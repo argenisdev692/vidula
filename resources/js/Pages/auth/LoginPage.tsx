@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Head, router } from '@inertiajs/react';
-import AuthLayout from '@/Pages/layouts/AuthLayout';
+import AuthLayout from '@/pages/layouts/AuthLayout';
 import { AuthInput } from './components/AuthInput';
 import { OtpInput } from './components/OtpInput';
 import {

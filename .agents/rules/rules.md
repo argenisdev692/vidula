@@ -7,56 +7,51 @@ trigger: always_on
 - **Language:** Respond in English at all times.
 - **CLI:** Use `./vendor/bin/sail artisan` — NEVER bare `php`.
 - **TypeScript:** Strict mode enforced on ALL `.tsx` / `.ts` files.
+- **Context7 (MCP):** Always resolve live docs — never rely on cached training knowledge.
+- **Investigate / Investigar:** Run Tavily search immediately before responding.
 
 ---
 
 # [MUST] Before writing any code — read the relevant skill
 
-| Task type                | Required reading                               |
-| ------------------------ | ---------------------------------------------- |
-| PHP / Laravel backend    | `.agents/skills/ARQUITECTURE-PHP.md`           |
-| React / Inertia frontend | `.agents/skills/ARQUITECTURE-REACT-INERTIA.md` |
-| CSS / Styles / UI        | `.agents/skills/rules-styles.md`               |
-| PHP coding rules         | `.agents/skills/RULES-PHP-2026.md`             |
+| Task type             | Required reading                                  |
+| --------------------- | ------------------------------------------------- |
+| PHP / Laravel backend | `.agents/skills/ARCHITECTURE-INTERMEDIATE-PHP.md` |
+| React / Inertia UI    | `.agents/skills/ARCHITECTURE-REACT-INERTIA.md`    |
+| CSS / Styles / UI     | `.agents/skills/RULES-STYLES.md`                  |
+| Full coding rules     | `.agents/skills/RULES-FULLSTACK.md`               |
+| Business Logic / CRUD | `.agents/skills/HOW-TO-USE.md`                    |
 
 > **Rule:** If a skill file covers the task, read it FIRST — no exceptions.
 
 ---
 
-# [MUST] CSS / Styles — Token-First
+# [MUST] CSS / Styles
 
-- NEVER hardcode hex colors in components. Use `var(--token)`.
-- NEVER use inline `rgba()` — use `color-mix(in srgb, var(--token) N%, transparent)`.
-- All tokens are defined in `resources/css/globals.css`.
-- Dark is the default theme. Light override lives in `[data-theme="light"]`.
-- **CRUD Actions:** Buttons (View, Edit, Delete, Restore) MUST use `btn-action` utilities with modern backgrounds, borders, and rounded corners.
-- **Add Buttons:** Main "Add" buttons in CRUDs MUST NOT be oversized. Use size-reduced padding (e.g., `px-4 py-2`) and `btn-modern-primary`.
-- All table cards MUST use the `card-modern` class for consistent premium aesthetic.
+- Follow `.agents/skills/RULES-STYLES.md` strictly.
+- NEVER hardcode hex, `bg-red-600`, or `bg-[#hex]`. Use `var(--token)` only.
+- All tokens defined in `resources/css/app.css`.
 
 ---
 
 # [MUST] React / TypeScript
 
-- Every page must be wrapped in its correct Layout (`AppLayout`, `AuthLayout`, etc.).
-- State typing: always explicit generics — `useState<string>('')`.
-- Form handlers: validate client-side before any `router.post/put`.
-- No `any`. No `@ts-ignore`. No inline styles with hardcoded colors.
+- Follow `.agents/skills/ARCHITECTURE-REACT-INERTIA.md` and `.agents/skills/RULES-FULLSTACK.md`.
+- No `any`. No `@ts-ignore`. No hardcoded colors in components.
+- Every page wrapped in correct Layout. State always explicitly typed.
 
 ---
 
 # [MUST] Laravel / PHP
 
-- Domain logic lives in `src/Contexts/<Module>/Domain/`.
-- No business logic in Controllers — only orchestration.
-- Use Commands + Handlers (CQRS) for writes, Queries for reads.
-- Seeders: always call `app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions()` after batch-creating permissions.
-- CRUD modules MUST include `DELETE /{uuid}` + `PATCH /{uuid}/restore` routes for soft-delete/restore in both web (Inertia) and API route groups. Always use `{uuid}`, never `{id}`.
+- Follow `.agents/skills/RULES-FULLSTACK.md` and `.agents/skills/HOW-TO-USE.md`.
+- No business logic in Controllers. No `php` bare CLI.
+- Web routes = primary (Inertia + session). API routes = secondary (mobile/Sanctum only).
 
 ---
 
 # [SHOULD] General quality
 
+- Mobile-first on every UI component.
+- `font-family: var(--font-sans)` everywhere.
 - Prefer descriptive names over comments.
-- Mobile-first responsive on every UI component.
-- `font-family: var(--font-sans)` everywhere — Inter is the project font.
-- Sidebar nav uses `AppLayout`; public/auth pages use their own layout.

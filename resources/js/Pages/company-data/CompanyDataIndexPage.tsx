@@ -1,14 +1,14 @@
 import * as React from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, Head, useRemember } from '@inertiajs/react';
 import { type RowSelectionState } from '@tanstack/react-table';
-import AppLayout from '@/Pages/layouts/AppLayout';
-import { useCompanyData } from '@/modules/company-data/hooks/useCompanyData';
-import { useDeleteCompanyData, useRestoreCompanyData } from '@/modules/company-data/hooks/useCompanyDataMutations';
+import AppLayout from '@/pages/layouts/AppLayout';
+import { useCompanies } from '@/modules/company-data/hooks/useCompanies';
+import { useCompanyDataMutations } from '@/modules/company-data/hooks/useCompanyDataMutations';
 import CompanyDataTable from './components/CompanyDataTable';
-import { DataTableBulkActions } from '@/components/ui/DataTableBulkActions';
-import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal';
-import { DataTableDateRangeFilter } from '@/components/common/data-table/DataTableDateRangeFilter';
-import { ExportButton } from '@/components/common/export/ExportButton';
+import { DataTableBulkActions } from '@/shadcn/DataTableBulkActions';
+import { DeleteConfirmModal } from '@/shadcn/DeleteConfirmModal';
+import { DataTableDateRangeFilter } from '@/common/data-table/DataTableDateRangeFilter';
+import { ExportButton } from '@/common/export/ExportButton';
 import type { CompanyDataFilters } from '@/types/api';
 
 // ══════════════════════════════════════════════════════════════
@@ -28,49 +28,42 @@ const IconChevRight = () => <svg {...ic} width={14} height={14}><polyline points
 // CompanyDataIndexPage
 // ══════════════════════════════════════════════════════════════
 export default function CompanyDataIndexPage(): React.JSX.Element {
-  const [filters, setFilters] = React.useState<CompanyDataFilters>({ page: 1, perPage: 15 });
-  const [search, setSearch] = React.useState<string>('');
+  const [filters, setFilters] = useRemember<CompanyDataFilters>({ page: 1, perPage: 15 }, 'company-filters');
+  const [search, setSearch] = React.useState<string>(filters.search || '');
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [pendingDelete, setPendingDelete] = React.useState<{ uuid: string; name: string } | null>(null);
   
-  const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [isExporting, setIsExporting] = React.useState<boolean>(false);
+  const [isPendingExport, startExportTransition] = React.useTransition();
+  const [, startSearchTransition] = React.useTransition();
 
   // ── Export function ──
   async function handleExport(format: 'excel' | 'pdf'): Promise<void> {
-    setIsExporting(true);
-    try {
+    startExportTransition(() => {
       const params = new URLSearchParams();
       if (filters.search) params.append('search', filters.search);
       if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
       if (filters.dateTo) params.append('dateTo', filters.dateTo);
       params.append('format', format);
 
-      window.open(`/api/company-data/export?${params.toString()}`, '_blank');
-    } catch (err) {
-      console.error('Export failed', err);
-    } finally {
-      setIsExporting(false);
-    }
+      window.open(`/company-data/data/admin/export?${params.toString()}`, '_blank');
+    });
   }
 
   // ── Fetch data ──
-  const { data, isPending, isError } = useCompanyData(filters);
-  const deleteMutation = useDeleteCompanyData();
-  const restoreMutation = useRestoreCompanyData();
+  const { data, isPending, isError } = useCompanies(filters);
+  const { deleteCompanyData, restoreCompanyData } = useCompanyDataMutations();
 
   const companyList = data?.data ?? [];
   const meta = data?.meta ?? { currentPage: 1, lastPage: 1, perPage: 15, total: 0 };
 
-  // ── Search debounce ──
+  // ── Search change ──
   function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>): void {
     const value = e.target.value;
     setSearch(value);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      // In TS strict mode, only undefined deletes it from URL query. '' gets kept.
+    
+    startSearchTransition(() => {
       setFilters((prev) => ({ ...prev, search: value || undefined, page: 1 }));
-    }, 400);
+    });
   }
 
   // ── Single Actions ──
@@ -80,7 +73,7 @@ export default function CompanyDataIndexPage(): React.JSX.Element {
 
   function handleConfirmSingleDelete(): void {
     if (!pendingDelete) return;
-    deleteMutation.mutate(pendingDelete.uuid, {
+    deleteCompanyData.mutate(pendingDelete.uuid, {
       onSuccess: () => setPendingDelete(null),
     });
   }
@@ -90,14 +83,14 @@ export default function CompanyDataIndexPage(): React.JSX.Element {
   
   function handleBulkDelete(): void {
     if (!selectedUuids.length) return;
-    deleteMutation.mutate(selectedUuids, {
+    deleteCompanyData.mutate(selectedUuids, {
       onSuccess: () => setRowSelection({}),
     });
   }
 
   function handleBulkRestore(): void {
     if (!selectedUuids.length) return;
-    restoreMutation.mutate(selectedUuids, {
+    restoreCompanyData.mutate(selectedUuids, {
       onSuccess: () => setRowSelection({}),
     });
   }
@@ -108,14 +101,15 @@ export default function CompanyDataIndexPage(): React.JSX.Element {
   }
 
   return (
-    <AppLayout>
+    <>
+      <Head title="Company Profiles" />
+      <AppLayout>
       <div style={{ fontFamily: 'var(--font-sans)' }}>
         {/* ── Header ── */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1
-              className="text-2xl font-bold tracking-tight"
-              style={{ color: 'var(--text-primary)' }}
+              className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100"
             >
               Company Profiles
             </h1>
@@ -158,17 +152,16 @@ export default function CompanyDataIndexPage(): React.JSX.Element {
             <div className="h-8 w-px hidden sm:block" style={{ background: 'var(--border-subtle)' }} />
             
             <DataTableDateRangeFilter
-              dateFrom={filters.dateFrom || ''}
-              dateTo={filters.dateTo || ''}
-              onFromChange={(val) => setFilters(p => ({ ...p, dateFrom: val || undefined, page: 1 }))}
-              onToChange={(val) => setFilters(p => ({ ...p, dateTo: val || undefined, page: 1 }))}
+              dateFrom={filters.dateFrom}
+              dateTo={filters.dateTo}
+              onChange={(range: { dateFrom?: string; dateTo?: string }) => setFilters(p => ({ ...p, ...range, page: 1 }))}
             />
 
             <div className="h-8 w-px hidden sm:block" style={{ background: 'var(--border-subtle)' }} />
 
             <ExportButton 
               onExport={handleExport} 
-              isExporting={isExporting} 
+              isExporting={isPendingExport} 
             />
           </div>
         </div>
@@ -178,8 +171,8 @@ export default function CompanyDataIndexPage(): React.JSX.Element {
           count={selectedUuids.length}
           onDelete={handleBulkDelete}
           onRestore={handleBulkRestore}
-          isDeleting={deleteMutation.isPending}
-          isRestoring={restoreMutation.isPending}
+          isDeleting={deleteCompanyData.isPending}
+          isRestoring={restoreCompanyData.isPending}
         />
 
         {/* ── Table Card ── */}
@@ -230,8 +223,9 @@ export default function CompanyDataIndexPage(): React.JSX.Element {
         entityLabel={pendingDelete?.name ?? ''}
         onConfirm={handleConfirmSingleDelete}
         onCancel={() => setPendingDelete(null)}
-        isDeleting={deleteMutation.isPending}
+        isDeleting={deleteCompanyData.isPending}
       />
-    </AppLayout>
+      </AppLayout>
+    </>
   );
 }

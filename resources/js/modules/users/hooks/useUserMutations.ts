@@ -1,47 +1,53 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import type {
-  CreateUserPayload,
-  UpdateUserPayload,
-  UserDetail,
-} from '@/types/users';
+import { CreateUserPayload, UpdateUserPayload } from '@/types/users';
 
 /**
- * createUser — POST /api/users
+ * useUserMutations — Provides mutations for creating, updating, and status management.
  */
-export async function createUser(
-  payload: CreateUserPayload,
-): Promise<UserDetail> {
-  const { data } = await axios.post<{ data: UserDetail }>(
-    '/api/users',
-    payload,
-  );
-  return data.data;
-}
+export const useUserMutations = () => {
+  const queryClient = useQueryClient();
 
-/**
- * updateUser — PUT /api/users/{uuid}
- */
-export async function updateUser(
-  uuid: string,
-  payload: UpdateUserPayload,
-): Promise<UserDetail> {
-  const { data } = await axios.put<{ data: UserDetail }>(
-    `/api/users/${uuid}`,
-    payload,
-  );
-  return data.data;
-}
+  const createUser = useMutation({
+    mutationFn: (payload: CreateUserPayload) => axios.post('/users/data/admin', payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+  });
 
-/**
- * deleteUser — DELETE /api/users/{uuid}
- */
-export async function deleteUser(uuid: string): Promise<void> {
-  await axios.delete(`/api/users/${uuid}`);
-}
+  const updateUser = useMutation({
+    mutationFn: ({ uuid, payload }: { uuid: string; payload: UpdateUserPayload }) =>
+      axios.put(`/users/data/admin/${uuid}`, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['users', variables.uuid] });
+    },
+  });
 
-/**
- * bulkDeleteUsers — DELETE /api/users/{uuid} for multiple UUIDs
- */
-export async function bulkDeleteUsers(uuids: string[]): Promise<void> {
-  await Promise.all(uuids.map(uuid => axios.delete(`/api/users/${uuid}`)));
-}
+  const deleteUser = useMutation({
+    mutationFn: (uuid: string) => axios.delete(`/users/data/admin/${uuid}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+  });
+
+  const restoreUser = useMutation({
+    mutationFn: (uuid: string) => axios.patch(`/users/data/admin/${uuid}/restore`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+  });
+
+  const suspendUser = useMutation({
+    mutationFn: (uuid: string) => axios.post(`/users/data/admin/${uuid}/suspend`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+  });
+
+  const activateUser = useMutation({
+    mutationFn: (uuid: string) => axios.post(`/users/data/admin/${uuid}/activate`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+  });
+
+  return {
+    createUser,
+    updateUser,
+    deleteUser,
+    restoreUser,
+    suspendUser,
+    activateUser,
+  };
+};

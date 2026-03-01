@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { createColumnHelper, type ColumnDef, type RowSelectionState, type OnChangeFn } from '@tanstack/react-table';
 import { Link } from '@inertiajs/react';
-import { DataTable } from '@/components/ui/data-table';
+import { DataTable } from '@/shadcn/data-table';
 import type { CompanyDataListItem } from '@/types/api';
 
 import { Building2, Eye, Pencil, Trash2 } from 'lucide-react';
@@ -66,7 +66,7 @@ export default function CompanyDataTable({
               <Building2 size={16} />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+              <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
                 {company.company_name}
               </p>
               {company.name && (

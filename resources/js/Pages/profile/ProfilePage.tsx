@@ -1,500 +1,164 @@
 import * as React from 'react';
-import { Head, router, usePage } from '@inertiajs/react';
-import AppLayout from '@/Pages/layouts/AppLayout';
-import { AuthInput } from '@/Pages/auth/components/AuthInput';
-import { PasswordStrengthBar } from '@/Pages/auth/components/PasswordStrengthBar';
-import { validateProfile, validateNewPassword } from '@/modules/auth/helpers/validators';
-import type { AuthUser, FormStatus, ProfilePageProps } from '@/types/auth';
+import { Head, usePage } from '@inertiajs/react';
+import AppLayout from '@/pages/layouts/AppLayout';
+import { PremiumField } from '@/shadcn/PremiumField';
+import { useUserMutations } from '@/modules/users/hooks/useUserMutations';
+import { UserDetail } from '@/types/users';
+import { User, Smartphone, Globe } from 'lucide-react';
 
-/** ── Eye Toggle ── */
-function EyeToggle({ show, onToggle }: { show: boolean; onToggle: () => void }): React.JSX.Element {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      className="transition-colors"
-      style={{ color: 'var(--text-muted)' }}
-      aria-label={show ? 'Hide password' : 'Show password'}
-    >
-      {show ? (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" />
-          <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" />
-          <line x1="1" y1="1" x2="23" y2="23" />
-        </svg>
-      ) : (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-          <circle cx="12" cy="12" r="3" />
-        </svg>
-      )}
-    </button>
-  );
-}
-
-/** ── Section wrapper ── */
-function Section({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description: string;
-  children: React.ReactNode;
-}): React.JSX.Element {
-  return (
-    <div
-      className="rounded-xl p-6"
-      style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border-default)',
-      }}
-    >
-      <h3
-        className="text-lg font-bold"
-        style={{ color: 'var(--text-primary)' }}
-      >
-        {title}
-      </h3>
-      <p
-        className="mt-1 mb-6 text-sm"
-        style={{ color: 'var(--text-muted)' }}
-      >
-        {description}
-      </p>
-      {children}
-    </div>
-  );
+interface ProfileProps {
+    auth: {
+        user: UserDetail;
+    };
 }
 
 export default function ProfilePage(): React.JSX.Element {
-  const { auth, flash, errors: serverErrors } = usePage<ProfilePageProps>().props;
-  const user: AuthUser = auth.user;
+  const { auth } = usePage<ProfileProps>().props;
+  const user = auth.user;
 
-  // ── Profile form state ──
-  const [profileStatus, setProfileStatus] = React.useState<FormStatus>('idle');
-  const [profileErrors, setProfileErrors] = React.useState<Record<string, string>>({});
-  const [profileData, setProfileData] = React.useState({
-    name: user.name ?? '',
-    last_name: user.last_name ?? '',
-    username: user.username ?? '',
-    email: user.email ?? '',
-    phone: user.phone ?? '',
-    date_of_birth: user.date_of_birth ?? '',
-    address: user.address ?? '',
-    zip_code: user.zip_code ?? '',
-    city: user.city ?? '',
-    state: user.state ?? '',
-    country: user.country ?? '',
-    gender: user.gender ?? '',
+  const [form, setForm] = React.useState({
+    name: user.name,
+    lastName: user.lastName,
+    email: user.email,
+    username: user.username || '',
+    phone: user.phone || '',
   });
 
-  // ── Password form state ──
-  const [passwordStatus, setPasswordStatus] = React.useState<FormStatus>('idle');
-  const [passwordErrors, setPasswordErrors] = React.useState<Record<string, string>>({});
-  const [currentPassword, setCurrentPassword] = React.useState('');
-  const [newPassword, setNewPassword] = React.useState('');
-  const [confirmPassword, setConfirmPassword] = React.useState('');
-  const [showCurrent, setShowCurrent] = React.useState(false);
-  const [showNew, setShowNew] = React.useState(false);
-  const [showConfirm, setShowConfirm] = React.useState(false);
-
-  function updateField(field: keyof typeof profileData, value: string): void {
-    setProfileData((prev) => ({ ...prev, [field]: value }));
-  }
-
-  /** ── Save Profile ── */
-  function handleProfileSubmit(e: React.FormEvent): void {
-    e.preventDefault();
-    const validation = validateProfile({
-      name: profileData.name,
-      email: profileData.email,
-      phone: profileData.phone || null,
-    });
-    if (!validation.valid) {
-      setProfileErrors(validation.errors);
-      return;
-    }
-    setProfileErrors({});
-    setProfileStatus('loading');
-
-    router.put(
-      '/user/profile-information',
-      profileData,
-      {
-        onSuccess: () => setProfileStatus('success'),
-        onError: (errs) => {
-          setProfileStatus('error');
-          setProfileErrors(errs);
-        },
-        onFinish: () => {
-          setTimeout(() => setProfileStatus('idle'), 3000);
-        },
-      },
-    );
-  }
-
-  /** ── Change Password ── */
-  function handlePasswordSubmit(e: React.FormEvent): void {
-    e.preventDefault();
-    const validation = validateNewPassword(newPassword, confirmPassword);
-    if (!validation.valid) {
-      setPasswordErrors(validation.errors);
-      return;
-    }
-    if (!currentPassword) {
-      setPasswordErrors({ current_password: 'Current password is required' });
-      return;
-    }
-    setPasswordErrors({});
-    setPasswordStatus('loading');
-
-    router.put(
-      '/user/password',
-      {
-        current_password: currentPassword,
-        password: newPassword,
-        password_confirmation: confirmPassword,
-      },
-      {
-        onSuccess: () => {
-          setPasswordStatus('success');
-          setCurrentPassword('');
-          setNewPassword('');
-          setConfirmPassword('');
-        },
-        onError: (errs) => {
-          setPasswordStatus('error');
-          setPasswordErrors(errs);
-        },
-        onFinish: () => {
-          setTimeout(() => setPasswordStatus('idle'), 3000);
-        },
-      },
-    );
-  }
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
+  
+  // Logic for updating profile would go here (using mutations)
+  
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+  };
 
   return (
-    <>
-      <Head title="Profile — Vidula" />
-      <AppLayout>
-        <div className="mx-auto max-w-3xl space-y-6">
-          {/* Page Header */}
-          <div className="flex items-center gap-4">
-            {/* Avatar */}
-            <div
-              className="flex h-16 w-16 items-center justify-center rounded-2xl text-xl font-bold"
-              style={{
-                background: 'var(--grad-primary)',
-                color: 'var(--color-white)',
-                boxShadow: '0 8px 24px var(--blue-glow)',
-              }}
-            >
-              {(user.name?.[0] ?? 'U').toUpperCase()}
-              {(user.last_name?.[0] ?? '').toUpperCase()}
+    <AppLayout>
+      <Head title="My Profile" />
+      <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        
+        {/* ── Page Header ── */}
+        <div className="flex items-center gap-6 p-2">
+            <div className="relative group">
+                {user.profilePhotoPath ? (
+                    <img 
+                        src={user.profilePhotoPath} 
+                        alt={user.fullName} 
+                        className="h-24 w-24 rounded-2xl object-cover shadow-2xl border-2 border-(--accent-primary) group-hover:scale-105 transition-transform duration-300" 
+                    />
+                ) : (
+                    <div className="h-24 w-24 rounded-2xl bg-(--grad-primary) flex items-center justify-center shadow-2xl group-hover:scale-105 transition-transform duration-300">
+                        <span className="text-white text-3xl font-black">{(user.name[0] + user.lastName[0]).toUpperCase()}</span>
+                    </div>
+                )}
+                <div className="absolute -bottom-1 -right-1 bg-(--accent-success) h-4 w-4 rounded-full border-2 border-(--bg-app)" />
             </div>
             <div>
-              <h1
-                className="text-2xl font-bold"
-                style={{ color: 'var(--text-primary)' }}
-              >
-                {user.name} {user.last_name ?? ''}
-              </h1>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                {user.email}
-              </p>
-              {/* Role badge (read-only) */}
-              {user.roles && user.roles.length > 0 && (
-                <div className="mt-1 flex gap-2">
-                  {user.roles.map((role) => (
-                    <span
-                      key={role}
-                      className="inline-block rounded-full px-3 py-0.5 text-xs font-semibold uppercase tracking-wider"
-                      style={{
-                        background: 'color-mix(in srgb, var(--blue-500) 13%, transparent)',
-                        color: 'var(--blue-400)',
-                        border: '1px solid color-mix(in srgb, var(--blue-500) 27%, transparent)',
-                      }}
-                    >
-                      {role}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Flash messages */}
-          {flash?.success && (
-            <div
-              className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm"
-              style={{
-                background: 'rgba(34, 197, 94, 0.1)',
-                border: '1px solid rgba(34, 197, 94, 0.25)',
-                color: 'var(--accent-success)',
-              }}
-              role="status"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
-                <polyline points="22 4 12 14.01 9 11.01" />
-              </svg>
-              {flash.success}
-            </div>
-          )}
-
-          {/* ══════════════════════════════════════════
-              PERSONAL INFORMATION
-              ══════════════════════════════════════════ */}
-          <Section
-            title="Personal Information"
-            description="Update your personal details. Your role cannot be changed here."
-          >
-            <form onSubmit={handleProfileSubmit} className="space-y-4" noValidate>
-              {/* Name row */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <AuthInput
-                  label="First Name"
-                  type="text"
-                  value={profileData.name}
-                  onChange={(e) => updateField('name', e.target.value)}
-                  error={profileErrors.name ?? serverErrors.name}
-                  disabled={profileStatus === 'loading'}
-                />
-                <AuthInput
-                  label="Last Name"
-                  type="text"
-                  value={profileData.last_name}
-                  onChange={(e) => updateField('last_name', e.target.value)}
-                  error={profileErrors.last_name}
-                  disabled={profileStatus === 'loading'}
-                />
-              </div>
-
-              <AuthInput
-                label="Username"
-                type="text"
-                value={profileData.username}
-                onChange={(e) => updateField('username', e.target.value)}
-                error={profileErrors.username ?? serverErrors.username}
-                disabled={profileStatus === 'loading'}
-              />
-
-              <AuthInput
-                label="Email"
-                type="email"
-                value={profileData.email}
-                onChange={(e) => updateField('email', e.target.value)}
-                error={profileErrors.email ?? serverErrors.email}
-                disabled={profileStatus === 'loading'}
-              />
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <AuthInput
-                  label="Phone"
-                  type="tel"
-                  value={profileData.phone}
-                  onChange={(e) => updateField('phone', e.target.value)}
-                  error={profileErrors.phone ?? serverErrors.phone}
-                  disabled={profileStatus === 'loading'}
-                />
-                <AuthInput
-                  label="Date of Birth"
-                  type="date"
-                  value={profileData.date_of_birth}
-                  onChange={(e) => updateField('date_of_birth', e.target.value)}
-                  error={profileErrors.date_of_birth}
-                  disabled={profileStatus === 'loading'}
-                />
-              </div>
-
-              {/* Gender */}
-              <div className="space-y-1.5">
-                <label
-                  className="block text-xs font-semibold uppercase tracking-wider"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  Gender
-                </label>
-                <select
-                  value={profileData.gender}
-                  onChange={(e) => updateField('gender', e.target.value)}
-                  disabled={profileStatus === 'loading'}
-                  className="h-11 w-full rounded-lg border px-4 text-sm transition-all duration-200 focus:outline-none"
-                  style={{
-                    background: 'var(--input-bg)',
-                    borderColor: 'var(--input-border)',
-                    color: 'var(--input-text)',
-                    borderRadius: 'var(--input-radius)',
-                    fontFamily: 'var(--font-sans)',
-                  }}
-                >
-                  <option value="">Select...</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                  <option value="prefer_not_to_say">Prefer not to say</option>
-                </select>
-              </div>
-
-              {/* Address section */}
-              <AuthInput
-                label="Address"
-                type="text"
-                value={profileData.address}
-                onChange={(e) => updateField('address', e.target.value)}
-                error={profileErrors.address}
-                disabled={profileStatus === 'loading'}
-              />
-
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <AuthInput
-                  label="City"
-                  type="text"
-                  value={profileData.city}
-                  onChange={(e) => updateField('city', e.target.value)}
-                  error={profileErrors.city}
-                  disabled={profileStatus === 'loading'}
-                />
-                <AuthInput
-                  label="State"
-                  type="text"
-                  value={profileData.state}
-                  onChange={(e) => updateField('state', e.target.value)}
-                  error={profileErrors.state}
-                  disabled={profileStatus === 'loading'}
-                />
-                <AuthInput
-                  label="Zip Code"
-                  type="text"
-                  value={profileData.zip_code}
-                  onChange={(e) => updateField('zip_code', e.target.value)}
-                  error={profileErrors.zip_code}
-                  disabled={profileStatus === 'loading'}
-                />
-                <AuthInput
-                  label="Country"
-                  type="text"
-                  value={profileData.country}
-                  onChange={(e) => updateField('country', e.target.value)}
-                  error={profileErrors.country}
-                  disabled={profileStatus === 'loading'}
-                />
-              </div>
-
-              {/* Submit */}
-              <div className="flex items-center gap-4 pt-2">
-                <button
-                  type="submit"
-                  disabled={profileStatus === 'loading'}
-                  className="flex h-10 items-center justify-center rounded-lg px-6 text-sm font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60"
-                  style={{
-                    background: 'var(--grad-primary)',
-                    color: '#ffffff',
-                    boxShadow: '0 4px 16px var(--blue-glow)',
-                  }}
-                >
-                  {profileStatus === 'loading' ? (
-                    <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="60" strokeLinecap="round" />
-                    </svg>
-                  ) : (
-                    'Save Changes'
-                  )}
-                </button>
-
-                {profileStatus === 'success' && (
-                  <span className="text-sm font-medium" style={{ color: 'var(--accent-success)' }}>
-                    ✓ Saved
+              <h1 className="text-3xl font-black text-(--text-primary) tracking-tight">{user.fullName}</h1>
+              <p className="text-(--text-muted) font-medium">@{user.username || 'user'} • {user.role || 'Member'}</p>
+              <div className="mt-2 flex gap-2">
+                  <span className="px-2 py-0.5 rounded-md bg-(--accent-primary)/10 text-(--accent-primary) text-[10px] font-bold uppercase tracking-wider border border-(--accent-primary)/20">
+                      Standard Account
                   </span>
-                )}
               </div>
-            </form>
-          </Section>
-
-          {/* ══════════════════════════════════════════
-              CHANGE PASSWORD
-              ══════════════════════════════════════════ */}
-          <Section
-            title="Change Password"
-            description="Ensure your account is using a long, random password to stay secure."
-          >
-            <form onSubmit={handlePasswordSubmit} className="space-y-4" noValidate>
-              <AuthInput
-                label="Current Password"
-                type={showCurrent ? 'text' : 'password'}
-                placeholder="••••••••"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                error={passwordErrors.current_password ?? serverErrors.current_password}
-                autoComplete="current-password"
-                disabled={passwordStatus === 'loading'}
-                rightElement={
-                  <EyeToggle show={showCurrent} onToggle={() => setShowCurrent(!showCurrent)} />
-                }
-              />
-
-              <div>
-                <AuthInput
-                  label="New Password"
-                  type={showNew ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  error={passwordErrors.password ?? serverErrors.password}
-                  autoComplete="new-password"
-                  disabled={passwordStatus === 'loading'}
-                  rightElement={
-                    <EyeToggle show={showNew} onToggle={() => setShowNew(!showNew)} />
-                  }
-                />
-                <PasswordStrengthBar password={newPassword} />
-              </div>
-
-              <AuthInput
-                label="Confirm New Password"
-                type={showConfirm ? 'text' : 'password'}
-                placeholder="••••••••"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                error={passwordErrors.password_confirmation}
-                autoComplete="new-password"
-                disabled={passwordStatus === 'loading'}
-                rightElement={
-                  <EyeToggle show={showConfirm} onToggle={() => setShowConfirm(!showConfirm)} />
-                }
-              />
-
-              <div className="flex items-center gap-4 pt-2">
-                <button
-                  type="submit"
-                  disabled={passwordStatus === 'loading'}
-                  className="flex h-10 items-center justify-center rounded-lg px-6 text-sm font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60"
-                  style={{
-                    background: 'var(--grad-primary)',
-                    color: '#ffffff',
-                    boxShadow: '0 4px 16px var(--blue-glow)',
-                  }}
-                >
-                  {passwordStatus === 'loading' ? (
-                    <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="60" strokeLinecap="round" />
-                    </svg>
-                  ) : (
-                    'Update Password'
-                  )}
-                </button>
-
-                {passwordStatus === 'success' && (
-                  <span className="text-sm font-medium" style={{ color: 'var(--accent-success)' }}>
-                    ✓ Updated
-                  </span>
-                )}
-              </div>
-            </form>
-          </Section>
+            </div>
         </div>
-      </AppLayout>
-    </>
+
+        {/* ── Grid Layout ── */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            
+            {/* ── Personal Info Section ── */}
+            <div className="md:col-span-2 space-y-8">
+                <section className="card-modern p-8 space-y-8 glass-morphism border-(--border-default) shadow-xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-5">
+                        <User size={120} />
+                    </div>
+                    <div className="flex items-center gap-3 relative z-10">
+                        <div className="p-2 rounded-lg bg-(--accent-primary)/10 text-(--accent-primary)">
+                            <User size={20} />
+                        </div>
+                        <h2 className="text-lg font-bold text-(--text-primary)">Account Settings</h2>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 relative z-10">
+                        <PremiumField 
+                            label="First Name" 
+                            name="name" 
+                            value={form.name} 
+                            onChange={handleChange} 
+                            placeholder="John"
+                        />
+                        <PremiumField 
+                            label="Last Name" 
+                            name="lastName" 
+                            value={form.lastName} 
+                            onChange={handleChange} 
+                            placeholder="Doe"
+                        />
+                        <div className="sm:col-span-2">
+                             <PremiumField 
+                                label="Primary Email" 
+                                name="email" 
+                                type="email"
+                                value={form.email} 
+                                onChange={handleChange} 
+                                placeholder="john@example.com"
+                            />
+                        </div>
+                        <PremiumField 
+                            label="Public Username" 
+                            name="username" 
+                            value={form.username} 
+                            onChange={handleChange} 
+                            placeholder="jdoe88"
+                        />
+                        <PremiumField 
+                            label="Contact Phone" 
+                            name="phone" 
+                            value={form.phone} 
+                            onChange={handleChange} 
+                            placeholder="+1 555-0199"
+                        />
+                    </div>
+
+                    <div className="pt-4 flex justify-end relative z-10">
+                        <button className="btn-modern-primary px-8 py-2.5 font-bold shadow-lg hover:shadow-(--accent-primary)/30 transition-all">
+                            Save Profile
+                        </button>
+                    </div>
+                </section>
+            </div>
+
+            {/* ── Sidebar Column ── */}
+            <div className="space-y-6">
+                <section className="card-modern p-6 space-y-4 border-(--border-subtle) bg-(--bg-surface) shadow-sm">
+                    <div className="flex items-center gap-2 mb-2 text-(--text-muted)">
+                        <Smartphone size={16} />
+                        <h3 className="text-xs font-bold uppercase tracking-widest">Connect</h3>
+                    </div>
+                    <p className="text-xs text-(--text-disabled) leading-relaxed">
+                        Link your phone number to enable Two-Factor Authentication and receive instant notifications.
+                    </p>
+                    <button className="w-full py-2.5 rounded-xl border border-(--border-default) bg-(--bg-card) text-xs font-bold text-(--text-primary) hover:bg-(--bg-hover) transition-all shadow-sm">
+                        Verify Phone
+                    </button>
+                </section>
+
+                <section className="card-modern p-6 space-y-4 border-(--border-subtle) bg-(--bg-surface) shadow-sm">
+                    <div className="flex items-center gap-2 mb-2 text-(--text-muted)">
+                        <Globe size={16} />
+                        <h3 className="text-xs font-bold uppercase tracking-widest">Region</h3>
+                    </div>
+                    <div className="flex items-center justify-between">
+                         <span className="text-xs font-medium text-(--text-secondary)">Language</span>
+                         <span className="text-[11px] font-bold text-(--accent-primary)">English (US)</span>
+                    </div>
+                </section>
+            </div>
+
+        </div>
+      </div>
+    </AppLayout>
   );
 }

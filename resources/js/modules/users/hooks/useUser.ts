@@ -1,10 +1,18 @@
+import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import type { UserDetail } from '@/types/users';
+import { UserDetail } from '@/types/users';
 
 /**
- * fetchUser — Fetches a single user detail by UUID from the API.
+ * useUser — Fetches a single user by UUID.
  */
-export async function fetchUser(uuid: string): Promise<UserDetail> {
-  const { data } = await axios.get<{ data: UserDetail }>(`/api/users/${uuid}`);
-  return data.data;
-}
+export const useUser = (uuid?: string) => {
+  return useQuery({
+    queryKey: ['users', uuid],
+    queryFn: async () => {
+      if (!uuid) return null;
+      const { data } = await axios.get<{ data: UserDetail }>(`/users/data/admin/${uuid}`);
+      return data.data;
+    },
+    enabled: !!uuid,
+  });
+};

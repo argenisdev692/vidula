@@ -270,6 +270,19 @@ function AvatarDropdown(): React.JSX.Element {
             </p>
           </div>
 
+          {/* Company Identity → /profile (includes company data) */}
+          <Link
+            href="/profile"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors"
+            style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--bg-hover)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'transparent'; }}
+          >
+            <IconBuilding />
+            My Company
+          </Link>
+
           {/* Settings → /profile */}
           <Link
             href="/profile"

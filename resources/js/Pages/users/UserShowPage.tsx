@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { Link, router } from '@inertiajs/react';
-import AppLayout from '@/Pages/layouts/AppLayout';
+import AppLayout from '@/pages/layouts/AppLayout';
 import UserStatusBadge from '@/modules/users/components/UserStatusBadge';
-import { deleteUser } from '@/modules/users/hooks/useUserMutations';
+import { useUserMutations } from '@/modules/users/hooks/useUserMutations';
 import type { UserDetail } from '@/types/users';
 
 // ══════════════════════════════════════════════════════════════
@@ -20,11 +20,11 @@ const IconTrash = () => <svg {...ic}><polyline points="3 6 5 6 21 6"/><path d="M
 // ══════════════════════════════════════════════════════════════
 // Info Row
 // ══════════════════════════════════════════════════════════════
-function InfoRow({ label, value }: { label: string; value: string | null }): React.JSX.Element {
+function InfoRow({ label, value }: { label: string; value: string | null | undefined }): React.JSX.Element {
   return (
     <div className="grid grid-cols-3 gap-4 py-3" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
       <dt className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>{label}</dt>
-      <dd className="col-span-2 text-sm" style={{ color: 'var(--text-primary)' }}>{value || '—'}</dd>
+      <dd className="col-span-2 text-sm font-medium text-gray-900 dark:text-gray-100">{value || '—'}</dd>
     </div>
   );
 }
@@ -40,10 +40,12 @@ interface UserShowPageProps {
 // UserShowPage
 // ══════════════════════════════════════════════════════════════
 export default function UserShowPage({ user }: UserShowPageProps): React.JSX.Element {
+  const { deleteUser } = useUserMutations();
+
   async function handleDelete(): Promise<void> {
     if (!confirm(`Are you sure you want to delete "${user.full_name}"?`)) return;
     try {
-      await deleteUser(user.uuid);
+      await deleteUser.mutateAsync(user.uuid);
       router.visit('/users');
     } catch (err) {
       console.error('Failed to delete user', err);
@@ -70,7 +72,7 @@ export default function UserShowPage({ user }: UserShowPageProps): React.JSX.Ele
               <IconArrowLeft />
             </Link>
             <div>
-              <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
                 User Details
               </h1>
               <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
@@ -117,7 +119,7 @@ export default function UserShowPage({ user }: UserShowPageProps): React.JSX.Ele
               </div>
             )}
             <div>
-              <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                 {user.full_name}
               </h2>
               {user.username && (

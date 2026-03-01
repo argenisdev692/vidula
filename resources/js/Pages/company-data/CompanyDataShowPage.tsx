@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
-import AppLayout from '@/Pages/layouts/AppLayout';
+import AppLayout from '@/pages/layouts/AppLayout';
 import { useSingleCompanyData } from '@/modules/company-data/hooks/useCompanyData';
 import CompanyDataStatusBadge from '@/modules/company-data/components/CompanyDataStatusBadge';
 import type { PageProps } from '@inertiajs/core';
@@ -69,7 +69,7 @@ export default function CompanyDataShowPage(): React.JSX.Element {
               <IconArrowLeft />
             </Link>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+              <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
                 {company.company_name}
               </h1>
               <div className="mt-1 flex items-center gap-3">
@@ -103,7 +103,7 @@ export default function CompanyDataShowPage(): React.JSX.Element {
             
             {/* Contact Details Card */}
             <div className="card-modern shadow-md">
-              <h2 className="mb-4 text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+              <h2 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">
                 Contact Information
               </h2>
               <div className="space-y-4">
@@ -193,7 +193,7 @@ export default function CompanyDataShowPage(): React.JSX.Element {
 
             {/* Geographic Coordinates Card (if map is needed later) */}
             <div className="card-modern shadow-md">
-               <h2 className="mb-4 text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+               <h2 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">
                 Geographic Data
               </h2>
               <div className="grid grid-cols-2 gap-4">
@@ -213,7 +213,7 @@ export default function CompanyDataShowPage(): React.JSX.Element {
           {/* Social Links & Metadata Column */}
           <div className="space-y-6">
             <div className="card-modern">
-              <h2 className="mb-4 text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+              <h2 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">
                 Social Profiles
               </h2>
               <div className="space-y-4">
@@ -240,7 +240,7 @@ export default function CompanyDataShowPage(): React.JSX.Element {
             </div>
 
             <div className="card-modern">
-               <h2 className="mb-4 text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+               <h2 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">
                 Metadata
               </h2>
               <div className="space-y-4 text-sm" style={{ color: 'var(--text-secondary)' }}>

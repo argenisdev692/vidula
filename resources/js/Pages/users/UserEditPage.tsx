@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Link, router } from '@inertiajs/react';
-import AppLayout from '@/Pages/layouts/AppLayout';
-import { updateUser } from '@/modules/users/hooks/useUserMutations';
+import AppLayout from '@/pages/layouts/AppLayout';
+import { useUserMutations } from '@/modules/users/hooks/useUserMutations';
 import type { UpdateUserPayload, UserDetail } from '@/types/users';
 
 // ══════════════════════════════════════════════════════════════
@@ -67,20 +67,20 @@ interface UserEditPageProps {
 // UserEditPage
 // ══════════════════════════════════════════════════════════════
 export default function UserEditPage({ user }: UserEditPageProps): React.JSX.Element {
+  const { updateUser } = useUserMutations();
   const [form, setForm] = React.useState<UpdateUserPayload>({
     name: user.name,
     email: user.email ?? '',
-    last_name: user.lastName ?? '',
+    last_name: user.last_name ?? '',
     username: user.username ?? '',
     phone: user.phone ?? '',
     address: user.address ?? '',
     city: user.city ?? '',
     state: user.state ?? '',
     country: user.country ?? '',
-    zip_code: user.zipCode ?? '',
+    zip_code: user.zip_code ?? '',
   });
   const [errors, setErrors] = React.useState<Record<string, string>>({});
-  const [submitting, setSubmitting] = React.useState<boolean>(false);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>): void {
     const { name, value } = e.target;
@@ -101,24 +101,20 @@ export default function UserEditPage({ user }: UserEditPageProps): React.JSX.Ele
     e.preventDefault();
     if (!validate()) return;
 
-    setSubmitting(true);
-    try {
-      await updateUser(user.uuid, form);
-      router.visit(`/users/${user.uuid}`);
-    } catch (err: unknown) {
-      if (typeof err === 'object' && err !== null && 'response' in err) {
-        const response = (err as { response: { data: { errors?: Record<string, string[]> } } }).response;
-        if (response.data.errors) {
+    updateUser.mutate({ uuid: user.uuid, payload: form }, {
+      onSuccess: () => {
+        router.visit(`/users/${user.uuid}`);
+      },
+      onError: (err: any) => {
+        if (err.response?.data?.errors) {
           const serverErrors: Record<string, string> = {};
-          for (const [key, msgs] of Object.entries(response.data.errors)) {
-            serverErrors[key] = msgs[0] ?? '';
+          for (const [key, msgs] of Object.entries(err.response.data.errors)) {
+            serverErrors[key] = (msgs as string[])[0] ?? '';
           }
           setErrors(serverErrors);
         }
       }
-    } finally {
-      setSubmitting(false);
-    }
+    });
   }
 
   return (
@@ -138,11 +134,11 @@ export default function UserEditPage({ user }: UserEditPageProps): React.JSX.Ele
             <IconArrowLeft />
           </Link>
           <div>
-            <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
               Edit User
             </h1>
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              {user.fullName}
+              {user.full_name}
             </p>
           </div>
         </div>
@@ -195,7 +191,7 @@ export default function UserEditPage({ user }: UserEditPageProps): React.JSX.Ele
             </Link>
             <button
               type="submit"
-              disabled={submitting}
+              disabled={updateUser.isPending}
               className="rounded-lg px-5 py-2.5 text-sm font-semibold transition-all disabled:opacity-50"
               style={{
                 background: 'linear-gradient(135deg, var(--color-aqua), var(--color-aqua-dark))',
@@ -203,7 +199,7 @@ export default function UserEditPage({ user }: UserEditPageProps): React.JSX.Ele
                 boxShadow: '0 2px 8px color-mix(in srgb, var(--color-aqua) 30%, transparent)',
               }}
             >
-              {submitting ? 'Saving...' : 'Save Changes'}
+              {updateUser.isPending ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>

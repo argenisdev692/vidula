@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
-use Src\Contexts\Users\Infrastructure\Persistence\Eloquent\Models\UserEloquentModel as User;
+use Modules\Users\Infrastructure\Persistence\Eloquent\Models\UserEloquentModel as User;
 use Ramsey\Uuid\Uuid;
 
 class UserSeeder extends Seeder
@@ -33,7 +33,8 @@ class UserSeeder extends Seeder
         $superAdminUser = User::firstOrCreate(
             ['email' => 'argenis692@gmail.com'],
             [
-                'name' => 'Argenis Gonzalez',
+                'name' => 'Argenis',
+                'last_name' => 'Gonzalez',
                 'username' => 'argenis692',
                 'password' => bcrypt('argenis01='),
                 'uuid' => Uuid::uuid4()->toString(),
@@ -51,7 +52,8 @@ class UserSeeder extends Seeder
         $adminUser = User::firstOrCreate(
             ['email' => 'admin@vidula.com'],
             [
-                'name' => 'Admin User',
+                'name' => 'Admin',
+                'last_name' => 'User',
                 'username' => 'admin_user',
                 'password' => bcrypt('password123'),
                 'uuid' => Uuid::uuid4()->toString(),
@@ -64,7 +66,8 @@ class UserSeeder extends Seeder
         $standardUser = User::firstOrCreate(
             ['email' => 'user@vidula.com'],
             [
-                'name' => 'Standard User',
+                'name' => 'Standard',
+                'last_name' => 'User',
                 'username' => 'standard_user',
                 'password' => bcrypt('password123'),
                 'uuid' => Uuid::uuid4()->toString(),
@@ -77,7 +80,8 @@ class UserSeeder extends Seeder
         $guestUser = User::firstOrCreate(
             ['email' => 'guest@vidula.com'],
             [
-                'name' => 'Guest User',
+                'name' => 'Guest',
+                'last_name' => 'User',
                 'username' => 'guest_user',
                 'password' => bcrypt('password123'),
                 'uuid' => Uuid::uuid4()->toString(),

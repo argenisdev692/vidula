@@ -1,7 +1,8 @@
 import * as React from 'react';
+import type { UserStatus } from '@/types/users';
 
 interface UserStatusBadgeProps {
-  status: 'active' | 'suspended' | 'banned' | 'deleted';
+  status: UserStatus;
 }
 
 const STATUS_CONFIG: Record<
@@ -31,6 +32,12 @@ const STATUS_CONFIG: Record<
     bg: 'color-mix(in srgb, var(--text-disabled) 15%, transparent)',
     text: 'var(--text-disabled)',
     dot: 'var(--text-disabled)',
+  },
+  pending_setup: {
+    label: 'Pending Setup',
+    bg: 'color-mix(in srgb, var(--accent-info) 15%, transparent)',
+    text: 'var(--accent-info)',
+    dot: 'var(--accent-info)',
   },
 };
 

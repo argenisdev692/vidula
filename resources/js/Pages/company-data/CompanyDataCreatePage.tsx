@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import AppLayout from '@/Pages/layouts/AppLayout';
-import { useCreateCompanyData } from '@/modules/company-data/hooks/useCompanyDataMutations';
+import AppLayout from '@/pages/layouts/AppLayout';
+import { useCompanyDataMutations } from '@/modules/company-data/hooks/useCompanyDataMutations';
 import type { CreateCompanyDataDTO } from '@/types/api';
 
 // ══════════════════════════════════════════════════════════════
@@ -19,7 +19,7 @@ const IconSave = () => <svg {...ic}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 
 // CompanyDataCreatePage
 // ══════════════════════════════════════════════════════════════
 export default function CompanyDataCreatePage(): React.JSX.Element {
-  const createMutation = useCreateCompanyData();
+  const { createCompanyData: createMutation } = useCompanyDataMutations();
   const [formData, setFormData] = React.useState<CreateCompanyDataDTO>({
     user_id: 1, // Defaulting to 1 for now, or this could come from auth context
     company_name: '',
@@ -68,7 +68,7 @@ export default function CompanyDataCreatePage(): React.JSX.Element {
               <IconArrowLeft />
             </Link>
             <div>
-              <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+              <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
                 New Company Profile
               </h1>
               <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>

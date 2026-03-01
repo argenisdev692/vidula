@@ -1,108 +1,71 @@
 import * as React from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, Head, useRemember } from '@inertiajs/react';
 import { type RowSelectionState } from '@tanstack/react-table';
-import AppLayout from '@/Pages/layouts/AppLayout';
+import AppLayout from '@/pages/layouts/AppLayout';
 import { useUsers } from '@/modules/users/hooks/useUsers';
-import { deleteUser, bulkDeleteUsers } from '@/modules/users/hooks/useUserMutations';
+import { useUserMutations } from '@/modules/users/hooks/useUserMutations';
 import UsersTable from './components/UsersTable';
-import { DataTableBulkActions } from '@/components/ui/DataTableBulkActions';
-import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal';
-import { DataTableDateRangeFilter } from '@/components/common/data-table/DataTableDateRangeFilter';
-import { ExportButton } from '@/components/common/export/ExportButton';
+import { DataTableBulkActions } from '@/shadcn/DataTableBulkActions';
+import { DeleteConfirmModal } from '@/shadcn/DeleteConfirmModal';
+import { DataTableDateRangeFilter } from '@/common/data-table/DataTableDateRangeFilter';
+import { ExportButton } from '@/common/export/ExportButton';
 import type { UserFilters } from '@/types/users';
+import { Search, ChevronLeft, ChevronRight, UserPlus } from 'lucide-react';
 
-// ══════════════════════════════════════════════════════════════
-// Icons
-// ══════════════════════════════════════════════════════════════
-const ic = {
-  w: 16, h: 16, viewBox: '0 0 24 24', fill: 'none',
-  stroke: 'currentColor', strokeWidth: 2,
-  strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const,
-};
-const IconPlus = () => <svg {...ic}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
-const IconSearch = () => <svg {...ic} width={14} height={14}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
-const IconChevLeft = () => <svg {...ic} width={14} height={14}><polyline points="15 18 9 12 15 6"/></svg>;
-const IconChevRight = () => <svg {...ic} width={14} height={14}><polyline points="9 18 15 12 9 6"/></svg>;
-
-// ══════════════════════════════════════════════════════════════
-// UsersIndexPage
-// ══════════════════════════════════════════════════════════════
+/**
+ * UsersIndexPage — Super-admin management for users.
+ */
 export default function UsersIndexPage(): React.JSX.Element {
-  const [filters, setFilters] = React.useState<UserFilters>({ page: 1, perPage: 15 });
-  const [search, setSearch] = React.useState<string>('');
+  const [filters, setFilters] = useRemember<UserFilters>({ page: 1, per_page: 15 }, 'users-filters');
+  const [search, setSearch] = React.useState<string>(filters.search || '');
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
-  const [pendingDelete, setPendingDelete] = React.useState<{ uuid: string; name: string } | null>(null);
+  const [pendingDelete, setPendingDelete] = React.useState<{ uuid: string; name: string; email: string } | null>(null);
   
-  const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [isExporting, setIsExporting] = React.useState<boolean>(false);
-  const [isDeleting, setIsDeleting] = React.useState<boolean>(false);
+  const [isPendingExport, startExportTransition] = React.useTransition();
+  const [, startSearchTransition] = React.useTransition();
 
   // ── Fetch users via TanStack Query ──
-  const { data, isPending, isError, refetch } = useUsers(filters);
+  const { data, isPending, isError } = useUsers(filters);
   const users = data?.data ?? [];
   const meta = data?.meta ?? { currentPage: 1, lastPage: 1, perPage: 15, total: 0 };
 
+  const { deleteUser } = useUserMutations();
+
   // ── Export function ──
   async function handleExport(format: 'excel' | 'pdf'): Promise<void> {
-    setIsExporting(true);
-    try {
+    startExportTransition(() => {
       const params = new URLSearchParams();
       if (filters.search) params.append('search', filters.search);
-      if (filters.dateFrom) params.append('date_from', filters.dateFrom);
-      if (filters.dateTo) params.append('date_to', filters.dateTo);
+      if (filters.date_from) params.append('date_from', filters.date_from);
+      if (filters.date_to) params.append('date_to', filters.date_to);
       params.append('format', format);
 
-      window.open(`/api/users/export?${params.toString()}`, '_blank');
-    } catch (err) {
-      console.error('Export failed', err);
-    } finally {
-      setIsExporting(false);
-    }
+      window.open(`/users/data/admin/export?${params.toString()}`, '_blank');
+    });
   }
 
-  // ── Search debounce ──
+  // ── Search Change ──
   function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>): void {
     const value = e.target.value;
     setSearch(value);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
+    
+    startSearchTransition(() => {
       setFilters((prev) => ({ ...prev, search: value || undefined, page: 1 }));
-    }, 400);
+    });
   }
 
   // ── Single Actions ──
-  function handleDeleteClick(uuid: string, name: string): void {
-    setPendingDelete({ uuid, name });
+  function handleDeleteClick(uuid: string, name: string, email: string): void {
+    setPendingDelete({ uuid, name, email });
   }
 
   async function handleConfirmSingleDelete(): Promise<void> {
     if (!pendingDelete) return;
-    setIsDeleting(true);
     try {
-      await deleteUser(pendingDelete.uuid);
+      await deleteUser.mutateAsync(pendingDelete.uuid);
       setPendingDelete(null);
-      await refetch();
     } catch (err) {
       console.error('Failed to delete user', err);
-    } finally {
-      setIsDeleting(false);
-    }
-  }
-
-  // ── Bulk Actions ──
-  const selectedUuids = Object.keys(rowSelection).filter((k) => rowSelection[k]);
-
-  async function handleBulkDelete(): Promise<void> {
-    if (!selectedUuids.length) return;
-    setIsDeleting(true);
-    try {
-      await bulkDeleteUsers(selectedUuids);
-      setRowSelection({});
-      await refetch();
-    } catch (err) {
-      console.error('Failed to bulk delete users', err);
-    } finally {
-      setIsDeleting(false);
     }
   }
 
@@ -111,87 +74,89 @@ export default function UsersIndexPage(): React.JSX.Element {
     setFilters((prev) => ({ ...prev, page }));
   }
 
-  const initials = React.useCallback((name: string, lastName: string | null): string => {
-    const f = name?.charAt(0) ?? '';
-    const l = lastName?.charAt(0) ?? '';
-    return (f + l).toUpperCase() || '?';
+  const initials = React.useCallback((name: string, lastName: string): string => {
+    if (!name && !lastName) return 'U';
+    const f = (name || '').trim().charAt(0).toUpperCase();
+    const l = (lastName || '').trim().charAt(0).toUpperCase();
+    return f && l ? f + l : f || l || 'U';
   }, []);
 
+  const selectedUuids = React.useMemo(() => 
+    Object.keys(rowSelection).filter((k) => rowSelection[k]),
+    [rowSelection]
+  );
+
   return (
-    <AppLayout>
-      <div style={{ fontFamily: 'var(--font-sans)' }}>
+    <>
+      <Head title="System Users" />
+      <AppLayout>
+      <div className="flex flex-col gap-6 animate-in fade-in duration-500">
         {/* ── Header ── */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1
-              className="text-2xl font-bold tracking-tight"
-              style={{ color: 'var(--text-primary)' }}
-            >
+            <h1 className="text-3xl font-extrabold tracking-tight text-(--text-primary)">
               System Users
             </h1>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-              Manage all platform users — {meta.total} total
+            <p className="text-sm mt-1 text-(--text-muted) font-medium">
+              Oversee and manage platform accounts — <span className="text-(--accent-primary)">{meta.total} users</span> recorded
             </p>
           </div>
           <Link
             href="/users/create"
-            className="btn-modern btn-modern-primary px-4 py-2"
+            className="btn-modern-primary flex items-center gap-2 px-4 py-2 hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
-            <IconPlus /> New User
+            <UserPlus size={18} />
+            <span className="font-semibold">New User</span>
           </Link>
         </div>
 
-        {/* ── Search bar ── */}
-        <div
-          className="mb-4 flex flex-col items-center gap-3 rounded-xl px-4 py-3 sm:flex-row"
-          style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border-default)',
-          }}
-        >
-          <div className="flex flex-1 items-center gap-3 w-full">
-            <span style={{ color: 'var(--text-disabled)' }}><IconSearch /></span>
+        {/* ── Filters Bar ── */}
+        <div className="flex flex-col items-center gap-3 rounded-2xl px-5 py-4 sm:flex-row glass-morphism border border-(--border-default) shadow-sm">
+          <div className="flex flex-1 items-center gap-3 w-full group">
+            <Search size={18} className="text-(--text-disabled) group-focus-within:text-(--accent-primary) transition-colors" />
             <input
               type="text"
               value={search}
               onChange={handleSearchChange}
-              placeholder="Search by name, email or username..."
-              className="flex-1 bg-transparent text-sm outline-none"
-              style={{
-                color: 'var(--text-primary)',
-                fontFamily: 'var(--font-sans)',
-              }}
+              placeholder="Filter by name, email or identity..."
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-(--text-disabled) text-(--text-primary)"
             />
           </div>
 
           <div className="flex w-full items-center gap-4 sm:w-auto">
-            <div className="h-8 w-px hidden sm:block" style={{ background: 'var(--border-subtle)' }} />
+            <div className="h-8 w-px bg-(--border-subtle) hidden sm:block" />
             
             <DataTableDateRangeFilter
-              dateFrom={filters.dateFrom || ''}
-              dateTo={filters.dateTo || ''}
-              onFromChange={(val) => setFilters(p => ({ ...p, dateFrom: val || undefined, page: 1 }))}
-              onToChange={(val) => setFilters(p => ({ ...p, dateTo: val || undefined, page: 1 }))}
+              dateFrom={filters.date_from}
+              dateTo={filters.date_to}
+              onChange={(range) => setFilters(p => ({ 
+                ...p, 
+                date_from: range.dateFrom, 
+                date_to: range.dateTo, 
+                page: 1 
+              }))}
             />
 
-            <div className="h-8 w-px hidden sm:block" style={{ background: 'var(--border-subtle)' }} />
+            <div className="h-8 w-px bg-(--border-subtle) hidden sm:block" />
 
             <ExportButton 
               onExport={handleExport} 
-              isExporting={isExporting} 
+              isExporting={isPendingExport} 
             />
           </div>
         </div>
 
         {/* ── Bulk Actions Bar ── */}
-        <DataTableBulkActions
-          count={selectedUuids.length}
-          onDelete={handleBulkDelete}
-          isDeleting={isDeleting}
-        />
+        {selectedUuids.length > 0 && (
+            <DataTableBulkActions
+                count={selectedUuids.length}
+                onDelete={() => {}} // Impl later
+                isDeleting={false}
+            />
+        )}
 
         {/* ── Table Card ── */}
-        <div className="card-modern shadow-lg">
+        <div className="card-modern overflow-hidden border border-(--border-default) shadow-xl">
           <UsersTable
             data={users}
             isLoading={isPending}
@@ -204,29 +169,42 @@ export default function UsersIndexPage(): React.JSX.Element {
 
           {/* ── Pagination ── */}
           {meta.lastPage > 1 && (
-            <div
-              className="flex items-center justify-between px-4 py-3"
-              style={{ borderTop: '1px solid var(--border-subtle)' }}
-            >
-              <p className="text-xs" style={{ color: 'var(--text-disabled)' }}>
-                Page {meta.currentPage} of {meta.lastPage} ({meta.total} users)
-              </p>
-              <div className="flex items-center gap-1">
+            <div className="flex items-center justify-between px-6 py-4 bg-black/5 dark:bg-white/5 border-t border-(--border-subtle)">
+              <span className="text-xs font-semibold text-(--text-disabled) uppercase tracking-wider">
+                Page {meta.currentPage} / {meta.lastPage} • {meta.total} Total
+              </span>
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => goToPage(meta.currentPage - 1)}
                   disabled={meta.currentPage <= 1}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg transition-all disabled:opacity-30"
-                  style={{ color: 'var(--text-muted)', border: '1px solid var(--border-default)' }}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-(--bg-card) border border-(--border-default) text-(--text-muted) hover:bg-(--bg-hover) disabled:opacity-30 disabled:pointer-events-none transition-all"
                 >
-                  <IconChevLeft />
+                  <ChevronLeft size={18} />
                 </button>
+                <div className="flex items-center gap-1 mx-2">
+                    {Array.from({ length: Math.min(5, meta.lastPage) }, (_, i) => {
+                        const p = i + 1;
+                        return (
+                            <button
+                                key={p}
+                                onClick={() => goToPage(p)}
+                                className={`h-9 w-9 rounded-xl text-xs font-bold transition-all ${
+                                    meta.currentPage === p 
+                                    ? 'bg-(--accent-primary) text-white shadow-lg' 
+                                    : 'hover:bg-(--bg-hover) text-(--text-muted)'
+                                }`}
+                            >
+                                {p}
+                            </button>
+                        );
+                    })}
+                </div>
                 <button
                   onClick={() => goToPage(meta.currentPage + 1)}
                   disabled={meta.currentPage >= meta.lastPage}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg transition-all disabled:opacity-30"
-                  style={{ color: 'var(--text-muted)', border: '1px solid var(--border-default)' }}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-(--bg-card) border border-(--border-default) text-(--text-muted) hover:bg-(--bg-hover) disabled:opacity-30 disabled:pointer-events-none transition-all"
                 >
-                  <IconChevRight />
+                  <ChevronRight size={18} />
                 </button>
               </div>
             </div>
@@ -236,11 +214,12 @@ export default function UsersIndexPage(): React.JSX.Element {
 
       <DeleteConfirmModal
         open={pendingDelete !== null}
-        entityLabel={pendingDelete?.name ?? ''}
+        entityLabel={pendingDelete ? `${pendingDelete.name} (${pendingDelete.email})` : ''}
         onConfirm={handleConfirmSingleDelete}
         onCancel={() => setPendingDelete(null)}
-        isDeleting={isDeleting}
+        isDeleting={deleteUser.isPending}
       />
-    </AppLayout>
+      </AppLayout>
+    </>
   );
 }

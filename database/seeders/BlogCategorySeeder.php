@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\BlogCategory;
+use Modules\Blog\Infrastructure\Persistence\Eloquent\Models\BlogCategory;
 use Ramsey\Uuid\Uuid;
 
 class BlogCategorySeeder extends Seeder
@@ -38,4 +38,4 @@ class BlogCategorySeeder extends Seeder
             ]);
         }
     }
-} 
+}

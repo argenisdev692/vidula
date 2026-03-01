@@ -116,7 +116,20 @@ export interface CreateCompanyDataDTO {
   signature_path?: string | null;
 }
 
-export interface UpdateCompanyDataDTO extends Partial<Omit<CreateCompanyDataDTO, 'user_id'>> {}
+export interface UpdateCompanyDataDTO {
+  companyName: string;
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  website?: string | null;
+  facebook?: string | null;
+  instagram?: string | null;
+  linkedin?: string | null;
+  twitter?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+}
 
 export interface CompanyDataFilters {
   page?: number;

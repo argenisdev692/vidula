@@ -2,10 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use Src\Contexts\Auth\Infrastructure\Adapters\Http\Controllers\Web\OtpController;
-use Src\Contexts\Auth\Infrastructure\Adapters\Http\Controllers\Web\SocialiteController;
-use Src\Contexts\Users\Infrastructure\Adapters\Http\Controllers\Web\UserPageController;
-use Src\Contexts\Users\Infrastructure\Adapters\Http\Controllers\Api\UserController;
+use Modules\Auth\Infrastructure\Http\Controllers\Web\OtpController;
+use Modules\Auth\Infrastructure\Http\Controllers\Web\SocialiteController;
+use Modules\Users\Infrastructure\Http\Controllers\Web\UserPageController;
+use Modules\Users\Infrastructure\Http\Controllers\Api\UserController;
 
 Route::get('/', function () {
     return redirect()->route('login');

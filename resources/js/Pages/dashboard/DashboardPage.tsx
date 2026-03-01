@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Head, usePage } from '@inertiajs/react';
-import AppLayout from '@/Pages/layouts/AppLayout';
+import AppLayout from '@/pages/layouts/AppLayout';
 import type { AuthPageProps } from '@/types/auth';
 import {
   Area,
@@ -19,14 +19,14 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@/shadcn/card";
 
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart";
+} from "@/shadcn/chart";
 
 // ══════════════════════════════════════════════════════════════════
 // Types & Data

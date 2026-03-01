@@ -6,10 +6,11 @@ return [
     App\Providers\HorizonServiceProvider::class,
     App\Providers\TelescopeServiceProvider::class,
 
-    Src\Core\Providers\CoreServiceProvider::class,
+    Src\Providers\CoreServiceProvider::class,
 
     // ── Bounded Context Providers ──
-    Src\Contexts\Auth\Providers\AuthServiceProvider::class,
-    Src\Contexts\Users\Providers\UsersServiceProvider::class,
-    Src\Contexts\CompanyData\Providers\CompanyDataServiceProvider::class,
+    Modules\Auth\Providers\AuthServiceProvider::class,
+    Modules\Users\Providers\UsersServiceProvider::class,
+    Modules\CompanyData\Providers\CompanyDataServiceProvider::class,
+    Modules\Blog\Providers\BlogServiceProvider::class,
 ];

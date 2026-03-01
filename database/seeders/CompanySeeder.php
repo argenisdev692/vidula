@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Src\Contexts\CompanyData\Infrastructure\Persistence\Eloquent\Models\CompanyDataEloquentModel as CompanyData;
+use Modules\CompanyData\Infrastructure\Persistence\Eloquent\Models\CompanyDataEloquentModel as CompanyData;
 use Illuminate\Support\Facades\DB;
 use Ramsey\Uuid\Uuid;
 
