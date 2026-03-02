@@ -33,8 +33,8 @@ createInertiaApp({
                         fill: 'var(--bg-card)',
                         roundness: 8,
                         styles: {
-                            title: 'text-[14px] font-sans font-semibold text-[var(--text-primary)]',
-                            description: 'text-[13px] font-sans text-[var(--text-muted)]'
+                            title: 'text-[14px] font-sans font-semibold text-(--text-primary)',
+                            description: 'text-[13px] font-sans text-(--text-muted)'
                         }
                     }}
                 />

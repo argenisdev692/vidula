@@ -2,20 +2,21 @@
 
 namespace Database\Factories;
 
-use App\Models\CompanyData;
+use Modules\CompanyData\Infrastructure\Persistence\Eloquent\Models\CompanyDataEloquentModel;
+use Modules\Users\Infrastructure\Persistence\Eloquent\Models\UserEloquentModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 class CompanyDataFactory extends Factory
 {
-    protected $model = CompanyData::class;
+    protected $model = CompanyDataEloquentModel::class;
 
     public function definition(): array
     {
         return [
             'uuid' => (string) Str::uuid(),
-            'user_id' => \App\Models\User::factory(),
-            'name' => $this->faker->company(),
+            'user_id' => UserEloquentModel::factory(),
+            'name' => $this->faker->name(),
             'company_name' => $this->faker->company(),
             'email' => $this->faker->unique()->companyEmail(),
             'phone' => $this->faker->phoneNumber(),

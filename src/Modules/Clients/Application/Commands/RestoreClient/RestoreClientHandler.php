@@ -1,0 +1,23 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Clients\Application\Commands\RestoreClient;
+
+use Modules\Clients\Domain\Exceptions\ClientNotFoundException;
+use Modules\Clients\Domain\Ports\ClientRepositoryPort;
+use Modules\Clients\Domain\ValueObjects\ClientId;
+
+final readonly class RestoreClientHandler
+{
+    public function __construct(
+        private ClientRepositoryPort $repository
+    ) {
+    }
+
+    public function handle(RestoreClientCommand $command): void
+    {
+        $id = new ClientId($command->id);
+        $this->repository->restore($id);
+    }
+}

@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { Link, Head, useRemember } from '@inertiajs/react';
+import { Link, Head, useRemember, router } from '@inertiajs/react';
+import { useQueryClient } from '@tanstack/react-query';
 import { type RowSelectionState } from '@tanstack/react-table';
 import AppLayout from '@/pages/layouts/AppLayout';
 import { useUsers } from '@/modules/users/hooks/useUsers';
@@ -20,9 +21,12 @@ export default function UsersIndexPage(): React.JSX.Element {
   const [search, setSearch] = React.useState<string>(filters.search || '');
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [pendingDelete, setPendingDelete] = React.useState<{ uuid: string; name: string; email: string } | null>(null);
+  const [isDeletingBulk, setIsDeletingBulk] = React.useState<boolean>(false);
   
   const [isPendingExport, startExportTransition] = React.useTransition();
   const [, startSearchTransition] = React.useTransition();
+
+  const queryClient = useQueryClient();
 
   // ── Fetch users via TanStack Query ──
   const { data, isPending, isError } = useUsers(filters);
@@ -67,6 +71,20 @@ export default function UsersIndexPage(): React.JSX.Element {
     } catch (err) {
       console.error('Failed to delete user', err);
     }
+  }
+
+  function handleBulkDelete(): void {
+    const uuids = Object.keys(rowSelection).filter(k => rowSelection[k]);
+    if (uuids.length === 0) return;
+    
+    setIsDeletingBulk(true);
+    router.post('/users/data/admin/bulk-delete', { uuids }, {
+      onSuccess: () => {
+        setRowSelection({});
+        queryClient.invalidateQueries({ queryKey: ['users'] });
+      },
+      onFinish: () => setIsDeletingBulk(false),
+    });
   }
 
   // ── Pagination ──
@@ -126,6 +144,18 @@ export default function UsersIndexPage(): React.JSX.Element {
           <div className="flex w-full items-center gap-4 sm:w-auto">
             <div className="h-8 w-px bg-(--border-subtle) hidden sm:block" />
             
+            <select
+              value={filters.status || ''}
+              onChange={(e) => startSearchTransition(() => setFilters(p => ({ ...p, status: (e.target.value || undefined) as any, page: 1 })))}
+              className="bg-transparent text-sm outline-none text-(--text-primary) border border-(--border-default) rounded-lg px-2 py-1 focus:border-(--accent-primary) transition-colors"
+            >
+              <option value="">All Status</option>
+              <option value="active">Active</option>
+              <option value="deleted">Deleted</option>
+            </select>
+
+            <div className="h-8 w-px bg-(--border-subtle) hidden sm:block" />
+            
             <DataTableDateRangeFilter
               dateFrom={filters.date_from}
               dateTo={filters.date_to}
@@ -150,8 +180,8 @@ export default function UsersIndexPage(): React.JSX.Element {
         {selectedUuids.length > 0 && (
             <DataTableBulkActions
                 count={selectedUuids.length}
-                onDelete={() => {}} // Impl later
-                isDeleting={false}
+                onDelete={handleBulkDelete}
+                isDeleting={isDeletingBulk}
             />
         )}
 

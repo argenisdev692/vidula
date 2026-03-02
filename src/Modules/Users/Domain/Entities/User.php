@@ -53,27 +53,11 @@ final class User extends AggregateRoot
      */
     public function softDelete(): self
     {
-        return new self(
-            id: $this->id,
-            uuid: $this->uuid,
-            name: $this->name,
-            lastName: $this->lastName,
-            email: $this->email,
-            username: $this->username,
-            phone: $this->phone,
-            profilePhotoPath: $this->profilePhotoPath,
-            address: $this->address,
-            city: $this->city,
-            state: $this->state,
-            country: $this->country,
-            zipCode: $this->zipCode,
-            status: UserStatus::Deleted,
-            setupToken: $this->setupToken,
-            setupTokenExpiresAt: $this->setupTokenExpiresAt,
-            createdAt: $this->createdAt,
-            updatedAt: date('Y-m-d H:i:s'),
-            deletedAt: date('Y-m-d H:i:s'),
-        );
+        return clone($this, [
+            'status' => UserStatus::Deleted,
+            'updatedAt' => date('Y-m-d H:i:s'),
+            'deletedAt' => date('Y-m-d H:i:s'),
+        ]);
     }
 
     /**
@@ -81,27 +65,10 @@ final class User extends AggregateRoot
      */
     public function suspend(): self
     {
-        return new self(
-            id: $this->id,
-            uuid: $this->uuid,
-            name: $this->name,
-            lastName: $this->lastName,
-            email: $this->email,
-            username: $this->username,
-            phone: $this->phone,
-            profilePhotoPath: $this->profilePhotoPath,
-            address: $this->address,
-            city: $this->city,
-            state: $this->state,
-            country: $this->country,
-            zipCode: $this->zipCode,
-            status: UserStatus::Suspended,
-            setupToken: $this->setupToken,
-            setupTokenExpiresAt: $this->setupTokenExpiresAt,
-            createdAt: $this->createdAt,
-            updatedAt: date('Y-m-d H:i:s'),
-            deletedAt: $this->deletedAt,
-        );
+        return clone($this, [
+            'status' => UserStatus::Suspended,
+            'updatedAt' => date('Y-m-d H:i:s'),
+        ]);
     }
 
     /**
@@ -109,27 +76,11 @@ final class User extends AggregateRoot
      */
     public function activate(): self
     {
-        return new self(
-            id: $this->id,
-            uuid: $this->uuid,
-            name: $this->name,
-            lastName: $this->lastName,
-            email: $this->email,
-            username: $this->username,
-            phone: $this->phone,
-            profilePhotoPath: $this->profilePhotoPath,
-            address: $this->address,
-            city: $this->city,
-            state: $this->state,
-            country: $this->country,
-            zipCode: $this->zipCode,
-            status: UserStatus::Active,
-            setupToken: $this->setupToken,
-            setupTokenExpiresAt: $this->setupTokenExpiresAt,
-            createdAt: $this->createdAt,
-            updatedAt: date('Y-m-d H:i:s'),
-            deletedAt: null,
-        );
+        return clone($this, [
+            'status' => UserStatus::Active,
+            'updatedAt' => date('Y-m-d H:i:s'),
+            'deletedAt' => null,
+        ]);
     }
 
     /**
@@ -137,26 +88,9 @@ final class User extends AggregateRoot
      */
     public function ban(): self
     {
-        return new self(
-            id: $this->id,
-            uuid: $this->uuid,
-            name: $this->name,
-            lastName: $this->lastName,
-            email: $this->email,
-            username: $this->username,
-            phone: $this->phone,
-            profilePhotoPath: $this->profilePhotoPath,
-            address: $this->address,
-            city: $this->city,
-            state: $this->state,
-            country: $this->country,
-            zipCode: $this->zipCode,
-            status: UserStatus::Banned,
-            setupToken: $this->setupToken,
-            setupTokenExpiresAt: $this->setupTokenExpiresAt,
-            createdAt: $this->createdAt,
-            updatedAt: date('Y-m-d H:i:s'),
-            deletedAt: $this->deletedAt,
-        );
+        return clone($this, [
+            'status' => UserStatus::Banned,
+            'updatedAt' => date('Y-m-d H:i:s'),
+        ]);
     }
 }

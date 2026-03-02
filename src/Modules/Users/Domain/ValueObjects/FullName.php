@@ -17,6 +17,7 @@ final readonly class FullName
     ) {
     }
 
+    #[\NoDiscard]
     public function __toString(): string
     {
         return trim("{$this->firstName} {$this->lastName}");

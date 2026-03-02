@@ -2,7 +2,7 @@
 
 namespace Modules\CompanyData\Infrastructure\Utils;
 
-use App\Models\CompanyData;
+use Modules\CompanyData\Infrastructure\Persistence\Eloquent\Models\CompanyDataEloquentModel;
 
 class CompanyDataHelper
 {
@@ -11,8 +11,8 @@ class CompanyDataHelper
      */
     public static function getCompanyInfo(): array
     {
-        $companyData = CompanyData::first();
-        
+        $companyData = CompanyDataEloquentModel::first();
+
         if ($companyData) {
             return [
                 'name' => $companyData->company_name ?: config('app.name', 'V General Contractors'),
@@ -60,10 +60,11 @@ class CompanyDataHelper
 
         // Remove all non-numeric characters
         $phone = preg_replace('/[^0-9]/', '', $phone);
-        
+
         // Format as (xxx) xxx-xxxx for 10 digit numbers
         if (strlen($phone) === 10) {
-            return sprintf('(%s) %s-%s', 
+            return sprintf(
+                '(%s) %s-%s',
                 substr($phone, 0, 3),
                 substr($phone, 3, 3),
                 substr($phone, 6, 4)
@@ -72,7 +73,8 @@ class CompanyDataHelper
 
         // Format as +1 (xxx) xxx-xxxx for 11 digit numbers starting with 1
         if (strlen($phone) === 11 && substr($phone, 0, 1) === '1') {
-            return sprintf('+1 (%s) %s-%s', 
+            return sprintf(
+                '+1 (%s) %s-%s',
                 substr($phone, 1, 3),
                 substr($phone, 4, 3),
                 substr($phone, 7, 4)
@@ -88,7 +90,7 @@ class CompanyDataHelper
     public static function getEmailTemplateData(): array
     {
         $info = self::getCompanyInfo();
-        
+
         return [
             'company_name' => $info['name'],
             'company_address' => $info['address'],
@@ -105,7 +107,7 @@ class CompanyDataHelper
     public static function getJobNotificationData(): array
     {
         $info = self::getCompanyInfo();
-        
+
         return [
             'from_name' => $info['name'],
             'from_email' => $info['email'],

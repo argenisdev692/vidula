@@ -1,38 +1,39 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title }}</title>
     <style>
-        body {
-            font-family: sans-serif;
-            font-size: 11px;
-            color: #333;
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DejaVu Sans', sans-serif;
+            font-size: 10px;
+            color: #333;
+            padding: 20px;
         }
 
         .header {
-            margin-bottom: 20px;
-            border-bottom: 2px solid #22d3ee;
-            padding-bottom: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #4F46E5;
         }
 
-        .logo {
-            height: 50px;
+        .header h1 {
+            font-size: 24px;
+            color: #4F46E5;
+            margin-bottom: 5px;
         }
 
-        .title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #0891b2;
-        }
-
-        .meta {
-            margin-top: 5px;
+        .header .meta {
+            font-size: 9px;
             color: #666;
-            font-size: 10px;
         }
 
         table {
@@ -41,78 +42,97 @@
             margin-top: 20px;
         }
 
-        th {
-            background-color: #f3f4f6;
-            color: #333;
+        thead {
+            background-color: #4F46E5;
+            color: white;
+        }
+
+        thead th {
+            padding: 10px 8px;
             text-align: left;
-            padding: 8px;
-            border: 1px solid #e5e7eb;
+            font-weight: 600;
+            font-size: 10px;
+            text-transform: uppercase;
         }
 
-        td {
-            padding: 8px;
-            border: 1px solid #e5e7eb;
+        tbody tr {
+            border-bottom: 1px solid #E5E7EB;
         }
 
-        tr:nth-child(even) {
-            background-color: #fafafa;
+        tbody tr:nth-child(even) {
+            background-color: #F9FAFB;
+        }
+
+        tbody tr:hover {
+            background-color: #F3F4F6;
+        }
+
+        tbody td {
+            padding: 8px;
+            font-size: 9px;
         }
 
         .footer {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #E5E7EB;
             text-align: center;
-            font-size: 9px;
+            font-size: 8px;
+            color: #666;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
             color: #999;
-            padding: 10px 0;
+            font-style: italic;
         }
     </style>
 </head>
-
 <body>
     <div class="header">
-        <table style="border: none; margin: 0;">
-            <tr style="background: none;">
-                <td style="border: none; padding: 0;">
-                    <img src="{{ public_path('img/Logo PNG.png') }}" class="logo" alt="Logo">
-                </td>
-                <td style="border: none; text-align: right; vertical-align: middle;">
-                    <div class="title">{{ $title }}</div>
-                    <div class="meta">Generated on: {{ $generatedAt }}</div>
-                </td>
-            </tr>
-        </table>
+        <h1>{{ $title }}</h1>
+        <div class="meta">
+            Generated on: {{ $generatedAt }}
+        </div>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>UUID</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>City</th>
-                <th>Created</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($rows as $user)
+    @if(count($rows) > 0)
+        <table>
+            <thead>
                 <tr>
-                    <td>{{ $user->uuid }}</td>
-                    <td>{{ $user->name }} {{ $user->last_name }}</td>
-                    <td>{{ $user->email }}</td>
-                    <td>{{ $user->phone }}</td>
-                    <td>{{ $user->city }}</td>
-                    <td>{{ $user->created_at }}</td>
+                    <th>UUID</th>
+                    <th>Name</th>
+                    <th>Last Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>City</th>
+                    <th>Created At</th>
                 </tr>
-            @endforeach
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach($rows as $row)
+                    <tr>
+                        <td>{{ $row['uuid'] }}</td>
+                        <td>{{ $row['name'] }}</td>
+                        <td>{{ $row['last_name'] }}</td>
+                        <td>{{ $row['email'] }}</td>
+                        <td>{{ $row['phone'] }}</td>
+                        <td>{{ $row['city'] }}</td>
+                        <td>{{ $row['created_at'] }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @else
+        <div class="no-data">
+            No users found matching the specified criteria.
+        </div>
+    @endif
 
     <div class="footer">
-        Vidula CRM - Page <span class="pagenum"></span>
+        <p>This document was automatically generated by the system.</p>
+        <p>Total records: {{ count($rows) }}</p>
     </div>
 </body>
-
 </html>

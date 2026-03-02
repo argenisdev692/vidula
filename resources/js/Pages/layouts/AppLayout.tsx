@@ -62,12 +62,22 @@ const IconBuilding = () => <Building2 size={icSize} />;
 // ══════════════════════════════════════════════════════════════════
 // Nav Items — Profile removed (accessible via avatar dropdown)
 // ══════════════════════════════════════════════════════════════════
-interface NavItem { label: string; href: string; icon: React.ReactNode; description: string; }
+export interface NavItem { 
+  label: string; 
+  href: string; 
+  icon: React.ReactNode; 
+  description: string;
+  permission?: string;
+  children?: NavItem[];
+}
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: <IconGrid />, description: 'Overview & metrics' },
-  { label: 'Users', href: '/users', icon: <IconUsers />, description: 'Manage system users' },
-  { label: 'Company Profiles', href: '/company-data', icon: <IconBuilding />, description: 'Corporate entities' },
+  { label: 'Users', href: '/users', icon: <IconUsers />, description: 'Manage system users', permission: 'VIEW ANY USERS' },
+  { label: 'Company Profiles', href: '/company-data', icon: <IconBuilding />, description: 'Corporate entities', permission: 'VIEW ANY COMPANY' },
+  { label: 'Products', href: '/products', icon: <IconBuilding />, description: 'Manage products', permission: 'VIEW ANY PRODUCTS' },
+  { label: 'Clients', href: '/clients', icon: <IconUsers />, description: 'Manage clients', permission: 'VIEW ANY CLIENTS' },
+  { label: 'Students', href: '/students', icon: <IconUsers />, description: 'Manage students', permission: 'VIEW ANY STUDENTS' },
 ];
 
 // ══════════════════════════════════════════════════════════════════
@@ -361,6 +371,16 @@ function ThemeToggle({ theme, onToggle }: { theme: Theme; onToggle: () => void }
 // ══════════════════════════════════════════════════════════════════
 function SidebarContent({ onClose }: { onClose?: () => void }): React.JSX.Element {
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+  const { auth } = usePage<AuthPageProps>().props;
+  const user = auth.user;
+  const permissions = user?.permissions || [];
+  const isSuperAdmin = user?.roles?.includes('SUPER_ADMIN');
+
+  const navItems = NAV_ITEMS.filter(item => {
+    if (!item.permission) return true;
+    if (isSuperAdmin) return true;
+    return permissions.includes(item.permission);
+  });
 
   return (
     <>
@@ -412,7 +432,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }): React.JSX.Elemen
       </div>
 
       <nav className="flex-1 space-y-1.5 px-3 uppercase text-xs tracking-wide">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const active = currentPath === item.href || currentPath.startsWith(item.href + '/');
           return (
             <Link

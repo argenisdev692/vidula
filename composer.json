@@ -11,6 +11,7 @@
     "require": {
         "php": "^8.5",
         "barryvdh/laravel-dompdf": "^3.1",
+        "darkaonline/l5-swagger": "^2.1",
         "echolabsdev/prism": "^0.99.19",
         "inertiajs/inertia-laravel": "^2.0",
         "intervention/image": "^3.11",

@@ -28,11 +28,13 @@ final readonly class DeleteUserHandler
 
         $this->repository->softDelete($command->uuid);
 
-        // Clear individual user cache
-        Cache::forget("user_{$command->uuid}");
-        
-        // Clear users list cache by pattern (requires Redis/Memcached)
-        // For simplicity, we rely on TTL (15 min) or use tags in production
+        // Invalidate caches
+        Cache::forget("user_read_{$command->uuid}");
+        $this->invalidateListCache();
+    }
+
+    private function invalidateListCache(): void
+    {
         try {
             Cache::tags(['users_list'])->flush();
         } catch (\Exception $e) {

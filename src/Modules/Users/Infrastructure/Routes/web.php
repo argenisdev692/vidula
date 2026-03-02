@@ -36,6 +36,7 @@ Route::prefix('data')->group(function () {
         Route::put('/{uuid}', [AdminUserController::class, 'update'])->name('users.data.update')->whereUuid('uuid');
         Route::delete('/{uuid}', [AdminUserController::class, 'destroy'])->name('users.data.destroy')->whereUuid('uuid');
         Route::patch('/{uuid}/restore', [AdminUserController::class, 'restore'])->name('users.data.restore')->whereUuid('uuid');
+        Route::post('/bulk-delete', [AdminUserController::class, 'bulkDelete'])->name('users.data.bulk-delete');
         Route::post('/{uuid}/suspend', [AdminUserController::class, 'suspend'])->name('users.data.suspend')->whereUuid('uuid');
         Route::post('/{uuid}/activate', [AdminUserController::class, 'activate'])->name('users.data.activate')->whereUuid('uuid');
     });

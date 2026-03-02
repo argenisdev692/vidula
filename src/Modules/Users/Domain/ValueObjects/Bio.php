@@ -14,6 +14,7 @@ final readonly class Bio
     ) {
     }
 
+    #[\NoDiscard]
     public function excerpt(int $length = 100): string
     {
         if (null === $this->content) {

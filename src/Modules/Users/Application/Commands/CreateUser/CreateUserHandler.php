@@ -10,6 +10,7 @@ use Modules\Users\Domain\Enums\UserStatus;
 use Modules\Users\Domain\Events\UserCreatedByAdmin;
 use Modules\Users\Domain\Ports\UserRepositoryPort;
 use Shared\Domain\Events\DomainEventPublisher;
+use Illuminate\Support\Facades\Cache;
 
 final readonly class CreateUserHandler
 {
@@ -41,6 +42,9 @@ final readonly class CreateUserHandler
             'setup_token_expires_at' => now()->addDays(7)->toDateTimeString(),
         ]);
 
+        // Invalidate list cache
+        $this->invalidateListCache();
+
         // Dispatch domain event
         DomainEventPublisher::instance()->publish(
             new UserCreatedByAdmin(
@@ -52,5 +56,14 @@ final readonly class CreateUserHandler
         );
 
         return $user;
+    }
+
+    private function invalidateListCache(): void
+    {
+        try {
+            Cache::tags(['users_list'])->flush();
+        } catch (\Exception $e) {
+            // Tags not supported, cache will expire naturally
+        }
     }
 }

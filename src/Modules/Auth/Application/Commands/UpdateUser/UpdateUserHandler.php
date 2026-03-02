@@ -1,0 +1,86 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Auth\Application\Commands\UpdateUser;
+
+use Modules\Auth\Domain\Entities\User;
+use Modules\Auth\Domain\Ports\UserRepositoryPort;
+use Modules\Auth\Domain\Exceptions\UserNotFoundException;
+use Illuminate\Support\Facades\Cache;
+
+/**
+ * UpdateUserHandler — Handles user profile updates with PHP 8.5 pipe operator.
+ */
+final readonly class UpdateUserHandler
+{
+    public function __construct(
+        private UserRepositoryPort $userRepository,
+    ) {}
+
+    #[\NoDiscard]
+    public function handle(UpdateUserCommand $command): User
+    {
+        return $command
+            |> $this->findUser(...)
+            |> $this->updateUser(...)
+            |> $this->persistUser(...)
+            |> $this->clearCache(...);
+    }
+
+    private function findUser(UpdateUserCommand $command): array
+    {
+        $user = $this->userRepository->findById($command->userId);
+
+        if ($user === null) {
+            throw UserNotFoundException::withId($command->userId);
+        }
+
+        return ['user' => $user, 'command' => $command];
+    }
+
+    private function updateUser(array $data): array
+    {
+        $user = $data['user'];
+        $command = $data['command'];
+
+        $updatedUser = $user->updateProfile(
+            name: $command->name,
+            lastName: $command->lastName,
+            phone: $command->phone,
+            username: $command->username,
+        );
+
+        return ['user' => $updatedUser, 'originalUser' => $user];
+    }
+
+    private function persistUser(array $data): User
+    {
+        $user = $data['user'];
+
+        $updateData = [
+            'name' => $user->name,
+            'last_name' => $user->lastName,
+            'phone' => $user->phone,
+            'username' => $user->username,
+        ];
+
+        return $this->userRepository->update($user, $updateData);
+    }
+
+    private function clearCache(User $user): User
+    {
+        // Clear individual user cache
+        Cache::forget("user_{$user->uuid}");
+        Cache::forget("user_{$user->id}");
+
+        // Clear list cache tags
+        try {
+            Cache::tags(['users_list'])->flush();
+        } catch (\Exception $e) {
+            // Tags not supported, cache will expire naturally
+        }
+
+        return $user;
+    }
+}

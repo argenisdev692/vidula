@@ -5,6 +5,7 @@ import { DataTable } from '@/shadcn/data-table';
 import UserStatusBadge from '@/modules/users/components/UserStatusBadge';
 import type { UserListItem } from '@/types/users';
 import { useUserMutations } from '@/modules/users/hooks/useUserMutations';
+import { formatDateShort } from '@/common/helpers/formatDate';
 
 import { Eye, Pencil, Trash2, CheckCircle } from 'lucide-react';
 
@@ -109,11 +110,9 @@ export default function UsersTable({
       header: 'Created',
       cell: (info) => {
         const val = info.getValue() as string | undefined;
-        if (!val) return '—';
-        const date = new Date(val);
         return (
           <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            {date.toLocaleDateString()}
+            {formatDateShort(val)}
           </span>
         );
       },

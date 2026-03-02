@@ -14,6 +14,7 @@ final readonly class Avatar
     ) {
     }
 
+    #[\NoDiscard]
     public function url(): ?string
     {
         return $this->path ? "/storage/{$this->path}" : null;

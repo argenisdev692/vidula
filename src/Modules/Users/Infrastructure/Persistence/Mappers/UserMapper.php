@@ -16,9 +16,32 @@ final class UserMapper
 {
     public static function toDomain(UserEloquentModel $model): User
     {
+        return $model
+            |> self::extractStatus(...)
+            |> self::mapToEntity(...);
+    }
+
+    /**
+     * Extract and determine user status
+     */
+    private static function extractStatus(UserEloquentModel $model): array
+    {
         $status = $model->trashed()
             ? UserStatus::Deleted
             : UserStatus::from($model->status ?? 'active');
+
+        return [
+            'model' => $model,
+            'status' => $status,
+        ];
+    }
+
+    /**
+     * Map model data to domain entity
+     */
+    private static function mapToEntity(array $data): User
+    {
+        ['model' => $model, 'status' => $status] = $data;
 
         return new User(
             id: new UserId($model->id),

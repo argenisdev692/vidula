@@ -7,7 +7,7 @@ namespace Modules\Auth\Domain\Entities;
 /**
  * SocialiteProvider — Domain Entity for OAuth links.
  */
-final readonly class SocialiteProvider
+final class SocialiteProvider
 {
     public function __construct(
         public int $id,
@@ -17,6 +17,9 @@ final readonly class SocialiteProvider
         public ?string $token = null,
         public ?string $refreshToken = null,
         public ?string $tokenExpiresAt = null,
+        public string $createdAt = '',
+        public string $updatedAt = '',
+        public ?string $deletedAt = null,
     ) {
     }
 }

@@ -83,19 +83,7 @@ final class UserExcelExport implements
 
     public function map($user): array
     {
-        return [
-            $user->id,
-            $user->uuid,
-            $user->name,
-            $user->last_name,
-            $user->email,
-            $user->username,
-            $user->phone,
-            $user->city,
-            $user->state,
-            $user->country,
-            $user->created_at?->toIso8601String(),
-        ];
+        return UserExportTransformer::transform($user);
     }
 
     public function title(): string

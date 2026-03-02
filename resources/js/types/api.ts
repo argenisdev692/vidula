@@ -225,3 +225,90 @@ export interface UpdatePasswordDTO {
   password_confirmation: string;
 }
 
+// ── Products ────────────────────────────────────────────────
+export interface ProductListItem {
+  id: string; // uuid
+  user_id: number;
+  type: string;
+  title: string;
+  slug: string;
+  status: string;
+  price: number;
+  currency: string;
+  created_at: string;
+  deleted_at?: string | null;
+}
+
+export interface ProductDetail extends ProductListItem {
+  description: string | null;
+  thumbnail: string | null;
+  level: string;
+  language: string;
+  updated_at: string | null;
+}
+
+export interface ProductFilters {
+  page?: number;
+  perPage?: number;
+  search?: string;
+  type?: string;
+  status?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+// ── Clients ────────────────────────────────────────────────
+export interface ClientListItem {
+  id: string; // uuid
+  name: string;
+  email: string | null;
+  phone: string | null;
+  company: string | null;
+  created_at: string;
+  deleted_at?: string | null;
+}
+
+export interface ClientDetail extends ClientListItem {
+  address: string | null;
+  tax_id: string | null;
+  notes: string | null;
+  updated_at: string | null;
+}
+
+export interface ClientFilters {
+  page?: number;
+  perPage?: number;
+  search?: string;
+  status?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+// ── Students ────────────────────────────────────────────────
+export interface StudentListItem {
+  id: string; // uuid
+  name: string;
+  email: string | null;
+  phone: string | null;
+  active: boolean;
+  created_at: string;
+  deleted_at?: string | null;
+}
+
+export interface StudentDetail extends StudentListItem {
+  dni: string | null;
+  birth_date: string | null;
+  address: string | null;
+  avatar: string | null;
+  notes: string | null;
+  updated_at: string | null;
+}
+
+export interface StudentFilters {
+  page?: number;
+  perPage?: number;
+  search?: string;
+  status?: string; 
+  dateFrom?: string;
+  dateTo?: string;
+}

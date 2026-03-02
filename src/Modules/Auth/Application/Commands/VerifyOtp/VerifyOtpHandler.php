@@ -41,14 +41,12 @@ final readonly class VerifyOtpHandler
 
         $this->otpService->invalidate($command->identifier);
 
-        $event = new UserLoggedIn(
-            userId: $user->id,
+        $user->logIn(
             provider: 'otp',
             ipAddress: $command->ipAddress,
             userAgent: $command->userAgent,
-            occurredAt: now()->toIso8601String(),
         );
 
-        return ['user' => $user, 'event' => $event];
+        return ['user' => $user, 'event' => $user->pullDomainEvents()[0]];
     }
 }

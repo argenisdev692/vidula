@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Users\Infrastructure\Http\Controllers\Api;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Modules\Users\Application\Commands\ActivateUser\ActivateUserCommand;
 use Modules\Users\Application\Commands\ActivateUser\ActivateUserHandler;
 use Modules\Users\Application\Commands\CreateUser\CreateUserCommand;
@@ -87,6 +88,20 @@ final class AdminUserController
     public function destroy(string $uuid): JsonResponse
     {
         $this->deleteHandler->handle(new DeleteUserCommand($uuid));
+
+        return response()->json(null, 204);
+    }
+
+    public function bulkDelete(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'uuids' => ['required', 'array'],
+            'uuids.*' => ['required', 'string', 'uuid'],
+        ]);
+
+        foreach ($validated['uuids'] as $uuid) {
+            $this->deleteHandler->handle(new DeleteUserCommand($uuid));
+        }
 
         return response()->json(null, 204);
     }

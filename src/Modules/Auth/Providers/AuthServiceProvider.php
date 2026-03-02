@@ -38,5 +38,6 @@ final class AuthServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadRoutesFrom(__DIR__ . '/../Infrastructure/Routes/web.php');
+        $this->loadRoutesFrom(__DIR__ . '/../Infrastructure/Routes/api.php');
     }
 }

@@ -48,25 +48,32 @@ final readonly class ListUsersHandler
             perPage: $filters->perPage,
         );
 
-        $result['data'] = array_map(
-            fn($user) => new UserListReadModel(
-                uuid: $user->uuid,
-                name: $user->name ?? '',
-                lastName: $user->lastName ?? '',
-                fullName: $user->fullName(),
-                email: $user->email ?? '',
-                username: $user->username,
-                phone: $user->phone,
-                status: $user->status->value,
-                profilePhotoPath: $user->profilePhotoPath,
-                role: null, // To be implemented with RBAC service
-                createdAt: $user->createdAt ?? '',
-                updatedAt: $user->updatedAt ?? '',
-                deletedAt: $user->deletedAt,
-            ),
-            $result['data']
-        );
+        // Transform users using pipe operator
+        $result['data'] = $result['data']
+            |> (fn($users) => array_map(self::mapToReadModel(...), $users));
 
         return $result;
+    }
+
+    /**
+     * Map domain User entity to UserListReadModel
+     */
+    private static function mapToReadModel($user): UserListReadModel
+    {
+        return new UserListReadModel(
+            uuid: $user->uuid,
+            name: $user->name ?? '',
+            lastName: $user->lastName ?? '',
+            fullName: $user->fullName(),
+            email: $user->email ?? '',
+            username: $user->username,
+            phone: $user->phone,
+            status: $user->status->value,
+            profilePhotoPath: $user->profilePhotoPath,
+            role: null, // To be implemented with RBAC service
+            createdAt: $user->createdAt ?? '',
+            updatedAt: $user->updatedAt ?? '',
+            deletedAt: $user->deletedAt,
+        );
     }
 }

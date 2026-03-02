@@ -29,8 +29,19 @@ final readonly class UpdateUserHandler
 
         $user = $this->repository->update($command->uuid, $command->dto->toArray());
 
-        Cache::forget("user_{$command->uuid}");
+        // Invalidate caches
+        Cache::forget("user_read_{$command->uuid}");
+        $this->invalidateListCache();
 
         return $user;
+    }
+
+    private function invalidateListCache(): void
+    {
+        try {
+            Cache::tags(['users_list'])->flush();
+        } catch (\Exception $e) {
+            // Tags not supported, cache will expire naturally
+        }
     }
 }

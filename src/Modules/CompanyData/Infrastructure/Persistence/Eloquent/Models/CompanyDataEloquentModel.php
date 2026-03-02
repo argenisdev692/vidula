@@ -22,6 +22,14 @@ final class CompanyDataEloquentModel extends Model
 
     protected $table = 'company_data';
 
+    /**
+     * Create a new factory instance for the model.
+     */
+    protected static function newFactory(): \Database\Factories\CompanyDataFactory
+    {
+        return \Database\Factories\CompanyDataFactory::new();
+    }
+
     protected $fillable = [
         'uuid',
         'user_id',
