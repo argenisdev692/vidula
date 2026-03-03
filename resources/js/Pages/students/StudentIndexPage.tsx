@@ -8,10 +8,11 @@ import { useStudentMutations } from '@/modules/students/hooks/useStudentMutation
 import StudentsTable from './components/StudentsTable';
 import { DataTableBulkActions } from '@/shadcn/DataTableBulkActions';
 import { DeleteConfirmModal } from '@/shadcn/DeleteConfirmModal';
+import { RestoreConfirmModal } from '@/shadcn/RestoreConfirmModal';
 import { DataTableDateRangeFilter } from '@/common/data-table/DataTableDateRangeFilter';
 import { ExportButton } from '@/common/export/ExportButton';
 import type { StudentFilters, StudentListItem } from '@/types/api';
-import { Search, ChevronLeft, ChevronRight, Building2 } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, GraduationCap } from 'lucide-react';
 
 /**
  * StudentIndexPage — React 19 + TanStack Query v5 + TanStack Table v8
@@ -24,6 +25,7 @@ export default function StudentIndexPage(): React.JSX.Element {
   const [search, setSearch] = React.useState<string>(filters.search || '');
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [pendingDelete, setPendingDelete] = React.useState<{ uuid: string; name: string } | null>(null);
+  const [pendingRestore, setPendingRestore] = React.useState<{ uuid: string; name: string } | null>(null);
   const [isDeletingBulk, setIsDeletingBulk] = React.useState<boolean>(false);
 
   // React 19: useTransition for non-blocking updates
@@ -42,7 +44,7 @@ export default function StudentIndexPage(): React.JSX.Element {
     (state: StudentListItem[], deletedUuid: string) => state.filter(s => s.id !== deletedUuid)
   );
 
-  const { deleteStudent } = useStudentMutations();
+  const { deleteStudent, restoreStudent } = useStudentMutations();
 
   // ── Export ──
   async function handleExport(format: 'excel' | 'pdf'): Promise<void> {
@@ -84,6 +86,21 @@ export default function StudentIndexPage(): React.JSX.Element {
         console.error('Failed to delete student', err);
       }
     });
+  }
+
+  // ── Restore with Modal Confirmation (§8) ──
+  function handleRestoreClick(uuid: string, name: string): void {
+    setPendingRestore({ uuid, name });
+  }
+
+  async function handleConfirmRestore(): Promise<void> {
+    if (!pendingRestore) return;
+    try {
+      await restoreStudent.mutateAsync(pendingRestore.uuid);
+      setPendingRestore(null);
+    } catch (err) {
+      console.error('Failed to restore student', err);
+    }
   }
 
   // ── Bulk Delete via router (Inertia) ──
@@ -139,7 +156,7 @@ export default function StudentIndexPage(): React.JSX.Element {
             href="/students/create"
             className="btn-modern btn-modern-primary inline-flex items-center gap-2 px-5 py-2 font-bold shadow-sm"
           >
-            <Building2 size={16} />
+            <GraduationCap size={16} />
             New Student
           </Link>
         </div>
@@ -211,6 +228,7 @@ export default function StudentIndexPage(): React.JSX.Element {
             isLoading={isPending}
             isError={isError}
             onDelete={handleDeleteClick}
+            onRestore={handleRestoreClick}
             rowSelection={rowSelection}
             onRowSelectionChange={setRowSelection}
           />
@@ -263,6 +281,13 @@ export default function StudentIndexPage(): React.JSX.Element {
         onConfirm={handleConfirmSingleDelete}
         onCancel={() => setPendingDelete(null)}
         isDeleting={deleteStudent.isPending}
+      />
+      <RestoreConfirmModal
+        open={pendingRestore !== null}
+        entityLabel={pendingRestore?.name ?? ''}
+        onConfirm={handleConfirmRestore}
+        onCancel={() => setPendingRestore(null)}
+        isRestoring={restoreStudent.isPending}
       />
       </AppLayout>
     </>

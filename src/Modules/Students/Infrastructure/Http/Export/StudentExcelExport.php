@@ -35,6 +35,7 @@ final class StudentExcelExport implements
     {
         /** @var Builder $query */
         $query = StudentEloquentModel::query()
+            ->withTrashed()
             ->select([
                 'id',
                 'uuid',

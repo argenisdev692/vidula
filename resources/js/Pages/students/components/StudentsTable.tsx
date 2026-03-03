@@ -8,16 +8,16 @@ import {
 import { DataTable } from '@/shadcn/data-table';
 import { Link } from '@inertiajs/react';
 import type { StudentListItem } from '@/types/api';
-import { useStudentMutations } from '@/modules/students/hooks/useStudentMutations';
 import { formatDateShort } from '@/common/helpers/formatDate';
-import { Building2, Eye, Pencil, Trash2, CheckCircle } from 'lucide-react';
+import { Eye, Pencil, Trash2, CheckCircle, GraduationCap } from 'lucide-react';
 
 /**
  * StudentsTable — TanStack Table v8 with sorting, filtering, and row selection.
- * columnHelper is defined outside the component to avoid re-creation on every render.
+ * columnHelper defined outside component per §7.
+ * Actions: Eye/Pencil/Trash2 (active) | Eye/CheckCircle (soft-deleted) per §7.
  */
 
-// ── columnHelper outside component (performance) ──
+// ── columnHelper outside component (performance — §7) ──
 const columnHelper = createColumnHelper<StudentListItem>();
 
 interface StudentsTableProps {
@@ -25,6 +25,7 @@ interface StudentsTableProps {
   isLoading: boolean;
   isError?: boolean;
   onDelete: (uuid: string, name: string) => void;
+  onRestore: (uuid: string, name: string) => void;
   rowSelection: RowSelectionState;
   onRowSelectionChange: OnChangeFn<RowSelectionState>;
 }
@@ -34,10 +35,10 @@ export default function StudentsTable({
   isLoading,
   isError = false,
   onDelete,
+  onRestore,
   rowSelection,
   onRowSelectionChange,
 }: StudentsTableProps) {
-  const { restoreStudent } = useStudentMutations();
 
   const columns = React.useMemo<ColumnDef<StudentListItem, any>[]>(() => [
     columnHelper.display({
@@ -48,7 +49,7 @@ export default function StudentsTable({
           checked={table.getIsAllPageRowsSelected()}
           onChange={table.getToggleAllPageRowsSelectedHandler()}
           aria-label="Select all"
-          className="h-4 w-4 rounded border-gray-300 accent-(--accent-primary) cursor-pointer"
+          className="h-4 w-4 rounded border-(--border-default) accent-(--accent-primary) cursor-pointer"
         />
       ),
       cell: ({ row }) => (
@@ -57,7 +58,7 @@ export default function StudentsTable({
           checked={row.getIsSelected()}
           onChange={row.getToggleSelectedHandler()}
           aria-label="Select row"
-          className="h-4 w-4 rounded border-gray-300 accent-(--accent-primary) cursor-pointer"
+          className="h-4 w-4 rounded border-(--border-default) accent-(--accent-primary) cursor-pointer"
         />
       ),
     }),
@@ -74,7 +75,7 @@ export default function StudentsTable({
                 color: 'var(--accent-success)',
               }}
             >
-              <Building2 size={18} />
+              <GraduationCap size={18} />
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-(--text-primary)">
@@ -147,6 +148,7 @@ export default function StudentsTable({
               href={`/students/${student.id}`}
               className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors"
               title="View Profile"
+              aria-label={`View ${student.name}`}
             >
               <Eye size={16} />
             </Link>
@@ -157,23 +159,27 @@ export default function StudentsTable({
                   href={`/students/${student.id}/edit`}
                   className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors"
                   title="Edit"
+                  aria-label={`Edit ${student.name}`}
                 >
                   <Pencil size={16} />
                 </Link>
                 <button
                   onClick={() => onDelete(student.id, student.name)}
-                  className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-red-500/10 text-(--accent-error) shadow-sm transition-colors"
+                  className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) shadow-sm transition-colors"
+                  style={{ color: 'var(--accent-error)' }}
                   title="Delete"
+                  aria-label={`Delete ${student.name}`}
                 >
                   <Trash2 size={16} />
                 </button>
               </>
             ) : (
               <button
-                onClick={() => restoreStudent.mutate(student.id)}
-                className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-green-500/10 text-(--accent-success) shadow-sm transition-colors"
+                onClick={() => onRestore(student.id, student.name)}
+                className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) shadow-sm transition-colors"
+                style={{ color: 'var(--accent-success)' }}
                 title="Restore"
-                disabled={restoreStudent.isPending}
+                aria-label={`Restore ${student.name}`}
               >
                 <CheckCircle size={16} />
               </button>
@@ -182,7 +188,7 @@ export default function StudentsTable({
         );
       },
     }),
-  ], [onDelete, restoreStudent]);
+  ], [onDelete, onRestore]);
 
   return (
     <DataTable

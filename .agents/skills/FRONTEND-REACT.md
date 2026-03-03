@@ -117,9 +117,13 @@ Before implementing any component, read `globals.css` and use existing tokens. I
 
 Map all tokens in `tailwind.config.js` under `theme.extend.colors`, `fontFamily`, `borderRadius`.
 
+### §2.1 — Accessibility (WCAG AA Compliance)
+
+> Integrated into §2 below.
+
 ---
 
-## §2 — Accessibility (WCAG 2.2 AA)
+## §2 — Accessibility (WCAG 2.2 AA + WCAG 2.3.1)
 
 ```css
 :focus {
@@ -137,11 +141,19 @@ Map all tokens in `tailwind.config.js` under `theme.extend.colors`, `fontFamily`
     *::after {
         animation-duration: 0.01ms !important;
         transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
     }
 }
 ```
 
-Minimum 24×24px tap targets. Focus ring ≥ 3:1 contrast.
+**Hard rules:**
+
+- **WCAG 2.3.1 — Three Flashes**: No element may flash >3×/sec. `duration ≤ 0.4s` (§11). `globals.css` MUST include `@media (prefers-reduced-motion: reduce)`.
+- **Contrast**: Text ≥ 4.5:1 (normal), ≥ 3:1 (large). Labels use `--text-secondary`, never `--text-disabled`.
+- **Focus rings**: ≥ 3:1 contrast. Minimum 24×24px tap targets.
+- **ARIA**: Icon-only buttons must have `aria-label` or `title`.
+- **Keyboard**: Modals close on `Escape`. Confirm buttons receive auto-focus.
+- **Form controls**: `select`, `input[type="date"]` must have `color-scheme: dark` and `background: var(--bg-elevated)` in dark mode.
 
 ---
 
@@ -306,7 +318,11 @@ export function use{Entity}Mutations() {
 
 ---
 
-## §7 — TanStack Table v8
+## §7 — TanStack Table v8 (MANDATORY)
+
+> **DataTable MUST use `@tanstack/react-table` (`useReactTable`) — NEVER use shadcn/ui's `data-table` component.**
+> shadcn/ui `Table` primitives (`Table`, `TableRow`, `TableCell`, `TableHead`) are allowed ONLY as HTML wrappers for rendering.
+> The `@/shadcn/data-table.tsx` is a **custom composition** (TanStack logic + shadcn HTML primitives), NOT a shadcn-generated file.
 
 ### Critical Rules
 
@@ -314,6 +330,8 @@ export function use{Entity}Mutations() {
 2. `getRowId: (row) => row.uuid` MUST be provided — stable IDs for optimistic updates
 3. `columnHelper` MUST NOT appear in `useMemo` deps
 4. Never hide TanStack API behind wrapper abstractions
+5. All table logic (`useReactTable`, `getCoreRowModel`, `getSortedRowModel`, `flexRender`) comes from `@tanstack/react-table`
+6. HTML rendering uses `@/shadcn/table` primitives (thin `<table>`/`<tr>`/`<td>` wrappers)
 
 ### Table Template
 
@@ -467,9 +485,11 @@ Label: 11px weight 600 uppercase letter-spacing 1.5px
 ## §10 — shadcn/ui Rules
 
 - **NEVER hand-edit** files in `shadcn/` — regenerate via `npx shadcn@latest add <name>`.
+    - **Exception**: `data-table.tsx`, `DeleteConfirmModal.tsx`, `RestoreConfirmModal.tsx`, `DataTableBulkActions.tsx` — these are **custom compositions**, not shadcn-generated.
 - Wrap in `common/` abstractions. Never import directly in pages.
 - Search Tavily `site:ui.shadcn.com` before building custom components.
 - **Required new components (Oct 2025)**: Spinner, Field, InputGroup, ButtonGroup, Empty, Item, Kbd.
+- **NEVER use shadcn/ui `data-table`**: Our DataTable uses TanStack Table v8 directly (§7). shadcn/ui's `Table` primitive is used ONLY for HTML rendering (`<table>`, `<tr>`, `<td>` wrappers).
 
 ---
 

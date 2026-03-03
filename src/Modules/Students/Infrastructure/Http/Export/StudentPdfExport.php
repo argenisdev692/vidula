@@ -19,6 +19,7 @@ final class StudentPdfExport
     public function stream(): Response
     {
         $rows = StudentEloquentModel::query()
+            ->withTrashed()
             ->select([
                 'name',
                 'email',

@@ -70,6 +70,7 @@ final class EloquentStudentRepository implements StudentRepositoryPort
     public function findAllPaginated(array $filters = [], int $page = 1, int $perPage = 15): array
     {
         $query = StudentEloquentModel::query()
+            ->withTrashed()
             ->when($filters['email'] ?? null, fn($q, $email) => $q->where('email', $email))
             ->when($filters['status'] ?? null, fn($q, $status) => $q->where('status', $status))
             ->when(

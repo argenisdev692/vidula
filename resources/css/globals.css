@@ -5,34 +5,34 @@
 
 /* ── Vidula Brand Palette ── */
 :root {
-    --bg-void:        #03020A;
-    --bg-base:        #07060F;
-    --bg-surface:     #0D0B1A;
-    --bg-elevated:    #131126;
-    --bg-overlay:     #1A1830;
+    --bg-void: #03020a;
+    --bg-base: #07060f;
+    --bg-surface: #0d0b1a;
+    --bg-elevated: #131126;
+    --bg-overlay: #1a1830;
 
-    --blue-500:       #3B6EF8;
-    --purple-500:     #8B3CF7;
-    
-    --text-primary:   #F0EEFF;
-    --text-secondary: #9B8FC4;
-    --text-muted:     #4D4570;
-    --text-disabled:  #2A2545;
+    --blue-500: #3b6ef8;
+    --purple-500: #8b3cf7;
 
-    --border-subtle:  rgba(139, 60, 247, 0.12);
+    --text-primary: #f0eeff;
+    --text-secondary: #9b8fc4;
+    --text-muted: #4d4570;
+    --text-disabled: #2a2545;
+
+    --border-subtle: rgba(139, 60, 247, 0.12);
     --border-default: rgba(139, 60, 247, 0.22);
-    --border-strong:  rgba(94, 143, 250, 0.4);
+    --border-strong: rgba(94, 143, 250, 0.4);
 
-    --accent-primary: #3B6EF8;
-    --accent-secondary: #8B3CF7;
-    --accent-success: #10D988;
-    --accent-warning: #F59E0B;
-    --accent-error: #F43F5E;
-    --accent-info: #38BDF8;
+    --accent-primary: #3b6ef8;
+    --accent-secondary: #8b3cf7;
+    --accent-success: #10d988;
+    --accent-warning: #f59e0b;
+    --accent-error: #f43f5e;
+    --accent-info: #38bdf8;
 
-    --grad-primary:   linear-gradient(135deg, #2456E8 0%, #6D28D9 100%);
-    --grad-glow:      linear-gradient(135deg, #3B6EF8 0%, #8B3CF7 100%);
-    --grad-text:      linear-gradient(90deg, #5E8FFA, #C084FC);
+    --grad-primary: linear-gradient(135deg, #2456e8 0%, #6d28d9 100%);
+    --grad-glow: linear-gradient(135deg, #3b6ef8 0%, #8b3cf7 100%);
+    --grad-text: linear-gradient(90deg, #5e8ffa, #c084fc);
 
     --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
     --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
@@ -45,7 +45,11 @@
 
     /* ── Input tokens ── */
     --input-bg: var(--bg-elevated);
-    --input-bg-disabled: color-mix(in srgb, var(--bg-elevated) 50%, var(--bg-base));
+    --input-bg-disabled: color-mix(
+        in srgb,
+        var(--bg-elevated) 50%,
+        var(--bg-base)
+    );
     --input-border: var(--border-default);
     --input-border-hover: var(--border-strong);
     --input-border-focus: var(--blue-500);
@@ -63,7 +67,8 @@
 }
 
 /* ── Base ── */
-html, body {
+html,
+body {
     background: var(--bg-base);
     color: var(--text-primary);
     font-family: var(--font-sans);
@@ -77,7 +82,7 @@ html, body {
     height: 8px;
 }
 ::-webkit-scrollbar-track {
-    background: var(--bg-base); 
+    background: var(--bg-base);
 }
 ::-webkit-scrollbar-thumb {
     background-color: var(--purple-500);
@@ -166,4 +171,54 @@ html, body {
     border: 1px solid color-mix(in srgb, var(--blue-500) 20%, transparent);
     backdrop-filter: blur(8px);
     color: var(--blue-400);
+}
+
+/* ── Form Controls Dark Theme ── */
+select,
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"] {
+    color-scheme: dark;
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    border: 1px solid var(--border-default);
+    font-family: var(--font-sans);
+    accent-color: var(--accent-primary);
+}
+
+select option {
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    padding: 8px;
+}
+
+select:focus,
+input[type="date"]:focus,
+input[type="datetime-local"]:focus,
+input[type="time"]:focus {
+    border-color: var(--accent-primary);
+    outline: none;
+    box-shadow: 0 0 0 2px
+        color-mix(in srgb, var(--accent-primary) 25%, transparent);
+}
+
+/* Date input calendar icon color */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.7) sepia(0.3) hue-rotate(200deg);
+    cursor: pointer;
+}
+
+/* ── WCAG 2.3.1 — No Three Flashes ── */
+/* Respect prefers-reduced-motion for photosensitive users */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
