@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Student\Infrastructure\Utils;
+namespace Modules\Students\Infrastructure\Utils;
 
 use App\Models\Student;
 

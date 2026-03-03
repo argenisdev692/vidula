@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Modules\Student\Application\Commands\RestoreStudent;
+namespace Modules\Students\Application\Commands\RestoreStudent;
 
-use Modules\Student\Domain\Exceptions\StudentNotFoundException;
-use Modules\Student\Domain\Ports\StudentRepositoryPort;
-use Modules\Student\Domain\ValueObjects\StudentId;
+use Modules\Students\Domain\Exceptions\StudentNotFoundException;
+use Modules\Students\Domain\Ports\StudentRepositoryPort;
+use Modules\Students\Domain\ValueObjects\StudentId;
 
 final readonly class RestoreStudentHandler
 {

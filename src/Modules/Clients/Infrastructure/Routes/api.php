@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
-use Modules\Client\Infrastructure\Http\Controllers\Api\ClientController;
+use Modules\Clients\Infrastructure\Http\Controllers\Api\ClientController;
 
 /**
  * Client Context — API routes.

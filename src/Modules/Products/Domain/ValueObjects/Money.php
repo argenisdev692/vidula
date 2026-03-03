@@ -8,9 +8,11 @@ use InvalidArgumentException;
 
 final readonly class Money
 {
+    public string $currency;
+
     public function __construct(
         public float $amount,
-        public string $currency
+        string $currency
     ) {
         if ($amount < 0) {
             throw new InvalidArgumentException(
@@ -83,7 +85,7 @@ final readonly class Money
     #[\NoDiscard]
     public function equals(self $other): bool
     {
-        return $this->amount === $other->amount 
+        return $this->amount === $other->amount
             && $this->currency === $other->currency;
     }
 }

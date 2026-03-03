@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Modules\Student\Application\DTOs;
+namespace Modules\Students\Application\DTOs;
 
 use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Attributes\MapOutputName;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\SnakeCaseMapper;
-use Modules\Student\Domain\Entities\Student;
+use Modules\Students\Domain\Entities\Student;
 
 #[MapInputName(SnakeCaseMapper::class)]
 #[MapOutputName(SnakeCaseMapper::class)]

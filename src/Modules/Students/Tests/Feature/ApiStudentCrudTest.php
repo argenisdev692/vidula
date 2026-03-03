@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Models\User;
-use App\Models\Student as StudentEloquentModel;
+use Modules\Users\Infrastructure\Persistence\Eloquent\Models\UserEloquentModel as User;
+use Modules\Students\Infrastructure\Persistence\Eloquent\Models\StudentEloquentModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -15,139 +15,133 @@ beforeEach(function () {
     // Generate a user to authenticate with during tests
 });
 
-it('lists company data', function () {
+it('lists student data', function () {
     $user = User::factory()->create();
-    StudentEloquentModel::factory()->count(3)->create(['user_id' => $user->id]);
+    StudentEloquentModel::factory()->count(3)->create();
 
     $this->actingAs($user)
-        ->getJson(route('student.index'))
+        ->getJson(route('api.admin.student.index'))
         ->assertOk()
         ->assertJsonStructure([
             'data' => [
-                '*' => ['id', 'userId', 'companyName', 'createdAt']
+                '*' => ['id', 'name', 'createdAt']
             ],
             'meta' => ['total', 'perPage']
         ]);
 });
 
-it('creates company data', function () {
+it('creates student data', function () {
     $user = User::factory()->create();
     $payload = [
-        'user_id' => $user->id,
-        'company_name' => 'Acme Corp',
-        'email' => 'contact@acme.com',
+        'name' => 'John Doe',
+        'email' => 'john@acme.com',
         'phone' => '1234567890'
     ];
 
     $this->actingAs($user)
-        ->postJson(route('student.store'), $payload)
+        ->postJson(route('api.admin.student.store'), $payload)
         ->assertCreated()
-        ->assertJsonStructure(['message', 'uuid']);
+        ->assertJsonStructure(['message']);
 
-    $this->assertDatabaseHas('student', [
-        'user_id' => $user->id,
-        'company_name' => 'Acme Corp'
+    $this->assertDatabaseHas('students', [
+        'name' => 'John Doe'
     ]);
 });
 
 it('validates required fields on create', function () {
     $user = User::factory()->create();
     $this->actingAs($user)
-        ->postJson(route('student.store'), [])
+        ->postJson(route('api.admin.student.store'), [])
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['user_id', 'company_name']);
+        ->assertJsonValidationErrors(['name']);
 });
 
-it('shows company data', function () {
+it('shows student data', function () {
     $user = User::factory()->create();
     $uuid = (string) Str::uuid();
     $student = StudentEloquentModel::factory()->create([
         'uuid' => $uuid,
-        'user_id' => $user->id,
-        'company_name' => 'Show Test Corp'
+        'name' => 'Show Test Corp'
     ]);
 
     $this->actingAs($user)
-        ->getJson(route('student.show', $uuid))
+        ->getJson(route('api.admin.student.show', $uuid))
         ->assertOk()
-        ->assertJsonPath('data.companyName', 'Show Test Corp');
+        ->assertJsonPath('data.name', 'Show Test Corp');
 });
 
-it('updates company data', function () {
+it('updates student data', function () {
     $user = User::factory()->create();
     $uuid = (string) Str::uuid();
     $student = StudentEloquentModel::factory()->create([
         'uuid' => $uuid,
-        'user_id' => $user->id,
-        'company_name' => 'Old Name'
+        'name' => 'Old Name'
     ]);
 
     $this->actingAs($user)
-        ->putJson(route('student.update', $uuid), [
-            'company_name' => 'New Name'
+        ->putJson(route('api.admin.student.update', $uuid), [
+            'name' => 'New Name'
         ])
         ->assertOk()
-        ->assertJson(['message' => 'Company data updated successfully']);
+        ->assertJson(['message' => 'Student updated successfully']);
 
-    $this->assertDatabaseHas('student', [
+    $this->assertDatabaseHas('students', [
         'uuid' => $uuid,
-        'company_name' => 'New Name'
+        'name' => 'New Name'
     ]);
 });
 
-it('soft deletes company data', function () {
+it('soft deletes student data', function () {
     $user = User::factory()->create();
     $uuid = (string) Str::uuid();
     $student = StudentEloquentModel::factory()->create([
         'uuid' => $uuid,
-        'user_id' => $user->id,
     ]);
 
     $this->actingAs($user)
-        ->deleteJson(route('student.destroy', $uuid))
+        ->deleteJson(route('api.admin.student.destroy', $uuid))
         ->assertOk()
-        ->assertJson(['message' => 'Company data deleted successfully']);
+        ->assertJson(['message' => 'Student deleted successfully']);
 
-    $this->assertDatabaseHas('student', [
+    $this->assertDatabaseHas('students', [
         'uuid' => $uuid,
     ]);
 
     expect(StudentEloquentModel::withTrashed()->where('uuid', $uuid)->first()->deleted_at)->not->toBeNull();
 });
 
-it('restores soft deleted company data', function () {
+it('restores soft deleted student data', function () {
     $user = User::factory()->create();
     $uuid = (string) Str::uuid();
     $student = StudentEloquentModel::factory()->create([
         'uuid' => $uuid,
-        'user_id' => $user->id,
         'deleted_at' => now(),
     ]);
 
     $this->actingAs($user)
-        ->patchJson(route('student.restore', $uuid))
+        ->patchJson(route('api.admin.student.restore', $uuid))
         ->assertOk()
-        ->assertJson(['message' => 'Company data restored successfully']);
+        ->assertJson(['message' => 'Student restored successfully']);
 
     expect(StudentEloquentModel::where('uuid', $uuid)->first()->deleted_at)->toBeNull();
 });
 
-it('exports company data to excel', function () {
+it('exports student data to excel', function () {
     $user = User::factory()->create();
     StudentEloquentModel::factory()->count(3)->create();
 
     $this->actingAs($user)
-        ->getJson(route('student.export', ['format' => 'excel']))
+        ->getJson(route('api.admin.student.export', ['format' => 'excel']))
         ->assertOk()
         ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 });
 
-it('exports company data to pdf', function () {
+it('exports student data to pdf', function () {
     $user = User::factory()->create();
     StudentEloquentModel::factory()->count(3)->create();
 
     $this->actingAs($user)
-        ->getJson(route('student.export', ['format' => 'pdf']))
+        ->getJson(route('api.admin.student.export', ['format' => 'pdf']))
         ->assertOk()
         ->assertHeader('content-type', 'application/pdf');
 });

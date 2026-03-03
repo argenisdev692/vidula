@@ -1,6 +1,7 @@
 import {
   useReactTable,
   getCoreRowModel,
+  getSortedRowModel,
   flexRender,
   type ColumnDef,
   type RowSelectionState,
@@ -27,6 +28,8 @@ interface DataTableProps<TData, TValue> {
   // Optional Row Selection
   rowSelection?: RowSelectionState;
   onRowSelectionChange?: OnChangeFn<RowSelectionState>;
+  // Optional row ID function for stable IDs (avoids index-based IDs)
+  getRowId?: (row: TData) => string;
 }
 
 export function DataTable<TData, TValue>({
@@ -39,13 +42,16 @@ export function DataTable<TData, TValue>({
   loadingMessage = 'Loading...',
   rowSelection,
   onRowSelectionChange,
+  getRowId,
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
     enableRowSelection: rowSelection !== undefined,
     onRowSelectionChange,
+    getRowId,
     state: {
       rowSelection: rowSelection ?? {},
     },
@@ -94,7 +100,10 @@ export function DataTable<TData, TValue>({
                 className="h-24 text-center text-sm"
                 style={{ color: 'var(--text-muted)' }}
               >
-                {loadingMessage}
+                <div className="flex flex-col items-center justify-center gap-3">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-(--accent-primary)" />
+                  <span className="text-(--text-muted)">{loadingMessage}</span>
+                </div>
               </TableCell>
             </TableRow>
           ) : table.getRowModel().rows?.length ? (

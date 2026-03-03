@@ -16,7 +16,7 @@ final readonly class ListCompanyDataHandler
     }
 
     /**
-     * @return array{data: list<CompanyDataReadModel>, total: int, perPage: int, currentPage: int, lastPage: int}
+     * @return array{data: list<CompanyDataReadModel>, meta: array{total: int, perPage: int, currentPage: int, lastPage: int}}
      */
     public function handle(ListCompanyDataQuery $query): array
     {
@@ -31,7 +31,7 @@ final readonly class ListCompanyDataHandler
                 perPage: $filters->perPage
             );
 
-            $result['data'] = array_map(
+            $mapped = array_map(
                 fn($companyData) => new CompanyDataReadModel(
                     uuid: $companyData->id->value,
                     userUuid: $companyData->userId->value,
@@ -47,7 +47,16 @@ final readonly class ListCompanyDataHandler
                 $result['data']
             );
 
-            return $result;
+            // Wrap pagination into `meta` to match frontend PaginatedResponse<T>
+            return [
+                'data' => $mapped,
+                'meta' => [
+                    'total' => $result['total'],
+                    'perPage' => $result['perPage'],
+                    'currentPage' => $result['currentPage'],
+                    'lastPage' => $result['lastPage'],
+                ],
+            ];
         });
     }
 }

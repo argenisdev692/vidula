@@ -16,6 +16,9 @@ use Modules\Users\Infrastructure\Persistence\Eloquent\Models\UserEloquentModel;
 /**
  * ClientEloquentModel
  */
+/**
+ * @internal — Only the ClientMapper may access this model directly.
+ */
 final class ClientEloquentModel extends Model
 {
     use HasFactory, SoftDeletes, LogsActivity;
@@ -38,6 +41,7 @@ final class ClientEloquentModel extends Model
         'phone',
         'address',
         'tax_id',
+        'nif',
         'website',
         'facebook_link',
         'instagram_link',

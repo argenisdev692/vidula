@@ -1,244 +1,242 @@
 import * as React from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/pages/layouts/AppLayout';
-import { useStudentMutations } from '@/modules/student/hooks/useStudentMutations';
+import { useStudentMutations } from '@/modules/students/hooks/useStudentMutations';
+import { PremiumField } from '@/shadcn/PremiumField';
 import type { CreateStudentDTO } from '@/types/api';
+import { ArrowLeft, Save, Building2, Share2 } from 'lucide-react';
 
-// ══════════════════════════════════════════════════════════════
-// Icons
-// ══════════════════════════════════════════════════════════════
-const ic = {
-  w: 16, h: 16, viewBox: '0 0 24 24', fill: 'none',
-  stroke: 'currentColor', strokeWidth: 2,
-  strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const,
-};
-const IconArrowLeft = () => <svg {...ic}><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>;
-const IconSave = () => <svg {...ic}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>;
-
-// ══════════════════════════════════════════════════════════════
-// StudentCreatePage
-// ══════════════════════════════════════════════════════════════
+/**
+ * StudentCreatePage - React 19 Modern Implementation
+ * Uses standard form with FormData API and TanStack Query mutations
+ */
 export default function StudentCreatePage(): React.JSX.Element {
-  const { createStudent: createMutation } = useStudentMutations();
-  const [formData, setFormData] = React.useState<CreateStudentDTO>({
-    user_id: 1, // Defaulting to 1 for now, or this could come from auth context
-    company_name: '',
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-    website: '',
-    facebook_link: '',
-    instagram_link: '',
-    linkedin_link: '',
-    twitter_link: '',
-  });
+  const { createStudent } = useStudentMutations();
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    createMutation.mutate(formData, {
-      onSuccess: () => {
-        router.visit('/student');
-      },
-      onError: (error) => {
-        console.error('Failed to create company data:', error);
-        alert('Failed to save company data. Please check the console.');
+    const formData = new FormData(e.currentTarget);
+    
+    const payload: CreateStudentDTO = {
+      user_id: 1, // Default user_id, should come from auth context in production
+      company_name: formData.get('company_name') as string,
+      name: formData.get('name') as string || null,
+      email: formData.get('email') as string || null,
+      phone: formData.get('phone') as string || null,
+      address: formData.get('address') as string || null,
+      website: formData.get('website') as string || null,
+      linkedin_link: formData.get('linkedin_link') as string || null,
+      twitter_link: formData.get('twitter_link') as string || null,
+      facebook_link: formData.get('facebook_link') as string || null,
+      instagram_link: formData.get('instagram_link') as string || null,
+      latitude: formData.get('latitude') ? parseFloat(formData.get('latitude') as string) : null,
+      longitude: formData.get('longitude') ? parseFloat(formData.get('longitude') as string) : null,
+    };
+
+    try {
+      await createStudent.mutateAsync(payload);
+      router.visit('/student');
+    } catch (err: any) {
+      if (err.response?.data?.errors) {
+        setErrors(err.response.data.errors);
       }
-    });
-  };
+    }
+  }
+  
+  const isPending = createStudent.isPending;
 
   return (
     <AppLayout>
       <Head title="Create Company Profile" />
-      <div style={{ fontFamily: 'var(--font-sans)', maxWidth: '800px', margin: '0 auto' }}>
+      <div className="max-w-5xl mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
         
         {/* ── Header ── */}
-        <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link
               href="/student"
-              className="flex h-9 w-9 items-center justify-center rounded-lg transition-all hover:bg-(--bg-hover)"
-              style={{ color: 'var(--text-muted)' }}
+              className="flex h-10 w-10 items-center justify-center rounded-xl bg-(--bg-card) border border-(--border-default) text-(--text-muted) hover:bg-(--bg-hover) hover:text-(--accent-primary) transition-all shadow-sm"
             >
-              <IconArrowLeft />
+              <ArrowLeft size={20} />
             </Link>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-                New Company Profile
-              </h1>
-              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                Enter the details below to register a new corporate entity.
-              </p>
+              <h1 className="text-2xl font-bold tracking-tight text-(--text-primary)">New Company Profile</h1>
+              <p className="text-sm text-(--text-muted)">Register a new corporate entity</p>
             </div>
           </div>
+
           <button
-            onClick={handleSubmit}
-            disabled={createMutation.isPending}
-            className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all disabled:opacity-50"
-            style={{
-              background: 'var(--accent-primary)',
-              color: 'var(--color-white)',
-            }}
+            type="submit"
+            form="company-create-form"
+            disabled={isPending}
+            className="btn-modern-primary flex items-center gap-2 px-6 py-2.5 shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
           >
-            {createMutation.isPending ? 'Saving...' : <><IconSave /> Save Profile</>}
+            {isPending ? (
+              <span className="animate-pulse">Creating...</span>
+            ) : (
+              <>
+                <Save size={18} />
+                <span className="font-bold">Save Profile</span>
+              </>
+            )}
           </button>
         </div>
 
-        {/* ── Form Card ── */}
-        <div className="card">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              {/* Company Name */}
-              <div>
-                <label className="input-label" htmlFor="company_name">Company Name *</label>
-                <input
-                  id="company_name"
-                  name="company_name"
-                  type="text"
-                  required
-                  value={formData.company_name}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="e.g. Acme Corp"
-                />
+        {/* Global Error */}
+        {errors.general && (
+          <div className="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+            <p className="text-sm text-red-600 dark:text-red-400">{errors.general}</p>
+          </div>
+        )}
+
+        {/* ── Form Body ── */}
+        <form id="company-create-form" onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* ── Left Column: Main Info ── */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="card-modern p-8 space-y-8 shadow-xl border border-(--border-default)">
+                <div className="flex items-center gap-3">
+                  <Building2 className="text-(--accent-primary)" size={24} />
+                  <h2 className="text-lg font-bold text-(--text-primary)">Core Information</h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="md:col-span-2">
+                    <PremiumField 
+                      label="Official Company Name" 
+                      name="company_name" 
+                      required 
+                      error={errors.company_name?.[0]} 
+                      placeholder="Acme Corporation S.A."
+                    />
+                  </div>
+                  <PremiumField 
+                    label="Legal Representative" 
+                    name="name" 
+                    error={errors.name?.[0]} 
+                    placeholder="John Smith"
+                  />
+                  <PremiumField 
+                    label="Business Email" 
+                    name="email" 
+                    type="email"
+                    error={errors.email?.[0]} 
+                    placeholder="billing@acme.com"
+                  />
+                  <PremiumField 
+                    label="Public Phone" 
+                    name="phone" 
+                    error={errors.phone?.[0]} 
+                    placeholder="+1 800-ACME-CORP"
+                  />
+                  <div className="md:col-span-2">
+                    <PremiumField 
+                      label="Official Website" 
+                      name="website" 
+                      type="url"
+                      error={errors.website?.[0]} 
+                      placeholder="https://acme.com"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <PremiumField 
+                      label="Primary Address" 
+                      name="address" 
+                      error={errors.address?.[0]} 
+                      isTextArea
+                      placeholder="123 Corporate Way, Silicon Valley, CA"
+                    />
+                  </div>
+                </div>
               </div>
 
-              {/* Representative Name */}
-              <div>
-                <label className="input-label" htmlFor="name">Representative Name</label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  value={formData.name || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="e.g. Jane Doe"
-                />
-              </div>
+              <div className="card-modern p-8 space-y-8 shadow-xl border border-(--border-default)">
+                <div className="flex items-center gap-3">
+                  <Share2 className="text-(--accent-primary)" size={24} />
+                  <h2 className="text-lg font-bold text-(--text-primary)">Social Media & Public Presence</h2>
+                </div>
 
-              {/* Email */}
-              <div>
-                <label className="input-label" htmlFor="email">Contact Email</label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="contact@acmecorp.com"
-                />
-              </div>
-
-              {/* Phone */}
-              <div>
-                <label className="input-label" htmlFor="phone">Phone Number</label>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="text"
-                  value={formData.phone || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="+1 (555) 000-0000"
-                />
-              </div>
-              
-              {/* Website */}
-              <div className="md:col-span-2">
-                <label className="input-label" htmlFor="website">Website URL</label>
-                <input
-                  id="website"
-                  name="website"
-                  type="url"
-                  value={formData.website || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="https://www.acmecorp.com"
-                />
-              </div>
-
-              {/* Address */}
-              <div className="md:col-span-2">
-                <label className="input-label" htmlFor="address">Address</label>
-                <textarea
-                  id="address"
-                  name="address"
-                  rows={3}
-                  value={formData.address || ''}
-                  onChange={handleChange}
-                  className="input h-auto! pt-2"
-                  placeholder="123 Corporate Blvd, Suite 100..."
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <PremiumField 
+                    label="LinkedIn" 
+                    name="linkedin_link" 
+                    error={errors.linkedin_link?.[0]} 
+                    placeholder="linkedin.com/company/acme"
+                  />
+                  <PremiumField 
+                    label="Instagram" 
+                    name="instagram_link" 
+                    error={errors.instagram_link?.[0]} 
+                    placeholder="instagram.com/acme"
+                  />
+                  <PremiumField 
+                    label="Twitter / X" 
+                    name="twitter_link" 
+                    error={errors.twitter_link?.[0]} 
+                    placeholder="x.com/acme"
+                  />
+                  <PremiumField 
+                    label="Facebook" 
+                    name="facebook_link" 
+                    error={errors.facebook_link?.[0]} 
+                    placeholder="facebook.com/acme"
+                  />
+                </div>
               </div>
             </div>
 
-            <hr style={{ borderColor: 'var(--border-subtle)', margin: '24px 0' }} />
+            {/* ── Right Column: Sidebar ── */}
+            <div className="space-y-6">
+              <div className="card-modern p-6 bg-(--bg-surface) border border-(--border-subtle)">
+                <h3 className="text-sm font-bold uppercase tracking-widest text-(--text-muted) mb-4">Geolocation</h3>
+                
+                <div className="space-y-4">
+                  <PremiumField 
+                    label="Latitude" 
+                    name="latitude" 
+                    type="number"
+                    step="any"
+                    error={errors.latitude?.[0]} 
+                    placeholder="40.7128"
+                  />
+                  <PremiumField 
+                    label="Longitude" 
+                    name="longitude" 
+                    type="number"
+                    step="any"
+                    error={errors.longitude?.[0]} 
+                    placeholder="-74.0060"
+                  />
+                </div>
+                
+                <div className="mt-4 p-4 rounded-xl bg-(--bg-card) border border-(--border-default) shadow-inner">
+                  <p className="text-[11px] text-(--text-disabled) leading-relaxed text-center italic">
+                    Used for public map listings and service discovery.
+                  </p>
+                </div>
+              </div>
 
-            <h3 className="mb-4 text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
-              Social Links
-            </h3>
-
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <div>
-                <label className="input-label" htmlFor="linkedin_link">LinkedIn</label>
-                <input
-                  id="linkedin_link"
-                  name="linkedin_link"
-                  type="url"
-                  value={formData.linkedin_link || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="https://linkedin.com/company/acmecorp"
-                />
-              </div>
-              <div>
-                <label className="input-label" htmlFor="twitter_link">Twitter (X)</label>
-                <input
-                  id="twitter_link"
-                  name="twitter_link"
-                  type="url"
-                  value={formData.twitter_link || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="https://twitter.com/acmecorp"
-                />
-              </div>
-              <div>
-                <label className="input-label" htmlFor="facebook_link">Facebook</label>
-                <input
-                  id="facebook_link"
-                  name="facebook_link"
-                  type="url"
-                  value={formData.facebook_link || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="https://facebook.com/acmecorp"
-                />
-              </div>
-              <div>
-                <label className="input-label" htmlFor="instagram_link">Instagram</label>
-                <input
-                  id="instagram_link"
-                  name="instagram_link"
-                  type="url"
-                  value={formData.instagram_link || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="https://instagram.com/acmecorp"
-                />
+              <div className="card-modern p-6 bg-(--bg-surface) border border-(--border-subtle)">
+                <h3 className="text-sm font-bold uppercase tracking-widest text-(--text-muted) mb-4">Quick Tips</h3>
+                <ul className="space-y-2 text-xs text-(--text-muted)">
+                  <li className="flex items-start gap-2">
+                    <span className="text-(--accent-primary) mt-0.5">•</span>
+                    <span>Company name is required for registration</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-(--accent-primary) mt-0.5">•</span>
+                    <span>Social links help improve public visibility</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-(--accent-primary) mt-0.5">•</span>
+                    <span>Geolocation enables map-based discovery</span>
+                  </li>
+                </ul>
               </div>
             </div>
-
-          </form>
-        </div>
+          </div>
+        </form>
       </div>
     </AppLayout>
   );

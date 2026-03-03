@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Product\Application\DTOs;
+namespace Modules\Products\Application\DTOs;
 
 use Spatie\LaravelData\Data;
 

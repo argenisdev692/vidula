@@ -2,29 +2,29 @@
 
 declare(strict_types=1);
 
-namespace Modules\Student\Infrastructure\Http\Controllers\Api;
+namespace Modules\Students\Infrastructure\Http\Controllers\Api;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Modules\Student\Application\Commands\CreateStudent\CreateStudentCommand;
-use Modules\Student\Application\Commands\CreateStudent\CreateStudentHandler;
-use Modules\Student\Application\Commands\DeleteStudent\DeleteStudentCommand;
-use Modules\Student\Application\Commands\DeleteStudent\DeleteStudentHandler;
-use Modules\Student\Application\Commands\RestoreStudent\RestoreStudentCommand;
-use Modules\Student\Application\Commands\RestoreStudent\RestoreStudentHandler;
-use Modules\Student\Application\Commands\UpdateStudent\UpdateStudentCommand;
-use Modules\Student\Application\Commands\UpdateStudent\UpdateStudentHandler;
-use Modules\Student\Application\DTOs\StudentFilterDTO;
-use Modules\Student\Application\DTOs\CreateStudentDTO;
-use Modules\Student\Application\DTOs\UpdateStudentDTO;
-use Modules\Student\Application\Queries\GetStudent\GetStudentHandler;
-use Modules\Student\Application\Queries\GetStudent\GetStudentQuery;
-use Modules\Student\Application\Queries\ListStudent\ListStudentHandler;
-use Modules\Student\Application\Queries\ListStudent\ListStudentQuery;
-use Modules\Student\Infrastructure\Http\Requests\CreateStudentRequest;
-use Modules\Student\Infrastructure\Http\Requests\UpdateStudentRequest;
-use Modules\Student\Infrastructure\Persistence\Export\StudentExcelExport;
-use Modules\Student\Infrastructure\Persistence\Export\StudentPdfExport;
+use Modules\Students\Application\Commands\CreateStudent\CreateStudentCommand;
+use Modules\Students\Application\Commands\CreateStudent\CreateStudentHandler;
+use Modules\Students\Application\Commands\DeleteStudent\DeleteStudentCommand;
+use Modules\Students\Application\Commands\DeleteStudent\DeleteStudentHandler;
+use Modules\Students\Application\Commands\RestoreStudent\RestoreStudentCommand;
+use Modules\Students\Application\Commands\RestoreStudent\RestoreStudentHandler;
+use Modules\Students\Application\Commands\UpdateStudent\UpdateStudentCommand;
+use Modules\Students\Application\Commands\UpdateStudent\UpdateStudentHandler;
+use Modules\Students\Application\DTOs\StudentFilterDTO;
+use Modules\Students\Application\DTOs\CreateStudentDTO;
+use Modules\Students\Application\DTOs\UpdateStudentDTO;
+use Modules\Students\Application\Queries\GetStudent\GetStudentHandler;
+use Modules\Students\Application\Queries\GetStudent\GetStudentQuery;
+use Modules\Students\Application\Queries\ListStudent\ListStudentHandler;
+use Modules\Students\Application\Queries\ListStudent\ListStudentQuery;
+use Modules\Students\Infrastructure\Http\Requests\CreateStudentRequest;
+use Modules\Students\Infrastructure\Http\Requests\UpdateStudentRequest;
+use Modules\Students\Infrastructure\Persistence\Export\StudentExcelExport;
+use Modules\Students\Infrastructure\Persistence\Export\StudentPdfExport;
 use Maatwebsite\Excel\Facades\Excel;
 /**
  * StudentController

@@ -9,14 +9,14 @@ use Shared\Domain\Events\DomainEvent;
 /**
  * UserSuspended Domain Event
  */
-final class UserSuspended extends DomainEvent
+final readonly class UserSuspended extends DomainEvent
 {
     public function __construct(
-        public string $aggregateId,
+        string $aggregateId,
         public string $reason = '',
-        public string $occurredOn = ''
+        ?string $occurredOn = null
     ) {
-        parent::__construct($aggregateId, $occurredOn ?: date('Y-m-d H:i:s'));
+        parent::__construct($aggregateId, $occurredOn);
     }
 
     public static function eventName(): string

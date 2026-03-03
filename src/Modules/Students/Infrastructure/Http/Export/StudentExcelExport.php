@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Student\Infrastructure\Http\Export;
+namespace Modules\Students\Infrastructure\Http\Export;
 
 use App\Models\Student as StudentEloquentModel;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,7 +14,7 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use Modules\Student\Application\DTOs\StudentFilterDTO;
+use Modules\Students\Application\DTOs\StudentFilterDTO;
 
 final class StudentExcelExport implements
     FromQuery,

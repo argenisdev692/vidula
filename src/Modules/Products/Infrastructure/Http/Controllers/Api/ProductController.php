@@ -2,30 +2,28 @@
 
 declare(strict_types=1);
 
-namespace Modules\Product\Infrastructure\Http\Controllers\Api;
+namespace Modules\Products\Infrastructure\Http\Controllers\Api;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Modules\Product\Application\Commands\CreateProduct\CreateProductCommand;
-use Modules\Product\Application\Commands\CreateProduct\CreateProductHandler;
-use Modules\Product\Application\Commands\DeleteProduct\DeleteProductCommand;
-use Modules\Product\Application\Commands\DeleteProduct\DeleteProductHandler;
-use Modules\Product\Application\Commands\RestoreProduct\RestoreProductCommand;
-use Modules\Product\Application\Commands\RestoreProduct\RestoreProductHandler;
-use Modules\Product\Application\Commands\UpdateProduct\UpdateProductCommand;
-use Modules\Product\Application\Commands\UpdateProduct\UpdateProductHandler;
-use Modules\Product\Application\DTOs\ProductFilterDTO;
-use Modules\Product\Application\DTOs\CreateProductDTO;
-use Modules\Product\Application\DTOs\UpdateProductDTO;
-use Modules\Product\Application\Queries\GetProduct\GetProductHandler;
-use Modules\Product\Application\Queries\GetProduct\GetProductQuery;
-use Modules\Product\Application\Queries\ListProduct\ListProductHandler;
-use Modules\Product\Application\Queries\ListProduct\ListProductQuery;
-use Modules\Product\Infrastructure\Http\Requests\CreateProductRequest;
-use Modules\Product\Infrastructure\Http\Requests\UpdateProductRequest;
-use Modules\Product\Infrastructure\Persistence\Export\ProductExcelExport;
-use Modules\Product\Infrastructure\Persistence\Export\ProductPdfExport;
-use Maatwebsite\Excel\Facades\Excel;
+use Modules\Products\Application\Commands\CreateProduct\CreateProductCommand;
+use Modules\Products\Application\Commands\CreateProduct\CreateProductHandler;
+use Modules\Products\Application\Commands\DeleteProduct\DeleteProductCommand;
+use Modules\Products\Application\Commands\DeleteProduct\DeleteProductHandler;
+use Modules\Products\Application\Commands\RestoreProduct\RestoreProductCommand;
+use Modules\Products\Application\Commands\RestoreProduct\RestoreProductHandler;
+use Modules\Products\Application\Commands\UpdateProduct\UpdateProductCommand;
+use Modules\Products\Application\Commands\UpdateProduct\UpdateProductHandler;
+use Modules\Products\Application\DTOs\CreateProductDTO;
+use Modules\Products\Application\DTOs\ProductFilterDTO;
+use Modules\Products\Application\DTOs\UpdateProductDTO;
+use Modules\Products\Application\Queries\GetProduct\GetProductHandler;
+use Modules\Products\Application\Queries\GetProduct\GetProductQuery;
+use Modules\Products\Application\Queries\ListProduct\ListProductHandler;
+use Modules\Products\Application\Queries\ListProduct\ListProductQuery;
+use Modules\Products\Infrastructure\Http\Requests\CreateProductRequest;
+use Modules\Products\Infrastructure\Http\Requests\UpdateProductRequest;
+
 /**
  * ProductController
  */
@@ -41,21 +39,26 @@ final class ProductController
     ) {
     }
 
-    public function export(Request $request): mixed
-    {
-        $format = $request->query('format', 'excel');
-        $filters = ProductFilterDTO::from($request->all());
-        $query = new ListProductQuery($filters);
-
-        if ($format === 'pdf') {
-            $pdfExport = new ProductPdfExport($this->listHandler, $query);
-            return $pdfExport->export();
-        }
-
-        $excelExport = new ProductExcelExport($this->listHandler, $query);
-        return Excel::download($excelExport, 'products.xlsx');
-    }
-
+    /**
+     * @OA\Get(
+     *     path="/api/products/admin",
+     *     summary="List products (paginated)",
+     *     tags={"Products"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Parameter(name="search", in="query", required=false, @OA\Schema(type="string")),
+     *     @OA\Parameter(name="page",   in="query", required=false, @OA\Schema(type="integer")),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Paginated list",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/ProductListItem")),
+     *             @OA\Property(property="meta", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthenticated"),
+     *     @OA\Response(response=403, description="Forbidden")
+     * )
+     */
     public function index(Request $request): JsonResponse
     {
         $filters = ProductFilterDTO::from($request->all());
@@ -64,6 +67,17 @@ final class ProductController
         return response()->json($result);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/products/admin/{uuid}",
+     *     summary="Get single product details",
+     *     tags={"Products"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Parameter(name="uuid", in="path", required=true, @OA\Schema(type="string", format="uuid")),
+     *     @OA\Response(response=200, description="Product found"),
+     *     @OA\Response(response=404, description="Product not found")
+     * )
+     */
     public function show(Request $request, ?string $uuid = null): JsonResponse
     {
         $targetUuid = $uuid ?? $request->user()?->uuid;
@@ -77,6 +91,17 @@ final class ProductController
         return response()->json(['data' => $result]);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/products/admin",
+     *     summary="Create product",
+     *     tags={"Products"},
+     *     security={{"sanctum": {}}},
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/CreateProductDTO")),
+     *     @OA\Response(response=201, description="Product created"),
+     *     @OA\Response(response=422, description="Validation error")
+     * )
+     */
     public function store(CreateProductRequest $request): JsonResponse
     {
         $dto = CreateProductDTO::from($request->validated());
@@ -87,6 +112,19 @@ final class ProductController
         ], 201);
     }
 
+    /**
+     * @OA\Put(
+     *     path="/api/products/admin/{uuid}",
+     *     summary="Update product details",
+     *     tags={"Products"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Parameter(name="uuid", in="path", required=true, @OA\Schema(type="string", format="uuid")),
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/UpdateProductDTO")),
+     *     @OA\Response(response=200, description="Product updated"),
+     *     @OA\Response(response=404, description="Product not found"),
+     *     @OA\Response(response=422, description="Validation error")
+     * )
+     */
     public function update(UpdateProductRequest $request, ?string $uuid = null): JsonResponse
     {
         $targetUuid = $uuid ?? $request->user()?->uuid;
@@ -103,6 +141,17 @@ final class ProductController
         ]);
     }
 
+    /**
+     * @OA\Delete(
+     *     path="/api/products/admin/{uuid}",
+     *     summary="Soft delete product",
+     *     tags={"Products"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Parameter(name="uuid", in="path", required=true, @OA\Schema(type="string", format="uuid")),
+     *     @OA\Response(response=200, description="Product deleted"),
+     *     @OA\Response(response=404, description="Product not found")
+     * )
+     */
     public function destroy(string $uuid): JsonResponse
     {
         $this->deleteHandler->handle(new DeleteProductCommand($uuid));
@@ -112,6 +161,18 @@ final class ProductController
         ]);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/products/admin/bulk-delete",
+     *     summary="Bulk soft delete products",
+     *     tags={"Products"},
+     *     security={{"sanctum": {}}},
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         @OA\Property(property="uuids", type="array", @OA\Items(type="string", format="uuid"))
+     *     )),
+     *     @OA\Response(response=204, description="Products deleted successfully")
+     * )
+     */
     public function bulkDelete(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -126,6 +187,16 @@ final class ProductController
         return response()->json(null, 204);
     }
 
+    /**
+     * @OA\Patch(
+     *     path="/api/products/admin/{uuid}/restore",
+     *     summary="Restore soft deleted product",
+     *     tags={"Products"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Parameter(name="uuid", in="path", required=true, @OA\Schema(type="string", format="uuid")),
+     *     @OA\Response(response=200, description="Product restored successfully")
+     * )
+     */
     public function restore(string $uuid): JsonResponse
     {
         $this->restoreHandler->handle(new RestoreProductCommand($uuid));

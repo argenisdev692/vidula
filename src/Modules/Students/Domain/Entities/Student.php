@@ -11,21 +11,22 @@ use Shared\Domain\Entities\AggregateRoot;
 
 final class Student extends AggregateRoot
 {
-    private function __construct(
-        public readonly StudentId $id,
-        public readonly string $name,
-        public readonly ?string $email,
-        public readonly ?string $phone,
-        public readonly ?string $dni,
-        public readonly ?string $birthDate,
-        public readonly ?string $address,
-        public readonly ?string $avatar,
-        public readonly ?string $notes,
-        public readonly bool $active,
-        public readonly ?string $createdAt = null,
-        public readonly ?string $updatedAt = null,
-        public readonly ?string $deletedAt = null
-    ) {}
+    public function __construct(
+        public StudentId $id,
+        public string $name,
+        public ?string $email,
+        public ?string $phone,
+        public ?string $dni,
+        public ?string $birthDate,
+        public ?string $address,
+        public ?string $avatar,
+        public ?string $notes,
+        public bool $active,
+        public ?string $createdAt = null,
+        public ?string $updatedAt = null,
+        public ?string $deletedAt = null
+    ) {
+    }
 
     public static function create(
         StudentId $id,
@@ -50,13 +51,13 @@ final class Student extends AggregateRoot
             avatar: $avatar,
             notes: $notes,
             active: $active,
-            createdAt: now()->toIso8601String()
+            createdAt: date('c')
         );
 
-        $student->recordEvent(new StudentCreated(
+        $student->recordDomainEvent(new StudentCreated(
             aggregateId: $id->value,
             name: $name,
-            occurredOn: now()->toDateTimeString()
+            occurredOn: date('c')
         ));
 
         return $student;
@@ -72,22 +73,21 @@ final class Student extends AggregateRoot
         ?string $notes,
         bool $active
     ): self {
-        $updated = clone($this, [
-            'name' => $name,
-            'email' => $email,
-            'phone' => $phone,
-            'dni' => $dni,
-            'birthDate' => $birthDate,
-            'address' => $address,
-            'notes' => $notes,
-            'active' => $active,
-            'updatedAt' => now()->toIso8601String()
-        ]);
+        $updated = clone $this;
+        $updated->name = $name;
+        $updated->email = $email;
+        $updated->phone = $phone;
+        $updated->dni = $dni;
+        $updated->birthDate = $birthDate;
+        $updated->address = $address;
+        $updated->notes = $notes;
+        $updated->active = $active;
+        $updated->updatedAt = date('c');
 
-        $updated->recordEvent(new StudentUpdated(
+        $updated->recordDomainEvent(new StudentUpdated(
             aggregateId: $this->id->value,
             name: $name,
-            occurredOn: now()->toDateTimeString()
+            occurredOn: date('c')
         ));
 
         return $updated;
@@ -99,10 +99,9 @@ final class Student extends AggregateRoot
             return $this;
         }
 
-        $deactivated = clone($this, [
-            'active' => false,
-            'updatedAt' => now()->toIso8601String()
-        ]);
+        $deactivated = clone $this;
+        $deactivated->active = false;
+        $deactivated->updatedAt = date('c');
 
         return $deactivated;
     }
@@ -113,20 +112,19 @@ final class Student extends AggregateRoot
             return $this;
         }
 
-        $activated = clone($this, [
-            'active' => true,
-            'updatedAt' => now()->toIso8601String()
-        ]);
+        $activated = clone $this;
+        $activated->active = true;
+        $activated->updatedAt = date('c');
 
         return $activated;
     }
 
     public function updateAvatar(?string $avatar): self
     {
-        return clone($this, [
-            'avatar' => $avatar,
-            'updatedAt' => now()->toIso8601String()
-        ]);
+        $updated = clone $this;
+        $updated->avatar = $avatar;
+        $updated->updatedAt = date('c');
+        return $updated;
     }
 
     public function isActive(): bool

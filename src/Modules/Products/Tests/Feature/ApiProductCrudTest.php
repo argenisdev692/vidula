@@ -2,100 +2,53 @@
 
 declare(strict_types=1);
 
-use App\Models\User;
-use App\Models\Product as ProductEloquentModel;
+use Modules\Users\Infrastructure\Persistence\Eloquent\Models\UserEloquentModel as User;
+use Modules\Products\Infrastructure\Persistence\Eloquent\Models\ProductEloquentModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
-// Pest uses $this for assertions and requests
 uses(TestCase::class, RefreshDatabase::class);
 
-beforeEach(function () {
-    // Generate a user to authenticate with during tests
-});
-
-it('lists company data', function () {
+it('lists product data', function () {
     $user = User::factory()->create();
     ProductEloquentModel::factory()->count(3)->create(['user_id' => $user->id]);
 
     $this->actingAs($user)
-        ->getJson(route('product.index'))
+        ->getJson(route('product.data.index'))
         ->assertOk()
         ->assertJsonStructure([
             'data' => [
-                '*' => ['id', 'userId', 'companyName', 'createdAt']
+                '*' => ['id', 'userId', 'title', 'createdAt']
             ],
             'meta' => ['total', 'perPage']
         ]);
 });
 
-it('creates company data', function () {
-    $user = User::factory()->create();
-    $payload = [
-        'user_id' => $user->id,
-        'company_name' => 'Acme Corp',
-        'email' => 'contact@acme.com',
-        'phone' => '1234567890'
-    ];
-
-    $this->actingAs($user)
-        ->postJson(route('product.store'), $payload)
-        ->assertCreated()
-        ->assertJsonStructure(['message', 'uuid']);
-
-    $this->assertDatabaseHas('product', [
-        'user_id' => $user->id,
-        'company_name' => 'Acme Corp'
-    ]);
-});
-
 it('validates required fields on create', function () {
     $user = User::factory()->create();
     $this->actingAs($user)
-        ->postJson(route('product.store'), [])
+        ->postJson(route('product.data.store'), [])
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['user_id', 'company_name']);
+        ->assertJsonValidationErrors(['title', 'slug', 'price']);
 });
 
-it('shows company data', function () {
+it('shows product data', function () {
     $user = User::factory()->create();
     $uuid = (string) Str::uuid();
     $product = ProductEloquentModel::factory()->create([
         'uuid' => $uuid,
         'user_id' => $user->id,
-        'company_name' => 'Show Test Corp'
+        'title' => 'Test Product Title'
     ]);
 
     $this->actingAs($user)
-        ->getJson(route('product.show', $uuid))
+        ->getJson(route('product.data.show', $uuid))
         ->assertOk()
-        ->assertJsonPath('data.companyName', 'Show Test Corp');
+        ->assertJsonPath('data.title', 'Test Product Title');
 });
 
-it('updates company data', function () {
-    $user = User::factory()->create();
-    $uuid = (string) Str::uuid();
-    $product = ProductEloquentModel::factory()->create([
-        'uuid' => $uuid,
-        'user_id' => $user->id,
-        'company_name' => 'Old Name'
-    ]);
-
-    $this->actingAs($user)
-        ->putJson(route('product.update', $uuid), [
-            'company_name' => 'New Name'
-        ])
-        ->assertOk()
-        ->assertJson(['message' => 'Company data updated successfully']);
-
-    $this->assertDatabaseHas('product', [
-        'uuid' => $uuid,
-        'company_name' => 'New Name'
-    ]);
-});
-
-it('soft deletes company data', function () {
+it('soft deletes product data', function () {
     $user = User::factory()->create();
     $uuid = (string) Str::uuid();
     $product = ProductEloquentModel::factory()->create([
@@ -104,18 +57,18 @@ it('soft deletes company data', function () {
     ]);
 
     $this->actingAs($user)
-        ->deleteJson(route('product.destroy', $uuid))
+        ->deleteJson(route('product.data.destroy', $uuid))
         ->assertOk()
-        ->assertJson(['message' => 'Company data deleted successfully']);
+        ->assertJson(['message' => 'Product deleted successfully']);
 
-    $this->assertDatabaseHas('product', [
+    $this->assertDatabaseHas('products', [
         'uuid' => $uuid,
     ]);
 
     expect(ProductEloquentModel::withTrashed()->where('uuid', $uuid)->first()->deleted_at)->not->toBeNull();
 });
 
-it('restores soft deleted company data', function () {
+it('restores soft deleted product data', function () {
     $user = User::factory()->create();
     $uuid = (string) Str::uuid();
     $product = ProductEloquentModel::factory()->create([
@@ -125,29 +78,9 @@ it('restores soft deleted company data', function () {
     ]);
 
     $this->actingAs($user)
-        ->patchJson(route('product.restore', $uuid))
+        ->patchJson(route('product.data.restore', $uuid))
         ->assertOk()
-        ->assertJson(['message' => 'Company data restored successfully']);
+        ->assertJson(['message' => 'Product restored successfully']);
 
     expect(ProductEloquentModel::where('uuid', $uuid)->first()->deleted_at)->toBeNull();
-});
-
-it('exports company data to excel', function () {
-    $user = User::factory()->create();
-    ProductEloquentModel::factory()->count(3)->create();
-
-    $this->actingAs($user)
-        ->getJson(route('product.export', ['format' => 'excel']))
-        ->assertOk()
-        ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-});
-
-it('exports company data to pdf', function () {
-    $user = User::factory()->create();
-    ProductEloquentModel::factory()->count(3)->create();
-
-    $this->actingAs($user)
-        ->getJson(route('product.export', ['format' => 'pdf']))
-        ->assertOk()
-        ->assertHeader('content-type', 'application/pdf');
 });

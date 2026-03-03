@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AppLayout from '@/pages/layouts/AppLayout';
-import { useProduct } from '@/modules/product/hooks/useProduct';
-import { useProductMutations } from '@/modules/product/hooks/useProductMutations';
+import { useProduct } from '@/modules/products/hooks/useProduct';
+import { useProductMutations } from '@/modules/products/hooks/useProductMutations';
 import { PremiumField } from '@/shadcn/PremiumField';
 import { UpdateProductDTO } from '@/types/api';
 import { ArrowLeft, Save, Building2, Share2, MapPin } from 'lucide-react';

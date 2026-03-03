@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import AppLayout from '@/pages/layouts/AppLayout';
-import { useSingleClient } from '@/modules/client/hooks/useClient';
-import ClientStatusBadge from '@/modules/client/components/ClientStatusBadge';
+import { useSingleClient } from '@/modules/clients/hooks/useClient';
+import ClientStatusBadge from '@/modules/clients/components/ClientStatusBadge';
 import type { PageProps } from '@inertiajs/core';
 
 // ══════════════════════════════════════════════════════════════

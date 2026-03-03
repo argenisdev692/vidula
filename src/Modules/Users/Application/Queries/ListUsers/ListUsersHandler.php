@@ -16,7 +16,7 @@ final readonly class ListUsersHandler
     }
 
     /**
-     * @return array{data: list<UserListReadModel>, total: int, perPage: int, currentPage: int, lastPage: int}
+     * @return array{data: list<UserListReadModel>, meta: array{total: int, perPage: int, currentPage: int, lastPage: int}}
      */
     public function handle(ListUsersQuery $query): array
     {
@@ -38,7 +38,7 @@ final readonly class ListUsersHandler
     }
 
     /**
-     * @return array{data: list<UserListReadModel>, total: int, perPage: int, currentPage: int, lastPage: int}
+     * @return array{data: list<UserListReadModel>, meta: array{total: int, perPage: int, currentPage: int, lastPage: int}}
      */
     private function fetchAndMapUsers($filters): array
     {
@@ -49,10 +49,19 @@ final readonly class ListUsersHandler
         );
 
         // Transform users using pipe operator
-        $result['data'] = $result['data']
+        $mapped = $result['data']
             |> (fn($users) => array_map(self::mapToReadModel(...), $users));
 
-        return $result;
+        // Wrap pagination metadata into a `meta` key to match frontend PaginatedResponse<T>
+        return [
+            'data' => $mapped,
+            'meta' => [
+                'total' => $result['total'],
+                'perPage' => $result['perPage'],
+                'currentPage' => $result['currentPage'],
+                'lastPage' => $result['lastPage'],
+            ],
+        ];
     }
 
     /**

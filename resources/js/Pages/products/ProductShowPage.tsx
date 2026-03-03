@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import AppLayout from '@/pages/layouts/AppLayout';
-import { useSingleProduct } from '@/modules/product/hooks/useProduct';
-import ProductStatusBadge from '@/modules/product/components/ProductStatusBadge';
+import { useSingleProduct } from '@/modules/products/hooks/useProduct';
+import ProductStatusBadge from '@/modules/products/components/ProductStatusBadge';
 import type { PageProps } from '@inertiajs/core';
 
 // ══════════════════════════════════════════════════════════════

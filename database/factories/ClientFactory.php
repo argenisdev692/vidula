@@ -21,6 +21,7 @@ class ClientFactory extends Factory
             'phone' => $this->faker->phoneNumber(),
             'address' => $this->faker->address(),
             'tax_id' => $this->faker->regexify('[0-9]{9}[A-Z]'),
+            'nif' => $this->faker->regexify('[0-9]{8}[A-Z]'),
             'website' => $this->faker->url(),
             'facebook_link' => 'https://facebook.com/' . $this->faker->userName(),
             'instagram_link' => 'https://instagram.com/' . $this->faker->userName(),

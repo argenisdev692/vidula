@@ -15,15 +15,12 @@ namespace Modules\Auth\Domain\ValueObjects;
 final readonly class IpAddress
 {
     public function __construct(
-        public string $value {
-            set {
-                if (!filter_var($value, FILTER_VALIDATE_IP)) {
-                    throw new \InvalidArgumentException("Invalid IP address: {$value}");
-                }
-                $this->value = $value;
-            }
+        public string $value
+    ) {
+        if (!filter_var($value, FILTER_VALIDATE_IP)) {
+            throw new \InvalidArgumentException("Invalid IP address: {$value}");
         }
-    ) {}
+    }
 
     public function isIPv4(): bool
     {

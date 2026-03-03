@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Modules\Student\Infrastructure\Http\Controllers\Api;
+namespace Modules\Students\Infrastructure\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Maatwebsite\Excel\Facades\Excel;
-use Modules\Student\Application\DTOs\StudentFilterDTO;
-use Modules\Student\Infrastructure\Http\Export\StudentExcelExport;
-use Modules\Student\Infrastructure\Http\Export\StudentPdfExport;
+use Modules\Students\Application\DTOs\StudentFilterDTO;
+use Modules\Students\Infrastructure\Http\Export\StudentExcelExport;
+use Modules\Students\Infrastructure\Http\Export\StudentPdfExport;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 final class StudentExportController extends Controller

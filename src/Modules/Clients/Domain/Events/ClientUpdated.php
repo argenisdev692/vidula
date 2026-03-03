@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Client\Domain\Events;
+namespace Modules\Clients\Domain\Events;
 
 use Shared\Domain\Events\DomainEvent;
 
@@ -19,5 +19,15 @@ final readonly class ClientUpdated extends DomainEvent
     public static function eventName(): string
     {
         return 'client.updated';
+    }
+
+    #[\NoDiscard]
+    public function toPrimitives(): array
+    {
+        return [
+            'aggregateId' => $this->aggregateId,
+            'companyName' => $this->companyName,
+            'occurredOn' => $this->occurredOn->format('c'),
+        ];
     }
 }

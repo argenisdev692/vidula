@@ -18,17 +18,18 @@ use Shared\Domain\Entities\AggregateRoot;
 final class Client extends AggregateRoot
 {
     public function __construct(
-        public readonly ClientId $id,
-        public readonly UserId $userId,
-        public readonly string $companyName,
-        public readonly ?string $email = null,
-        public readonly ?string $phone = null,
-        public readonly ?string $address = null,
-        public readonly ?SocialLinks $socialLinks = null,
-        public readonly ?Coordinates $coordinates = null,
-        public readonly ?string $createdAt = null,
-        public readonly ?string $updatedAt = null,
-        public readonly ?string $deletedAt = null
+        public ClientId $id,
+        public UserId $userId,
+        public string $companyName,
+        public ?string $email = null,
+        public ?string $phone = null,
+        public ?string $address = null,
+        public ?string $nif = null,
+        public ?SocialLinks $socialLinks = null,
+        public ?Coordinates $coordinates = null,
+        public ?string $createdAt = null,
+        public ?string $updatedAt = null,
+        public ?string $deletedAt = null
     ) {
     }
 
@@ -39,21 +40,31 @@ final class Client extends AggregateRoot
         ?string $email = null,
         ?string $phone = null,
         ?string $address = null,
+        ?string $nif = null,
         ?SocialLinks $socialLinks = null,
         ?Coordinates $coordinates = null,
     ): self {
-        return new self(
+        $client = new self(
             id: $id,
             userId: $userId,
             companyName: $companyName,
             email: $email,
             phone: $phone,
             address: $address,
+            nif: $nif,
             socialLinks: $socialLinks ?? new SocialLinks(),
             coordinates: $coordinates ?? new Coordinates(null, null),
             createdAt: date('c'),
             updatedAt: date('c')
         );
+
+        $client->recordDomainEvent(new \Modules\Clients\Domain\Events\ClientCreated(
+            aggregateId: $id->value,
+            companyName: $companyName,
+            occurredOn: date('c')
+        ));
+
+        return $client;
     }
 
     /**
@@ -64,18 +75,27 @@ final class Client extends AggregateRoot
         ?string $email = null,
         ?string $phone = null,
         ?string $address = null,
+        ?string $nif = null,
         ?SocialLinks $socialLinks = null,
-        ?Coordinates $coordinates = null,
+        ?Coordinates $coordinates = null
     ): self {
-        return clone($this, [
-            'companyName' => $companyName ?? $this->companyName,
-            'email' => $email ?? $this->email,
-            'phone' => $phone ?? $this->phone,
-            'address' => $address ?? $this->address,
-            'socialLinks' => $socialLinks ?? $this->socialLinks,
-            'coordinates' => $coordinates ?? $this->coordinates,
-            'updatedAt' => date('c'),
-        ]);
+        $updated = clone $this;
+        $updated->companyName = $companyName ?? $this->companyName;
+        $updated->email = $email ?? $this->email;
+        $updated->phone = $phone ?? $this->phone;
+        $updated->address = $address ?? $this->address;
+        $updated->nif = $nif ?? $this->nif;
+        $updated->socialLinks = $socialLinks ?? $this->socialLinks;
+        $updated->coordinates = $coordinates ?? $this->coordinates;
+        $updated->updatedAt = date('c');
+
+        $updated->recordDomainEvent(new \Modules\Clients\Domain\Events\ClientUpdated(
+            aggregateId: $this->id->value,
+            companyName: $updated->companyName,
+            occurredOn: date('c')
+        ));
+
+        return $updated;
     }
 
     /**
@@ -83,10 +103,10 @@ final class Client extends AggregateRoot
      */
     public function softDelete(): self
     {
-        return clone($this, [
-            'deletedAt' => date('c'),
-            'updatedAt' => date('c'),
-        ]);
+        $updated = clone $this;
+        $updated->deletedAt = date('c');
+        $updated->updatedAt = date('c');
+        return $updated;
     }
 
     /**
@@ -94,9 +114,9 @@ final class Client extends AggregateRoot
      */
     public function restore(): self
     {
-        return clone($this, [
-            'deletedAt' => null,
-            'updatedAt' => date('c'),
-        ]);
+        $updated = clone $this;
+        $updated->deletedAt = null;
+        $updated->updatedAt = date('c');
+        return $updated;
     }
 }

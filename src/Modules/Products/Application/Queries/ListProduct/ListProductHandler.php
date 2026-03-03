@@ -12,10 +12,11 @@ final readonly class ListProductHandler
 {
     public function __construct(
         private ProductRepositoryPort $repository
-    ) {}
+    ) {
+    }
 
     /**
-     * @return array{data: list<ProductReadModel>, total: int, perPage: int, currentPage: int, lastPage: int}
+     * @return array{data: list<ProductReadModel>, meta: array{total: int, perPage: int, currentPage: int, lastPage: int}}
      */
     public function handle(ListProductQuery $query): array
     {
@@ -42,7 +43,7 @@ final readonly class ListProductHandler
             perPage: $filters->perPage
         );
 
-        $result['data'] = $result['data']
+        $mapped = $result['data']
             |> (fn($products) => array_map(
                 fn($product) => new ProductReadModel(
                     id: $product->id->value,
@@ -64,6 +65,15 @@ final readonly class ListProductHandler
                 $products
             ));
 
-        return $result;
+        // Wrap pagination into `meta` to match frontend PaginatedResponse<T>
+        return [
+            'data' => $mapped,
+            'meta' => [
+                'total' => $result['total'],
+                'perPage' => $result['perPage'],
+                'currentPage' => $result['currentPage'],
+                'lastPage' => $result['lastPage'],
+            ],
+        ];
     }
 }

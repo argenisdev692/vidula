@@ -9,13 +9,13 @@ use Shared\Domain\Events\DomainEvent;
 /**
  * UserActivated Domain Event
  */
-final class UserActivated extends DomainEvent
+final readonly class UserActivated extends DomainEvent
 {
     public function __construct(
-        public string $aggregateId,
-        public string $occurredOn = ''
+        string $aggregateId,
+        ?string $occurredOn = null
     ) {
-        parent::__construct($aggregateId, $occurredOn ?: date('Y-m-d H:i:s'));
+        parent::__construct($aggregateId, $occurredOn);
     }
 
     public static function eventName(): string

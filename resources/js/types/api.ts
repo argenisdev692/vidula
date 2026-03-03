@@ -261,6 +261,7 @@ export interface ProductFilters {
 export interface ClientListItem {
   id: string; // uuid
   name: string;
+  nif?: string | null;
   email: string | null;
   phone: string | null;
   company: string | null;
@@ -288,20 +289,44 @@ export interface ClientFilters {
 export interface StudentListItem {
   id: string; // uuid
   name: string;
-  email: string | null;
+  email: string;
   phone: string | null;
+  dni: string | null;
+  birth_date: string | null;
+  address: string | null;
+  avatar: string | null;
   active: boolean;
   created_at: string;
   deleted_at?: string | null;
 }
 
 export interface StudentDetail extends StudentListItem {
-  dni: string | null;
-  birth_date: string | null;
-  address: string | null;
-  avatar: string | null;
   notes: string | null;
   updated_at: string | null;
+}
+
+export interface CreateStudentDTO {
+  name: string;
+  email: string;
+  phone?: string | null;
+  dni?: string | null;
+  birth_date?: string | null;
+  address?: string | null;
+  avatar?: string | null;
+  notes?: string | null;
+  active?: boolean;
+}
+
+export interface UpdateStudentDTO {
+  name?: string;
+  email?: string;
+  phone?: string | null;
+  dni?: string | null;
+  birth_date?: string | null;
+  address?: string | null;
+  avatar?: string | null;
+  notes?: string | null;
+  active?: boolean;
 }
 
 export interface StudentFilters {

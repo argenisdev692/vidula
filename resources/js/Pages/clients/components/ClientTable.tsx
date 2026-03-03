@@ -16,6 +16,9 @@ interface ClientTableProps {
   onRowSelectionChange: OnChangeFn<RowSelectionState>;
 }
 
+// ── columnHelper outside component (performance) ──
+const columnHelper = createColumnHelper<ClientListItem>();
+
 export default function ClientTable({
   data,
   isLoading,
@@ -25,8 +28,6 @@ export default function ClientTable({
   rowSelection,
   onRowSelectionChange,
 }: ClientTableProps) {
-  const columnHelper = createColumnHelper<ClientListItem>();
-
   const columns = React.useMemo<ColumnDef<ClientListItem, any>[]>(() => [
     columnHelper.display({
       id: 'select',
@@ -77,6 +78,10 @@ export default function ClientTable({
           </div>
         );
       },
+    }),
+    columnHelper.accessor('nif', {
+      header: 'NIF/CIF',
+      cell: (info) => <span className="text-sm font-medium uppercase" style={{ color: 'var(--text-secondary)' }}>{info.getValue() ?? '—'}</span>,
     }),
     columnHelper.accessor('email', {
       header: 'Email',
@@ -135,7 +140,7 @@ export default function ClientTable({
         );
       },
     }),
-  ], [columnHelper, onDelete, onRestoreClick]);
+  ], [onDelete, onRestoreClick]);
 
   return (
     <DataTable
@@ -146,6 +151,7 @@ export default function ClientTable({
       noDataMessage="No clients found"
       rowSelection={rowSelection}
       onRowSelectionChange={onRowSelectionChange}
+      getRowId={(row) => row.id}
     />
   );
 }

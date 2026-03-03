@@ -9,12 +9,12 @@ use Shared\Domain\Events\DomainEvent;
 /**
  * AvatarChanged Domain Event
  */
-final class AvatarChanged extends DomainEvent
+final readonly class AvatarChanged extends DomainEvent
 {
     public function __construct(
-        public string $aggregateId,
+        string $aggregateId,
         public string $newPath,
-        public string $occurredOn
+        ?string $occurredOn = null
     ) {
         parent::__construct($aggregateId, $occurredOn);
     }

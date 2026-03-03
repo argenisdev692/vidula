@@ -15,6 +15,8 @@ use Modules\Users\Infrastructure\Persistence\Eloquent\Models\UserEloquentModel;
 
 /**
  * StudentEloquentModel
+ * 
+ * @internal
  */
 final class StudentEloquentModel extends Model
 {

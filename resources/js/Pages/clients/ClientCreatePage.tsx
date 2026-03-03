@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/pages/layouts/AppLayout';
-import { useClientMutations } from '@/modules/client/hooks/useClientMutations';
+import { useClientMutations } from '@/modules/clients/hooks/useClientMutations';
 import type { CreateClientDTO } from '@/types/api';
 
 // ══════════════════════════════════════════════════════════════

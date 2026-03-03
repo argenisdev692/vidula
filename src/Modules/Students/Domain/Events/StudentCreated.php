@@ -9,10 +9,12 @@ use Shared\Domain\Events\DomainEvent;
 final readonly class StudentCreated extends DomainEvent
 {
     public function __construct(
-        public string $aggregateId,
+        string $aggregateId,
         public string $name,
-        public string $occurredOn
-    ) {}
+        ?string $occurredOn = null
+    ) {
+        parent::__construct($aggregateId, $occurredOn);
+    }
 
     public static function eventName(): string
     {
@@ -25,7 +27,7 @@ final readonly class StudentCreated extends DomainEvent
         return [
             'aggregateId' => $this->aggregateId,
             'name' => $this->name,
-            'occurredOn' => $this->occurredOn,
+            'occurredOn' => $this->occurredOn->format('c'),
         ];
     }
 }

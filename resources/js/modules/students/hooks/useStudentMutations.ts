@@ -3,7 +3,7 @@ import axios from 'axios';
 import { CreateStudentDTO, UpdateStudentDTO } from '@/types/api';
 
 /**
- * useStudentMutations — Mutations for updating company data.
+ * useStudentMutations — Mutations for student/company data.
  */
 export const useStudentMutations = () => {
   const queryClient = useQueryClient();
@@ -13,7 +13,7 @@ export const useStudentMutations = () => {
       return axios.post('/student/data/admin', payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
     },
   });
 
@@ -24,7 +24,7 @@ export const useStudentMutations = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['student', variables.userUuid || 'me'] });
-      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
     },
   });
 
@@ -34,7 +34,7 @@ export const useStudentMutations = () => {
       return axios.delete(`/student/data/admin/${uuids}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
     },
   });
 
@@ -44,7 +44,7 @@ export const useStudentMutations = () => {
       return axios.patch(`/student/data/admin/${uuids}/restore`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
     },
   });
 

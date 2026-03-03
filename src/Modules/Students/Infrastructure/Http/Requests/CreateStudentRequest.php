@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Student\Infrastructure\Http\Requests;
+namespace Modules\Students\Infrastructure\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -16,20 +16,15 @@ final class CreateStudentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_id' => ['required', 'integer', 'exists:users,id'],
-            'company_name' => ['required', 'string', 'max:255'],
-            'name' => ['nullable', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:students,email'],
             'phone' => ['nullable', 'string', 'max:50'],
-            'address' => ['nullable', 'string', 'max:1000'],
-            'website' => ['nullable', 'url', 'max:255'],
-            'facebook_link' => ['nullable', 'url', 'max:255'],
-            'instagram_link' => ['nullable', 'url', 'max:255'],
-            'linkedin_link' => ['nullable', 'url', 'max:255'],
-            'twitter_link' => ['nullable', 'url', 'max:255'],
-            'latitude' => ['nullable', 'numeric'],
-            'longitude' => ['nullable', 'numeric'],
-            'signature_path' => ['nullable', 'string', 'max:255'],
+            'dni' => ['nullable', 'string', 'max:50', 'unique:students,dni'],
+            'birth_date' => ['nullable', 'date'],
+            'address' => ['nullable', 'string'],
+            'avatar' => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string'],
+            'active' => ['boolean'],
         ];
     }
 }

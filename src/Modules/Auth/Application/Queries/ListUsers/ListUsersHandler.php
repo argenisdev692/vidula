@@ -17,10 +17,9 @@ final readonly class ListUsersHandler
     #[\NoDiscard]
     public function handle(ListUsersQuery $query): array
     {
-        return $query
-            |> $this->buildCacheKey(...)
-            |> $this->getFromCacheOrDatabase(...)
-            |> $this->mapToReadModels(...);
+        $cacheData = $this->buildCacheKey($query);
+        $data = $this->getFromCacheOrDatabase($cacheData);
+        return $this->mapToReadModels($data);
     }
 
     private function buildCacheKey(ListUsersQuery $query): array
@@ -66,8 +65,8 @@ final readonly class ListUsersHandler
         if ($query->search) {
             $queryBuilder->where(function ($q) use ($query) {
                 $q->where('name', 'like', "%{$query->search}%")
-                  ->orWhere('email', 'like', "%{$query->search}%")
-                  ->orWhere('username', 'like', "%{$query->search}%");
+                    ->orWhere('email', 'like', "%{$query->search}%")
+                    ->orWhere('username', 'like', "%{$query->search}%");
             });
         }
 
@@ -99,19 +98,19 @@ final readonly class ListUsersHandler
     {
         $result = $data['result'];
 
-        $result['data'] = $result['data']
-            |> fn($items) => array_map(fn($item) => UserMapper::toDomain($item), $items)
-            |> fn($users) => array_map(fn($user) => new UserListReadModel(
-                id: $user->id,
-                uuid: $user->uuid,
-                name: $user->name,
-                lastName: $user->lastName,
-                email: $user->email,
-                username: $user->username,
-                profilePhotoPath: $user->profilePhotoPath,
-                isEmailVerified: $user->isEmailVerified,
-                createdAt: $user->createdAt,
-            ), $users);
+        $domainUsers = array_map(fn($item) => UserMapper::toDomain($item), $result['data']);
+
+        $result['data'] = array_map(fn($user) => new UserListReadModel(
+            id: $user->id,
+            uuid: $user->uuid,
+            name: $user->name,
+            lastName: $user->lastName,
+            email: $user->email,
+            username: $user->username,
+            profilePhotoPath: $user->profilePhotoPath,
+            isEmailVerified: $user->isEmailVerified,
+            createdAt: $user->createdAt,
+        ), $domainUsers);
 
         return $result;
     }

@@ -16,7 +16,7 @@ final readonly class ListClientHandler
     }
 
     /**
-     * @return array{data: list<ClientReadModel>, total: int, perPage: int, currentPage: int, lastPage: int}
+     * @return array{data: list<ClientReadModel>, meta: array{total: int, perPage: int, currentPage: int, lastPage: int}}
      */
     public function handle(ListClientQuery $query): array
     {
@@ -44,10 +44,19 @@ final readonly class ListClientHandler
         );
 
         // Transform clients using pipe operator
-        $result['data'] = $result['data']
+        $mapped = $result['data']
             |> (fn($clients) => array_map(self::mapToReadModel(...), $clients));
 
-        return $result;
+        // Wrap pagination into `meta` to match frontend PaginatedResponse<T>
+        return [
+            'data' => $mapped,
+            'meta' => [
+                'total' => $result['total'],
+                'perPage' => $result['perPage'],
+                'currentPage' => $result['currentPage'],
+                'lastPage' => $result['lastPage'],
+            ],
+        ];
     }
 
     /**

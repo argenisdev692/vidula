@@ -1,13 +1,24 @@
 import * as React from 'react';
-import { createColumnHelper, type ColumnDef, type RowSelectionState, type OnChangeFn } from '@tanstack/react-table';
+import { 
+  createColumnHelper, 
+  type ColumnDef, 
+  type RowSelectionState, 
+  type OnChangeFn,
+  type SortingState,
+  type ColumnFiltersState,
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  flexRender,
+} from '@tanstack/react-table';
 import { Link } from '@inertiajs/react';
-import { DataTable } from '@/shadcn/data-table';
 import UserStatusBadge from '@/modules/users/components/UserStatusBadge';
 import type { UserListItem } from '@/types/users';
 import { useUserMutations } from '@/modules/users/hooks/useUserMutations';
 import { formatDateShort } from '@/common/helpers/formatDate';
 
-import { Eye, Pencil, Trash2, CheckCircle } from 'lucide-react';
+import { Eye, Pencil, Trash2, CheckCircle, ArrowUpDown } from 'lucide-react';
 
 interface UsersTableProps {
   data: UserListItem[];
@@ -19,6 +30,9 @@ interface UsersTableProps {
   onRowSelectionChange: OnChangeFn<RowSelectionState>;
 }
 
+// ── columnHelper outside component (performance) ──
+const columnHelper = createColumnHelper<UserListItem>();
+
 export default function UsersTable({
   data,
   isLoading,
@@ -28,8 +42,11 @@ export default function UsersTable({
   rowSelection,
   onRowSelectionChange,
 }: UsersTableProps) {
-  const columnHelper = createColumnHelper<UserListItem>();
   const { restoreUser } = useUserMutations();
+  
+  // TanStack Table v8: Local state for sorting and filtering
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
 
   const columns = React.useMemo<ColumnDef<UserListItem, any>[]>(() => [
     columnHelper.display({
@@ -54,7 +71,16 @@ export default function UsersTable({
       ),
     }),
     columnHelper.accessor('full_name', {
-      header: 'User',
+      header: ({ column }) => (
+        <button
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          className="flex items-center gap-2 hover:text-(--accent-primary) transition-colors"
+        >
+          User
+          <ArrowUpDown size={14} />
+        </button>
+      ),
+      enableSorting: true,
       cell: (info) => {
         const user = info.row.original;
         return (
@@ -91,7 +117,17 @@ export default function UsersTable({
       },
     }),
     columnHelper.accessor('email', {
-      header: 'Email / Phone',
+      header: ({ column }) => (
+        <button
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          className="flex items-center gap-2 hover:text-(--accent-primary) transition-colors"
+        >
+          Email / Phone
+          <ArrowUpDown size={14} />
+        </button>
+      ),
+      enableSorting: true,
+      enableColumnFilter: true,
       cell: (info) => {
           const user = info.row.original;
           return (
@@ -107,7 +143,17 @@ export default function UsersTable({
       cell: (info) => <UserStatusBadge status={info.getValue()} />,
     }),
     columnHelper.accessor('created_at', {
-      header: 'Created',
+      header: ({ column }) => (
+        <button
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          className="flex items-center gap-2 hover:text-(--accent-primary) transition-colors"
+        >
+          Created
+          <ArrowUpDown size={14} />
+        </button>
+      ),
+      enableSorting: true,
+      sortingFn: 'datetime',
       cell: (info) => {
         const val = info.getValue() as string | undefined;
         return (
@@ -166,17 +212,87 @@ export default function UsersTable({
         );
       },
     }),
-  ], [columnHelper, onDelete, initials, restoreUser]);
+  ], [onDelete, initials, restoreUser]);
+
+  // TanStack Table v8: getRowId usa uuid estable (no índice del array)
+  const table = useReactTable({
+    data,
+    columns,
+    getRowId: (row) => row.uuid,
+    state: {
+      rowSelection,
+      sorting,
+      columnFilters,
+    },
+    onRowSelectionChange,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    enableRowSelection: true,
+    enableSorting: true,
+    enableColumnFilters: true,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-(--accent-primary)" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center py-12 text-(--accent-error)">
+        Error loading users
+      </div>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-12 text-(--text-muted)">
+        No users found
+      </div>
+    );
+  }
 
   return (
-    <DataTable
-      columns={columns}
-      data={data}
-      isLoading={isLoading}
-      isError={isError}
-      noDataMessage="No users found"
-      rowSelection={rowSelection}
-      onRowSelectionChange={onRowSelectionChange}
-    />
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead>
+          {table.getHeaderGroups().map(headerGroup => (
+            <tr key={headerGroup.id} className="border-b border-(--border-subtle)">
+              {headerGroup.headers.map(header => (
+                <th 
+                  key={header.id} 
+                  className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-(--text-muted)"
+                >
+                  {header.isPlaceholder
+                    ? null
+                    : flexRender(header.column.columnDef.header, header.getContext())}
+                </th>
+              ))}
+            </tr>
+          ))}
+        </thead>
+        <tbody>
+          {table.getRowModel().rows.map(row => (
+            <tr 
+              key={row.id}
+              className="border-b border-(--border-subtle) hover:bg-(--bg-hover) transition-colors"
+            >
+              {row.getVisibleCells().map(cell => (
+                <td key={cell.id} className="px-6 py-4">
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

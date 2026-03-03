@@ -16,29 +16,30 @@ final class SpatieMediaLibraryStorageAdapter implements StoragePort
     /**
      * Store a file and return its path
      */
-    public function store(UploadedFile $file, string $path = 'avatars'): string
+    public function upload(UploadedFile $file): string
     {
         // Store file using Laravel's storage
-        $storedPath = $file->store($path, 'public');
-        
+        $storedPath = $file->store('avatars', 'public');
+
         return $storedPath;
     }
 
     /**
      * Delete a file by path
      */
-    public function delete(string $path): bool
+    public function delete(string $path): void
     {
-        return \Storage::disk('public')->delete($path);
+        \Storage::disk('public')->delete($path);
     }
 
     /**
      * Get public URL for a file
      */
-    #[\NoDiscard]
-    public function url(string $path): string
+    public function getUrl(string $path): string
     {
-        return \Storage::disk('public')->url($path);
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = \Storage::disk('public');
+        return $disk->url($path);
     }
 
     /**
@@ -64,13 +65,14 @@ final class SpatieMediaLibraryStorageAdapter implements StoragePort
      */
     public function deleteMedia(int $mediaId): bool
     {
+        /** @var Media|null $media */
         $media = Media::find($mediaId);
-        
+
         if ($media) {
             $media->delete();
             return true;
         }
-        
+
         return false;
     }
 }

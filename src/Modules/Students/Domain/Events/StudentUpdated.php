@@ -20,4 +20,14 @@ final readonly class StudentUpdated extends DomainEvent
     {
         return 'student.updated';
     }
+
+    #[\NoDiscard]
+    public function toPrimitives(): array
+    {
+        return [
+            'aggregateId' => $this->aggregateId,
+            'name' => $this->name,
+            'occurredOn' => $this->occurredOn->format('c'),
+        ];
+    }
 }

@@ -45,7 +45,7 @@ final readonly class SocialLinks
 
         try {
             $urlObject = new Url($url);
-            return $urlObject->toString();
+            return $url;
         } catch (\Exception $e) {
             throw new \InvalidArgumentException(
                 "Invalid URL for {$field}: {$url}. " . $e->getMessage()

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Product\Infrastructure\Http\Requests;
+namespace Modules\Products\Infrastructure\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -16,19 +16,15 @@ final class UpdateProductRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'company_name' => ['sometimes', 'string', 'max:255'],
-            'name' => ['nullable', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:50'],
-            'address' => ['nullable', 'string', 'max:1000'],
-            'website' => ['nullable', 'url', 'max:255'],
-            'facebook_link' => ['nullable', 'url', 'max:255'],
-            'instagram_link' => ['nullable', 'url', 'max:255'],
-            'linkedin_link' => ['nullable', 'url', 'max:255'],
-            'twitter_link' => ['nullable', 'url', 'max:255'],
-            'latitude' => ['nullable', 'numeric'],
-            'longitude' => ['nullable', 'numeric'],
-            'signature_path' => ['nullable', 'string', 'max:255'],
+            'type' => ['sometimes', 'string', 'in:classroom,video'],
+            'title' => ['sometimes', 'string', 'max:255'],
+            'slug' => ['sometimes', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'price' => ['sometimes', 'numeric', 'min:0'],
+            'currency' => ['sometimes', 'string', 'size:3'],
+            'level' => ['sometimes', 'string', 'in:beginner,intermediate,advanced'],
+            'language' => ['sometimes', 'string', 'size:2'],
+            'thumbnail' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

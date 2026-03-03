@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Student\Application\Commands\RestoreStudent;
+namespace Modules\Students\Application\Commands\RestoreStudent;
 
 final readonly class RestoreStudentCommand
 {

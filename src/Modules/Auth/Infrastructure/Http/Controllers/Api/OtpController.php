@@ -16,17 +16,7 @@ use Modules\Auth\Domain\Exceptions\UserNotFoundException;
 use Modules\Auth\Infrastructure\Http\Requests\SendOtpRequest;
 use Modules\Auth\Infrastructure\Http\Requests\VerifyOtpRequest;
 
-/**
- * @OA\Info(
- *     version="1.0.0",
- *     title="Tu API",
- *     description="Documentación de la API"
- * )
- * @OA\Server(
- *     url=L5_SWAGGER_CONST_HOST,
- *     description="API Server"
- * )
- */
+
 final class OtpController extends Controller
 {
     public function __construct(

@@ -9,12 +9,12 @@ use Shared\Domain\Events\DomainEvent;
 /**
  * ProfileUpdated Domain Event
  */
-final class ProfileUpdated extends DomainEvent
+final readonly class ProfileUpdated extends DomainEvent
 {
     public function __construct(
-        public string $aggregateId,
+        string $aggregateId,
         public array $changedFields,
-        public string $occurredOn
+        ?string $occurredOn = null
     ) {
         parent::__construct($aggregateId, $occurredOn);
     }

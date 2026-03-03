@@ -54,6 +54,7 @@ final class ClientMapper
             email: $model->email,
             phone: $model->phone,
             address: $model->address,
+            nif: $model->nif,
             socialLinks: $socialLinks,
             coordinates: $coordinates,
             createdAt: $model->created_at?->toIso8601String(),

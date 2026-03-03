@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace Modules\Product\Application\Queries\ReadModels;
+namespace Modules\Products\Application\Queries\ReadModels;
 use Spatie\LaravelData\Data;
 
 class ProductListReadModel extends Data

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/pages/layouts/AppLayout';
-import { useProductMutations } from '@/modules/product/hooks/useProductMutations';
+import { useProductMutations } from '@/modules/products/hooks/useProductMutations';
 import type { CreateProductDTO } from '@/types/api';
 
 // ══════════════════════════════════════════════════════════════

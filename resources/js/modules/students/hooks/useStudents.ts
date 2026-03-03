@@ -3,13 +3,13 @@ import axios from 'axios';
 import { StudentListItem, StudentFilters, PaginatedResponse } from '@/types/api';
 
 /**
- * useCompanies — Fetches a paginated list of company profiles.
+ * useStudents — Fetches a paginated list of student profiles.
  */
-export const useCompanies = (filters: StudentFilters) => {
+export const useStudents = (filters: StudentFilters) => {
   return useQuery({
-    queryKey: ['companies', filters],
+    queryKey: ['students', filters],
     queryFn: async () => {
-      const { data } = await axios.get<PaginatedResponse<StudentListItem>>('/student/data/admin', {
+      const { data } = await axios.get<PaginatedResponse<StudentListItem>>('/students/data/admin', {
         params: filters
       });
       return data;

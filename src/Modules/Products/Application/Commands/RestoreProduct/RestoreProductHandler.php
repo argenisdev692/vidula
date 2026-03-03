@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Modules\Product\Application\Commands\RestoreProduct;
+namespace Modules\Products\Application\Commands\RestoreProduct;
 
-use Modules\Product\Domain\Exceptions\ProductNotFoundException;
-use Modules\Product\Domain\Ports\ProductRepositoryPort;
-use Modules\Product\Domain\ValueObjects\ProductId;
+use Modules\Products\Domain\Exceptions\ProductNotFoundException;
+use Modules\Products\Domain\Ports\ProductRepositoryPort;
+use Modules\Products\Domain\ValueObjects\ProductId;
 
 final readonly class RestoreProductHandler
 {

@@ -17,7 +17,6 @@ final readonly class UserProfileManager
     ) {
     }
 
-    #[\NoDiscard]
     public function updateProfile(UserProfile $profile): void
     {
         $this->repository->save($profile);

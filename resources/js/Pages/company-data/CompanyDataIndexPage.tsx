@@ -192,8 +192,8 @@ export default function CompanyDataIndexPage(): React.JSX.Element {
               className="flex items-center justify-between px-4 py-3"
               style={{ borderTop: '1px solid var(--border-subtle)' }}
             >
-              <p className="text-xs" style={{ color: 'var(--text-disabled)' }}>
-                Page {meta.currentPage} of {meta.lastPage} ({meta.total} entries)
+              <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                Page <span style={{ color: 'var(--accent-primary)', fontWeight: 700 }}>{meta.currentPage}</span> / {meta.lastPage} • <span style={{ color: 'var(--accent-primary)', fontWeight: 700 }}>{meta.total}</span> Total
               </p>
               <div className="flex items-center gap-1">
                 <button

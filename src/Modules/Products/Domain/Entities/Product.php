@@ -16,22 +16,23 @@ use Shared\Domain\Entities\AggregateRoot;
 
 final class Product extends AggregateRoot
 {
-    private function __construct(
-        public readonly ProductId $id,
-        public readonly UserId $userId,
-        public readonly ProductType $type,
-        public readonly string $title,
-        public readonly string $slug,
-        public readonly ?string $description,
-        public readonly Money $price,
-        public readonly ProductStatus $status,
-        public readonly ?string $thumbnail,
-        public readonly ProductLevel $level,
-        public readonly string $language,
-        public readonly ?string $createdAt = null,
-        public readonly ?string $updatedAt = null,
-        public readonly ?string $deletedAt = null
-    ) {}
+    public function __construct(
+        public ProductId $id,
+        public UserId $userId,
+        public ProductType $type,
+        public string $title,
+        public string $slug,
+        public ?string $description,
+        public Money $price,
+        public ProductStatus $status,
+        public ?string $thumbnail,
+        public ProductLevel $level,
+        public string $language,
+        public ?string $createdAt = null,
+        public ?string $updatedAt = null,
+        public ?string $deletedAt = null
+    ) {
+    }
 
     public static function create(
         ProductId $id,
@@ -57,13 +58,13 @@ final class Product extends AggregateRoot
             thumbnail: $thumbnail,
             level: $level,
             language: $language,
-            createdAt: now()->toIso8601String()
+            createdAt: date('c')
         );
 
-        $product->recordEvent(new ProductCreated(
+        $product->recordDomainEvent(new ProductCreated(
             aggregateId: $id->value,
             title: $title,
-            occurredOn: now()->toDateTimeString()
+            occurredOn: date('c')
         ));
 
         return $product;
@@ -78,21 +79,20 @@ final class Product extends AggregateRoot
         string $language,
         ?string $thumbnail
     ): self {
-        $updated = clone($this, [
-            'title' => $title,
-            'slug' => $slug,
-            'description' => $description,
-            'price' => $price,
-            'level' => $level,
-            'language' => $language,
-            'thumbnail' => $thumbnail,
-            'updatedAt' => now()->toIso8601String()
-        ]);
+        $updated = clone $this;
+        $updated->title = $title;
+        $updated->slug = $slug;
+        $updated->description = $description;
+        $updated->price = $price;
+        $updated->level = $level;
+        $updated->language = $language;
+        $updated->thumbnail = $thumbnail;
+        $updated->updatedAt = date('c');
 
-        $updated->recordEvent(new ProductUpdated(
+        $updated->recordDomainEvent(new ProductUpdated(
             aggregateId: $this->id->value,
             title: $title,
-            occurredOn: now()->toDateTimeString()
+            occurredOn: date('c')
         ));
 
         return $updated;
@@ -104,10 +104,10 @@ final class Product extends AggregateRoot
             return $this;
         }
 
-        return clone($this, [
-            'status' => ProductStatus::Published,
-            'updatedAt' => now()->toIso8601String()
-        ]);
+        $updated = clone $this;
+        $updated->status = ProductStatus::Published;
+        $updated->updatedAt = date('c');
+        return $updated;
     }
 
     public function archive(): self
@@ -116,26 +116,26 @@ final class Product extends AggregateRoot
             return $this;
         }
 
-        return clone($this, [
-            'status' => ProductStatus::Archived,
-            'updatedAt' => now()->toIso8601String()
-        ]);
+        $updated = clone $this;
+        $updated->status = ProductStatus::Archived;
+        $updated->updatedAt = date('c');
+        return $updated;
     }
 
     public function updateThumbnail(?string $thumbnail): self
     {
-        return clone($this, [
-            'thumbnail' => $thumbnail,
-            'updatedAt' => now()->toIso8601String()
-        ]);
+        $updated = clone $this;
+        $updated->thumbnail = $thumbnail;
+        $updated->updatedAt = date('c');
+        return $updated;
     }
 
     public function changePrice(Money $newPrice): self
     {
-        return clone($this, [
-            'price' => $newPrice,
-            'updatedAt' => now()->toIso8601String()
-        ]);
+        $updated = clone $this;
+        $updated->price = $newPrice;
+        $updated->updatedAt = date('c');
+        return $updated;
     }
 
     public function isPublished(): bool

@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import AppLayout from '@/pages/layouts/AppLayout';
-import { useSingleStudent } from '@/modules/student/hooks/useStudent';
-import StudentStatusBadge from '@/modules/student/components/StudentStatusBadge';
+import { useSingleStudent } from '@/modules/students/hooks/useStudent';
+import StudentStatusBadge from '@/modules/students/components/StudentStatusBadge';
 import type { PageProps } from '@inertiajs/core';
 
 // ══════════════════════════════════════════════════════════════
@@ -229,9 +229,9 @@ export default function StudentShowPage(): React.JSX.Element {
                     </p>
                     <p className="mt-1 text-sm truncate" style={{ color: 'var(--text-secondary)' }}>
                       {social.url ? (
-                        <a href={social.url} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--accent-info)' }}>
-                           {new URL(social.url).hostname.replace('www.', '')}
-                        </a>
+                         <a href={social.url} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--accent-info)' }}>
+                           {(() => { try { return new URL(social.url).hostname.replace('www.', ''); } catch { return social.url; } })()}
+                         </a>
                       ) : '—'}
                     </p>
                   </div>

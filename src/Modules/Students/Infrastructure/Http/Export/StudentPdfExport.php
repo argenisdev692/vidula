@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Modules\Student\Infrastructure\Http\Export;
+namespace Modules\Students\Infrastructure\Http\Export;
 
 use App\Models\Student as StudentEloquentModel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Response;
-use Modules\Student\Application\DTOs\StudentFilterDTO;
+use Modules\Students\Application\DTOs\StudentFilterDTO;
 
 final class StudentPdfExport
 {

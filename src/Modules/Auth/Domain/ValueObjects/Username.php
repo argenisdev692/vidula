@@ -14,41 +14,39 @@ namespace Modules\Auth\Domain\ValueObjects;
  */
 final readonly class Username
 {
-    public function __construct(
-        public string $value {
-            get => strtolower($this->value);
-            set {
-                $normalized = strtolower(trim($value));
-                
-                if (strlen($normalized) < 3) {
-                    throw new \InvalidArgumentException('Username must be at least 3 characters long');
-                }
-                
-                if (strlen($normalized) > 30) {
-                    throw new \InvalidArgumentException('Username must not exceed 30 characters');
-                }
-                
-                if (!preg_match('/^[a-z0-9_-]+$/', $normalized)) {
-                    throw new \InvalidArgumentException(
-                        'Username can only contain lowercase letters, numbers, underscores, and hyphens'
-                    );
-                }
-                
-                if (preg_match('/^[0-9]/', $normalized)) {
-                    throw new \InvalidArgumentException('Username cannot start with a number');
-                }
-                
-                $this->value = $normalized;
-            }
+    public string $value;
+
+    public function __construct(string $value)
+    {
+        $normalized = strtolower(trim($value));
+
+        if (strlen($normalized) < 3) {
+            throw new \InvalidArgumentException('Username must be at least 3 characters long');
         }
-    ) {}
+
+        if (strlen($normalized) > 30) {
+            throw new \InvalidArgumentException('Username must not exceed 30 characters');
+        }
+
+        if (!preg_match('/^[a-z0-9_-]+$/', $normalized)) {
+            throw new \InvalidArgumentException(
+                'Username can only contain lowercase letters, numbers, underscores, and hyphens'
+            );
+        }
+
+        if (preg_match('/^[0-9]/', $normalized)) {
+            throw new \InvalidArgumentException('Username cannot start with a number');
+        }
+
+        $this->value = $normalized;
+    }
 
     #[\NoDiscard]
     public static function fromEmail(string $email): self
     {
         $username = strstr($email, '@', true);
         $normalized = preg_replace('/[^a-z0-9_-]/', '_', strtolower($username));
-        
+
         return new self($normalized);
     }
 
@@ -57,7 +55,7 @@ final readonly class Username
     {
         $normalized = preg_replace('/[^a-z0-9_-]/', '_', strtolower($baseName));
         $username = $suffix > 0 ? "{$normalized}_{$suffix}" : $normalized;
-        
+
         return new self($username);
     }
 

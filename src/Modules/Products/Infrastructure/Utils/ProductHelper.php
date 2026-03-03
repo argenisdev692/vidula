@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Product\Infrastructure\Utils;
+namespace Modules\Products\Infrastructure\Utils;
 
 use App\Models\Product;
 

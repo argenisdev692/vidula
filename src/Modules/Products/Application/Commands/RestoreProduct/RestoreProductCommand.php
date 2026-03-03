@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Product\Application\Commands\RestoreProduct;
+namespace Modules\Products\Application\Commands\RestoreProduct;
 
 final readonly class RestoreProductCommand
 {

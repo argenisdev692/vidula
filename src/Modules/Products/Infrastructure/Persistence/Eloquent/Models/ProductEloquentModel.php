@@ -15,6 +15,8 @@ use Modules\Users\Infrastructure\Persistence\Eloquent\Models\UserEloquentModel;
 
 /**
  * ProductEloquentModel
+ *
+ * @internal
  */
 final class ProductEloquentModel extends Model
 {

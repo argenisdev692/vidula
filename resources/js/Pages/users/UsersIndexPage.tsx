@@ -10,11 +10,13 @@ import { DataTableBulkActions } from '@/shadcn/DataTableBulkActions';
 import { DeleteConfirmModal } from '@/shadcn/DeleteConfirmModal';
 import { DataTableDateRangeFilter } from '@/common/data-table/DataTableDateRangeFilter';
 import { ExportButton } from '@/common/export/ExportButton';
-import type { UserFilters } from '@/types/users';
+import type { UserFilters, UserListItem } from '@/types/users';
 import { Search, ChevronLeft, ChevronRight, UserPlus } from 'lucide-react';
 
 /**
- * UsersIndexPage — Super-admin management for users.
+ * UsersIndexPage — React 19 + TanStack Query v5 + TanStack Table v8
+ * - useTransition: search/export no-bloqueantes
+ * - useOptimistic: feedback instantáneo en eliminaciones (dentro de startTransition ✅)
  */
 export default function UsersIndexPage(): React.JSX.Element {
   const [filters, setFilters] = useRemember<UserFilters>({ page: 1, per_page: 15 }, 'users-filters');
@@ -22,7 +24,8 @@ export default function UsersIndexPage(): React.JSX.Element {
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [pendingDelete, setPendingDelete] = React.useState<{ uuid: string; name: string; email: string } | null>(null);
   const [isDeletingBulk, setIsDeletingBulk] = React.useState<boolean>(false);
-  
+
+  // React 19: useTransition for non-blocking updates
   const [isPendingExport, startExportTransition] = React.useTransition();
   const [, startSearchTransition] = React.useTransition();
 
@@ -33,9 +36,15 @@ export default function UsersIndexPage(): React.JSX.Element {
   const users = data?.data ?? [];
   const meta = data?.meta ?? { currentPage: 1, lastPage: 1, perPage: 15, total: 0 };
 
+  // React 19: useOptimistic for instant UI feedback
+  const [optimisticUsers, setOptimisticUsers] = React.useOptimistic(
+    users,
+    (state: UserListItem[], deletedUuid: string) => state.filter(u => u.uuid !== deletedUuid)
+  );
+
   const { deleteUser } = useUserMutations();
 
-  // ── Export function ──
+  // ── Export ──
   async function handleExport(format: 'excel' | 'pdf'): Promise<void> {
     startExportTransition(() => {
       const params = new URLSearchParams();
@@ -43,42 +52,49 @@ export default function UsersIndexPage(): React.JSX.Element {
       if (filters.date_from) params.append('date_from', filters.date_from);
       if (filters.date_to) params.append('date_to', filters.date_to);
       params.append('format', format);
-
       window.open(`/users/data/admin/export?${params.toString()}`, '_blank');
     });
   }
 
-  // ── Search Change ──
+  // ── Search ──
   function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>): void {
     const value = e.target.value;
     setSearch(value);
-    
     startSearchTransition(() => {
       setFilters((prev) => ({ ...prev, search: value || undefined, page: 1 }));
     });
   }
 
-  // ── Single Actions ──
+  // ── Single Delete with Optimistic Update ──
   function handleDeleteClick(uuid: string, name: string, email: string): void {
     setPendingDelete({ uuid, name, email });
   }
 
   async function handleConfirmSingleDelete(): Promise<void> {
     if (!pendingDelete) return;
-    try {
-      await deleteUser.mutateAsync(pendingDelete.uuid);
-      setPendingDelete(null);
-    } catch (err) {
-      console.error('Failed to delete user', err);
-    }
+
+    // React 19: useOptimistic dentro de startTransition async
+    React.startTransition(async () => {
+      setOptimisticUsers(pendingDelete.uuid);
+      try {
+        await deleteUser.mutateAsync(pendingDelete.uuid);
+        setPendingDelete(null);
+      } catch (err) {
+        console.error('Failed to delete user', err);
+      }
+    });
   }
 
+  // ── Bulk Delete ──
+  const selectedUuids = React.useMemo(() =>
+    Object.keys(rowSelection).filter((k) => rowSelection[k]),
+    [rowSelection]
+  );
+
   function handleBulkDelete(): void {
-    const uuids = Object.keys(rowSelection).filter(k => rowSelection[k]);
-    if (uuids.length === 0) return;
-    
+    if (selectedUuids.length === 0) return;
     setIsDeletingBulk(true);
-    router.post('/users/data/admin/bulk-delete', { uuids }, {
+    router.post('/users/data/admin/bulk-delete', { uuids: selectedUuids }, {
       onSuccess: () => {
         setRowSelection({});
         queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -92,17 +108,22 @@ export default function UsersIndexPage(): React.JSX.Element {
     setFilters((prev) => ({ ...prev, page }));
   }
 
+  const pageWindow = React.useMemo(() => {
+    const total = meta.lastPage;
+    const current = meta.currentPage;
+    const half = 2;
+    let start = Math.max(1, current - half);
+    const end = Math.min(total, start + 4);
+    start = Math.max(1, end - 4);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  }, [meta.currentPage, meta.lastPage]);
+
   const initials = React.useCallback((name: string, lastName: string): string => {
     if (!name && !lastName) return 'U';
     const f = (name || '').trim().charAt(0).toUpperCase();
     const l = (lastName || '').trim().charAt(0).toUpperCase();
     return f && l ? f + l : f || l || 'U';
   }, []);
-
-  const selectedUuids = React.useMemo(() => 
-    Object.keys(rowSelection).filter((k) => rowSelection[k]),
-    [rowSelection]
-  );
 
   return (
     <>
@@ -121,10 +142,10 @@ export default function UsersIndexPage(): React.JSX.Element {
           </div>
           <Link
             href="/users/create"
-            className="btn-modern-primary flex items-center gap-2 px-4 py-2 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="btn-modern btn-modern-primary inline-flex items-center gap-2 px-5 py-2 font-bold shadow-sm"
           >
-            <UserPlus size={18} />
-            <span className="font-semibold">New User</span>
+            <UserPlus size={16} />
+            New User
           </Link>
         </div>
 
@@ -143,7 +164,7 @@ export default function UsersIndexPage(): React.JSX.Element {
 
           <div className="flex w-full items-center gap-4 sm:w-auto">
             <div className="h-8 w-px bg-(--border-subtle) hidden sm:block" />
-            
+
             <select
               value={filters.status || ''}
               onChange={(e) => startSearchTransition(() => setFilters(p => ({ ...p, status: (e.target.value || undefined) as any, page: 1 })))}
@@ -155,40 +176,40 @@ export default function UsersIndexPage(): React.JSX.Element {
             </select>
 
             <div className="h-8 w-px bg-(--border-subtle) hidden sm:block" />
-            
+
             <DataTableDateRangeFilter
               dateFrom={filters.date_from}
               dateTo={filters.date_to}
-              onChange={(range) => setFilters(p => ({ 
-                ...p, 
-                date_from: range.dateFrom, 
-                date_to: range.dateTo, 
-                page: 1 
+              onChange={(range) => setFilters(p => ({
+                ...p,
+                date_from: range.dateFrom,
+                date_to: range.dateTo,
+                page: 1
               }))}
             />
 
             <div className="h-8 w-px bg-(--border-subtle) hidden sm:block" />
 
-            <ExportButton 
-              onExport={handleExport} 
-              isExporting={isPendingExport} 
+            <ExportButton
+              onExport={handleExport}
+              isExporting={isPendingExport}
             />
           </div>
         </div>
 
-        {/* ── Bulk Actions Bar ── */}
+        {/* ── Bulk Actions ── */}
         {selectedUuids.length > 0 && (
-            <DataTableBulkActions
-                count={selectedUuids.length}
-                onDelete={handleBulkDelete}
-                isDeleting={isDeletingBulk}
-            />
+          <DataTableBulkActions
+            count={selectedUuids.length}
+            onDelete={handleBulkDelete}
+            isDeleting={isDeletingBulk}
+          />
         )}
 
         {/* ── Table Card ── */}
         <div className="card-modern overflow-hidden border border-(--border-default) shadow-xl">
           <UsersTable
-            data={users}
+            data={optimisticUsers}
             isLoading={isPending}
             isError={isError}
             onDelete={handleDeleteClick}
@@ -200,8 +221,8 @@ export default function UsersIndexPage(): React.JSX.Element {
           {/* ── Pagination ── */}
           {meta.lastPage > 1 && (
             <div className="flex items-center justify-between px-6 py-4 bg-black/5 dark:bg-white/5 border-t border-(--border-subtle)">
-              <span className="text-xs font-semibold text-(--text-disabled) uppercase tracking-wider">
-                Page {meta.currentPage} / {meta.lastPage} • {meta.total} Total
+              <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                Page <span style={{ color: 'var(--accent-primary)', fontWeight: 700 }}>{meta.currentPage}</span> / {meta.lastPage} • <span style={{ color: 'var(--accent-primary)', fontWeight: 700 }}>{meta.total}</span> Total
               </span>
               <div className="flex items-center gap-2">
                 <button
@@ -212,22 +233,19 @@ export default function UsersIndexPage(): React.JSX.Element {
                   <ChevronLeft size={18} />
                 </button>
                 <div className="flex items-center gap-1 mx-2">
-                    {Array.from({ length: Math.min(5, meta.lastPage) }, (_, i) => {
-                        const p = i + 1;
-                        return (
-                            <button
-                                key={p}
-                                onClick={() => goToPage(p)}
-                                className={`h-9 w-9 rounded-xl text-xs font-bold transition-all ${
-                                    meta.currentPage === p 
-                                    ? 'bg-(--accent-primary) text-white shadow-lg' 
-                                    : 'hover:bg-(--bg-hover) text-(--text-muted)'
-                                }`}
-                            >
-                                {p}
-                            </button>
-                        );
-                    })}
+                  {pageWindow.map(p => (
+                    <button
+                      key={p}
+                      onClick={() => goToPage(p)}
+                      className={`h-9 w-9 rounded-xl text-xs font-bold transition-all ${
+                        meta.currentPage === p
+                          ? 'bg-(--accent-primary) text-white shadow-lg'
+                          : 'hover:bg-(--bg-hover) text-(--text-muted)'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
                 </div>
                 <button
                   onClick={() => goToPage(meta.currentPage + 1)}

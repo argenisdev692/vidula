@@ -16,15 +16,12 @@ namespace Modules\Auth\Domain\ValueObjects;
 final readonly class OtpCode
 {
     public function __construct(
-        public string $value {
-            set {
-                if (!preg_match('/^\d{6}$/', $value)) {
-                    throw new \InvalidArgumentException('OTP code must be exactly 6 digits.');
-                }
-                $this->value = $value;
-            }
+        public string $value
+    ) {
+        if (!preg_match('/^\d{6}$/', $value)) {
+            throw new \InvalidArgumentException('OTP code must be exactly 6 digits.');
         }
-    ) {}
+    }
 
     #[\NoDiscard]
     public static function generate(): self

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Product\Infrastructure\Http\Export;
+namespace Modules\Products\Infrastructure\Http\Export;
 
 use App\Models\Product as ProductEloquentModel;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,7 +14,7 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use Modules\Product\Application\DTOs\ProductFilterDTO;
+use Modules\Products\Application\DTOs\ProductFilterDTO;
 
 final class ProductExcelExport implements
     FromQuery,

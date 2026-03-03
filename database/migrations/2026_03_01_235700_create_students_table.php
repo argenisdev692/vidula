@@ -18,6 +18,7 @@ return new class extends Migration {
             $table->string('address')->nullable();
             $table->string('avatar')->nullable();
             $table->text('notes')->nullable();
+            $table->string('status')->default('DRAFT');
             $table->boolean('active')->default(true);
             $table->timestamps();
             $table->softDeletes();

@@ -10,9 +10,23 @@ export default defineConfig({
             refresh: true,
         }),
         tailwindcss(),
-        react(),
+        react({
+            // React 19 Compiler for automatic optimizations
+            babel: {
+                plugins: [
+                    ['babel-plugin-react-compiler', {
+                        target: '19'
+                    }]
+                ],
+            },
+        }),
     ],
     server: {
         watch: { ignored: ['**/storage/framework/views/**'] },
+    },
+    resolve: {
+        alias: {
+            '@': '/resources/js',
+        },
     },
 });

@@ -12,10 +12,11 @@ final readonly class ListStudentHandler
 {
     public function __construct(
         private StudentRepositoryPort $repository
-    ) {}
+    ) {
+    }
 
     /**
-     * @return array{data: list<StudentReadModel>, total: int, perPage: int, currentPage: int, lastPage: int}
+     * @return array{data: list<StudentReadModel>, meta: array{total: int, perPage: int, currentPage: int, lastPage: int}}
      */
     public function handle(ListStudentQuery $query): array
     {
@@ -42,7 +43,7 @@ final readonly class ListStudentHandler
             perPage: $filters->perPage
         );
 
-        $result['data'] = $result['data']
+        $mapped = $result['data']
             |> (fn($students) => array_map(
                 fn($student) => new StudentReadModel(
                     id: $student->id->value,
@@ -62,6 +63,15 @@ final readonly class ListStudentHandler
                 $students
             ));
 
-        return $result;
+        // Wrap pagination into `meta` to match frontend PaginatedResponse<T>
+        return [
+            'data' => $mapped,
+            'meta' => [
+                'total' => $result['total'],
+                'perPage' => $result['perPage'],
+                'currentPage' => $result['currentPage'],
+                'lastPage' => $result['lastPage'],
+            ],
+        ];
     }
 }

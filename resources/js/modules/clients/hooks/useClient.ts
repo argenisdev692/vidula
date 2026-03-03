@@ -11,7 +11,7 @@ export const useSingleClient = (uuid?: string) => {
     queryFn: async () => {
       // Backend controller: show(Request $request, ?string $uuid = null)
       // If uuid is null, it uses $request->user()?->uuid
-      const url = uuid ? `/client/data/admin/${uuid}` : '/client/data/me';
+      const url = uuid ? `/clients/data/admin/${uuid}` : '/clients/data/me';
       const { data } = await axios.get<{ data: ClientDetail }>(url);
       return data.data;
     },

@@ -20,4 +20,14 @@ final readonly class ProductCreated extends DomainEvent
     {
         return 'product.created';
     }
+
+    #[\NoDiscard]
+    public function toPrimitives(): array
+    {
+        return [
+            'aggregateId' => $this->aggregateId,
+            'title' => $this->title,
+            'occurredOn' => $this->occurredOn->format('c'),
+        ];
+    }
 }

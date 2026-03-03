@@ -3,44 +3,48 @@ import { Link, Head, useRemember, router } from '@inertiajs/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { type RowSelectionState } from '@tanstack/react-table';
 import AppLayout from '@/pages/layouts/AppLayout';
-import { useCompanies } from '@/modules/students/hooks/useCompanies';
+import { useStudents } from '@/modules/students/hooks/useStudents';
 import { useStudentMutations } from '@/modules/students/hooks/useStudentMutations';
-import StudentTable from './components/StudentTable';
+import StudentsTable from './components/StudentsTable';
 import { DataTableBulkActions } from '@/shadcn/DataTableBulkActions';
 import { DeleteConfirmModal } from '@/shadcn/DeleteConfirmModal';
 import { DataTableDateRangeFilter } from '@/common/data-table/DataTableDateRangeFilter';
 import { ExportButton } from '@/common/export/ExportButton';
-import type { StudentFilters } from '@/types/api';
+import type { StudentFilters, StudentListItem } from '@/types/api';
+import { Search, ChevronLeft, ChevronRight, Building2 } from 'lucide-react';
 
-// ══════════════════════════════════════════════════════════════
-// Icons
-// ══════════════════════════════════════════════════════════════
-const ic = {
-  w: 16, h: 16, viewBox: '0 0 24 24', fill: 'none',
-  stroke: 'currentColor', strokeWidth: 2,
-  strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const,
-};
-const IconPlus = () => <svg {...ic}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
-const IconSearch = () => <svg {...ic} width={14} height={14}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
-const IconChevLeft = () => <svg {...ic} width={14} height={14}><polyline points="15 18 9 12 15 6"/></svg>;
-const IconChevRight = () => <svg {...ic} width={14} height={14}><polyline points="9 18 15 12 9 6"/></svg>;
-
-// ══════════════════════════════════════════════════════════════
-// StudentIndexPage
-// ══════════════════════════════════════════════════════════════
+/**
+ * StudentIndexPage — React 19 + TanStack Query v5 + TanStack Table v8
+ * - useTransition: search/export no-bloqueantes
+ * - useOptimistic: feedback instantáneo en eliminaciones (dentro de startTransition ✅)
+ * - bulk delete via useMutation (consistente con el resto de mutations)
+ */
 export default function StudentIndexPage(): React.JSX.Element {
-  const [filters, setFilters] = useRemember<StudentFilters>({ page: 1, perPage: 15 }, 'company-filters');
+  const [filters, setFilters] = useRemember<StudentFilters>({ page: 1, perPage: 15 }, 'student-filters');
   const [search, setSearch] = React.useState<string>(filters.search || '');
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [pendingDelete, setPendingDelete] = React.useState<{ uuid: string; name: string } | null>(null);
   const [isDeletingBulk, setIsDeletingBulk] = React.useState<boolean>(false);
-  
+
+  // React 19: useTransition for non-blocking updates
   const [isPendingExport, startExportTransition] = React.useTransition();
   const [, startSearchTransition] = React.useTransition();
 
   const queryClient = useQueryClient();
 
-  // ── Export function ──
+  // ── Fetch data via TanStack Query ──
+  const { data, isPending, isError } = useStudents(filters);
+  const studentList = data?.data ?? [];
+  const meta = data?.meta ?? { currentPage: 1, lastPage: 1, perPage: 15, total: 0 };
+
+  const [optimisticStudents, setOptimisticStudents] = React.useOptimistic(
+    studentList,
+    (state: StudentListItem[], deletedUuid: string) => state.filter(s => s.id !== deletedUuid)
+  );
+
+  const { deleteStudent } = useStudentMutations();
+
+  // ── Export ──
   async function handleExport(format: 'excel' | 'pdf'): Promise<void> {
     startExportTransition(() => {
       const params = new URLSearchParams();
@@ -48,47 +52,50 @@ export default function StudentIndexPage(): React.JSX.Element {
       if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
       if (filters.dateTo) params.append('dateTo', filters.dateTo);
       params.append('format', format);
-
-      window.open(`/student/data/admin/export?${params.toString()}`, '_blank');
+      window.open(`/students/data/admin/export?${params.toString()}`, '_blank');
     });
   }
 
-  // ── Fetch data ──
-  const { data, isPending, isError } = useCompanies(filters);
-  const { deleteStudent, restoreStudent } = useStudentMutations();
-
-  const companyList = data?.data ?? [];
-  const meta = data?.meta ?? { currentPage: 1, lastPage: 1, perPage: 15, total: 0 };
-
-  // ── Search change ──
+  // ── Search ──
   function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>): void {
     const value = e.target.value;
     setSearch(value);
-    
     startSearchTransition(() => {
       setFilters((prev) => ({ ...prev, search: value || undefined, page: 1 }));
     });
   }
 
-  // ── Single Actions ──
-  function handleDeleteClick(uuid: string, companyName: string): void {
-    setPendingDelete({ uuid, name: companyName });
+  // ── Single Delete with Optimistic Update ──
+  function handleDeleteClick(uuid: string, name: string): void {
+    setPendingDelete({ uuid, name });
   }
 
-  function handleConfirmSingleDelete(): void {
+  async function handleConfirmSingleDelete(): Promise<void> {
     if (!pendingDelete) return;
-    deleteStudent.mutate(pendingDelete.uuid, {
-      onSuccess: () => setPendingDelete(null),
+
+    // React 19: useOptimistic debe activarse dentro de startTransition async
+    React.startTransition(async () => {
+      setOptimisticStudents(pendingDelete.uuid);
+      try {
+        await deleteStudent.mutateAsync(pendingDelete.uuid);
+        setPendingDelete(null);
+      } catch (err) {
+        // React revierte automáticamente el estado optimista si hay error
+        console.error('Failed to delete student', err);
+      }
     });
   }
 
-  // ── Bulk Actions ──
-  const selectedUuids = Object.keys(rowSelection).filter((k) => rowSelection[k]);
-  
+  // ── Bulk Delete via router (Inertia) ──
+  const selectedUuids = React.useMemo(() =>
+    Object.keys(rowSelection).filter((k) => rowSelection[k]),
+    [rowSelection]
+  );
+
   function handleBulkDelete(): void {
     if (!selectedUuids.length) return;
     setIsDeletingBulk(true);
-    router.post('/student/data/admin/bulk-delete', { uuids: selectedUuids }, {
+    router.post('/students/data/admin/bulk-delete', { uuids: selectedUuids }, {
       onSuccess: () => {
         setRowSelection({});
         queryClient.invalidateQueries({ queryKey: ['students'] });
@@ -97,96 +104,90 @@ export default function StudentIndexPage(): React.JSX.Element {
     });
   }
 
-  function handleBulkRestore(): void {
-    if (!selectedUuids.length) return;
-    restoreStudent.mutate(selectedUuids, {
-      onSuccess: () => setRowSelection({}),
-    });
-  }
-
   // ── Pagination ──
   function goToPage(page: number): void {
     setFilters((prev) => ({ ...prev, page }));
   }
 
+  // Calcular páginas a mostrar (ventana de 5 alrededor de la página actual)
+  const pageWindow = React.useMemo(() => {
+    const total = meta.lastPage;
+    const current = meta.currentPage;
+    const half = 2;
+    let start = Math.max(1, current - half);
+    const end = Math.min(total, start + 4);
+    start = Math.max(1, end - 4);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  }, [meta.currentPage, meta.lastPage]);
+
   return (
     <>
-      <Head title="Company Profiles" />
+      <Head title="Students" />
       <AppLayout>
-      <div style={{ fontFamily: 'var(--font-sans)' }}>
+      <div className="flex flex-col gap-6 animate-in fade-in duration-500">
         {/* ── Header ── */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1
-              className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100"
-            >
-              Company Profiles
+            <h1 className="text-3xl font-extrabold tracking-tight text-(--text-primary)">
+              Students
             </h1>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-              Manage corporate entries — {meta.total} {meta.total === 1 ? 'record' : 'records'} found
+            <p className="text-sm mt-1 text-(--text-muted) font-medium">
+              Manage student profiles — <span className="text-(--accent-primary)">{meta.total} registered</span>
             </p>
           </div>
           <Link
             href="/student/create"
-            className="btn-modern btn-modern-primary px-4 py-2"
+            className="btn-modern btn-modern-primary inline-flex items-center gap-2 px-5 py-2 font-bold shadow-sm"
           >
-            <IconPlus /> New Company
+            <Building2 size={16} />
+            New Student
           </Link>
         </div>
 
-        {/* ── Search bar ── */}
-        <div
-          className="mb-4 flex flex-col items-center gap-3 rounded-xl px-4 py-3 sm:flex-row"
-          style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border-default)',
-          }}
-        >
-          <div className="flex flex-1 items-center gap-3 w-full">
-            <span style={{ color: 'var(--text-disabled)' }}><IconSearch /></span>
+        {/* ── Filters Bar ── */}
+        <div className="flex flex-col items-center gap-3 rounded-2xl px-5 py-4 sm:flex-row glass-morphism border border-(--border-default) shadow-sm">
+          <div className="flex flex-1 items-center gap-3 w-full group">
+            <Search size={18} className="text-(--text-disabled) group-focus-within:text-(--accent-primary) transition-colors" />
             <input
               type="text"
               value={search}
               onChange={handleSearchChange}
-              placeholder="Search companies..."
-              className="flex-1 bg-transparent text-sm outline-none"
-              style={{
-                color: 'var(--text-primary)',
-                fontFamily: 'var(--font-sans)',
-              }}
+              placeholder="Search by name, email or contact..."
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-(--text-disabled) text-(--text-primary)"
             />
           </div>
 
           <div className="flex w-full items-center gap-4 sm:w-auto">
-            <div className="h-8 w-px hidden sm:block" style={{ background: 'var(--border-subtle)' }} />
-            
+            <div className="h-8 w-px bg-(--border-subtle) hidden sm:block" />
+
             <select
               value={filters.status || ''}
               onChange={(e) => startSearchTransition(() => setFilters(p => ({ ...p, status: e.target.value || undefined, page: 1 })))}
-              className="bg-transparent text-sm outline-none border rounded-lg px-2 py-1 transition-colors"
-              style={{
-                color: 'var(--text-primary)',
-                borderColor: 'var(--border-default)',
-              }}
+              className="bg-transparent text-sm outline-none text-(--text-primary) border border-(--border-default) rounded-lg px-2 py-1 focus:border-(--accent-primary) transition-colors"
             >
               <option value="">All Status</option>
               <option value="active">Active</option>
               <option value="deleted">Deleted</option>
             </select>
 
-            <div className="h-8 w-px hidden sm:block" style={{ background: 'var(--border-subtle)' }} />
-            
+            <div className="h-8 w-px bg-(--border-subtle) hidden sm:block" />
+
             <DataTableDateRangeFilter
               dateFrom={filters.dateFrom}
               dateTo={filters.dateTo}
-              onChange={(range: { dateFrom?: string; dateTo?: string }) => setFilters(p => ({ ...p, ...range, page: 1 }))}
+              onChange={(range) => setFilters(p => ({
+                ...p,
+                dateFrom: range.dateFrom,
+                dateTo: range.dateTo,
+                page: 1
+              }))}
             />
 
-            <div className="h-8 w-px hidden sm:block" style={{ background: 'var(--border-subtle)' }} />
+            <div className="h-8 w-px bg-(--border-subtle) hidden sm:block" />
 
-            <ExportButton 
-              onExport={handleExport} 
-              isExporting={isPendingExport} 
+            <ExportButton
+              onExport={handleExport}
+              isExporting={isPendingExport}
             />
           </div>
         </div>
@@ -196,16 +197,14 @@ export default function StudentIndexPage(): React.JSX.Element {
           <DataTableBulkActions
             count={selectedUuids.length}
             onDelete={handleBulkDelete}
-            onRestore={handleBulkRestore}
             isDeleting={isDeletingBulk}
-            isRestoring={restoreStudent.isPending}
           />
         )}
 
         {/* ── Table Card ── */}
-        <div className="card-modern shadow-lg">
-          <StudentTable
-            data={companyList}
+        <div className="card-modern overflow-hidden border border-(--border-default) shadow-xl">
+          <StudentsTable
+            data={optimisticStudents}
             isLoading={isPending}
             isError={isError}
             onDelete={handleDeleteClick}
@@ -215,29 +214,39 @@ export default function StudentIndexPage(): React.JSX.Element {
 
           {/* ── Pagination ── */}
           {meta.lastPage > 1 && (
-            <div
-              className="flex items-center justify-between px-4 py-3"
-              style={{ borderTop: '1px solid var(--border-subtle)' }}
-            >
-              <p className="text-xs" style={{ color: 'var(--text-disabled)' }}>
-                Page {meta.currentPage} of {meta.lastPage} ({meta.total} entries)
-              </p>
-              <div className="flex items-center gap-1">
+            <div className="flex items-center justify-between px-6 py-4 bg-black/5 dark:bg-white/5 border-t border-(--border-subtle)">
+              <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                Page <span style={{ color: 'var(--accent-primary)', fontWeight: 700 }}>{meta.currentPage}</span> / {meta.lastPage} • <span style={{ color: 'var(--accent-primary)', fontWeight: 700 }}>{meta.total}</span> Total
+              </span>
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => goToPage(meta.currentPage - 1)}
                   disabled={meta.currentPage <= 1}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg transition-all disabled:opacity-30"
-                  style={{ color: 'var(--text-muted)', border: '1px solid var(--border-default)' }}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-(--bg-card) border border-(--border-default) text-(--text-muted) hover:bg-(--bg-hover) disabled:opacity-30 disabled:pointer-events-none transition-all"
                 >
-                  <IconChevLeft />
+                  <ChevronLeft size={18} />
                 </button>
+                <div className="flex items-center gap-1 mx-2">
+                  {pageWindow.map(p => (
+                    <button
+                      key={p}
+                      onClick={() => goToPage(p)}
+                      className={`h-9 w-9 rounded-xl text-xs font-bold transition-all ${
+                        meta.currentPage === p
+                          ? 'bg-(--accent-primary) text-white shadow-lg'
+                          : 'hover:bg-(--bg-hover) text-(--text-muted)'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
                 <button
                   onClick={() => goToPage(meta.currentPage + 1)}
                   disabled={meta.currentPage >= meta.lastPage}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg transition-all disabled:opacity-30"
-                  style={{ color: 'var(--text-muted)', border: '1px solid var(--border-default)' }}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-(--bg-card) border border-(--border-default) text-(--text-muted) hover:bg-(--bg-hover) disabled:opacity-30 disabled:pointer-events-none transition-all"
                 >
-                  <IconChevRight />
+                  <ChevronRight size={18} />
                 </button>
               </div>
             </div>

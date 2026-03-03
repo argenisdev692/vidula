@@ -4,7 +4,7 @@ export function formatDateShort(isoString: string | Date | undefined | null): st
     if (isNaN(date.getTime())) return '—';
     
     return new Intl.DateTimeFormat('en-US', {
-        month: 'short',
+        month: 'long',
         day: 'numeric',
         year: 'numeric'
     }).format(date);

@@ -8,12 +8,22 @@ import 'sileo/styles.css';
 import { Toaster } from 'sileo';
 
 // ── QueryClient — module-level (never inside a component) ──
+// TanStack Query v5 best practices configuration
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 1,
-      throwOnError: false,
+      staleTime: 1000 * 60 * 5,        // 5 minutes - data stays fresh
+      gcTime: 1000 * 60 * 30,          // 30 minutes - garbage collection (formerly cacheTime)
+      retry: 3,                         // Retry failed requests 3 times
+      refetchOnWindowFocus: true,      // Refetch when window regains focus
+      refetchOnReconnect: true,        // Refetch when reconnecting
+      refetchOnMount: true,            // Refetch on component mount
+    },
+    mutations: {
+      retry: 1,                         // Retry mutations once on failure
+      onError: (error) => {
+        console.error('Mutation error:', error);
+      },
     },
   },
 });

@@ -15,20 +15,22 @@ PHP 8.5 es una actualización importante del lenguaje que introduce característ
 El operador pipe permite encadenar funciones de izquierda a derecha, pasando el resultado de una función como entrada de la siguiente. Es una de las características más esperadas por la comunidad PHP.
 
 **Sintaxis básica:**
+
 ```php
-$result = "Hello World" 
-    |> strtoupper(...) 
-    |> str_shuffle(...) 
+$result = "Hello World"
+    |> strtoupper(...)
+    |> str_shuffle(...)
     |> trim(...);
 // Resultado: "LWHO LDLROE"
 ```
 
 **Antes de PHP 8.5 (funciones anidadas):**
+
 ```php
 $title = ' PHP 8.5 Released ';
 $slug = strtolower(
-    str_replace('.', '', 
-        str_replace(' ', '-', 
+    str_replace('.', '',
+        str_replace(' ', '-',
             trim($title)
         )
     )
@@ -36,18 +38,20 @@ $slug = strtolower(
 ```
 
 **Con PHP 8.5 (operador pipe):**
+
 ```php
 $title = ' PHP 8.5 Released ';
-$slug = $title 
-    |> trim(...) 
-    |> (fn($str) => str_replace(' ', '-', $str)) 
-    |> (fn($str) => str_replace('.', '', $str)) 
+$slug = $title
+    |> trim(...)
+    |> (fn($str) => str_replace(' ', '-', $str))
+    |> (fn($str) => str_replace('.', '', $str))
     |> strtolower(...);
 ```
 
 **Tipos de callables soportados:**
+
 ```php
-$result = "Hello World" 
+$result = "Hello World"
     |> 'strtoupper'                              // String callable
     |> str_shuffle(...)                          // First-class callable
     |> fn($x) => trim($x)                        // Arrow function
@@ -61,6 +65,7 @@ $result = "Hello World"
 ```
 
 **Beneficios:**
+
 - Código más legible y fácil de seguir
 - Flujo de datos de izquierda a derecha (como se lee naturalmente)
 - Elimina variables intermedias innecesarias
@@ -72,6 +77,7 @@ $result = "Hello World"
 PHP 8.5 introduce una extensión URI completa que soporta dos estándares: RFC 3986 y WHATWG URL. Reemplaza las funciones inconsistentes como `parse_url()`.
 
 **RFC 3986 (Estándar Web Tradicional):**
+
 ```php
 use Uri\Rfc3986\Uri;
 
@@ -86,6 +92,7 @@ echo $uri->getFragment();    // "fragment"
 ```
 
 **WHATWG (Estándar de Navegadores Modernos):**
+
 ```php
 use Uri\WhatWg\Url;
 
@@ -95,6 +102,7 @@ echo $url->getOrigin();      // "https://example.com"
 ```
 
 **Manejo de codificación:**
+
 ```php
 $uri = new Uri\Rfc3986\Uri("https://%61pple:p%61ss@ex%61mple.com/foob%61r?%61bc=%61bc");
 
@@ -110,6 +118,7 @@ echo $uri->getPath();        // "/foobar"
 ```
 
 **Modificación de URIs:**
+
 ```php
 use Uri\Rfc3986\Uri;
 
@@ -132,6 +141,7 @@ echo $url->toRawString();    // HTTPS://thephp.foundation/sp%6Fnsor/
 ```
 
 **Beneficios:**
+
 - Parsing conforme a estándares (RFC 3986 y WHATWG)
 - Seguridad mejorada (usa bibliotecas probadas: uriparser y Lexbor)
 - Manejo consistente de URLs
@@ -143,6 +153,7 @@ echo $url->toRawString();    // HTTPS://thephp.foundation/sp%6Fnsor/
 Permite clonar objetos y modificar propiedades en una sola operación, ideal para clases `readonly`.
 
 **Antes de PHP 8.5:**
+
 ```php
 readonly class Color {
     public function __construct(
@@ -151,7 +162,7 @@ readonly class Color {
         public int $blue,
         public int $alpha = 255,
     ) {}
-    
+
     public function withAlpha(int $alpha): self {
         $values = get_object_vars($this);
         $values['alpha'] = $alpha;
@@ -164,6 +175,7 @@ $transparentBlue = $blue->withAlpha(128);
 ```
 
 **Con PHP 8.5:**
+
 ```php
 readonly class Color {
     public function __construct(
@@ -172,7 +184,7 @@ readonly class Color {
         public int $blue,
         public int $alpha = 255,
     ) {}
-    
+
     public function withAlpha(int $alpha): self {
         return clone($this, ['alpha' => $alpha]);
     }
@@ -183,6 +195,7 @@ $transparentBlue = $blue->withAlpha(128);
 ```
 
 **Ejemplo con múltiples propiedades:**
+
 ```php
 readonly class Response {
     public function __construct(
@@ -199,6 +212,7 @@ $error = clone($response, [
 ```
 
 **Beneficios:**
+
 - Patrón "wither" simplificado
 - Menos código boilerplate
 - Perfecto para objetos inmutables
@@ -222,6 +236,7 @@ $total = calculateTotal($items); // ✓ OK
 ```
 
 **Casos de uso:**
+
 - Funciones de sanitización
 - Operaciones de transformación
 - Cálculos importantes
@@ -230,6 +245,7 @@ $total = calculateTotal($items); // ✓ OK
 ### 5. Nuevas Funciones de Array
 
 **`array_first()` y `array_last()`:**
+
 ```php
 $users = ["Alice", "Avery", "Scott", "Steph"];
 
@@ -253,9 +269,9 @@ if ($email === false) {
     throw new InvalidArgumentException('Invalid email');
 }
 
-// Ahora: puede lanzar excepción directamente
+// Ahora: puede lanzar excepción directamente (¡NOTA: el flag correcto es FILTER_THROW_ON_FAILURE!)
 try {
-    $email = filter_var($input, FILTER_VALIDATE_EMAIL, FILTER_THROW);
+    $email = filter_var($input, FILTER_VALIDATE_EMAIL, FILTER_THROW_ON_FAILURE);
 } catch (ValueError $e) {
     // Manejar error de validación
 }
@@ -280,6 +296,7 @@ Stack trace:
 ### 8. Nuevas Funciones de Internacionalización
 
 **`locale_is_right_to_left()` y `Locale::isRightToLeft()`:**
+
 ```php
 // Detectar si un locale usa escritura de derecha a izquierda
 $isRTL = locale_is_right_to_left('ar_SA'); // true (árabe)
@@ -290,6 +307,7 @@ $isRTL = Locale::isRightToLeft('he_IL'); // true (hebreo)
 ```
 
 **Nueva clase `IntlListFormatter`:**
+
 ```php
 $formatter = new IntlListFormatter('en_US', IntlListFormatter::TYPE_AND);
 echo $formatter->format(['apples', 'oranges', 'bananas']);
@@ -334,9 +352,9 @@ $handler = get_error_handler();
 class Example {
     #[\Deprecated("Use NEW_CONSTANT instead")]
     public const OLD_CONSTANT = 'old';
-    
+
     public const NEW_CONSTANT = 'new';
-    
+
     #[\Override]
     public string $property = 'value';
 }
@@ -347,7 +365,7 @@ class Example {
 ```php
 class Config {
     public private(set) static string $apiKey;
-    
+
     public static function initialize(string $key): void {
         self::$apiKey = $key; // ✓ OK dentro de la clase
     }
@@ -372,17 +390,21 @@ class User {
 ### 14. Nuevas Funciones y Constantes
 
 **Constantes:**
+
 - `PHP_BUILD_PROVIDER`: Proveedor que compiló PHP
 - `PHP_BUILD_DATE`: Fecha de compilación de PHP
 
 **Funciones cURL:**
+
 - `curl_multi_get_handles()`: Obtiene todos los handles de una sesión multi-cURL
 
 **Funciones DOM:**
+
 - `Dom\Element::getElementsByClassName()`: Buscar elementos por clase
 - `Dom\Element::insertAdjacentHTML()`: Insertar HTML en posiciones relativas
 
 **Funciones de grafemas:**
+
 - `grapheme_levenshtein()`: Calcular distancia Levenshtein con soporte Unicode
 
 ### 15. Mejoras en Closures
@@ -429,16 +451,38 @@ $output = `ls -la`;
 $output = shell_exec('ls -la');
 ```
 
-### 2. Métodos Mágicos `__sleep()` y `__wakeup()`
+### 2. Casts No-Canónicos (NUEVO en 8.5)
+
+```php
+// Deprecado en PHP 8.5:
+$x = (boolean) $val;  // ⚠️ usar (bool)
+$x = (integer) $val;  // ⚠️ usar (int)
+$x = (double) $val;   // ⚠️ usar (float)
+$x = (binary) $val;   // ⚠️ usar (string)
+
+// Correcto:
+$x = (bool) $val;
+$x = (int) $val;
+$x = (float) $val;
+$x = (string) $val;
+```
+
+### 3. Usar `null` como clave de array (NUEVO en 8.5)
 
 ```php
 // Deprecado:
-class Example {
-    public function __sleep() { /* ... */ }
-    public function __wakeup() { /* ... */ }
-}
+array_key_exists(null, $arr); // ⚠️ Warning
 
 // Usar en su lugar:
+array_key_exists('', $arr);
+```
+
+### 4. Métodos Mágicos `__sleep()` y `__wakeup()`
+
+> ⚠️ **NOTA:** Esta migración es recomendada desde PHP 8.1 — `__sleep/__wakeup` siguen funcionando en PHP 8.5 pero es buena práctica migrar.
+
+```php
+// Reemplazar por (disponible desde PHP 8.1):
 class Example {
     public function __serialize(): array { /* ... */ }
     public function __unserialize(array $data): void { /* ... */ }
@@ -493,6 +537,7 @@ final readonly class Coordinates
 ```
 
 **Benefits:**
+
 - Automatic validation on property assignment
 - No need for separate setter methods
 - Cleaner, more declarative code
@@ -512,6 +557,7 @@ final readonly class SocialLinks
 ```
 
 **Benefits:**
+
 - URL validation happens automatically
 - Invalid URLs are converted to null
 - Type safety maintained
@@ -537,6 +583,7 @@ final readonly class Email
 ```
 
 **Benefits:**
+
 - Email is always lowercase when accessed
 - Validation on construction
 - Normalization built-in
@@ -559,6 +606,7 @@ public static function transformForExport(ClientReadModel $client): array
 ```
 
 **Benefits:**
+
 - More readable than nested function calls
 - Clear data transformation pipeline
 - Easy to add/remove transformation steps
@@ -576,6 +624,7 @@ public static function sanitizeInput(array $input): array
 ```
 
 **Benefits:**
+
 - Clear sanitization flow
 - Each step is isolated and testable
 - Easy to understand data flow
@@ -598,6 +647,7 @@ public static function sanitizeInput(array $input): array
 ```
 
 **Benefits:**
+
 - Prevents accidental ignoring of sanitized data
 - Compile-time warning if return value is discarded
 - Better code safety
@@ -615,7 +665,10 @@ readonly class Client {
 }
 
 $client = new Client('ACME Corp', 'info@acme.com');
-$updated = clone $client with ['email' => 'new@acme.com'];
+// ✅ Sintaxis correcta confirmada en PHP 8.5:
+$updated = clone($client, ['email' => 'new@acme.com']);
+// ⚠️ NOTA: La sintaxis `clone $obj with [...]` NO fue confirmada oficialmente.
+// La forma correcta es clone($obj, ['prop' => value])
 ```
 
 ## Usage Examples
@@ -747,6 +800,7 @@ test('email is normalized to lowercase', function () {
 ## Estrategia de Migración
 
 ### Paso 1: Actualizar PHP
+
 ```bash
 # Verificar versión actual
 php -v
@@ -756,18 +810,21 @@ php -v
 ```
 
 ### Paso 2: Revisar Deprecaciones
+
 - Reemplazar backticks con `shell_exec()`
 - Migrar `__sleep()/__wakeup()` a `__serialize()/__unserialize()`
 - Revisar casteos de NAN
 - Verificar desestructuración de arrays
 
 ### Paso 3: Adoptar Nuevas Características
+
 1. Identificar código con funciones anidadas → usar operador pipe
 2. Reemplazar `parse_url()` → usar extensión URI
 3. Simplificar métodos "wither" → usar clone with
 4. Agregar `#[\NoDiscard]` a funciones críticas
 
 ### Paso 4: Testing
+
 ```bash
 # Ejecutar suite de pruebas
 php artisan test
@@ -787,16 +844,19 @@ PHP 8.5 es una versión point release, por lo que la mayoría del código existe
 ## Herramientas y Soporte
 
 ### IDEs
+
 - **PHPStorm:** Soporte completo desde la versión 2025.3
 - **VS Code:** Extensión PHP Intelephense soporta PHP 8.5
 - **Vim/Neovim:** Plugins LSP actualizados
 
 ### Análisis Estático
+
 - **PHPStan:** Soporte completo para PHP 8.5
 - **Psalm:** Soporte desde versión 5.x
 - **Rector:** Reglas de migración disponibles
 
 ### Testing
+
 ```php
 // Ejemplo con Pest/PHPUnit
 test('pipe operator transforms data correctly', function () {
@@ -804,7 +864,7 @@ test('pipe operator transforms data correctly', function () {
         |> strtoupper(...)
         |> str_shuffle(...)
         |> trim(...);
-    
+
     expect($result)->toBeString();
 });
 
@@ -818,6 +878,7 @@ test('URI extension parses correctly', function () {
 ## Casos de Uso Reales
 
 ### 1. Pipeline de Procesamiento de Datos
+
 ```php
 $processedData = $rawData
     |> $this->validate(...)
@@ -828,6 +889,7 @@ $processedData = $rawData
 ```
 
 ### 2. Generación de Slugs
+
 ```php
 $slug = $title
     |> trim(...)
@@ -837,6 +899,7 @@ $slug = $title
 ```
 
 ### 3. Validación de URLs
+
 ```php
 use Uri\WhatWg\Url;
 
@@ -851,18 +914,19 @@ function validateAndNormalizeUrl(string $input): ?string {
 ```
 
 ### 4. Objetos Inmutables con Clone With
+
 ```php
 readonly class Money {
     public function __construct(
         public int $amount,
         public string $currency,
     ) {}
-    
+
     public function add(Money $other): self {
         if ($this->currency !== $other->currency) {
             throw new InvalidArgumentException('Currency mismatch');
         }
-        
+
         return clone $this with [
             'amount' => $this->amount + $other->amount,
         ];
@@ -873,6 +937,7 @@ readonly class Money {
 ## Recursos y Referencias
 
 ### Documentación Oficial
+
 - [PHP 8.5 Release Announcement](https://www.php.net/releases/8.5/en.php)
 - [PHP 8.5 Migration Guide](https://www.php.net/manual/en/migration85.php)
 - [Pipe Operator RFC](https://wiki.php.net/rfc/pipe-operator-v3)
@@ -880,11 +945,13 @@ readonly class Money {
 - [Clone With RFC](https://wiki.php.net/rfc/clone_with_v2)
 
 ### Artículos y Tutoriales
+
 - [PHP.Watch - PHP 8.5: What's New and Changed](https://php.watch/versions/8.5)
 - [Kinsta - PHP 8.5: Here's what's new](https://kinsta.com/blog/php-8-5/)
 - [Zend - PHP 8.5: New Features and Deprecations](https://www.zend.com/blog/php-8-5-features)
 
 ### Comunidad
+
 - [PHP Foundation Blog](https://thephp.foundation/blog/)
 - [PHP Internals Mailing List](https://externals.io/)
 - [Reddit r/PHP](https://www.reddit.com/r/PHP/)
@@ -895,4 +962,4 @@ readonly class Money {
 **Versión del documento:** 2.0  
 **Autor:** Documentación generada con información de fuentes oficiales de PHP
 
-*Contenido rephraseado para cumplir con restricciones de licenciamiento. Consultar fuentes originales para información detallada.*
+_Contenido rephraseado para cumplir con restricciones de licenciamiento. Consultar fuentes originales para información detallada._

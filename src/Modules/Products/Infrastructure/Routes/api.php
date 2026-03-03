@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
-use Modules\Product\Infrastructure\Http\Controllers\Api\ProductController;
+use Modules\Products\Infrastructure\Http\Controllers\Api\ProductController;
 
 /**
- * Product Context — API routes.
+ * Product Context - API routes.
  */
 Route::prefix('admin')->group(function () {
     Route::get('/', [ProductController::class, 'index'])->name('api.admin.product.index');

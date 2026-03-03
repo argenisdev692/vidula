@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Student\Infrastructure\Http\Requests;
+namespace Modules\Students\Infrastructure\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -16,19 +16,15 @@ final class UpdateStudentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'company_name' => ['sometimes', 'string', 'max:255'],
-            'name' => ['nullable', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255'],
+            'name' => ['sometimes', 'string', 'max:255'],
+            'email' => ['sometimes', 'email', 'max:255', 'unique:students,email,' . $this->route('uuid') . ',uuid'],
             'phone' => ['nullable', 'string', 'max:50'],
-            'address' => ['nullable', 'string', 'max:1000'],
-            'website' => ['nullable', 'url', 'max:255'],
-            'facebook_link' => ['nullable', 'url', 'max:255'],
-            'instagram_link' => ['nullable', 'url', 'max:255'],
-            'linkedin_link' => ['nullable', 'url', 'max:255'],
-            'twitter_link' => ['nullable', 'url', 'max:255'],
-            'latitude' => ['nullable', 'numeric'],
-            'longitude' => ['nullable', 'numeric'],
-            'signature_path' => ['nullable', 'string', 'max:255'],
+            'dni' => ['nullable', 'string', 'max:50', 'unique:students,dni,' . $this->route('uuid') . ',uuid'],
+            'birth_date' => ['nullable', 'date'],
+            'address' => ['nullable', 'string'],
+            'avatar' => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string'],
+            'active' => ['boolean'],
         ];
     }
 }
