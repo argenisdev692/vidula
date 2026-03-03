@@ -49,6 +49,7 @@ final class EloquentStudentRepository implements StudentRepositoryPort
             'address' => $student->address,
             'avatar' => $student->avatar,
             'notes' => $student->notes,
+            'status' => $student->status,
             'active' => $student->active,
             'deleted_at' => $student->deletedAt,
         ]);
@@ -70,15 +71,18 @@ final class EloquentStudentRepository implements StudentRepositoryPort
     {
         $query = StudentEloquentModel::query()
             ->when($filters['email'] ?? null, fn($q, $email) => $q->where('email', $email))
-            ->when($filters['search'] ?? null, fn($q, $search) => 
-                $q->where(function($query) use ($search) {
+            ->when($filters['status'] ?? null, fn($q, $status) => $q->where('status', $status))
+            ->when(
+                $filters['search'] ?? null,
+                fn($q, $search) =>
+                $q->where(function ($query) use ($search) {
                     $query->where('name', 'like', "%{$search}%")
-                          ->orWhere('email', 'like', "%{$search}%")
-                          ->orWhere('dni', 'like', "%{$search}%");
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('dni', 'like', "%{$search}%");
                 })
             )
-            ->inDateRange($filters['date_from'] ?? null, $filters['date_to'] ?? null)
-            ->orderBy($filters['sort_by'] ?? 'created_at', $filters['sort_dir'] ?? 'desc');
+            ->inDateRange($filters['dateFrom'] ?? null, $filters['dateTo'] ?? null)
+            ->orderBy($filters['sortBy'] ?? 'created_at', $filters['sortDir'] ?? 'desc');
 
         $paginator = $query->paginate(perPage: $perPage, page: $page);
 

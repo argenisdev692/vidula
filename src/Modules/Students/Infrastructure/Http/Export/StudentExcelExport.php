@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Students\Infrastructure\Http\Export;
 
-use App\Models\Student as StudentEloquentModel;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromQuery;
@@ -13,8 +12,9 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Modules\Students\Application\DTOs\StudentFilterDTO;
+use Modules\Students\Infrastructure\Persistence\Eloquent\Models\StudentEloquentModel;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 final class StudentExcelExport implements
     FromQuery,
@@ -38,24 +38,30 @@ final class StudentExcelExport implements
             ->select([
                 'id',
                 'uuid',
-                'company_name',
                 'name',
                 'email',
                 'phone',
+                'dni',
+                'birth_date',
                 'address',
-                'website',
+                'status',
+                'active',
                 'created_at',
             ])
-            ->whereNull('deleted_at')
             ->when(
                 $this->filters->search,
-                fn($q, $s) =>
-                $q->where('company_name', 'like', "%{$s}%")
-                    ->orWhere('name', 'like', "%{$s}%")
+                fn(Builder $q, string $s) =>
+                $q->where('name', 'like', "%{$s}%")
+                    ->orWhere('email', 'like', "%{$s}%")
+                    ->orWhere('dni', 'like', "%{$s}%")
+            )
+            ->when(
+                $this->filters->status,
+                fn(Builder $q, string $status) => $q->where('status', $status)
             )
             ->when(
                 $this->filters->dateFrom || $this->filters->dateTo,
-                fn($q) => $q->inDateRange($this->filters->dateFrom, $this->filters->dateTo)
+                fn(Builder $q) => $q->inDateRange($this->filters->dateFrom, $this->filters->dateTo)
             )
             ->orderBy($this->filters->sortBy ?? 'created_at', $this->filters->sortDir ?? 'desc');
 
@@ -67,34 +73,38 @@ final class StudentExcelExport implements
         return [
             'ID',
             'UUID',
-            'Company Name',
-            'Contact Name',
+            'Name',
             'Email',
             'Phone',
+            'DNI',
+            'Birth Date',
             'Address',
-            'Website',
+            'Status',
+            'Active',
             'Created At',
         ];
     }
 
-    public function map($company): array
+    public function map($student): array
     {
         return [
-            $company->id,
-            $company->uuid,
-            $company->company_name,
-            $company->name,
-            $company->email,
-            $company->phone,
-            $company->address,
-            $company->website,
-            $company->created_at?->toIso8601String(),
+            $student->id,
+            $student->uuid,
+            $student->name,
+            $student->email ?? '—',
+            $student->phone ?? '—',
+            $student->dni ?? '—',
+            $student->birth_date ?? '—',
+            $student->address ?? '—',
+            $student->status,
+            $student->active ? 'Yes' : 'No',
+            $student->created_at?->toIso8601String(),
         ];
     }
 
     public function title(): string
     {
-        return 'Company Profiles Export';
+        return 'Students Export';
     }
 
     public function styles(Worksheet $sheet): array

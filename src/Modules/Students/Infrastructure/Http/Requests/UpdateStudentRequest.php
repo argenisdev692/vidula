@@ -17,13 +17,14 @@ final class UpdateStudentRequest extends FormRequest
     {
         return [
             'name' => ['sometimes', 'string', 'max:255'],
-            'email' => ['sometimes', 'email', 'max:255', 'unique:students,email,' . $this->route('uuid') . ',uuid'],
+            'email' => ['sometimes', 'nullable', 'email', 'max:255', 'unique:students,email,' . $this->route('uuid') . ',uuid'],
             'phone' => ['nullable', 'string', 'max:50'],
             'dni' => ['nullable', 'string', 'max:50', 'unique:students,dni,' . $this->route('uuid') . ',uuid'],
             'birth_date' => ['nullable', 'date'],
             'address' => ['nullable', 'string'],
             'avatar' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
+            'status' => ['sometimes', 'string', 'in:DRAFT,ACTIVE,INACTIVE,GRADUATED,SUSPENDED'],
             'active' => ['boolean'],
         ];
     }

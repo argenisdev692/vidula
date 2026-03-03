@@ -17,13 +17,14 @@ final class CreateStudentRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:students,email'],
+            'email' => ['nullable', 'email', 'max:255', 'unique:students,email'],
             'phone' => ['nullable', 'string', 'max:50'],
             'dni' => ['nullable', 'string', 'max:50', 'unique:students,dni'],
             'birth_date' => ['nullable', 'date'],
             'address' => ['nullable', 'string'],
             'avatar' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
+            'status' => ['sometimes', 'string', 'in:DRAFT,ACTIVE,INACTIVE,GRADUATED,SUSPENDED'],
             'active' => ['boolean'],
         ];
     }

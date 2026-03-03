@@ -317,46 +317,51 @@ export interface UpdateClientDTO {
 }
 
 // ── Students ────────────────────────────────────────────────
+export type StudentStatus = 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'GRADUATED' | 'SUSPENDED';
+
 export interface StudentListItem {
   id: string; // uuid
   name: string;
-  email: string;
+  email: string | null;
   phone: string | null;
-  dni: string | null;
-  birth_date: string | null;
-  address: string | null;
-  avatar: string | null;
+  status: StudentStatus;
   active: boolean;
-  created_at: string;
-  deleted_at?: string | null;
+  createdAt: string;
+  deletedAt: string | null;
 }
 
 export interface StudentDetail extends StudentListItem {
+  dni: string | null;
+  birthDate: string | null;
+  address: string | null;
+  avatar: string | null;
   notes: string | null;
-  updated_at: string | null;
+  updatedAt: string | null;
 }
 
 export interface CreateStudentDTO {
   name: string;
-  email: string;
+  email?: string | null;
   phone?: string | null;
   dni?: string | null;
-  birth_date?: string | null;
+  birthDate?: string | null;
   address?: string | null;
   avatar?: string | null;
   notes?: string | null;
+  status?: StudentStatus;
   active?: boolean;
 }
 
 export interface UpdateStudentDTO {
-  name?: string;
-  email?: string;
+  name: string;
+  email?: string | null;
   phone?: string | null;
   dni?: string | null;
-  birth_date?: string | null;
+  birthDate?: string | null;
   address?: string | null;
   avatar?: string | null;
   notes?: string | null;
+  status?: StudentStatus;
   active?: boolean;
 }
 
@@ -364,7 +369,10 @@ export interface StudentFilters {
   page?: number;
   perPage?: number;
   search?: string;
-  status?: string; 
+  status?: StudentStatus | '';
   dateFrom?: string;
   dateTo?: string;
+  sortBy?: string;
+  sortDir?: 'asc' | 'desc';
 }
+

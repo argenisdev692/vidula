@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Modules\Students\Infrastructure\Persistence\Mappers;
@@ -23,6 +24,7 @@ final class StudentMapper
                 'address' => $m->address,
                 'avatar' => $m->avatar,
                 'notes' => $m->notes,
+                'status' => $m->status ?? 'DRAFT',
                 'active' => (bool) $m->active,
                 'createdAt' => $m->created_at?->toIso8601String(),
                 'updatedAt' => $m->updated_at?->toIso8601String(),

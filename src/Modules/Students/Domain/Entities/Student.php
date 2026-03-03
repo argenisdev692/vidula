@@ -21,6 +21,7 @@ final class Student extends AggregateRoot
         public ?string $address,
         public ?string $avatar,
         public ?string $notes,
+        public string $status,
         public bool $active,
         public ?string $createdAt = null,
         public ?string $updatedAt = null,
@@ -38,6 +39,7 @@ final class Student extends AggregateRoot
         ?string $address = null,
         ?string $avatar = null,
         ?string $notes = null,
+        string $status = 'DRAFT',
         bool $active = true
     ): self {
         $student = new self(
@@ -50,6 +52,7 @@ final class Student extends AggregateRoot
             address: $address,
             avatar: $avatar,
             notes: $notes,
+            status: $status,
             active: $active,
             createdAt: date('c')
         );
@@ -70,19 +73,24 @@ final class Student extends AggregateRoot
         ?string $dni,
         ?string $birthDate,
         ?string $address,
+        ?string $avatar,
         ?string $notes,
+        string $status,
         bool $active
     ): self {
-        $updated = clone $this;
-        $updated->name = $name;
-        $updated->email = $email;
-        $updated->phone = $phone;
-        $updated->dni = $dni;
-        $updated->birthDate = $birthDate;
-        $updated->address = $address;
-        $updated->notes = $notes;
-        $updated->active = $active;
-        $updated->updatedAt = date('c');
+        $updated = clone($this, [
+            'name' => $name,
+            'email' => $email,
+            'phone' => $phone,
+            'dni' => $dni,
+            'birthDate' => $birthDate,
+            'address' => $address,
+            'avatar' => $avatar,
+            'notes' => $notes,
+            'status' => $status,
+            'active' => $active,
+            'updatedAt' => date('c'),
+        ]);
 
         $updated->recordDomainEvent(new StudentUpdated(
             aggregateId: $this->id->value,
@@ -99,11 +107,10 @@ final class Student extends AggregateRoot
             return $this;
         }
 
-        $deactivated = clone $this;
-        $deactivated->active = false;
-        $deactivated->updatedAt = date('c');
-
-        return $deactivated;
+        return clone($this, [
+            'active' => false,
+            'updatedAt' => date('c'),
+        ]);
     }
 
     public function activate(): self
@@ -112,19 +119,18 @@ final class Student extends AggregateRoot
             return $this;
         }
 
-        $activated = clone $this;
-        $activated->active = true;
-        $activated->updatedAt = date('c');
-
-        return $activated;
+        return clone($this, [
+            'active' => true,
+            'updatedAt' => date('c'),
+        ]);
     }
 
     public function updateAvatar(?string $avatar): self
     {
-        $updated = clone $this;
-        $updated->avatar = $avatar;
-        $updated->updatedAt = date('c');
-        return $updated;
+        return clone($this, [
+            'avatar' => $avatar,
+            'updatedAt' => date('c'),
+        ]);
     }
 
     public function isActive(): bool

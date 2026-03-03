@@ -77,12 +77,12 @@ export default function StudentsTable({
               <Building2 size={18} />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+              <p className="truncate text-sm font-semibold text-(--text-primary)">
                 {student.name}
               </p>
-              {student.dni && (
+              {student.email && (
                 <p className="truncate text-[11px] mt-0.5" style={{ color: 'var(--text-disabled)' }}>
-                  DNI: {student.dni}
+                  {student.email}
                 </p>
               )}
             </div>
@@ -108,18 +108,22 @@ export default function StudentsTable({
         );
       },
     }),
-    columnHelper.accessor('active', {
+    columnHelper.accessor('status', {
       header: 'Status',
       cell: (info) => {
-        const isActive = info.getValue() as boolean;
+        const status = info.getValue();
+        const isActive = info.row.original.active;
+        const colorStyle = isActive
+          ? { background: 'color-mix(in srgb, var(--accent-success) 15%, transparent)', color: 'var(--accent-success)' }
+          : { background: 'color-mix(in srgb, var(--accent-warning) 15%, transparent)', color: 'var(--accent-warning)' };
         return (
-          <span className={`inline-flex items-center uppercase rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider ${isActive ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'}`}>
-            {isActive ? 'Active' : 'Inactive'}
+          <span className="inline-flex items-center uppercase rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider" style={colorStyle}>
+            {status}
           </span>
         );
       },
     }),
-    columnHelper.accessor('created_at', {
+    columnHelper.accessor('createdAt', {
       header: 'Created',
       cell: (info) => {
         const val = info.getValue() as string | undefined;
@@ -135,12 +139,12 @@ export default function StudentsTable({
       header: 'Actions',
       cell: (info) => {
         const student = info.row.original;
-        const isDeleted = !!student.deleted_at;
+        const isDeleted = !!student.deletedAt;
 
         return (
           <div className="flex items-center justify-end gap-2 pr-4">
             <Link
-              href={`/student/${student.id}`}
+              href={`/students/${student.id}`}
               className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors"
               title="View Profile"
             >
@@ -150,7 +154,7 @@ export default function StudentsTable({
             {!isDeleted ? (
               <>
                 <Link
-                  href={`/student/${student.id}/edit`}
+                  href={`/students/${student.id}/edit`}
                   className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors"
                   title="Edit"
                 >

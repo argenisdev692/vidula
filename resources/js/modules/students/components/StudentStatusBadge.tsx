@@ -1,9 +1,9 @@
 import * as React from 'react';
 
+type StudentBadgeStatus = 'active' | 'inactive' | 'deleted' | 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'GRADUATED' | 'SUSPENDED';
+
 interface StudentStatusBadgeProps {
-  // If your domain adds a status field to Student in the future,
-  // change this prop. For now, it's a simple placeholder or 'active'
-  status?: 'active' | 'suspended' | 'banned' | 'deleted';
+  status?: StudentBadgeStatus;
 }
 
 const STATUS_CONFIG: Record<
@@ -11,16 +11,46 @@ const STATUS_CONFIG: Record<
   { label: string; bg: string; text: string; dot: string }
 > = {
   active: {
-    label: 'Verified',
+    label: 'Active',
     bg: 'color-mix(in srgb, var(--accent-success) 15%, transparent)',
     text: 'var(--accent-success)',
     dot: 'var(--accent-success)',
   },
-  suspended: {
-    label: 'Suspended',
+  ACTIVE: {
+    label: 'Active',
+    bg: 'color-mix(in srgb, var(--accent-success) 15%, transparent)',
+    text: 'var(--accent-success)',
+    dot: 'var(--accent-success)',
+  },
+  inactive: {
+    label: 'Inactive',
     bg: 'color-mix(in srgb, var(--accent-warning) 15%, transparent)',
     text: 'var(--accent-warning)',
     dot: 'var(--accent-warning)',
+  },
+  INACTIVE: {
+    label: 'Inactive',
+    bg: 'color-mix(in srgb, var(--accent-warning) 15%, transparent)',
+    text: 'var(--accent-warning)',
+    dot: 'var(--accent-warning)',
+  },
+  DRAFT: {
+    label: 'Draft',
+    bg: 'color-mix(in srgb, var(--accent-info) 15%, transparent)',
+    text: 'var(--accent-info)',
+    dot: 'var(--accent-info)',
+  },
+  GRADUATED: {
+    label: 'Graduated',
+    bg: 'color-mix(in srgb, var(--accent-secondary) 15%, transparent)',
+    text: 'var(--accent-secondary)',
+    dot: 'var(--accent-secondary)',
+  },
+  SUSPENDED: {
+    label: 'Suspended',
+    bg: 'color-mix(in srgb, var(--accent-error) 15%, transparent)',
+    text: 'var(--accent-error)',
+    dot: 'var(--accent-error)',
   },
   deleted: {
     label: 'Deleted',

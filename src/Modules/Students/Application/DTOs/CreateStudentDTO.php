@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Modules\Students\Application\DTOs;
@@ -17,6 +18,7 @@ use Spatie\LaravelData\Data;
  *     @OA\Property(property="address", type="string", nullable=true),
  *     @OA\Property(property="avatar", type="string", nullable=true),
  *     @OA\Property(property="notes", type="string", nullable=true),
+ *     @OA\Property(property="status", type="string", default="DRAFT"),
  *     @OA\Property(property="active", type="boolean", default=true)
  * )
  */
@@ -31,6 +33,7 @@ final class CreateStudentDTO extends Data
         public ?string $address = null,
         public ?string $avatar = null,
         public ?string $notes = null,
+        public string $status = 'DRAFT',
         public bool $active = true
     ) {
     }

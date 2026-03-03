@@ -23,10 +23,6 @@ Route::get('/{uuid}/edit', [StudentPageController::class, 'edit'])->name('studen
 // ── JSON Endpoints for React Query (Internal Web API) ──
 // These endpoints are used by the frontend React components via React Query
 Route::prefix('data')->group(function () {
-    // Current user profile
-    Route::get('/me', [StudentController::class, 'show'])->name('student.data.me');
-    Route::put('/me', [StudentController::class, 'update'])->name('student.data.me.update');
-
     // Admin
     Route::prefix('admin')->group(function () {
         Route::get('/export', [StudentExportController::class, '__invoke'])->name('student.data.export'); // MUST be before /{uuid}

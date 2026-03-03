@@ -1,23 +1,20 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import { StudentDetail } from '@/types/api';
+import type { StudentDetail } from '@/types/api';
 
 /**
- * useSingleStudent — Fetches a single student profile by UUID or for the current user.
+ * useStudent — Fetches a single student profile by UUID.
+ * Per §6: single-object API, explicit types, queryKey convention.
  */
-export const useSingleStudent = (uuid?: string) => {
-  return useQuery({
-    queryKey: ['student', uuid || 'me'],
+export function useStudent(uuid?: string) {
+  return useQuery<StudentDetail, Error>({
+    queryKey: ['student', uuid],
     queryFn: async () => {
-      // Backend controller: show(Request $request, ?string $uuid = null)
-      const url = uuid ? `/student/data/admin/${uuid}` : '/student/data/me';
-      const { data } = await axios.get<{ data: StudentDetail }>(url);
+      const { data } = await axios.get<{ data: StudentDetail }>(
+        `/students/data/admin/${uuid}`
+      );
       return data.data;
     },
-    // Fetch when uuid is provided, or always (for "me")
-    enabled: true,
+    enabled: !!uuid,
   });
-};
-
-// Alias for backward compatibility
-export const useStudent = useSingleStudent;
+}

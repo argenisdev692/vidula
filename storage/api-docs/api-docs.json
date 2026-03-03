@@ -802,9 +802,69 @@
                         "type": "string",
                         "nullable": true
                     },
+                    "status": {
+                        "type": "string",
+                        "default": "DRAFT"
+                    },
                     "active": {
                         "type": "boolean",
                         "default": true
+                    }
+                },
+                "type": "object"
+            },
+            "StudentDTO": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "phone": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "dni": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "birthDate": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "address": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "avatar": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "notes": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "active": {
+                        "type": "boolean"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
                     }
                 },
                 "type": "object"
@@ -837,9 +897,16 @@
                         "type": "string",
                         "nullable": true
                     },
+                    "avatar": {
+                        "type": "string",
+                        "nullable": true
+                    },
                     "notes": {
                         "type": "string",
                         "nullable": true
+                    },
+                    "status": {
+                        "type": "string"
                     },
                     "active": {
                         "type": "boolean",
@@ -884,6 +951,9 @@
                     "notes": {
                         "type": "string",
                         "nullable": true
+                    },
+                    "status": {
+                        "type": "string"
                     },
                     "active": {
                         "type": "boolean"

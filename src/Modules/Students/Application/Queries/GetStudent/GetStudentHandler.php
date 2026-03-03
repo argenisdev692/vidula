@@ -14,14 +14,15 @@ final readonly class GetStudentHandler
 {
     public function __construct(
         private StudentRepositoryPort $repository
-    ) {}
+    ) {
+    }
 
     public function handle(GetStudentQuery $query): StudentReadModel
     {
         $cacheKey = "student_{$query->uuid}";
         $ttl = 60 * 60; // 1 hour
 
-        return Cache::remember($cacheKey, $ttl, function () use ($query) {
+        return Cache::remember($cacheKey, $ttl, function () use ($query): StudentReadModel {
             $student = $this->repository->findById(new StudentId($query->uuid));
 
             if (null === $student) {
@@ -38,6 +39,7 @@ final readonly class GetStudentHandler
                 address: $student->address,
                 avatar: $student->avatar,
                 notes: $student->notes,
+                status: $student->status,
                 active: $student->active,
                 createdAt: $student->createdAt,
                 updatedAt: $student->updatedAt,

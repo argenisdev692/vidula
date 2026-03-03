@@ -136,7 +136,7 @@ export default function StudentIndexPage(): React.JSX.Element {
             </p>
           </div>
           <Link
-            href="/student/create"
+            href="/students/create"
             className="btn-modern btn-modern-primary inline-flex items-center gap-2 px-5 py-2 font-bold shadow-sm"
           >
             <Building2 size={16} />
@@ -162,12 +162,15 @@ export default function StudentIndexPage(): React.JSX.Element {
 
             <select
               value={filters.status || ''}
-              onChange={(e) => startSearchTransition(() => setFilters(p => ({ ...p, status: e.target.value || undefined, page: 1 })))}
+              onChange={(e) => startSearchTransition(() => setFilters(p => ({ ...p, status: (e.target.value || undefined) as StudentFilters['status'], page: 1 })))}
               className="bg-transparent text-sm outline-none text-(--text-primary) border border-(--border-default) rounded-lg px-2 py-1 focus:border-(--accent-primary) transition-colors"
             >
               <option value="">All Status</option>
-              <option value="active">Active</option>
-              <option value="deleted">Deleted</option>
+              <option value="DRAFT">Draft</option>
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+              <option value="GRADUATED">Graduated</option>
+              <option value="SUSPENDED">Suspended</option>
             </select>
 
             <div className="h-8 w-px bg-(--border-subtle) hidden sm:block" />

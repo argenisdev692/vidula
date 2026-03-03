@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Students\Application\Queries\ListStudent;
 
 use Illuminate\Support\Facades\Cache;
+use Modules\Students\Application\DTOs\StudentFilterDTO;
 use Modules\Students\Application\Queries\ReadModels\StudentReadModel;
 use Modules\Students\Domain\Ports\StudentRepositoryPort;
 
@@ -25,17 +26,20 @@ final readonly class ListStudentHandler
         $ttl = 60 * 15;
 
         try {
-            return Cache::tags(['students_list'])->remember($cacheKey, $ttl, function () use ($filters) {
+            return Cache::tags(['students_list'])->remember($cacheKey, $ttl, function () use ($filters): array {
                 return $this->fetchData($filters);
             });
         } catch (\Exception $e) {
-            return Cache::remember($cacheKey, $ttl, function () use ($filters) {
+            return Cache::remember($cacheKey, $ttl, function () use ($filters): array {
                 return $this->fetchData($filters);
             });
         }
     }
 
-    private function fetchData($filters): array
+    /**
+     * @return array{data: list<StudentReadModel>, meta: array{total: int, perPage: int, currentPage: int, lastPage: int}}
+     */
+    private function fetchData(StudentFilterDTO $filters): array
     {
         $result = $this->repository->findAllPaginated(
             filters: $filters->toArray(),
@@ -55,6 +59,7 @@ final readonly class ListStudentHandler
                     address: $student->address,
                     avatar: $student->avatar,
                     notes: $student->notes,
+                    status: $student->status,
                     active: $student->active,
                     createdAt: $student->createdAt,
                     updatedAt: $student->updatedAt,

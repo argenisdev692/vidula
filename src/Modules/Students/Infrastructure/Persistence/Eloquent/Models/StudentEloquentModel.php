@@ -7,15 +7,13 @@ namespace Modules\Students\Infrastructure\Persistence\Eloquent\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
-use Modules\Users\Infrastructure\Persistence\Eloquent\Models\UserEloquentModel;
 
 /**
  * StudentEloquentModel
- * 
+ *
  * @internal
  */
 final class StudentEloquentModel extends Model
@@ -42,6 +40,7 @@ final class StudentEloquentModel extends Model
         'address',
         'avatar',
         'notes',
+        'status',
         'active',
     ];
 
@@ -57,16 +56,12 @@ final class StudentEloquentModel extends Model
                 'address',
                 'avatar',
                 'notes',
+                'status',
                 'active',
             ])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->useLogName('Admin.Students');
-    }
-
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(UserEloquentModel::class, 'user_id');
     }
 
     public function scopeInDateRange(

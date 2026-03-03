@@ -1,57 +1,46 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import { CreateStudentDTO, UpdateStudentDTO } from '@/types/api';
+import type { CreateStudentDTO, UpdateStudentDTO } from '@/types/api';
 
 /**
- * useStudentMutations — Mutations for student/company data.
+ * useStudentMutations — CRUD mutations for Students.
+ * Per §6: TanStack Query v5, invalidateQueries on success.
  */
-export const useStudentMutations = () => {
+export function useStudentMutations() {
   const queryClient = useQueryClient();
 
   const createStudent = useMutation({
-    mutationFn: (payload: CreateStudentDTO) => {
-      return axios.post('/student/data/admin', payload);
-    },
+    mutationFn: (payload: CreateStudentDTO) =>
+      axios.post('/students/data/admin', payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
     },
   });
 
   const updateStudent = useMutation({
-    mutationFn: ({ userUuid, payload }: { userUuid?: string; payload: UpdateStudentDTO }) => {
-      const url = userUuid ? `/student/data/admin/${userUuid}` : '/student/data/me';
-      return axios.put(url, payload);
-    },
+    mutationFn: ({ uuid, payload }: { uuid: string; payload: UpdateStudentDTO }) =>
+      axios.put(`/students/data/admin/${uuid}`, payload),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['student', variables.userUuid || 'me'] });
+      queryClient.invalidateQueries({ queryKey: ['student', variables.uuid] });
       queryClient.invalidateQueries({ queryKey: ['students'] });
     },
   });
 
   const deleteStudent = useMutation({
-    mutationFn: (uuid: string | string[]) => {
-      const uuids = Array.isArray(uuid) ? uuid.join(',') : uuid;
-      return axios.delete(`/student/data/admin/${uuids}`);
-    },
+    mutationFn: (uuid: string) =>
+      axios.delete(`/students/data/admin/${uuid}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
     },
   });
 
   const restoreStudent = useMutation({
-    mutationFn: (uuid: string | string[]) => {
-      const uuids = Array.isArray(uuid) ? uuid.join(',') : uuid;
-      return axios.patch(`/student/data/admin/${uuids}/restore`);
-    },
+    mutationFn: (uuid: string) =>
+      axios.patch(`/students/data/admin/${uuid}/restore`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
     },
   });
 
-  return {
-    createStudent,
-    updateStudent,
-    deleteStudent,
-    restoreStudent,
-  };
-};
+  return { createStudent, updateStudent, deleteStudent, restoreStudent };
+}

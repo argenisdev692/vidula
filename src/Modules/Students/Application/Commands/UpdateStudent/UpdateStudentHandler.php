@@ -13,7 +13,8 @@ final readonly class UpdateStudentHandler
 {
     public function __construct(
         private StudentRepositoryPort $repository
-    ) {}
+    ) {
+    }
 
     public function handle(UpdateStudentCommand $command): void
     {
@@ -32,7 +33,9 @@ final readonly class UpdateStudentHandler
             dni: $dto->dni,
             birthDate: $dto->birthDate,
             address: $dto->address,
+            avatar: $dto->avatar,
             notes: $dto->notes,
+            status: $dto->status,
             active: $dto->active
         );
 

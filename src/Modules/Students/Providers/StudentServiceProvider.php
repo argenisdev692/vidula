@@ -21,7 +21,6 @@ final class StudentServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        $this->loadMigrationsFrom(__DIR__ . '/../Infrastructure/Persistence/Eloquent/Migrations');
         $this->registerRoutes();
     }
 

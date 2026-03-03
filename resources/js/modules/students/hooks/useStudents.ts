@@ -1,19 +1,22 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import axios from 'axios';
-import { StudentListItem, StudentFilters, PaginatedResponse } from '@/types/api';
+import type { StudentListItem, StudentFilters, PaginatedResponse } from '@/types/api';
 
 /**
- * useStudents — Fetches a paginated list of student profiles.
+ * useStudents — Paginated list of students.
+ * Per §6: keepPreviousData (v5), explicit generics, staleTime for list.
  */
-export const useStudents = (filters: StudentFilters) => {
-  return useQuery({
+export function useStudents(filters: StudentFilters) {
+  return useQuery<PaginatedResponse<StudentListItem>, Error>({
     queryKey: ['students', filters],
     queryFn: async () => {
-      const { data } = await axios.get<PaginatedResponse<StudentListItem>>('/students/data/admin', {
-        params: filters
-      });
+      const { data } = await axios.get<PaginatedResponse<StudentListItem>>(
+        '/students/data/admin',
+        { params: filters }
+      );
       return data;
     },
-    placeholderData: (previousData) => previousData,
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 2,
   });
-};
+}

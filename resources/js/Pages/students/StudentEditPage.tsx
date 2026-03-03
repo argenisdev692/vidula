@@ -4,71 +4,72 @@ import AppLayout from '@/pages/layouts/AppLayout';
 import { useStudent } from '@/modules/students/hooks/useStudent';
 import { useStudentMutations } from '@/modules/students/hooks/useStudentMutations';
 import { PremiumField } from '@/shadcn/PremiumField';
-import type { UpdateStudentDTO } from '@/types/api';
-import { ArrowLeft, Save, Building2, Share2, MapPin } from 'lucide-react';
-import { AuthPageProps } from '@/types/auth';
+import type { UpdateStudentDTO, StudentStatus } from '@/types/api';
+import type { PageProps } from '@inertiajs/core';
+import { ArrowLeft, Save, User, FileText } from 'lucide-react';
 
 /**
- * StudentEditPage - React 19 Modern Implementation
- * Uses standard form with FormData API and TanStack Query mutations
+ * StudentEditPage — Edit an existing student.
+ * Reads `studentId` prop from Inertia (set by StudentPageController::edit()).
  */
 export default function StudentEditPage(): React.JSX.Element {
-  const { props } = usePage<AuthPageProps & { companyId?: string }>();
-  const uuid = props.companyId;
+  const { props } = usePage<PageProps & { studentId: string }>();
+  const uuid = props.studentId;
 
-  const { data: company, isPending: isLoadingCompany } = useStudent(uuid);
+  const { data: student, isPending: isLoadingStudent } = useStudent(uuid);
   const { updateStudent } = useStudentMutations();
   const [errors, setErrors] = React.useState<Record<string, string>>({});
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();
+    if (!uuid) return;
+
     const formData = new FormData(e.currentTarget);
-    
+
     const payload: UpdateStudentDTO = {
-      companyName: formData.get('companyName') as string,
-      name: formData.get('name') as string || null,
-      email: formData.get('email') as string || null,
-      phone: formData.get('phone') as string || null,
-      address: formData.get('address') as string || null,
-      website: formData.get('website') as string || null,
-      linkedin: formData.get('linkedin') as string || null,
-      twitter: formData.get('twitter') as string || null,
-      facebook: formData.get('facebook') as string || null,
-      instagram: formData.get('instagram') as string || null,
-      latitude: formData.get('latitude') ? parseFloat(formData.get('latitude') as string) : null,
-      longitude: formData.get('longitude') ? parseFloat(formData.get('longitude') as string) : null,
+      name: formData.get('name') as string,
+      email: (formData.get('email') as string) || null,
+      phone: (formData.get('phone') as string) || null,
+      dni: (formData.get('dni') as string) || null,
+      birthDate: (formData.get('birthDate') as string) || null,
+      address: (formData.get('address') as string) || null,
+      notes: (formData.get('notes') as string) || null,
+      status: (formData.get('status') as StudentStatus) || 'DRAFT',
+      active: formData.get('active') === 'on',
     };
 
     try {
-      await updateStudent.mutateAsync({ userUuid: uuid, payload });
-      if (uuid) {
-        router.visit('/student');
-      }
-    } catch (err: any) {
-      if (err.response?.data?.errors) {
-        setErrors(err.response.data.errors);
+      await updateStudent.mutateAsync({ uuid, payload });
+      router.visit('/students');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { errors?: Record<string, string> } } };
+      if (error.response?.data?.errors) {
+        setErrors(error.response.data.errors);
       }
     }
   }
-  
+
   const isPending = updateStudent.isPending;
 
-  if (isLoadingCompany) {
+  if (isLoadingStudent) {
     return (
       <AppLayout>
         <div className="flex h-[50vh] flex-col items-center justify-center gap-4">
           <div className="h-10 w-10 border-4 border-(--accent-primary) border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm font-medium text-(--text-disabled) animate-pulse">Loading Corporate Identity...</p>
+          <p className="text-sm font-medium text-(--text-disabled) animate-pulse">Loading student...</p>
         </div>
       </AppLayout>
     );
   }
 
-  if (!company) {
+  if (!student) {
     return (
       <AppLayout>
         <div className="flex h-[50vh] flex-col items-center justify-center gap-4">
-          <p className="text-sm font-medium text-(--accent-error)">Company not found</p>
+          <p className="text-sm font-medium text-(--accent-error)">Student not found</p>
+          <Link href="/students" className="text-sm text-(--accent-primary) hover:underline">
+            ← Back to Students
+          </Link>
         </div>
       </AppLayout>
     );
@@ -76,40 +77,40 @@ export default function StudentEditPage(): React.JSX.Element {
 
   return (
     <AppLayout>
-      <Head title={`Company Profile | ${company.company_name}`} />
-      <div className="max-w-5xl mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
-        
+      <Head title={`Edit Student | ${student.name}`} />
+      <div className="max-w-4xl mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
+
         {/* ── Header ── */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <Link
-              href="/student"
+              href="/students"
               className="flex h-10 w-10 items-center justify-center rounded-xl bg-(--bg-card) border border-(--border-default) text-(--text-muted) hover:bg-(--bg-hover) transition-all shadow-sm"
             >
               <ArrowLeft size={20} />
             </Link>
             <div>
               <h1 className="text-3xl font-extrabold tracking-tight text-(--text-primary)">
-                Corporate Profile
+                Edit Student
               </h1>
               <p className="text-sm text-(--text-muted) font-medium">
-                Manage legal and contact information for <span className="text-(--accent-primary)">{company.company_name}</span>
+                Update information for <span className="text-(--accent-primary)">{student.name}</span>
               </p>
             </div>
           </div>
 
           <button
             type="submit"
-            form="company-edit-form"
+            form="student-edit-form"
             disabled={isPending}
-            className="btn-modern-primary flex items-center gap-2 px-8 py-3 shadow-xl hover:shadow-(--accent-primary)/20 transition-all font-bold disabled:opacity-50"
+            className="btn-modern btn-modern-primary flex items-center gap-2 px-8 py-3 rounded-xl shadow-xl hover:shadow-(--accent-primary)/20 transition-all font-bold disabled:opacity-50"
           >
             {isPending ? (
-              <span className="animate-pulse">Syncing...</span>
+              <span className="animate-pulse">Saving...</span>
             ) : (
               <>
                 <Save size={18} />
-                Save Identity
+                Save Changes
               </>
             )}
           </button>
@@ -117,158 +118,146 @@ export default function StudentEditPage(): React.JSX.Element {
 
         {/* Global Error */}
         {errors.general && (
-          <div className="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-            <p className="text-sm text-red-600 dark:text-red-400">{errors.general}</p>
+          <div className="p-4 rounded-xl border border-(--accent-error) bg-(--accent-error)/10">
+            <p className="text-sm text-(--accent-error)">{errors.general}</p>
           </div>
         )}
 
         {/* ── Form Body ── */}
-        <form id="company-edit-form" onSubmit={handleSubmit}>
+        <form id="student-edit-form" onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* ── Left Column: Main Info ── */}
             <div className="lg:col-span-2 space-y-8">
-              <section className="card-modern p-8 space-y-8 shadow-2xl border border-(--border-default) glass-morphism">
+              <section className="card-modern p-8 space-y-8 shadow-2xl border border-(--border-default)">
                 <div className="flex items-center gap-3">
-                  <Building2 className="text-(--accent-primary)" size={24} />
-                  <h2 className="text-xl font-bold text-(--text-primary)">Core Information</h2>
+                  <User className="text-(--accent-primary)" size={24} />
+                  <h2 className="text-xl font-bold text-(--text-primary)">Personal Information</h2>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="md:col-span-2">
-                    <PremiumField 
-                      label="Official Company Name" 
-                      name="companyName" 
-                      defaultValue={company.company_name}
-                      required 
-                      error={errors.companyName?.[0]} 
-                      placeholder="Acme Corporation S.A."
+                    <PremiumField
+                      label="Full Name"
+                      name="name"
+                      defaultValue={student.name}
+                      required
+                      error={errors.name}
+                      placeholder="John Doe"
                     />
                   </div>
-                  <PremiumField 
-                    label="Legal Representative" 
-                    name="name" 
-                    defaultValue={company.name || ''}
-                    error={errors.name?.[0]} 
-                    placeholder="John Smith"
-                  />
-                  <PremiumField 
-                    label="Business Email" 
-                    name="email" 
+                  <PremiumField
+                    label="Email"
+                    name="email"
                     type="email"
-                    defaultValue={company.email || ''}
-                    error={errors.email?.[0]} 
-                    placeholder="billing@acme.com"
+                    defaultValue={student.email || ''}
+                    error={errors.email}
+                    placeholder="student@example.com"
                   />
-                  <PremiumField 
-                    label="Public Phone" 
-                    name="phone" 
-                    defaultValue={company.phone || ''}
-                    error={errors.phone?.[0]} 
-                    placeholder="+1 800-ACME-CORP"
+                  <PremiumField
+                    label="Phone"
+                    name="phone"
+                    defaultValue={student.phone || ''}
+                    error={errors.phone}
+                    placeholder="+1 (555) 000-0000"
+                  />
+                  <PremiumField
+                    label="DNI / ID Number"
+                    name="dni"
+                    defaultValue={student.dni || ''}
+                    error={errors.dni}
+                    placeholder="12345678A"
+                  />
+                  <PremiumField
+                    label="Birth Date"
+                    name="birthDate"
+                    type="date"
+                    defaultValue={student.birthDate || ''}
+                    error={errors.birthDate}
                   />
                   <div className="md:col-span-2">
-                    <PremiumField 
-                      label="Official Website" 
-                      name="website" 
-                      type="url"
-                      defaultValue={company.website || ''}
-                      error={errors.website?.[0]} 
-                      placeholder="https://acme.com"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <PremiumField 
-                      label="Primary Address" 
-                      name="address" 
-                      defaultValue={company.address || ''}
-                      error={errors.address?.[0]} 
+                    <PremiumField
+                      label="Address"
+                      name="address"
+                      defaultValue={student.address || ''}
+                      error={errors.address}
                       isTextArea
-                      placeholder="123 Corporate Way, Silicon Valley, CA"
+                      placeholder="123 Main Street, City, Country"
                     />
                   </div>
                 </div>
               </section>
 
-              <section className="card-modern p-8 space-y-8 shadow-2xl border border-(--border-default) glass-morphism">
+              <section className="card-modern p-8 space-y-8 shadow-2xl border border-(--border-default)">
                 <div className="flex items-center gap-3">
-                  <Share2 className="text-(--accent-primary)" size={24} />
-                  <h2 className="text-xl font-bold text-(--text-primary)">Social Media & Public Presence</h2>
+                  <FileText className="text-(--accent-primary)" size={24} />
+                  <h2 className="text-xl font-bold text-(--text-primary)">Additional Details</h2>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <PremiumField 
-                    label="LinkedIn" 
-                    name="linkedin" 
-                    defaultValue={company.linkedin_link || ''}
-                    error={errors.linkedin?.[0]} 
-                    placeholder="linkedin.com/company/acme"
-                  />
-                  <PremiumField 
-                    label="Instagram" 
-                    name="instagram" 
-                    defaultValue={company.instagram_link || ''}
-                    error={errors.instagram?.[0]} 
-                    placeholder="instagram.com/acme"
-                  />
-                  <PremiumField 
-                    label="Twitter / X" 
-                    name="twitter" 
-                    defaultValue={company.twitter_link || ''}
-                    error={errors.twitter?.[0]} 
-                    placeholder="x.com/acme"
-                  />
-                  <PremiumField 
-                    label="Facebook" 
-                    name="facebook" 
-                    defaultValue={company.facebook_link || ''}
-                    error={errors.facebook?.[0]} 
-                    placeholder="facebook.com/acme"
-                  />
-                </div>
+                <PremiumField
+                  label="Notes"
+                  name="notes"
+                  defaultValue={student.notes || ''}
+                  error={errors.notes}
+                  isTextArea
+                  placeholder="Any additional information about the student..."
+                />
               </section>
             </div>
 
             {/* ── Right Column: Sidebar ── */}
             <div className="space-y-8">
               <section className="card-modern p-6 bg-(--bg-surface) border border-(--border-subtle) space-y-6">
-                <div className="flex items-center gap-3 mb-2">
-                  <MapPin className="text-(--accent-primary)" size={20} />
-                  <h3 className="text-sm font-bold uppercase tracking-widest text-(--text-muted)">Geolocation</h3>
-                </div>
+                <h3 className="text-sm font-bold uppercase tracking-widest text-(--text-secondary)">Status & Visibility</h3>
 
                 <div className="space-y-4">
-                  <PremiumField 
-                    label="Latitude" 
-                    name="latitude" 
-                    type="number"
-                    step="any"
-                    defaultValue={company.latitude?.toString() || ''}
-                    error={errors.latitude?.[0]} 
-                    placeholder="40.7128"
-                  />
-                  <PremiumField 
-                    label="Longitude" 
-                    name="longitude" 
-                    type="number"
-                    step="any"
-                    defaultValue={company.longitude?.toString() || ''}
-                    error={errors.longitude?.[0]} 
-                    placeholder="-74.0060"
-                  />
-                </div>
-                
-                <div className="p-4 rounded-xl bg-(--bg-card) border border-(--border-default) shadow-inner">
-                  <p className="text-[11px] text-(--text-disabled) leading-relaxed text-center italic">
-                    Used for public map listings and service discovery.
-                  </p>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[11px] font-bold uppercase tracking-widest text-(--text-secondary)">
+                      Status
+                    </label>
+                    <select
+                      name="status"
+                      defaultValue={student.status}
+                      className="w-full rounded-xl px-4 py-3 text-sm outline-none bg-(--bg-card) border border-(--border-default) text-(--text-primary) focus:ring-2 focus:ring-(--accent-primary)"
+                    >
+                      <option value="DRAFT">Draft</option>
+                      <option value="ACTIVE">Active</option>
+                      <option value="INACTIVE">Inactive</option>
+                      <option value="GRADUATED">Graduated</option>
+                      <option value="SUSPENDED">Suspended</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-(--bg-card) border border-(--border-default)">
+                    <label htmlFor="active" className="text-sm font-medium text-(--text-primary) cursor-pointer">
+                      Active
+                    </label>
+                    <input
+                      type="checkbox"
+                      id="active"
+                      name="active"
+                      defaultChecked={student.active}
+                      className="h-5 w-5 rounded accent-(--accent-primary) cursor-pointer"
+                    />
+                  </div>
                 </div>
               </section>
 
               <section className="card-modern p-6 bg-(--bg-surface) border border-(--border-subtle) space-y-4">
-                <h3 className="text-sm font-bold uppercase tracking-widest text-(--text-muted)">Status</h3>
-                <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-(--bg-card) border border-(--border-default)">
-                  <span className="text-sm font-medium text-(--text-primary)">Public Visibility</span>
-                  <div className={`h-2.5 w-2.5 rounded-full shadow-sm animate-pulse ${!company.deleted_at ? 'bg-(--accent-success)' : 'bg-(--accent-warning)'}`} />
+                <h3 className="text-sm font-bold uppercase tracking-widest text-(--text-secondary)">Metadata</h3>
+                <div className="space-y-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                  <div className="flex justify-between">
+                    <span>UUID</span>
+                    <span className="font-mono text-(--text-disabled)">{student.id.substring(0, 8)}...</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Created</span>
+                    <span>{new Date(student.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  {student.updatedAt && (
+                    <div className="flex justify-between">
+                      <span>Updated</span>
+                      <span>{new Date(student.updatedAt).toLocaleDateString()}</span>
+                    </div>
+                  )}
                 </div>
               </section>
             </div>

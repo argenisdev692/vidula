@@ -1,277 +1,130 @@
 {
 	"info": {
-		"_postman_id": "89b52a51-e94c-47b2-a4e3-aa0b18128362",
-		"name": "Student CRUD",
-		"description": "API collection for Student context",
+		"name": "Students CRUD",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "List Company Data",
+			"name": "List Students",
 			"request": {
 				"method": "GET",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json"
-					},
-					{
-						"key": "Authorization",
-						"value": "Bearer {{token}}"
-					}
-				],
 				"url": {
-					"raw": "{{base_url}}/api/student",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"student"
+					"raw": "{{base_url}}/api/students/admin",
+					"host": ["{{base_url}}"],
+					"path": ["api", "students", "admin"],
+					"query": [
+						{ "key": "page", "value": "1" },
+						{ "key": "perPage", "value": "15" },
+						{ "key": "search", "value": "", "disabled": true },
+						{ "key": "status", "value": "", "disabled": true }
 					]
 				}
-			},
-			"response": []
+			}
 		},
 		{
-			"name": "Show Company Data",
+			"name": "Show Student",
 			"request": {
 				"method": "GET",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json"
-					},
-					{
-						"key": "Authorization",
-						"value": "Bearer {{token}}"
-					}
-				],
 				"url": {
-					"raw": "{{base_url}}/api/student/{{uuid}}",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"student",
-						"{{uuid}}"
-					]
+					"raw": "{{base_url}}/api/students/admin/{{student_uuid}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "students", "admin", "{{student_uuid}}"]
 				}
-			},
-			"response": []
+			}
 		},
 		{
-			"name": "Create Company Data",
+			"name": "Create Student",
 			"request": {
 				"method": "POST",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json"
-					},
-					{
-						"key": "Authorization",
-						"value": "Bearer {{token}}"
-					}
-				],
+				"url": {
+					"raw": "{{base_url}}/api/students/admin",
+					"host": ["{{base_url}}"],
+					"path": ["api", "students", "admin"]
+				},
+				"header": [{ "key": "Content-Type", "value": "application/json" }],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"user_id\": 1,\n    \"company_name\": \"New Acme Corp\",\n    \"name\": \"John Doe\",\n    \"email\": \"contact@acme.com\",\n    \"phone\": \"+123456789\",\n    \"address\": \"123 Business Rd\",\n    \"website\": \"https://acme.com\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{base_url}}/api/student",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"student"
-					]
+					"raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"phone\": \"+123456789\",\n    \"dni\": \"12345678\",\n    \"birth_date\": \"2000-01-15\",\n    \"address\": \"123 Main St\",\n    \"notes\": \"New student\",\n    \"status\": \"DRAFT\",\n    \"active\": true\n}"
 				}
-			},
-			"response": []
+			}
 		},
 		{
-			"name": "Update Company Data",
+			"name": "Update Student",
 			"request": {
 				"method": "PUT",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json"
-					},
-					{
-						"key": "Authorization",
-						"value": "Bearer {{token}}"
-					}
-				],
+				"url": {
+					"raw": "{{base_url}}/api/students/admin/{{student_uuid}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "students", "admin", "{{student_uuid}}"]
+				},
+				"header": [{ "key": "Content-Type", "value": "application/json" }],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"company_name\": \"Updated Acme Corp\",\n    \"phone\": \"+987654321\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{base_url}}/api/student/{{uuid}}",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"student",
-						"{{uuid}}"
-					]
+					"raw": "{\n    \"name\": \"Jane Doe Updated\",\n    \"phone\": \"+987654321\",\n    \"status\": \"ACTIVE\"\n}"
 				}
-			},
-			"response": []
+			}
 		},
 		{
-			"name": "Delete Company Data",
+			"name": "Delete Student",
 			"request": {
 				"method": "DELETE",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json"
-					},
-					{
-						"key": "Authorization",
-						"value": "Bearer {{token}}"
-					}
-				],
 				"url": {
-					"raw": "{{base_url}}/api/student/{{uuid}}",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"student",
-						"{{uuid}}"
-					]
+					"raw": "{{base_url}}/api/students/admin/{{student_uuid}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "students", "admin", "{{student_uuid}}"]
 				}
-			},
-			"response": []
+			}
 		},
 		{
-			"name": "Restore Company Data",
+			"name": "Restore Student",
 			"request": {
 				"method": "PATCH",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json"
-					},
-					{
-						"key": "Authorization",
-						"value": "Bearer {{token}}"
-					}
-				],
 				"url": {
-					"raw": "{{base_url}}/api/student/{{uuid}}/restore",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"student",
-						"{{uuid}}",
-						"restore"
-					]
+					"raw": "{{base_url}}/api/students/admin/{{student_uuid}}/restore",
+					"host": ["{{base_url}}"],
+					"path": ["api", "students", "admin", "{{student_uuid}}", "restore"]
 				}
-			},
-			"response": []
+			}
 		},
 		{
-			"name": "Export Company Data Excel",
+			"name": "Bulk Delete Students",
+			"request": {
+				"method": "POST",
+				"url": {
+					"raw": "{{base_url}}/api/students/admin/bulk-delete",
+					"host": ["{{base_url}}"],
+					"path": ["api", "students", "admin", "bulk-delete"]
+				},
+				"header": [{ "key": "Content-Type", "value": "application/json" }],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"uuids\": [\"uuid-1\", \"uuid-2\"]\n}"
+				}
+			}
+		},
+		{
+			"name": "Export Students Excel",
 			"request": {
 				"method": "GET",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json"
-					},
-					{
-						"key": "Authorization",
-						"value": "Bearer {{token}}"
-					}
-				],
 				"url": {
-					"raw": "{{base_url}}/api/student/export?format=excel",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"student",
-						"export"
-					],
-					"query": [
-						{
-							"key": "format",
-							"value": "excel"
-						}
-					]
+					"raw": "{{base_url}}/api/students/admin/export?format=excel",
+					"host": ["{{base_url}}"],
+					"path": ["api", "students", "admin", "export"],
+					"query": [{ "key": "format", "value": "excel" }]
 				}
-			},
-			"response": []
+			}
 		},
 		{
-			"name": "Export Company Data PDF",
+			"name": "Export Students PDF",
 			"request": {
 				"method": "GET",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json"
-					},
-					{
-						"key": "Authorization",
-						"value": "Bearer {{token}}"
-					}
-				],
 				"url": {
-					"raw": "{{base_url}}/api/student/export?format=pdf",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"student",
-						"export"
-					],
-					"query": [
-						{
-							"key": "format",
-							"value": "pdf"
-						}
-					]
+					"raw": "{{base_url}}/api/students/admin/export?format=pdf",
+					"host": ["{{base_url}}"],
+					"path": ["api", "students", "admin", "export"],
+					"query": [{ "key": "format", "value": "pdf" }]
 				}
-			},
-			"response": []
-		}
-	],
-	"variable": [
-		{
-			"key": "base_url",
-			"value": "http://localhost"
-		},
-		{
-			"key": "token",
-			"value": "your_auth_token_here"
-		},
-		{
-			"key": "uuid",
-			"value": "student_uuid_here"
+			}
 		}
 	]
 }

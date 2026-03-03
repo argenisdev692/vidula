@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Modules\Students\Application\Queries\ReadModels;
@@ -17,6 +18,7 @@ use Spatie\LaravelData\Data;
  *     @OA\Property(property="address", type="string", nullable=true),
  *     @OA\Property(property="avatar", type="string", nullable=true),
  *     @OA\Property(property="notes", type="string", nullable=true),
+ *     @OA\Property(property="status", type="string"),
  *     @OA\Property(property="active", type="boolean"),
  *     @OA\Property(property="createdAt", type="string", format="date-time", nullable=true),
  *     @OA\Property(property="updatedAt", type="string", format="date-time", nullable=true),
@@ -35,6 +37,7 @@ final class StudentReadModel extends Data
         public ?string $address,
         public ?string $avatar,
         public ?string $notes,
+        public string $status,
         public bool $active,
         public ?string $createdAt,
         public ?string $updatedAt,
