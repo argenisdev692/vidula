@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Clients\Infrastructure\Http\Export;
 
-use Modules\Clients\Domain\Entities\Client;
+use Modules\Clients\Application\Queries\ReadModels\ClientReadModel;
 
 /**
  * ClientExportTransformer — Transforms client data for exports using pipe operator.
@@ -15,7 +15,7 @@ final class ClientExportTransformer
      * Transform client entity to export array for Excel
      */
     #[\NoDiscard]
-    public static function transformForExcel(Client $client): array
+    public static function transformForExcel(ClientReadModel $client): array
     {
         return $client
             |> self::extractBaseData(...)
@@ -27,7 +27,7 @@ final class ClientExportTransformer
      * Transform client entity to export array for PDF
      */
     #[\NoDiscard]
-    public static function transformForPdf(Client $client): array
+    public static function transformForPdf(ClientReadModel $client): array
     {
         return $client
             |> self::extractPdfData(...)
@@ -36,42 +36,42 @@ final class ClientExportTransformer
     }
 
     /**
-     * Extract base data from client entity for Excel
+     * Extract base data from array for Excel
      */
-    private static function extractBaseData(Client $client): array
+    private static function extractBaseData(ClientReadModel $client): array
     {
         return [
-            'id' => $client->id->value,
-            'uuid' => $client->id->value,
+            'id' => $client->uuid,
+            'uuid' => $client->uuid,
             'company_name' => $client->companyName,
             'email' => $client->email,
             'phone' => $client->phone,
             'address' => $client->address,
-            'website' => $client->socialLinks?->website,
-            'facebook' => $client->socialLinks?->facebook,
-            'instagram' => $client->socialLinks?->instagram,
-            'linkedin' => $client->socialLinks?->linkedin,
-            'twitter' => $client->socialLinks?->twitter,
-            'latitude' => $client->coordinates?->latitude,
-            'longitude' => $client->coordinates?->longitude,
-            'created_at' => $client->createdAt,
-            'updated_at' => $client->updatedAt,
+            'website' => $client->socialLinks['website'] ?? null,
+            'facebook' => $client->socialLinks['facebook'] ?? null,
+            'instagram' => $client->socialLinks['instagram'] ?? null,
+            'linkedin' => $client->socialLinks['linkedin'] ?? null,
+            'twitter' => $client->socialLinks['twitter'] ?? null,
+            'latitude' => $client->coordinates['latitude'] ?? null,
+            'longitude' => $client->coordinates['longitude'] ?? null,
+            'created_at' => is_string($client->createdAt) ? $client->createdAt : null, // Not strictly 8601 anymore, maybe string
+            'updated_at' => is_string($client->updatedAt) ? $client->updatedAt : null,
         ];
     }
 
     /**
      * Extract data specifically for PDF export
      */
-    private static function extractPdfData(Client $client): array
+    private static function extractPdfData(ClientReadModel $client): array
     {
         return [
-            'uuid' => $client->id->value,
+            'uuid' => $client->uuid,
             'company_name' => $client->companyName,
             'email' => $client->email,
             'phone' => $client->phone,
             'address' => $client->address,
-            'website' => $client->socialLinks?->website,
-            'created_at' => $client->createdAt,
+            'website' => $client->socialLinks['website'] ?? null,
+            'created_at' => is_string($client->createdAt) ? $client->createdAt : null,
         ];
     }
 
@@ -80,7 +80,7 @@ final class ClientExportTransformer
      */
     private static function formatDates(array $data): array
     {
-        // Dates are already in ISO8601 format from domain entity
+        // Dates are already in ISO8601 format from domain entity or readmodel
         return $data;
     }
 

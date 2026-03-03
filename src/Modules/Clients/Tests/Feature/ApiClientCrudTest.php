@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Models\User;
-use App\Models\Client as ClientEloquentModel;
+use Modules\Users\Infrastructure\Persistence\Eloquent\Models\UserEloquentModel as User;
+use Modules\Clients\Infrastructure\Persistence\Eloquent\Models\ClientEloquentModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -20,11 +20,11 @@ it('lists company data', function () {
     ClientEloquentModel::factory()->count(3)->create(['user_id' => $user->id]);
 
     $this->actingAs($user)
-        ->getJson(route('client.index'))
+        ->getJson(route('client.data.index'))
         ->assertOk()
         ->assertJsonStructure([
             'data' => [
-                '*' => ['id', 'userId', 'companyName', 'createdAt']
+                '*' => ['uuid', 'userUuid', 'companyName', 'createdAt']
             ],
             'meta' => ['total', 'perPage']
         ]);
@@ -33,29 +33,29 @@ it('lists company data', function () {
 it('creates company data', function () {
     $user = User::factory()->create();
     $payload = [
-        'user_id' => $user->id,
-        'company_name' => 'Acme Corp',
+        'userUuid' => $user->uuid,
+        'companyName' => 'Acme Corp',
         'email' => 'contact@acme.com',
         'phone' => '1234567890'
     ];
 
     $this->actingAs($user)
-        ->postJson(route('client.store'), $payload)
+        ->postJson(route('client.data.store'), $payload)
         ->assertCreated()
         ->assertJsonStructure(['message', 'uuid']);
 
-    $this->assertDatabaseHas('client', [
+    $this->assertDatabaseHas('clients', [
         'user_id' => $user->id,
-        'company_name' => 'Acme Corp'
+        'company' => 'Acme Corp'
     ]);
 });
 
 it('validates required fields on create', function () {
     $user = User::factory()->create();
     $this->actingAs($user)
-        ->postJson(route('client.store'), [])
+        ->postJson(route('client.data.store'), [])
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['user_id', 'company_name']);
+        ->assertJsonValidationErrors(['userUuid', 'companyName']);
 });
 
 it('shows company data', function () {
@@ -64,11 +64,11 @@ it('shows company data', function () {
     $client = ClientEloquentModel::factory()->create([
         'uuid' => $uuid,
         'user_id' => $user->id,
-        'company_name' => 'Show Test Corp'
+        'company' => 'Show Test Corp'
     ]);
 
     $this->actingAs($user)
-        ->getJson(route('client.show', $uuid))
+        ->getJson(route('client.data.show', $uuid))
         ->assertOk()
         ->assertJsonPath('data.companyName', 'Show Test Corp');
 });
@@ -79,19 +79,19 @@ it('updates company data', function () {
     $client = ClientEloquentModel::factory()->create([
         'uuid' => $uuid,
         'user_id' => $user->id,
-        'company_name' => 'Old Name'
+        'company' => 'Old Name'
     ]);
 
     $this->actingAs($user)
-        ->putJson(route('client.update', $uuid), [
-            'company_name' => 'New Name'
+        ->putJson(route('client.data.update', $uuid), [
+            'companyName' => 'New Name'
         ])
         ->assertOk()
-        ->assertJson(['message' => 'Company data updated successfully']);
+        ->assertJson(['message' => 'Client updated successfully']);
 
-    $this->assertDatabaseHas('client', [
+    $this->assertDatabaseHas('clients', [
         'uuid' => $uuid,
-        'company_name' => 'New Name'
+        'company' => 'New Name'
     ]);
 });
 
@@ -104,11 +104,11 @@ it('soft deletes company data', function () {
     ]);
 
     $this->actingAs($user)
-        ->deleteJson(route('client.destroy', $uuid))
+        ->deleteJson(route('client.data.destroy', $uuid))
         ->assertOk()
-        ->assertJson(['message' => 'Company data deleted successfully']);
+        ->assertJson(['message' => 'Client deleted successfully']);
 
-    $this->assertDatabaseHas('client', [
+    $this->assertDatabaseHas('clients', [
         'uuid' => $uuid,
     ]);
 
@@ -125,9 +125,9 @@ it('restores soft deleted company data', function () {
     ]);
 
     $this->actingAs($user)
-        ->patchJson(route('client.restore', $uuid))
+        ->patchJson(route('client.data.restore', $uuid))
         ->assertOk()
-        ->assertJson(['message' => 'Company data restored successfully']);
+        ->assertJson(['message' => 'Client restored successfully']);
 
     expect(ClientEloquentModel::where('uuid', $uuid)->first()->deleted_at)->toBeNull();
 });
@@ -137,7 +137,7 @@ it('exports company data to excel', function () {
     ClientEloquentModel::factory()->count(3)->create();
 
     $this->actingAs($user)
-        ->getJson(route('client.export', ['format' => 'excel']))
+        ->getJson(route('client.data.export', ['format' => 'excel']))
         ->assertOk()
         ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 });
@@ -147,7 +147,7 @@ it('exports company data to pdf', function () {
     ClientEloquentModel::factory()->count(3)->create();
 
     $this->actingAs($user)
-        ->getJson(route('client.export', ['format' => 'pdf']))
+        ->getJson(route('client.data.export', ['format' => 'pdf']))
         ->assertOk()
         ->assertHeader('content-type', 'application/pdf');
 });

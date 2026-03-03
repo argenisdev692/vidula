@@ -21,17 +21,17 @@ const IconSave = () => <svg {...ic}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 
 export default function ClientCreatePage(): React.JSX.Element {
   const { createClient: createMutation } = useClientMutations();
   const [formData, setFormData] = React.useState<CreateClientDTO>({
-    user_id: 1, // Defaulting to 1 for now, or this could come from auth context
-    company_name: '',
-    name: '',
+    userUuid: '', 
+    companyName: '',
     email: '',
     phone: '',
+    nif: '',
     address: '',
     website: '',
-    facebook_link: '',
-    instagram_link: '',
-    linkedin_link: '',
-    twitter_link: '',
+    facebookLink: '',
+    instagramLink: '',
+    linkedinLink: '',
+    twitterLink: '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -96,30 +96,29 @@ export default function ClientCreatePage(): React.JSX.Element {
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {/* Company Name */}
               <div>
-                <label className="input-label" htmlFor="company_name">Company Name *</label>
+                <label className="input-label" htmlFor="companyName">Company Name *</label>
                 <input
-                  id="company_name"
-                  name="company_name"
+                  id="companyName"
+                  name="companyName"
                   type="text"
                   required
-                  value={formData.company_name}
+                  value={formData.companyName}
                   onChange={handleChange}
                   className="input"
                   placeholder="e.g. Acme Corp"
                 />
               </div>
 
-              {/* Representative Name */}
               <div>
-                <label className="input-label" htmlFor="name">Representative Name</label>
+                <label className="input-label" htmlFor="nif">NIF</label>
                 <input
-                  id="name"
-                  name="name"
+                  id="nif"
+                  name="nif"
                   type="text"
-                  value={formData.name || ''}
+                  value={formData.nif || ''}
                   onChange={handleChange}
                   className="input"
-                  placeholder="e.g. Jane Doe"
+                  placeholder="e.g. A12345678"
                 />
               </div>
 
@@ -188,48 +187,48 @@ export default function ClientCreatePage(): React.JSX.Element {
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
-                <label className="input-label" htmlFor="linkedin_link">LinkedIn</label>
+                <label className="input-label" htmlFor="linkedinLink">LinkedIn</label>
                 <input
-                  id="linkedin_link"
-                  name="linkedin_link"
+                  id="linkedinLink"
+                  name="linkedinLink"
                   type="url"
-                  value={formData.linkedin_link || ''}
+                  value={formData.linkedinLink || ''}
                   onChange={handleChange}
                   className="input"
                   placeholder="https://linkedin.com/company/acmecorp"
                 />
               </div>
               <div>
-                <label className="input-label" htmlFor="twitter_link">Twitter (X)</label>
+                <label className="input-label" htmlFor="twitterLink">Twitter (X)</label>
                 <input
-                  id="twitter_link"
-                  name="twitter_link"
+                  id="twitterLink"
+                  name="twitterLink"
                   type="url"
-                  value={formData.twitter_link || ''}
+                  value={formData.twitterLink || ''}
                   onChange={handleChange}
                   className="input"
                   placeholder="https://twitter.com/acmecorp"
                 />
               </div>
               <div>
-                <label className="input-label" htmlFor="facebook_link">Facebook</label>
+                <label className="input-label" htmlFor="facebookLink">Facebook</label>
                 <input
-                  id="facebook_link"
-                  name="facebook_link"
+                  id="facebookLink"
+                  name="facebookLink"
                   type="url"
-                  value={formData.facebook_link || ''}
+                  value={formData.facebookLink || ''}
                   onChange={handleChange}
                   className="input"
                   placeholder="https://facebook.com/acmecorp"
                 />
               </div>
               <div>
-                <label className="input-label" htmlFor="instagram_link">Instagram</label>
+                <label className="input-label" htmlFor="instagramLink">Instagram</label>
                 <input
-                  id="instagram_link"
-                  name="instagram_link"
+                  id="instagramLink"
+                  name="instagramLink"
                   type="url"
-                  value={formData.instagram_link || ''}
+                  value={formData.instagramLink || ''}
                   onChange={handleChange}
                   className="input"
                   placeholder="https://instagram.com/acmecorp"

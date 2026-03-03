@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
+import type { CreateClientDTO, UpdateClientDTO } from '@/types/api';
 
 /**
  * useClientMutations — Mutations for client data.
@@ -9,7 +10,7 @@ export const useClientMutations = () => {
   const queryClient = useQueryClient();
 
   const createClient = useMutation({
-    mutationFn: (payload: Record<string, unknown>) => {
+    mutationFn: (payload: CreateClientDTO) => {
       return axios.post('/clients/data/admin', payload);
     },
     onSuccess: () => {
@@ -18,7 +19,7 @@ export const useClientMutations = () => {
   });
 
   const updateClient = useMutation({
-    mutationFn: ({ userUuid, payload }: { userUuid?: string; payload: Record<string, unknown> }) => {
+    mutationFn: ({ userUuid, payload }: { userUuid?: string; payload: UpdateClientDTO }) => {
       const url = userUuid ? `/clients/data/admin/${userUuid}` : '/clients/data/me';
       return axios.put(url, payload);
     },

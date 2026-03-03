@@ -50,7 +50,7 @@ export default function ClientTable({
         />
       ),
     }),
-    columnHelper.accessor('name', {
+    columnHelper.accessor('companyName', {
       header: 'Client',
       cell: (info) => {
         const item = info.row.original;
@@ -67,13 +67,8 @@ export default function ClientTable({
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold uppercase text-gray-900 dark:text-gray-100">
-                {item.name}
+                {item.companyName}
               </p>
-              {item.company && (
-                <p className="truncate text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-                  {item.company}
-                </p>
-              )}
             </div>
           </div>
         );
@@ -91,7 +86,7 @@ export default function ClientTable({
       header: 'Phone',
       cell: (info) => <span className="text-sm text-(--text-secondary)">{info.getValue() ?? '—'}</span>,
     }),
-    columnHelper.accessor('created_at', {
+    columnHelper.accessor('createdAt', {
       header: 'Created',
       cell: (info) => {
         const val = info.getValue() as string | undefined;
@@ -107,19 +102,19 @@ export default function ClientTable({
       header: 'Actions',
       cell: (info) => {
         const item = info.row.original;
-        const isDeleted = !!item.deleted_at;
+        const isDeleted = !!item.deletedAt;
         return (
           <div className="flex items-center justify-end gap-2 pr-4">
-            <Link href={`/clients/${item.id}`} className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors" title="View">
+            <Link href={`/clients/${item.uuid}`} className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors" title="View">
               <Eye size={16} />
             </Link>
             {!isDeleted ? (
               <>
-                <Link href={`/clients/${item.id}/edit`} className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors" title="Edit">
+                <Link href={`/clients/${item.uuid}/edit`} className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors" title="Edit">
                   <Pencil size={16} />
                 </Link>
                 <button
-                  onClick={() => onDelete(item.id, item.name)}
+                  onClick={() => onDelete(item.uuid, item.companyName)}
                   className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-red-500/10 text-(--accent-error) shadow-sm transition-colors"
                   title="Delete"
                 >
@@ -129,7 +124,7 @@ export default function ClientTable({
             ) : (
               // Deleted row: Provide restore button
               <button
-                onClick={() => onRestoreClick?.(item.id, item.name)}
+                onClick={() => onRestoreClick?.(item.uuid, item.companyName)}
                 className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-green-500/10 text-(--accent-success) shadow-sm transition-colors"
                 title="Restore"
               >
@@ -151,7 +146,7 @@ export default function ClientTable({
       noDataMessage="No clients found"
       rowSelection={rowSelection}
       onRowSelectionChange={onRowSelectionChange}
-      getRowId={(row) => row.id}
+      getRowId={(row) => row.uuid}
     />
   );
 }

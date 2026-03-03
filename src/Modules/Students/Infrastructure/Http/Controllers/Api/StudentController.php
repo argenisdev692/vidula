@@ -23,9 +23,7 @@ use Modules\Students\Application\Queries\ListStudent\ListStudentHandler;
 use Modules\Students\Application\Queries\ListStudent\ListStudentQuery;
 use Modules\Students\Infrastructure\Http\Requests\CreateStudentRequest;
 use Modules\Students\Infrastructure\Http\Requests\UpdateStudentRequest;
-use Modules\Students\Infrastructure\Persistence\Export\StudentExcelExport;
-use Modules\Students\Infrastructure\Persistence\Export\StudentPdfExport;
-use Maatwebsite\Excel\Facades\Excel;
+
 /**
  * StudentController
  */
@@ -41,21 +39,26 @@ final class StudentController
     ) {
     }
 
-    public function export(Request $request): mixed
-    {
-        $format = $request->query('format', 'excel');
-        $filters = StudentFilterDTO::from($request->all());
-        $query = new ListStudentQuery($filters);
-
-        if ($format === 'pdf') {
-            $pdfExport = new StudentPdfExport($this->listHandler, $query);
-            return $pdfExport->export();
-        }
-
-        $excelExport = new StudentExcelExport($this->listHandler, $query);
-        return Excel::download($excelExport, 'students.xlsx');
-    }
-
+    /**
+     * @OA\Get(
+     *     path="/api/students/admin",
+     *     summary="List students (paginated)",
+     *     tags={"Students"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Parameter(name="search", in="query", required=false, @OA\Schema(type="string")),
+     *     @OA\Parameter(name="page",   in="query", required=false, @OA\Schema(type="integer")),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Paginated list",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/StudentReadModel")),
+     *             @OA\Property(property="meta", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthenticated"),
+     *     @OA\Response(response=403, description="Forbidden")
+     * )
+     */
     public function index(Request $request): JsonResponse
     {
         $filters = StudentFilterDTO::from($request->all());
@@ -64,6 +67,23 @@ final class StudentController
         return response()->json($result);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/students/admin/{uuid}",
+     *     summary="Get student details",
+     *     tags={"Students"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Parameter(name="uuid", in="path", required=true, @OA\Schema(type="string", format="uuid")),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Student detail",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="data", ref="#/components/schemas/StudentReadModel")
+     *         )
+     *     ),
+     *     @OA\Response(response=404, description="Not found")
+     * )
+     */
     public function show(Request $request, ?string $uuid = null): JsonResponse
     {
         $targetUuid = $uuid ?? $request->user()?->uuid;
@@ -77,6 +97,17 @@ final class StudentController
         return response()->json(['data' => $result]);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/students/admin",
+     *     summary="Create student",
+     *     tags={"Students"},
+     *     security={{"sanctum": {}}},
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/CreateStudentDTO")),
+     *     @OA\Response(response=201, description="Created"),
+     *     @OA\Response(response=422, description="Validation error")
+     * )
+     */
     public function store(CreateStudentRequest $request): JsonResponse
     {
         $dto = CreateStudentDTO::from($request->validated());
@@ -87,6 +118,19 @@ final class StudentController
         ], 201);
     }
 
+    /**
+     * @OA\Put(
+     *     path="/api/students/admin/{uuid}",
+     *     summary="Update student",
+     *     tags={"Students"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Parameter(name="uuid", in="path", required=true, @OA\Schema(type="string", format="uuid")),
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/UpdateStudentDTO")),
+     *     @OA\Response(response=200, description="Updated"),
+     *     @OA\Response(response=404, description="Not found"),
+     *     @OA\Response(response=422, description="Validation error")
+     * )
+     */
     public function update(UpdateStudentRequest $request, ?string $uuid = null): JsonResponse
     {
         $targetUuid = $uuid ?? $request->user()?->uuid;
@@ -103,6 +147,17 @@ final class StudentController
         ]);
     }
 
+    /**
+     * @OA\Delete(
+     *     path="/api/students/admin/{uuid}",
+     *     summary="Soft delete student",
+     *     tags={"Students"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Parameter(name="uuid", in="path", required=true, @OA\Schema(type="string", format="uuid")),
+     *     @OA\Response(response=200, description="Deleted"),
+     *     @OA\Response(response=404, description="Not found")
+     * )
+     */
     public function destroy(string $uuid): JsonResponse
     {
         $this->deleteHandler->handle(new DeleteStudentCommand($uuid));
@@ -112,6 +167,18 @@ final class StudentController
         ]);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/students/admin/bulk-delete",
+     *     summary="Bulk delete students",
+     *     tags={"Students"},
+     *     security={{"sanctum": {}}},
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         @OA\Property(property="uuids", type="array", @OA\Items(type="string", format="uuid"))
+     *     )),
+     *     @OA\Response(response=204, description="Deleted")
+     * )
+     */
     public function bulkDelete(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -126,6 +193,17 @@ final class StudentController
         return response()->json(null, 204);
     }
 
+    /**
+     * @OA\Patch(
+     *     path="/api/students/admin/{uuid}/restore",
+     *     summary="Restore student",
+     *     tags={"Students"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Parameter(name="uuid", in="path", required=true, @OA\Schema(type="string", format="uuid")),
+     *     @OA\Response(response=200, description="Restored"),
+     *     @OA\Response(response=404, description="Not found")
+     * )
+     */
     public function restore(string $uuid): JsonResponse
     {
         $this->restoreHandler->handle(new RestoreStudentCommand($uuid));

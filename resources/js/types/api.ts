@@ -259,21 +259,21 @@ export interface ProductFilters {
 
 // ── Clients ────────────────────────────────────────────────
 export interface ClientListItem {
-  id: string; // uuid
-  name: string;
-  nif?: string | null;
+  uuid: string; // uuid
+  userUuid: string;
+  companyName: string;
+  nif: string | null;
   email: string | null;
   phone: string | null;
-  company: string | null;
-  created_at: string;
-  deleted_at?: string | null;
+  createdAt: string;
+  deletedAt?: string | null;
 }
 
 export interface ClientDetail extends ClientListItem {
   address: string | null;
-  tax_id: string | null;
-  notes: string | null;
-  updated_at: string | null;
+  socialLinks: Record<string, string>;
+  coordinates: Record<string, number>;
+  updatedAt: string | null;
 }
 
 export interface ClientFilters {
@@ -283,6 +283,37 @@ export interface ClientFilters {
   status?: string;
   dateFrom?: string;
   dateTo?: string;
+}
+
+export interface CreateClientDTO {
+  userUuid: string;
+  companyName: string;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  nif?: string | null;
+  website?: string | null;
+  facebookLink?: string | null;
+  instagramLink?: string | null;
+  linkedinLink?: string | null;
+  twitterLink?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+}
+
+export interface UpdateClientDTO {
+  companyName: string;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  nif?: string | null;
+  website?: string | null;
+  facebookLink?: string | null;
+  instagramLink?: string | null;
+  linkedinLink?: string | null;
+  twitterLink?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 // ── Students ────────────────────────────────────────────────

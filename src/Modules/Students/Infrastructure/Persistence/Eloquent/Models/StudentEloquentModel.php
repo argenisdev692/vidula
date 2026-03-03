@@ -48,9 +48,20 @@ final class StudentEloquentModel extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logFillable()
+            ->logOnly([
+                'name',
+                'email',
+                'phone',
+                'dni',
+                'birth_date',
+                'address',
+                'avatar',
+                'notes',
+                'active',
+            ])
             ->logOnlyDirty()
-            ->dontSubmitEmptyLogs();
+            ->dontSubmitEmptyLogs()
+            ->useLogName('Admin.Students');
     }
 
     public function user(): BelongsTo

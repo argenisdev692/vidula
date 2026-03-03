@@ -15,6 +15,7 @@ final class ClientReadModel extends Data
         public ?string $email,
         public ?string $phone,
         public ?string $address,
+        public ?string $nif,
         public array $socialLinks,
         public array $coordinates,
         public ?string $createdAt = null,

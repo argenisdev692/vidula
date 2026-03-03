@@ -10,7 +10,8 @@ final readonly class UpdateClientCommand
 {
     public function __construct(
         public string $id,
-        public UpdateClientDTO $dto
+        public UpdateClientDTO $dto,
+        public bool $isUserId = false
     ) {
     }
 }

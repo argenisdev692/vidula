@@ -55,7 +55,7 @@ export default function ClientShowPage(): React.JSX.Element {
 
   return (
     <AppLayout>
-      <Head title={`${company.company_name} Profile`} />
+      <Head title={`${company.companyName} Profile`} />
       <div style={{ fontFamily: 'var(--font-sans)', maxWidth: '900px', margin: '0 auto' }}>
         
         {/* ── Header ── */}
@@ -70,21 +70,21 @@ export default function ClientShowPage(): React.JSX.Element {
             </Link>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-                {company.company_name}
+                {company.companyName}
               </h1>
               <div className="mt-1 flex items-center gap-3">
-                <ClientStatusBadge status={company.deleted_at ? 'deleted' : 'active'} />
+                <ClientStatusBadge status={company.deletedAt ? 'deleted' : 'active'} />
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  ID: {company.id.substring(0, 8)}...
+                  ID: {company.uuid.substring(0, 8)}...
                 </span>
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  Registered: {new Date(company.created_at).toLocaleDateString()}
+                  Registered: {new Date(company.createdAt).toLocaleDateString()}
                 </span>
               </div>
             </div>
           </div>
           <Link
-            href={`/client/${company.id}/edit`}
+            href={`/client/${company.uuid}/edit`}
             className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all hover:bg-(--bg-hover)"
             style={{
               background: 'var(--accent-primary)',
@@ -113,10 +113,10 @@ export default function ClientShowPage(): React.JSX.Element {
                   </div>
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>
-                      Representative Name
+                      NIF
                     </p>
                     <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      {company.name ?? 'Not specified'}
+                      {company.nif ?? 'Not specified'}
                     </p>
                   </div>
                 </div>
@@ -165,10 +165,10 @@ export default function ClientShowPage(): React.JSX.Element {
                     <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>
                       Website
                     </p>
-                    <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      {company.website ? (
-                        <a href={company.website} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--accent-info)' }}>
-                           {company.website}
+                    <p className=" mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      {company.socialLinks?.website ? (
+                        <a href={company.socialLinks.website} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--accent-info)' }}>
+                           {company.socialLinks.website}
                         </a>
                       ) : 'Not specified'}
                     </p>
@@ -199,11 +199,11 @@ export default function ClientShowPage(): React.JSX.Element {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                    <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Latitude</p>
-                   <p className="mt-1 text-sm font-mono" style={{ color: 'var(--text-secondary)' }}>{company.latitude ?? '—'}</p>
+                   <p className="mt-1 text-sm font-mono" style={{ color: 'var(--text-secondary)' }}>{company.coordinates?.latitude ?? '—'}</p>
                 </div>
                 <div>
                    <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Longitude</p>
-                   <p className="mt-1 text-sm font-mono" style={{ color: 'var(--text-secondary)' }}>{company.longitude ?? '—'}</p>
+                   <p className="mt-1 text-sm font-mono" style={{ color: 'var(--text-secondary)' }}>{company.coordinates?.longitude ?? '—'}</p>
                 </div>
               </div>
             </div>
@@ -218,10 +218,10 @@ export default function ClientShowPage(): React.JSX.Element {
               </h2>
               <div className="space-y-4">
                 {[
-                  { label: 'LinkedIn', url: company.linkedin_link },
-                  { label: 'Twitter', url: company.twitter_link },
-                  { label: 'Facebook', url: company.facebook_link },
-                  { label: 'Instagram', url: company.instagram_link },
+                  { label: 'LinkedIn', url: company.socialLinks?.linkedin },
+                  { label: 'Twitter', url: company.socialLinks?.twitter },
+                  { label: 'Facebook', url: company.socialLinks?.facebook },
+                  { label: 'Instagram', url: company.socialLinks?.instagram },
                 ].map((social) => (
                   <div key={social.label}>
                     <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>
@@ -246,15 +246,15 @@ export default function ClientShowPage(): React.JSX.Element {
               <div className="space-y-4 text-sm" style={{ color: 'var(--text-secondary)' }}>
                  <div className="flex justify-between border-b pb-2" style={{ borderColor: 'var(--border-subtle)' }}>
                      <span style={{ color: 'var(--text-disabled)' }}>Owner User ID:</span>
-                     <span className="font-mono">{company.user_id}</span>
+                     <span className="font-mono">{company.userUuid}</span>
                  </div>
                  <div className="flex justify-between border-b pb-2" style={{ borderColor: 'var(--border-subtle)' }}>
                      <span style={{ color: 'var(--text-disabled)' }}>Created At:</span>
-                     <span>{new Date(company.created_at).toLocaleString()}</span>
+                     <span>{new Date(company.createdAt).toLocaleString()}</span>
                  </div>
                  <div className="flex justify-between border-b pb-2" style={{ borderColor: 'var(--border-subtle)' }}>
                      <span style={{ color: 'var(--text-disabled)' }}>Updated At:</span>
-                     <span>{company.updated_at ? new Date(company.updated_at).toLocaleString() : 'Never'}</span>
+                     <span>{company.updatedAt ? new Date(company.updatedAt).toLocaleString() : 'Never'}</span>
                  </div>
               </div>
             </div>

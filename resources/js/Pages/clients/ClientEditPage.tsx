@@ -19,32 +19,32 @@ export default function ClientEditPage(): React.JSX.Element {
 
   const [form, setForm] = React.useState<UpdateClientDTO>({
     companyName: '',
-    name: '',
     email: '',
     phone: '',
     address: '',
+    nif: '',
     website: '',
-    facebook: '',
-    instagram: '',
-    linkedin: '',
-    twitter: '',
+    facebookLink: '',
+    instagramLink: '',
+    linkedinLink: '',
+    twitterLink: '',
   });
 
   React.useEffect(() => {
     if (company) {
       setForm({
-        companyName: company.company_name,
-        name: company.name || '',
+        companyName: company.companyName || '',
         email: company.email || '',
         phone: company.phone || '',
         address: company.address || '',
-        website: company.website || '',
-        facebook: company.facebook_link || '',
-        instagram: company.instagram_link || '',
-        linkedin: company.linkedin_link || '',
-        twitter: company.twitter_link || '',
-        latitude: company.latitude || undefined,
-        longitude: company.longitude || undefined,
+        nif: company.nif || '',
+        website: company.socialLinks?.website || '',
+        facebookLink: company.socialLinks?.facebook || '',
+        instagramLink: company.socialLinks?.instagram || '',
+        linkedinLink: company.socialLinks?.linkedin || '',
+        twitterLink: company.socialLinks?.twitter || '',
+        latitude: company.coordinates?.latitude || undefined,
+        longitude: company.coordinates?.longitude || undefined,
       });
     }
   }, [company]);
@@ -81,7 +81,7 @@ export default function ClientEditPage(): React.JSX.Element {
 
   return (
     <AppLayout>
-      <Head title={`Company Profile | ${company?.company_name}`} />
+      <Head title={`Client Profile | ${company?.companyName}`} />
       <div className="max-w-5xl mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
         
         {/* ── Header ── */}
@@ -97,7 +97,7 @@ export default function ClientEditPage(): React.JSX.Element {
               <h1 className="text-3xl font-extrabold tracking-tight text-(--text-primary)">
                 Corporate Profile
               </h1>
-              <p className="text-sm text-(--text-muted) font-medium">Manage legal and contact information for <span className="text-(--accent-primary)">{company?.company_name}</span></p>
+              <p className="text-sm text-(--text-muted) font-medium">Manage legal and contact information for <span className="text-(--accent-primary)">{company?.companyName}</span></p>
             </div>
           </div>
 
@@ -130,14 +130,16 @@ export default function ClientEditPage(): React.JSX.Element {
                                 placeholder="Acme Corporation S.A."
                             />
                         </div>
+                        <div className="md:col-span-2">
+                            <PremiumField 
+                                label="NIF" 
+                                name="nif" 
+                                value={form.nif || ''} 
+                                onChange={handleChange} 
+                                placeholder="A12345678"
+                            />
+                        </div>
                         <PremiumField 
-                            label="Legal Representative" 
-                            name="name" 
-                            value={form.name || ''} 
-                            onChange={handleChange} 
-                            placeholder="John Smith"
-                        />
-                         <PremiumField 
                             label="Business Email" 
                             name="email" 
                             type="email"
@@ -184,29 +186,29 @@ export default function ClientEditPage(): React.JSX.Element {
                         </div>
                         <PremiumField 
                             label="LinkedIn" 
-                            name="linkedin" 
-                            value={form.linkedin || ''} 
+                            name="linkedinLink" 
+                            value={form.linkedinLink || ''} 
                             onChange={handleChange} 
                             placeholder="linkedin.com/company/acme"
                         />
                         <PremiumField 
                             label="Instagram" 
-                            name="instagram" 
-                            value={form.instagram || ''} 
+                            name="instagramLink" 
+                            value={form.instagramLink || ''} 
                             onChange={handleChange} 
                             placeholder="instagram.com/acme"
                         />
                         <PremiumField 
                             label="Twitter / X" 
-                            name="twitter" 
-                            value={form.twitter || ''} 
+                            name="twitterLink" 
+                            value={form.twitterLink || ''} 
                             onChange={handleChange} 
                             placeholder="x.com/acme"
                         />
                         <PremiumField 
                             label="Facebook" 
-                            name="facebook" 
-                            value={form.facebook || ''} 
+                            name="facebookLink" 
+                            value={form.facebookLink || ''} 
                             onChange={handleChange} 
                             placeholder="facebook.com/acme"
                         />
@@ -252,7 +254,7 @@ export default function ClientEditPage(): React.JSX.Element {
                      <h3 className="text-sm font-bold uppercase tracking-widest text-(--text-muted)">Status</h3>
                      <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-(--bg-card) border border-(--border-default)">
                          <span className="text-sm font-medium text-(--text-primary)">Public Visibility</span>
-                         <div className={`h-2.5 w-2.5 rounded-full shadow-sm animate-pulse ${!company?.deleted_at ? 'bg-(--accent-success)' : 'bg-(--accent-warning)'}`} />
+                         <div className={`h-2.5 w-2.5 rounded-full shadow-sm animate-pulse ${!company?.deletedAt ? 'bg-(--accent-success)' : 'bg-(--accent-warning)'}`} />
                      </div>
                 </section>
             </div>

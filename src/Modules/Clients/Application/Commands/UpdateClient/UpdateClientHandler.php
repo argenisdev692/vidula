@@ -9,6 +9,7 @@ use Modules\Clients\Domain\Ports\ClientRepositoryPort;
 use Modules\Clients\Domain\ValueObjects\Coordinates;
 use Modules\Clients\Domain\ValueObjects\SocialLinks;
 use Modules\Clients\Domain\ValueObjects\ClientId;
+use Modules\Clients\Domain\ValueObjects\UserId;
 use Illuminate\Support\Facades\Cache;
 
 final readonly class UpdateClientHandler
@@ -20,8 +21,11 @@ final readonly class UpdateClientHandler
 
     public function handle(UpdateClientCommand $command): void
     {
-        $id = new ClientId($command->id);
-        $client = $this->repository->findById($id);
+        if ($command->isUserId) {
+            $client = $this->repository->findByUserId(new UserId($command->id));
+        } else {
+            $client = $this->repository->findById(new ClientId($command->id));
+        }
 
         if (null === $client) {
             throw ClientNotFoundException::forId($command->id);

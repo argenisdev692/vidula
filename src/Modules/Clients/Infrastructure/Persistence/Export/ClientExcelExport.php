@@ -17,6 +17,16 @@ final class ClientExcelExport implements FromView
 
     public function view(): View
     {
-        return view('exports.pdf.clients', ['items' => $this->handler->handle($this->query)['data']]);
+        $result = $this->handler->handle($this->query);
+        $rows = array_map(
+            \Modules\Clients\Infrastructure\Http\Export\ClientExportTransformer::transformForExcel(...),
+            $result['data']
+        );
+
+        return view('exports.pdf.clients', [
+            'rows' => $rows,
+            'title' => 'Client Directory Report',
+            'generatedAt' => now()->format('Y-m-d H:i:s'),
+        ]);
     }
 }

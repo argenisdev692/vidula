@@ -16,15 +16,15 @@ final class UpdateClientRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'company_name' => ['sometimes', 'string', 'max:255'],
+            'companyName' => ['sometimes', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
             'address' => ['nullable', 'string', 'max:1000'],
             'website' => ['nullable', 'url', 'max:255'],
-            'facebook_link' => ['nullable', 'url', 'max:255'],
-            'instagram_link' => ['nullable', 'url', 'max:255'],
-            'linkedin_link' => ['nullable', 'url', 'max:255'],
-            'twitter_link' => ['nullable', 'url', 'max:255'],
+            'facebookLink' => ['nullable', 'url', 'max:255'],
+            'instagramLink' => ['nullable', 'url', 'max:255'],
+            'linkedinLink' => ['nullable', 'url', 'max:255'],
+            'twitterLink' => ['nullable', 'url', 'max:255'],
             'latitude' => ['nullable', 'numeric'],
             'longitude' => ['nullable', 'numeric'],
         ];

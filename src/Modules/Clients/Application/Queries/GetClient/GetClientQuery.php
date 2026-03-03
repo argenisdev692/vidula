@@ -7,7 +7,8 @@ namespace Modules\Clients\Application\Queries\GetClient;
 final readonly class GetClientQuery
 {
     public function __construct(
-        public string $userUuid
+        public string $uuid,
+        public bool $isUserUuid = false
     ) {
     }
 }

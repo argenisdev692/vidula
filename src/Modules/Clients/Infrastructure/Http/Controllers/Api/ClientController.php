@@ -66,13 +66,14 @@ final class ClientController
 
     public function show(Request $request, ?string $uuid = null): JsonResponse
     {
+        $isUserUuid = $uuid === null;
         $targetUuid = $uuid ?? $request->user()?->uuid;
 
         if (!$targetUuid) {
             return response()->json(['message' => 'User context not found'], 401);
         }
 
-        $result = $this->getHandler->handle(new GetClientQuery($targetUuid));
+        $result = $this->getHandler->handle(new GetClientQuery($targetUuid, $isUserUuid));
 
         return response()->json(['data' => $result]);
     }
@@ -80,15 +81,17 @@ final class ClientController
     public function store(CreateClientRequest $request): JsonResponse
     {
         $dto = CreateClientDTO::from($request->validated());
-        $this->createHandler->handle(new CreateClientCommand($dto));
+        $uuid = $this->createHandler->handle(new CreateClientCommand($dto));
 
         return response()->json([
             'message' => 'Client created successfully',
+            'uuid' => $uuid,
         ], 201);
     }
 
     public function update(UpdateClientRequest $request, ?string $uuid = null): JsonResponse
     {
+        $isUserId = $uuid === null;
         $targetUuid = $uuid ?? $request->user()?->uuid;
 
         if (!$targetUuid) {
@@ -96,7 +99,7 @@ final class ClientController
         }
 
         $dto = UpdateClientDTO::from($request->validated());
-        $this->updateHandler->handle(new UpdateClientCommand($targetUuid, $dto));
+        $this->updateHandler->handle(new UpdateClientCommand($targetUuid, $dto, $isUserId));
 
         return response()->json([
             'message' => 'Client updated successfully',

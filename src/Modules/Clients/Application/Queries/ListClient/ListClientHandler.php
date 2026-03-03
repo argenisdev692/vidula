@@ -71,6 +71,7 @@ final readonly class ListClientHandler
             email: $client->email,
             phone: $client->phone,
             address: $client->address,
+            nif: $client->nif,
             socialLinks: $client->socialLinks?->toArray() ?? [],
             coordinates: $client->coordinates?->toArray() ?? [],
             createdAt: $client->createdAt,

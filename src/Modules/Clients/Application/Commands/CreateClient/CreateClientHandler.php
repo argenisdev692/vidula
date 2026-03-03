@@ -19,7 +19,7 @@ final readonly class CreateClientHandler
     ) {
     }
 
-    public function handle(CreateClientCommand $command): void
+    public function handle(CreateClientCommand $command): string
     {
         $dto = $command->dto;
         $uuid = Str::uuid()->toString();
@@ -39,5 +39,7 @@ final readonly class CreateClientHandler
             Cache::tags(['clients_list'])->flush();
         } catch (\Exception $e) {
         }
+
+        return $uuid;
     }
 }
