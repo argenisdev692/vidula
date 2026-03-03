@@ -4,19 +4,13 @@ import {
   type ColumnDef,
   type RowSelectionState,
   type OnChangeFn,
-  type SortingState,
-  type ColumnFiltersState,
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
-  flexRender,
 } from '@tanstack/react-table';
+import { DataTable } from '@/shadcn/data-table';
 import { Link } from '@inertiajs/react';
 import type { StudentListItem } from '@/types/api';
 import { useStudentMutations } from '@/modules/students/hooks/useStudentMutations';
 import { formatDateShort } from '@/common/helpers/formatDate';
-import { Building2, Eye, Pencil, Trash2, CheckCircle, ArrowUpDown } from 'lucide-react';
+import { Building2, Eye, Pencil, Trash2, CheckCircle } from 'lucide-react';
 
 /**
  * StudentsTable — TanStack Table v8 with sorting, filtering, and row selection.
@@ -45,10 +39,6 @@ export default function StudentsTable({
 }: StudentsTableProps) {
   const { restoreStudent } = useStudentMutations();
 
-  // TanStack Table v8: Local state for sorting and filtering
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-
   const columns = React.useMemo<ColumnDef<StudentListItem, any>[]>(() => [
     columnHelper.display({
       id: 'select',
@@ -72,16 +62,7 @@ export default function StudentsTable({
       ),
     }),
     columnHelper.accessor('name', {
-      header: ({ column }) => (
-        <button
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          className="flex items-center gap-2 hover:text-(--accent-primary) transition-colors"
-        >
-          Student
-          <ArrowUpDown size={14} />
-        </button>
-      ),
-      enableSorting: true,
+      header: 'Student',
       cell: (info) => {
         const student = info.row.original;
         return (
@@ -110,17 +91,7 @@ export default function StudentsTable({
       },
     }),
     columnHelper.accessor('email', {
-      header: ({ column }) => (
-        <button
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          className="flex items-center gap-2 hover:text-(--accent-primary) transition-colors"
-        >
-          Contact
-          <ArrowUpDown size={14} />
-        </button>
-      ),
-      enableSorting: true,
-      enableColumnFilter: true,
+      header: 'Contact',
       cell: (info) => {
         const student = info.row.original;
         return (
@@ -149,17 +120,7 @@ export default function StudentsTable({
       },
     }),
     columnHelper.accessor('created_at', {
-      header: ({ column }) => (
-        <button
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          className="flex items-center gap-2 hover:text-(--accent-primary) transition-colors"
-        >
-          Created
-          <ArrowUpDown size={14} />
-        </button>
-      ),
-      enableSorting: true,
-      sortingFn: 'datetime',
+      header: 'Created',
       cell: (info) => {
         const val = info.getValue() as string | undefined;
         return (
@@ -177,41 +138,40 @@ export default function StudentsTable({
         const isDeleted = !!student.deleted_at;
 
         return (
-          <div className="flex items-center justify-end gap-1.5">
+          <div className="flex items-center justify-end gap-2 pr-4">
             <Link
               href={`/student/${student.id}`}
-              className="btn-action btn-action-view"
+              className="p-1.5 rounded-md hover:bg-(--bg-hover) text-(--text-secondary) transition-colors"
               title="View Profile"
             >
-              <Eye size={14} />
+              <Eye size={16} />
             </Link>
 
-            {!isDeleted && (
-               <Link
-                 href={`/student/${student.id}/edit`}
-                 className="btn-action btn-action-edit"
-                 title="Edit"
-               >
-                 <Pencil size={14} />
-               </Link>
-            )}
-
-            {isDeleted ? (
+            {!isDeleted ? (
+              <>
+                <Link
+                  href={`/student/${student.id}/edit`}
+                  className="p-1.5 rounded-md hover:bg-(--bg-hover) text-(--text-secondary) transition-colors"
+                  title="Edit"
+                >
+                  <Pencil size={16} />
+                </Link>
+                <button
+                  onClick={() => onDelete(student.id, student.name)}
+                  className="p-1.5 rounded-md hover:bg-(--bg-hover) text-(--accent-error) transition-colors"
+                  title="Delete"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </>
+            ) : (
               <button
                 onClick={() => restoreStudent.mutate(student.id)}
-                className="btn-action btn-action-restore"
+                className="p-1.5 rounded-md hover:bg-(--bg-hover) text-(--accent-success) transition-colors"
                 title="Restore"
                 disabled={restoreStudent.isPending}
               >
-                <CheckCircle size={14} />
-              </button>
-            ) : (
-              <button
-                onClick={() => onDelete(student.id, student.name)}
-                className="btn-action btn-action-delete"
-                title="Delete"
-              >
-                <Trash2 size={14} />
+                <CheckCircle size={16} />
               </button>
             )}
           </div>
@@ -220,85 +180,16 @@ export default function StudentsTable({
     }),
   ], [onDelete, restoreStudent]);
 
-  // TanStack Table v8: getRowId uses stable UUID instead of array index
-  const table = useReactTable({
-    data,
-    columns,
-    getRowId: (row) => row.id,
-    state: {
-      rowSelection,
-      sorting,
-      columnFilters,
-    },
-    onRowSelectionChange,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    enableRowSelection: true,
-    enableSorting: true,
-    enableColumnFilters: true,
-  });
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-(--accent-primary)" />
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="flex items-center justify-center py-12 text-(--accent-error)">
-        Error loading students
-      </div>
-    );
-  }
-
-  if (data.length === 0) {
-    return (
-      <div className="flex items-center justify-center py-12 text-(--text-muted)">
-        No students found
-      </div>
-    );
-  }
-
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          {table.getHeaderGroups().map(headerGroup => (
-            <tr key={headerGroup.id} className="border-b border-(--border-subtle)">
-              {headerGroup.headers.map(header => (
-                <th
-                  key={header.id}
-                  className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-(--text-muted)"
-                >
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(header.column.columnDef.header, header.getContext())}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          {table.getRowModel().rows.map(row => (
-            <tr
-              key={row.id}
-              className="border-b border-(--border-subtle) hover:bg-(--bg-hover) transition-colors"
-            >
-              {row.getVisibleCells().map(cell => (
-                <td key={cell.id} className="px-6 py-4">
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      columns={columns}
+      data={data}
+      isLoading={isLoading}
+      isError={isError}
+      noDataMessage="No students found"
+      rowSelection={rowSelection}
+      onRowSelectionChange={onRowSelectionChange}
+      getRowId={(row: StudentListItem) => row.id}
+    />
   );
 }

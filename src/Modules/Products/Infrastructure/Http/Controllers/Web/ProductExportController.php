@@ -28,23 +28,11 @@ final class ProductExportController
         $query = new ListProductQuery($filters);
 
         if ($format === 'pdf') {
-            return $this->exportPdf($query);
+            $pdfExport = new ProductPdfExport($this->listHandler, $query);
+            return $pdfExport->export();
         }
 
         $excelExport = new ProductExcelExport($this->listHandler, $query);
         return Excel::download($excelExport, 'products.xlsx');
-    }
-
-    private function exportPdf(ListProductQuery $query): mixed
-    {
-        // Re-use list handler
-        $items = $this->listHandler->handle($query);
-
-        $pdf = Pdf::loadView('products::exports.pdf', [
-            'items' => $items['data'],
-            'generatedAt' => now()->format('F j, Y H:i'),
-        ])->setPaper('a4', 'landscape');
-
-        return $pdf->download('products-export.pdf');
     }
 }
