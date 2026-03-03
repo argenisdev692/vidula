@@ -113,7 +113,7 @@ export default function StudentsTable({
       cell: (info) => {
         const isActive = info.getValue() as boolean;
         return (
-          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${isActive ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'}`}>
+          <span className={`inline-flex items-center uppercase rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider ${isActive ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'}`}>
             {isActive ? 'Active' : 'Inactive'}
           </span>
         );
@@ -141,7 +141,7 @@ export default function StudentsTable({
           <div className="flex items-center justify-end gap-2 pr-4">
             <Link
               href={`/student/${student.id}`}
-              className="p-1.5 rounded-md hover:bg-(--bg-hover) text-(--text-secondary) transition-colors"
+              className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors"
               title="View Profile"
             >
               <Eye size={16} />
@@ -151,14 +151,14 @@ export default function StudentsTable({
               <>
                 <Link
                   href={`/student/${student.id}/edit`}
-                  className="p-1.5 rounded-md hover:bg-(--bg-hover) text-(--text-secondary) transition-colors"
+                  className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors"
                   title="Edit"
                 >
                   <Pencil size={16} />
                 </Link>
                 <button
                   onClick={() => onDelete(student.id, student.name)}
-                  className="p-1.5 rounded-md hover:bg-(--bg-hover) text-(--accent-error) transition-colors"
+                  className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-red-500/10 text-(--accent-error) shadow-sm transition-colors"
                   title="Delete"
                 >
                   <Trash2 size={16} />
@@ -167,7 +167,7 @@ export default function StudentsTable({
             ) : (
               <button
                 onClick={() => restoreStudent.mutate(student.id)}
-                className="p-1.5 rounded-md hover:bg-(--bg-hover) text-(--accent-success) transition-colors"
+                className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-green-500/10 text-(--accent-success) shadow-sm transition-colors"
                 title="Restore"
                 disabled={restoreStudent.isPending}
               >

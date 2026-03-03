@@ -63,7 +63,7 @@ export default function ProductTable({
               <Package size={16} />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+              <p className="truncate text-sm font-semibold uppercase text-gray-900 dark:text-gray-100">
                 {item.title}
               </p>
               <p className="truncate text-[11px] uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
@@ -107,17 +107,17 @@ export default function ProductTable({
         const isDeleted = !!item.deleted_at;
         return (
           <div className="flex items-center justify-end gap-2 pr-4">
-            <Link href={`/products/${item.id}`} className="p-1.5 rounded-md hover:bg-(--bg-hover) text-(--text-secondary) transition-colors" title="View">
+            <Link href={`/products/${item.id}`} className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors" title="View">
               <Eye size={16} />
             </Link>
             {!isDeleted && (
               <>
-                <Link href={`/products/${item.id}/edit`} className="p-1.5 rounded-md hover:bg-(--bg-hover) text-(--text-secondary) transition-colors" title="Edit">
+                <Link href={`/products/${item.id}/edit`} className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors" title="Edit">
                   <Pencil size={16} />
                 </Link>
                 <button
                   onClick={() => onDelete(item.id, item.title)}
-                  className="p-1.5 rounded-md hover:bg-(--bg-hover) text-(--accent-error) transition-colors"
+                  className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-red-500/10 text-(--accent-error) shadow-sm transition-colors"
                   title="Delete"
                 >
                   <Trash2 size={16} />

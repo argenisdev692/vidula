@@ -66,7 +66,7 @@ export default function CompanyDataTable({
               <Building2 size={16} />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+              <p className="truncate text-sm font-semibold uppercase text-gray-900 dark:text-gray-100">
                 {company.company_name}
               </p>
               {company.name && (
@@ -104,27 +104,27 @@ export default function CompanyDataTable({
       cell: (info) => {
         const company = info.row.original;
         return (
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center justify-end gap-2 pr-4">
             <Link
               href={`/company-data/${company.id}`}
-              className="btn-action btn-action-view"
+              className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors"
               title="View"
             >
-              <Eye size={14} />
+              <Eye size={16} />
             </Link>
             <Link
               href={`/company-data/${company.id}/edit`}
-              className="btn-action btn-action-edit"
+              className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors"
               title="Edit"
             >
-              <Pencil size={14} />
+              <Pencil size={16} />
             </Link>
             <button
               onClick={() => onDelete(company.id, company.company_name)}
-              className="btn-action btn-action-delete"
+              className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-red-500/10 text-(--accent-error) shadow-sm transition-colors"
               title="Delete"
             >
-              <Trash2 size={14} />
+              <Trash2 size={16} />
             </button>
           </div>
         );

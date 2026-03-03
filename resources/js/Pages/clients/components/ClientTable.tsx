@@ -66,7 +66,7 @@ export default function ClientTable({
               <UserSquare2 size={16} />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+              <p className="truncate text-sm font-semibold uppercase text-gray-900 dark:text-gray-100">
                 {item.name}
               </p>
               {item.company && (
@@ -110,17 +110,17 @@ export default function ClientTable({
         const isDeleted = !!item.deleted_at;
         return (
           <div className="flex items-center justify-end gap-2 pr-4">
-            <Link href={`/clients/${item.id}`} className="p-1.5 rounded-md hover:bg-(--bg-hover) text-(--text-secondary) transition-colors" title="View">
+            <Link href={`/clients/${item.id}`} className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors" title="View">
               <Eye size={16} />
             </Link>
             {!isDeleted ? (
               <>
-                <Link href={`/clients/${item.id}/edit`} className="p-1.5 rounded-md hover:bg-(--bg-hover) text-(--text-secondary) transition-colors" title="Edit">
+                <Link href={`/clients/${item.id}/edit`} className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors" title="Edit">
                   <Pencil size={16} />
                 </Link>
                 <button
                   onClick={() => onDelete(item.id, item.name)}
-                  className="p-1.5 rounded-md hover:bg-(--bg-hover) text-(--accent-error) transition-colors"
+                  className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-red-500/10 text-(--accent-error) shadow-sm transition-colors"
                   title="Delete"
                 >
                   <Trash2 size={16} />
@@ -130,7 +130,7 @@ export default function ClientTable({
               // Deleted row: Provide restore button
               <button
                 onClick={() => onRestoreClick?.(item.id, item.name)}
-                className="p-1.5 rounded-md hover:bg-(--bg-hover) text-(--accent-success) transition-colors"
+                className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-green-500/10 text-(--accent-success) shadow-sm transition-colors"
                 title="Restore"
               >
                 <CheckCircle size={16} />
