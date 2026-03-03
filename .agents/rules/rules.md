@@ -6,6 +6,7 @@ trigger: always_on
 
 - **Language:** Respond in English at all times.
 - **CLI:** Use `./vendor/bin/sail artisan` — NEVER bare `php`.
+- **PHP 8.5:** Follow `.agents/skills/BACKEND-PHP.md` §0–§3 — SINGLE SOURCE OF TRUTH for PHP 8.5 syntax.
 - **TypeScript:** Strict mode enforced on ALL `.tsx` / `.ts` files.
 - **Context7 (MCP):** Always resolve live docs — never rely on cached training knowledge.
 - **Investigate / Investigar:** Run Tavily search immediately before responding.
@@ -14,29 +15,30 @@ trigger: always_on
 
 # [MUST] Before writing any code — read the relevant skill
 
-| Task type             | Required reading                                  |
-| --------------------- | ------------------------------------------------- |
-| PHP / Laravel backend | `.agents/skills/ARCHITECTURE-INTERMEDIATE-PHP.md` |
-| React / Inertia UI    | `.agents/skills/ARCHITECTURE-REACT-INERTIA.md`    |
-| CSS / Styles / UI     | `.agents/skills/RULES-STYLES.md`                  |
-| Full coding rules     | `.agents/skills/RULES-FULLSTACK.md`               |
-| Business Logic / CRUD | `.agents/skills/HOW-TO-USE.md`                    |
+| Task type                              | Required reading                                  |
+| -------------------------------------- | ------------------------------------------------- |
+| PHP / Laravel / Backend / Business     | `.agents/skills/BACKEND-PHP.md`                   |
+| React / Inertia / TanStack / Frontend  | `.agents/skills/FRONTEND-REACT.md`                |
+| CSS / Styles / UI design tokens        | `.agents/skills/FRONTEND-REACT.md` §0–§2, §9      |
+| PHP project structure / directory tree | `.agents/skills/ARCHITECTURE-INTERMEDIATE-PHP.md` |
+| React directory tree / file placement  | `.agents/skills/ARCHITECTURE-REACT-INERTIA.md`    |
 
 > **Rule:** If a skill file covers the task, read it FIRST — no exceptions.
+> **Total files:** 5 (this router + 4 skills). No redundancy.
 
 ---
 
 # [MUST] CSS / Styles
 
-- Follow `.agents/skills/RULES-STYLES.md` strictly.
+- Follow `FRONTEND-REACT.md` §0–§2 strictly.
 - NEVER hardcode hex, `bg-red-600`, or `bg-[#hex]`. Use `var(--token)` only.
-- All tokens defined in `resources/css/app.css`.
+- All tokens defined in `resources/css/globals.css` (imported by `app.css`).
 
 ---
 
 # [MUST] React / TypeScript
 
-- Follow `.agents/skills/ARCHITECTURE-REACT-INERTIA.md` and `.agents/skills/RULES-FULLSTACK.md`.
+- Follow `FRONTEND-REACT.md` strictly.
 - No `any`. No `@ts-ignore`. No hardcoded colors in components.
 - Every page wrapped in correct Layout. State always explicitly typed.
 
@@ -44,7 +46,7 @@ trigger: always_on
 
 # [MUST] Laravel / PHP
 
-- Follow `.agents/skills/RULES-FULLSTACK.md` and `.agents/skills/HOW-TO-USE.md`.
+- Follow `BACKEND-PHP.md` strictly.
 - No business logic in Controllers. No `php` bare CLI.
 - Web routes = primary (Inertia + session). API routes = secondary (mobile/Sanctum only).
 

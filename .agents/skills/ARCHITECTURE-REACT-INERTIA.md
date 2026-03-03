@@ -1,4 +1,5 @@
 # ARCHITECTURE-REACT-INERTIA.md
+
 # React 19 + Inertia.js 2.0 · Frontend Architecture (2026)
 
 > Stack: React 19 · Inertia.js 2.0 · TypeScript 5 · TanStack Query v5 · TanStack Table v8 · Tailwind CSS v4 · shadcn/ui (latest)
@@ -11,7 +12,8 @@
 resources/
 │
 ├── css/
-│   └── app.css                                   # Tailwind v4 entry + CSS custom tokens (globals)
+│   ├── app.css                                   # Tailwind v4 entry point (imports globals.css)
+│   └── globals.css                               # Vidula design tokens — ALL custom vars go here
 │
 └── js/
     │
@@ -187,149 +189,5 @@ resources/
         └── globals.d.ts                           # Global ambient declarations (route(), etc.)
 ```
 
----
-
-## Route Architecture
-
-### Web routes — Inertia (browser, session auth)
-
-These are the **primary routes**. All browser navigation goes through here. Two sub-types:
-
-**1. Inertia page routes** — return a React component via `Inertia::render()`
-
-```
-GET  /{module}               → {Module}PageController@index   → renders {Entities}IndexPage
-GET  /{module}/create        → {Module}PageController@create  → renders {Entity}CreatePage
-GET  /{module}/{uuid}        → {Module}PageController@show    → renders {Entity}ShowPage
-GET  /{module}/{uuid}/edit   → {Module}PageController@edit    → renders {Entity}EditPage
-```
-
-**2. JSON data endpoints** — used by TanStack Query from within the browser (same session cookie)
-
-```
-GET    /{module}/data/admin              → list (paginated)
-POST   /{module}/data/admin              → create
-GET    /{module}/data/admin/{uuid}       → show one
-PUT    /{module}/data/admin/{uuid}       → update
-DELETE /{module}/data/admin/{uuid}       → soft delete
-PATCH  /{module}/data/admin/{uuid}/restore → restore
-GET    /{module}/data/admin/export       → export Excel or PDF
-```
-
-Middleware: `web`, `auth` (session-based). Role checks via `role:SUPER_ADMIN` inside the group.
-
-### API routes — REST for mobile / external systems
-
-Built later, separate concern. Token-based authentication via Laravel Sanctum.
-
-```
-GET    /api/{module}/admin              → list
-POST   /api/{module}/admin              → create
-GET    /api/{module}/admin/{uuid}       → show one
-PUT    /api/{module}/admin/{uuid}       → update
-DELETE /api/{module}/admin/{uuid}       → soft delete
-PATCH  /api/{module}/admin/{uuid}/restore → restore
-```
-
-Middleware: `api`, `auth:sanctum`.
-
-### Key distinction
-
-| | Web routes | API routes |
-|---|---|---|
-| Auth | Session cookie | Sanctum Bearer token |
-| Used by | Browser (Inertia + React Query) | Mobile apps, external consumers |
-| CSRF | Inertia handles automatically | Not required |
-| Build priority | Primary — always first | Secondary — when mobile is needed |
-
-**Never call `/api/*` routes from Inertia pages. Never use session auth on API routes.**
-
-### Route registration in ServiceProvider
-
-```php
-// {Module}ServiceProvider.php
-private function registerWebRoutes(): void
-{
-    Route::middleware(['web', 'auth'])
-        ->prefix('{module}')
-        ->group(__DIR__ . '/../Infrastructure/Routes/web.php');
-}
-
-private function registerApiRoutes(): void
-{
-    Route::middleware(['api', 'auth:sanctum'])
-        ->prefix('api/{module}')
-        ->group(__DIR__ . '/../Infrastructure/Routes/api.php');
-}
-```
-
-```php
-// Infrastructure/Routes/web.php
-
-// Inertia pages
-Route::get('/', [{Module}PageController::class, 'index'])->name('{module}.index');
-Route::get('/create', [{Module}PageController::class, 'create'])->name('{module}.create');
-Route::get('/{uuid}', [{Module}PageController::class, 'show'])->name('{module}.show')->whereUuid('uuid');
-Route::get('/{uuid}/edit', [{Module}PageController::class, 'edit'])->name('{module}.edit')->whereUuid('uuid');
-
-// JSON data endpoints (React Query internal web API)
-Route::prefix('data')->group(function () {
-    Route::middleware(['role:SUPER_ADMIN'])->prefix('admin')->group(function () {
-        Route::get('/', [Admin{Module}Controller::class, 'index']);
-        Route::post('/', [Admin{Module}Controller::class, 'store']);
-        Route::get('/{uuid}', [Admin{Module}Controller::class, 'show'])->whereUuid('uuid');
-        Route::put('/{uuid}', [Admin{Module}Controller::class, 'update'])->whereUuid('uuid');
-        Route::delete('/{uuid}', [Admin{Module}Controller::class, 'destroy'])->whereUuid('uuid');
-        Route::patch('/{uuid}/restore', [Admin{Module}Controller::class, 'restore'])->whereUuid('uuid');
-        Route::get('/export', [{Module}ExportController::class, '__invoke']);
-    });
-});
-```
-
----
-
-## Layer Rules
-
-| Layer | Can import from | Cannot import from |
-|---|---|---|
-| `common/` | nothing (self-contained) | `modules/`, `pages/` |
-| `modules/` | `common/`, other modules' `types.ts` | `pages/` |
-| `pages/` | `modules/`, `common/`, `shadcn/` | nothing forbidden |
-| `shadcn/` | nothing (CLI-generated) | — never hand-edited |
-
----
-
-## File Naming Conventions
-
-| What | Convention | Example |
-|---|---|---|
-| React components | `PascalCase.tsx` | `UserStatusBadge.tsx` |
-| Hooks | `camelCase.ts` | `useUsers.ts` |
-| Helpers / utils | `camelCase.ts` | `formatCurrency.ts` |
-| Type files | `camelCase.ts` | `types.ts`, `api.ts` |
-| Directories | `kebab-case` | `data-table/`, `users/` |
-| Inertia Pages | `{Module}IndexPage.tsx` | `UsersIndexPage.tsx` |
-| Layouts | `PascalCaseLayout.tsx` | `AppLayout.tsx` |
-
----
-
-## Quick Reference: Where Does This File Go?
-
-| What you are creating | Directory |
-|---|---|
-| Reusable UI primitive (Button, Badge, Modal) | `common/{name}/` |
-| Generic table wrapper | `common/data-table/` |
-| Delete or restore confirm modal | `common/data-table/` |
-| Export button | `common/export/` |
-| Domain component used across multiple pages | `modules/{context}/components/` |
-| TanStack Query hook | `modules/{context}/hooks/` |
-| Domain types / interfaces | `modules/{context}/types.ts` |
-| Inertia Page component | `pages/{route-group}/` |
-| Component private to one page group | `pages/{route-group}/components/` |
-| Helper private to one page group | `pages/{route-group}/helpers/` |
-| Global layout | `pages/layouts/` |
-| shadcn/ui component | `shadcn/` — CLI only |
-| Inertia PageProps interface | `types/inertia.d.ts` |
-| API response / DTO interfaces | `types/api.ts` |
-| Shared React prop utility types | `types/props.ts` |
-| Date range filter | `common/data-table/DataTableDateRangeFilter.tsx` |
+> **For rules, routes, layer constraints, and naming conventions** → see `FRONTEND-REACT.md` §3–§4, §15.
+> This file is the detailed directory tree ONLY.
