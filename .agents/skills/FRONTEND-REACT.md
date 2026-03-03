@@ -471,6 +471,74 @@ export default function {Entities}IndexPage(): React.JSX.Element {
 }
 ```
 
+### §9.1 — Sidebar Navigation
+
+**Hard rules:**
+
+1. Every nav item with a `permission` MUST be wrapped in `<PermissionGuard permissions={[...]}>`.
+2. Related modules MUST be grouped inside **collapsible dropdown sections** (e.g., "People" → Users, Students, Clients).
+3. Each group section has a label, an icon, and a `ChevronDown` toggle. Clicking expands/collapses children.
+4. Groups persist their open/closed state across navigation (`useState` with `localStorage`).
+5. Active route auto-expands its parent group.
+6. Section labels (`Navigation`, `People`, `Management`) use `text-[10px] font-semibold uppercase tracking-[1.8px]` with `--text-disabled`.
+
+**Nav structure:**
+
+```tsx
+const NAV_GROUPS = [
+    {
+        label: "Overview",
+        items: [
+            {
+                label: "Dashboard",
+                href: "/dashboard",
+                icon: <LayoutDashboard />,
+            },
+        ],
+    },
+    {
+        label: "People",
+        items: [
+            {
+                label: "Users",
+                href: "/users",
+                icon: <Users />,
+                permission: "VIEW ANY USERS",
+            },
+            {
+                label: "Students",
+                href: "/students",
+                icon: <GraduationCap />,
+                permission: "VIEW ANY STUDENTS",
+            },
+            {
+                label: "Clients",
+                href: "/clients",
+                icon: <UserCheck />,
+                permission: "VIEW ANY CLIENTS",
+            },
+        ],
+    },
+    {
+        label: "Management",
+        items: [
+            {
+                label: "Company Profiles",
+                href: "/company-data",
+                icon: <Building2 />,
+                permission: "VIEW ANY COMPANY",
+            },
+            {
+                label: "Products",
+                href: "/products",
+                icon: <Package />,
+                permission: "VIEW ANY PRODUCTS",
+            },
+        ],
+    },
+];
+```
+
 ### Typography
 
 ```

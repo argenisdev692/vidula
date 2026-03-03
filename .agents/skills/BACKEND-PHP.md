@@ -329,6 +329,108 @@ final class {Module}EloquentModel extends Model
 }
 ```
 
+### §4.1 — Eloquent Performance (Senior-Level Mandatory)
+
+#### 1. `Model::shouldBeStrict()` — MANDATORY in `AppServiceProvider`
+
+```php
+public function boot(): void
+{
+    // Combines: preventLazyLoading + preventSilentlyDiscardingAttributes + preventAccessingMissingAttributes
+    Model::shouldBeStrict(! $this->app->isProduction());
+
+    // Production: log violations instead of crashing
+    if ($this->app->isProduction()) {
+        Model::handleLazyLoadingViolationUsing(function ($model, $relation): void {
+            logger()->warning("Lazy loading [{$relation}] on [" . get_class($model) . "]");
+        });
+    }
+}
+```
+
+#### 2. Eager Loading with Column Selection — ALWAYS specify columns
+
+```php
+// ❌ Loads ALL columns from relationships
+$students = StudentEloquentModel::with('courses')->get();
+
+// ✅ Only needed columns (MUST include id + foreign key)
+$students = StudentEloquentModel::with('courses:id,student_id,name,status')->get();
+```
+
+#### 3. Large Dataset Processing — `chunk()` / `chunkById()` / `cursor()`
+
+```php
+// chunk() — process in batches (bulk operations)
+StudentEloquentModel::where('active', true)->chunk(200, fn(Collection $batch) => /* ... */);
+
+// chunkById() — safer when modifying rows during iteration
+StudentEloquentModel::where('graduated', true)->chunkById(200, fn(Collection $batch) => /* ... */);
+
+// cursor() — one model at a time, lowest memory (ideal for exports)
+foreach (StudentEloquentModel::where('active', true)->cursor() as $student) { /* ... */ }
+```
+
+> **Rule**: `chunk()` for batch operations, `chunkById()` for mutations, `cursor()` for streaming exports. NEVER unbounded `get()` on tables with >1000 rows.
+
+#### 4. `withWhereHas()` — replaces `whereHas` + `with` combo
+
+```php
+// ❌ Duplicated constraint
+$q = Model::whereHas('relation', fn($q) => $q->where('active', true))
+    ->with(['relation' => fn($q) => $q->where('active', true)]);
+
+// ✅ Single method (Laravel 10+)
+$q = Model::withWhereHas('relation', fn($q) => $q->where('active', true));
+```
+
+#### 5. Aggregate Subqueries — `withCount()` / `withAvg()` / `withSum()`
+
+```php
+// ❌ N+1 to count/sum relations
+foreach ($students as $s) { echo $s->courses->count(); }
+
+// ✅ Use subquery aggregates
+$students = StudentEloquentModel::withCount('courses')
+    ->withAvg('grades as average_grade', 'score')
+    ->paginate(15);
+// Access: $student->courses_count, $student->average_grade
+```
+
+#### 6. Database Indexes — Composite for query patterns
+
+```php
+// Migration: index columns used together in WHERE + ORDER BY
+Schema::table('students', function (Blueprint $table): void {
+    $table->index(['status', 'created_at']);  // Status filter + date sort
+    $table->index(['name', 'email']);          // Search queries
+    $table->index(['deleted_at']);             // SoftDeletes filter
+});
+```
+
+> Rule: Every `when()` filter column + `orderBy` column MUST have an index.
+
+#### 7. Query Scopes — Reusable Filters
+
+```php
+// In EloquentModel
+public function scopeActive(Builder $query): Builder
+{
+    return $query->where('status', 'ACTIVE')->whereNull('deleted_at');
+}
+
+public function scopeSearch(Builder $query, ?string $term): Builder
+{
+    return $query->when($term, fn($q) => $q->where(function ($q) use ($term) {
+        $q->where('name', 'like', "%{$term}%")
+          ->orWhere('email', 'like', "%{$term}%");
+    }));
+}
+
+// Usage in Repository
+StudentEloquentModel::active()->search($filters->search)->paginate($perPage);
+```
+
 ---
 
 ## §5 — Architecture Rules

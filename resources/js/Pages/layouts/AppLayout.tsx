@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import type { AuthPageProps } from '@/types/auth';
+import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
 
 // ══════════════════════════════════════════════════════════════════
 // Theme Hook
@@ -27,26 +28,27 @@ function useTheme(): [Theme, () => void] {
   return [theme, toggle];
 }
 
-import { 
-  LayoutDashboard, 
-  Users, 
-  Building2, 
-  Sun, 
-  Moon, 
-  LogOut, 
-  Search, 
-  ChevronDown, 
-  ShieldCheck, 
-  Menu, 
-  Settings, 
-  ArrowLeft, 
-  X 
+import {
+  LayoutDashboard,
+  Users,
+  Building2,
+  Sun,
+  Moon,
+  LogOut,
+  Search,
+  ChevronDown,
+  ShieldCheck,
+  Menu,
+  Settings,
+  ArrowLeft,
+  X,
+  GraduationCap,
+  UserCheck,
+  Package,
 } from 'lucide-react';
 
 const icSize = 18;
 
-const IconGrid    = () => <LayoutDashboard size={icSize} />;
-const IconUsers   = () => <Users size={icSize} />;
 const IconSun     = () => <Sun size={icSize} />;
 const IconMoon    = () => <Moon size={icSize} />;
 const IconLogout  = () => <LogOut size={16} />;
@@ -60,24 +62,47 @@ const IconClose = () => <X size={16} />;
 const IconBuilding = () => <Building2 size={icSize} />;
 
 // ══════════════════════════════════════════════════════════════════
-// Nav Items — Profile removed (accessible via avatar dropdown)
+// Nav Groups — Collapsible sections per §9.1
 // ══════════════════════════════════════════════════════════════════
-export interface NavItem { 
-  label: string; 
-  href: string; 
-  icon: React.ReactNode; 
+export interface NavItem {
+  label: string;
+  href: string;
+  icon: React.ReactNode;
   description: string;
   permission?: string;
-  children?: NavItem[];
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: <IconGrid />, description: 'Overview & metrics' },
-  { label: 'Users', href: '/users', icon: <IconUsers />, description: 'Manage system users', permission: 'VIEW ANY USERS' },
-  { label: 'Company Profiles', href: '/company-data', icon: <IconBuilding />, description: 'Corporate entities', permission: 'VIEW ANY COMPANY' },
-  { label: 'Products', href: '/products', icon: <IconBuilding />, description: 'Manage products', permission: 'VIEW ANY PRODUCTS' },
-  { label: 'Clients', href: '/clients', icon: <IconUsers />, description: 'Manage clients', permission: 'VIEW ANY CLIENTS' },
-  { label: 'Students', href: '/students', icon: <IconUsers />, description: 'Manage students', permission: 'VIEW ANY STUDENTS' },
+interface NavGroup {
+  label: string;
+  icon: React.ReactNode;
+  items: NavItem[];
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    label: 'Overview',
+    icon: <LayoutDashboard size={14} />,
+    items: [
+      { label: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard size={icSize} />, description: 'Overview & metrics' },
+    ],
+  },
+  {
+    label: 'People',
+    icon: <Users size={14} />,
+    items: [
+      { label: 'Users', href: '/users', icon: <Users size={icSize} />, description: 'Manage system users', permission: 'VIEW ANY USERS' },
+      { label: 'Students', href: '/students', icon: <GraduationCap size={icSize} />, description: 'Manage students', permission: 'VIEW ANY STUDENTS' },
+      { label: 'Clients', href: '/clients', icon: <UserCheck size={icSize} />, description: 'Manage clients', permission: 'VIEW ANY CLIENTS' },
+    ],
+  },
+  {
+    label: 'Management',
+    icon: <Package size={14} />,
+    items: [
+      { label: 'Company Profiles', href: '/company-data', icon: <Building2 size={icSize} />, description: 'Corporate entities', permission: 'VIEW ANY COMPANY' },
+      { label: 'Products', href: '/products', icon: <Package size={icSize} />, description: 'Manage products', permission: 'VIEW ANY PRODUCTS' },
+    ],
+  },
 ];
 
 // ══════════════════════════════════════════════════════════════════
@@ -368,19 +393,37 @@ function ThemeToggle({ theme, onToggle }: { theme: Theme; onToggle: () => void }
 
 // ══════════════════════════════════════════════════════════════════
 // Sidebar Content (shared between desktop and mobile)
+// Per §9.1: collapsible groups + PermissionGuard
 // ══════════════════════════════════════════════════════════════════
 function SidebarContent({ onClose }: { onClose?: () => void }): React.JSX.Element {
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-  const { auth } = usePage<AuthPageProps>().props;
-  const user = auth.user;
-  const permissions = user?.permissions || [];
-  const isSuperAdmin = user?.roles?.includes('SUPER_ADMIN');
 
-  const navItems = NAV_ITEMS.filter(item => {
-    if (!item.permission) return true;
-    if (isSuperAdmin) return true;
-    return permissions.includes(item.permission);
+  // Determine which groups are expanded: auto-expand if current route is inside
+  const [expandedGroups, setExpandedGroups] = React.useState<Record<string, boolean>>(() => {
+    const saved: Record<string, boolean> = {};
+    try {
+      const stored = typeof window !== 'undefined' ? localStorage.getItem('sidebar-groups') : null;
+      if (stored) Object.assign(saved, JSON.parse(stored));
+    } catch { /* ignore */ }
+
+    // Auto-expand the group containing the active route
+    for (const group of NAV_GROUPS) {
+      const hasActiveItem = group.items.some(
+        (item) => currentPath === item.href || currentPath.startsWith(item.href + '/')
+      );
+      if (hasActiveItem) saved[group.label] = true;
+      if (saved[group.label] === undefined) saved[group.label] = false; // default closed
+    }
+    return saved;
   });
+
+  function toggleGroup(label: string): void {
+    setExpandedGroups((prev) => {
+      const next = { ...prev, [label]: !prev[label] };
+      try { localStorage.setItem('sidebar-groups', JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }
 
   return (
     <>
@@ -395,8 +438,8 @@ function SidebarContent({ onClose }: { onClose?: () => void }): React.JSX.Elemen
           <div>
             <span className="block text-[13px] font-bold tracking-tight leading-none"
               style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}>
-            Vidula
-          </span>
+              Vidula
+            </span>
             <span className="block text-[10px] font-semibold uppercase tracking-widest leading-none mt-0.5"
               style={{ color: 'var(--purple-500)' }}>
               CRM
@@ -414,8 +457,6 @@ function SidebarContent({ onClose }: { onClose?: () => void }): React.JSX.Elemen
               background: 'var(--bg-hover)',
               border: '1px solid var(--border-default)',
             }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-aqua)'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; }}
             aria-label="Close menu"
           >
             <IconArrowLeft />
@@ -423,45 +464,112 @@ function SidebarContent({ onClose }: { onClose?: () => void }): React.JSX.Elemen
         )}
       </div>
 
-      {/* Section label */}
-      <div className="px-4 pt-5 pb-2">
-        <span className="text-[10px] font-semibold uppercase tracking-[1.8px]"
-          style={{ color: 'var(--text-disabled)' }}>
-          Navigation
-        </span>
-      </div>
+      {/* ── Nav Groups ── */}
+      <nav className="flex-1 overflow-y-auto px-3 pt-4 pb-2">
+        {NAV_GROUPS.map((group) => {
+          const isExpanded = expandedGroups[group.label] ?? true;
+          const hasActiveChild = group.items.some(
+            (item) => currentPath === item.href || currentPath.startsWith(item.href + '/')
+          );
 
-      <nav className="flex-1 space-y-1.5 px-3 uppercase text-xs tracking-wide">
-        {navItems.map((item) => {
-          const active = currentPath === item.href || currentPath.startsWith(item.href + '/');
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onClose}
-              className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-300 ${active ? 'sidebar-active shadow-sm' : ''}`}
-              style={{
-                color: active ? 'var(--text-primary)' : 'var(--text-muted)',
-              }}
-            >
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-sm transition-all duration-300"
+            <div key={group.label} className="mb-2">
+              {/* ── Group Header (clickable toggle) ── */}
+              <button
+                onClick={() => toggleGroup(group.label)}
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150"
                 style={{
-                  background: active ? 'var(--grad-primary)' : 'rgba(255, 255, 255, 0.03)',
-                  color: active ? '#ffffff' : 'var(--text-muted)',
-                  border: active ? 'none' : '1px solid var(--border-default)'
-                }}>
-                {item.icon}
-              </span>
-              <div className="min-w-0 flex-1">
-                <span className="block text-[13px] font-semibold leading-none"
-                  style={{ color: active ? 'var(--text-primary)' : 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}>
-                  {item.label}
+                  color: hasActiveChild ? 'var(--text-primary)' : 'var(--text-disabled)',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-sans)',
+                }}
+                aria-expanded={isExpanded}
+                aria-label={`Toggle ${group.label} section`}
+              >
+                <span style={{ color: hasActiveChild ? 'var(--accent-primary)' : 'var(--text-disabled)' }}>
+                  {group.icon}
                 </span>
-                <span className="block text-[10px] normal-case leading-none mt-1" style={{ color: active ? 'var(--purple-400)' : 'var(--text-disabled)' }}>
-                  {item.description}
+                <span className="flex-1 text-left text-[10px] font-semibold uppercase tracking-[1.8px]">
+                  {group.label}
                 </span>
+                <ChevronDown
+                  size={12}
+                  className="transition-transform duration-200"
+                  style={{
+                    transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)',
+                    color: 'var(--text-disabled)',
+                  }}
+                />
+              </button>
+
+              {/* ── Group Items (collapsible) ── */}
+              <div
+                className="overflow-hidden transition-all duration-200"
+                style={{
+                  maxHeight: isExpanded ? `${group.items.length * 60}px` : '0px',
+                  opacity: isExpanded ? 1 : 0,
+                }}
+              >
+                <div className="space-y-1 pl-1 pt-1">
+                  {group.items.map((item) => {
+                    const active = currentPath === item.href || currentPath.startsWith(item.href + '/');
+
+                    const linkElement = (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={onClose}
+                        className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-200 ${active ? 'sidebar-active shadow-sm' : ''}`}
+                        style={{
+                          color: active ? 'var(--text-primary)' : 'var(--text-muted)',
+                        }}
+                      >
+                        <span
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-sm transition-all duration-200"
+                          style={{
+                            background: active ? 'var(--grad-primary)' : 'rgba(255, 255, 255, 0.03)',
+                            color: active ? '#ffffff' : 'var(--text-muted)',
+                            border: active ? 'none' : '1px solid var(--border-default)',
+                          }}
+                        >
+                          {item.icon}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <span
+                            className="block text-[13px] font-semibold leading-none uppercase tracking-wide"
+                            style={{
+                              color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
+                              fontFamily: 'var(--font-sans)',
+                            }}
+                          >
+                            {item.label}
+                          </span>
+                          <span
+                            className="block text-[10px] normal-case leading-none mt-1"
+                            style={{ color: active ? 'var(--purple-400)' : 'var(--text-disabled)' }}
+                          >
+                            {item.description}
+                          </span>
+                        </div>
+                      </Link>
+                    );
+
+                    // Wrap with PermissionGuard if permission is required (§9.1 rule 1)
+                    if (item.permission) {
+                      return (
+                        <PermissionGuard key={item.href} permissions={[item.permission]}>
+                          {linkElement}
+                        </PermissionGuard>
+                      );
+                    }
+
+                    return linkElement;
+                  })}
+                </div>
               </div>
-            </Link>
+            </div>
           );
         })}
       </nav>
