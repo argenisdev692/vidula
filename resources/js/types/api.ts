@@ -260,20 +260,20 @@ export interface ProductFilters {
 // ── Clients ────────────────────────────────────────────────
 export interface ClientListItem {
   uuid: string;
-  userUuid: string;
-  clientName: string;
+  user_uuid: string;
+  client_name: string;
   nif: string | null;
   email: string | null;
   phone: string | null;
-  createdAt: string;
-  deletedAt: string | null;
+  created_at: string;
+  deleted_at: string | null;
 }
 
 export interface ClientDetail extends ClientListItem {
   address: string | null;
-  socialLinks: Record<string, string>;
+  social_links: Record<string, string>;
   coordinates: Record<string, number>;
-  updatedAt: string | null;
+  updated_at: string | null;
 }
 
 export interface ClientFilters {

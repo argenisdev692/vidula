@@ -76,11 +76,23 @@ final class ClientExportTransformer
     }
 
     /**
-     * Format date fields
+     * Format date fields to human-readable format (e.g., "March 3, 2026")
      */
     private static function formatDates(array $data): array
     {
-        // Dates are already in ISO8601 format from domain entity or readmodel
+        $dateFields = ['created_at', 'updated_at'];
+        
+        foreach ($dateFields as $field) {
+            if (isset($data[$field]) && is_string($data[$field]) && $data[$field] !== '') {
+                try {
+                    $date = new \DateTimeImmutable($data[$field]);
+                    $data[$field] = $date->format('F j, Y');
+                } catch (\Exception) {
+                    // Keep original value if parsing fails
+                }
+            }
+        }
+        
         return $data;
     }
 

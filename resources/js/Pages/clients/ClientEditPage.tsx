@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AppLayout from '@/pages/layouts/AppLayout';
-import { useClient } from '@/modules/clients/hooks/useClient';
+import { useSingleClient } from '@/modules/clients/hooks/useClient';
 import { useClientMutations } from '@/modules/clients/hooks/useClientMutations';
 import { PremiumField } from '@/shadcn/PremiumField';
 import type { UpdateClientDTO } from '@/types/api';
@@ -12,7 +12,7 @@ export default function ClientEditPage(): React.JSX.Element {
   const { props } = usePage<AuthPageProps & { clientId?: string }>();
   const uuid = props.clientId;
 
-  const { data: client, isPending } = useClient(uuid);
+  const { data: client, isPending } = useSingleClient(uuid);
   const { updateClient } = useClientMutations();
 
   const [form, setForm] = React.useState<UpdateClientDTO>({
@@ -31,16 +31,16 @@ export default function ClientEditPage(): React.JSX.Element {
   React.useEffect(() => {
     if (client) {
       setForm({
-        clientName: client.clientName || '',
+        clientName: client.client_name || '',
         email: client.email || '',
         phone: client.phone || '',
         address: client.address || '',
         nif: client.nif || '',
-        website: client.socialLinks?.website || '',
-        facebookLink: client.socialLinks?.facebook || '',
-        instagramLink: client.socialLinks?.instagram || '',
-        linkedinLink: client.socialLinks?.linkedin || '',
-        twitterLink: client.socialLinks?.twitter || '',
+        website: client.social_links?.website || '',
+        facebookLink: client.social_links?.facebook || '',
+        instagramLink: client.social_links?.instagram || '',
+        linkedinLink: client.social_links?.linkedin || '',
+        twitterLink: client.social_links?.twitter || '',
         latitude: client.coordinates?.latitude || undefined,
         longitude: client.coordinates?.longitude || undefined,
       });
@@ -82,7 +82,7 @@ export default function ClientEditPage(): React.JSX.Element {
 
   return (
     <AppLayout>
-      <Head title={`Edit Client | ${client?.clientName ?? ''}`} />
+      <Head title={`Edit Client | ${client?.client_name ?? ''}`} />
       <div className="max-w-5xl mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
 
         {/* ── Header ── */}
@@ -104,7 +104,7 @@ export default function ClientEditPage(): React.JSX.Element {
                 Edit Client
               </h1>
               <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-                Manage information for <span style={{ color: 'var(--accent-primary)' }}>{client?.clientName}</span>
+                Manage information for <span style={{ color: 'var(--accent-primary)' }}>{client?.client_name}</span>
               </p>
             </div>
           </div>
@@ -289,7 +289,7 @@ export default function ClientEditPage(): React.JSX.Element {
                 <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Visibility</span>
                 <div
                   className="h-2.5 w-2.5 rounded-full shadow-sm animate-pulse"
-                  style={{ background: !client?.deletedAt ? 'var(--accent-success)' : 'var(--accent-warning)' }}
+                  style={{ background: !client?.deleted_at ? 'var(--accent-success)' : 'var(--accent-warning)' }}
                 />
               </div>
             </section>

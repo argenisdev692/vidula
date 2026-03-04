@@ -49,7 +49,7 @@ export default function ClientShowPage(): React.JSX.Element {
 
   return (
     <AppLayout>
-      <Head title={`${client.clientName} — Profile`} />
+      <Head title={`${client.client_name} — Profile`} />
       <div
         className="max-w-5xl mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12"
         style={{ fontFamily: 'var(--font-sans)' }}
@@ -74,15 +74,15 @@ export default function ClientShowPage(): React.JSX.Element {
                 className="text-2xl font-extrabold tracking-tight"
                 style={{ color: 'var(--text-primary)' }}
               >
-                {client.clientName}
+                {client.client_name}
               </h1>
               <div className="mt-1 flex items-center gap-3">
-                <ClientStatusBadge status={client.deletedAt ? 'deleted' : 'active'} />
+                <ClientStatusBadge status={client.deleted_at ? 'deleted' : 'active'} />
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                   ID: {client.uuid.substring(0, 8)}…
                 </span>
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  Registered: {formatDateShort(client.createdAt)}
+                  Registered: {formatDateShort(client.created_at)}
                 </span>
               </div>
             </div>
@@ -134,9 +134,9 @@ export default function ClientShowPage(): React.JSX.Element {
                 <InfoRow
                   icon={<Globe size={16} />}
                   label="Website"
-                  value={client.socialLinks?.website ? (
-                    <a href={client.socialLinks.website} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--accent-info)' }}>
-                      {client.socialLinks.website}
+                  value={client.social_links?.website ? (
+                    <a href={client.social_links.website} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--accent-info)' }}>
+                      {client.social_links.website}
                     </a>
                   ) : 'Not specified'}
                 />
@@ -185,10 +185,10 @@ export default function ClientShowPage(): React.JSX.Element {
               </div>
               <div className="space-y-4">
                 {[
-                  { label: 'LinkedIn', url: client.socialLinks?.linkedin },
-                  { label: 'Twitter', url: client.socialLinks?.twitter },
-                  { label: 'Facebook', url: client.socialLinks?.facebook },
-                  { label: 'Instagram', url: client.socialLinks?.instagram },
+                  { label: 'LinkedIn', url: client.social_links?.linkedin },
+                  { label: 'Twitter', url: client.social_links?.twitter },
+                  { label: 'Facebook', url: client.social_links?.facebook },
+                  { label: 'Instagram', url: client.social_links?.instagram },
                 ].map((social) => (
                   <div key={social.label}>
                     <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
@@ -214,15 +214,15 @@ export default function ClientShowPage(): React.JSX.Element {
               <div className="space-y-4 text-sm" style={{ color: 'var(--text-secondary)' }}>
                 <div className="flex justify-between border-b pb-2" style={{ borderColor: 'var(--border-subtle)' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Owner User ID:</span>
-                  <span style={{ fontFamily: 'var(--font-mono)' }}>{client.userUuid}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)' }}>{client.user_uuid}</span>
                 </div>
                 <div className="flex justify-between border-b pb-2" style={{ borderColor: 'var(--border-subtle)' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Created At:</span>
-                  <span>{formatDateShort(client.createdAt)}</span>
+                  <span>{formatDateShort(client.created_at)}</span>
                 </div>
                 <div className="flex justify-between border-b pb-2" style={{ borderColor: 'var(--border-subtle)' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Updated At:</span>
-                  <span>{client.updatedAt ? formatDateShort(client.updatedAt) : 'Never'}</span>
+                  <span>{client.updated_at ? formatDateShort(client.updated_at) : 'Never'}</span>
                 </div>
               </div>
             </section>

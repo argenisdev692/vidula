@@ -52,7 +52,7 @@ export default function ClientTable({
         />
       ),
     }),
-    columnHelper.accessor('clientName', {
+    columnHelper.accessor('client_name', {
       header: 'Client',
       cell: (info) => {
         const item = info.row.original;
@@ -69,7 +69,7 @@ export default function ClientTable({
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold uppercase" style={{ color: 'var(--text-primary)' }}>
-                {item.clientName}
+                {item.client_name}
               </p>
             </div>
           </div>
@@ -88,7 +88,7 @@ export default function ClientTable({
       header: 'Phone',
       cell: (info) => <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{info.getValue() ?? '—'}</span>,
     }),
-    columnHelper.accessor('createdAt', {
+    columnHelper.accessor('created_at', {
       header: 'Created',
       cell: (info) => {
         const val = info.getValue() as string | undefined;
@@ -104,7 +104,7 @@ export default function ClientTable({
       header: 'Actions',
       cell: (info) => {
         const item = info.row.original;
-        const isDeleted = !!item.deletedAt;
+        const isDeleted = !!item.deleted_at;
         return (
           <div className="flex items-center justify-end gap-2 pr-4">
             <Link
@@ -124,7 +124,7 @@ export default function ClientTable({
                   <Pencil size={14} />
                 </Link>
                 <button
-                  onClick={() => onDelete(item.uuid, item.clientName)}
+                  onClick={() => onDelete(item.uuid, item.client_name)}
                   className="btn-action btn-action-delete"
                   title="Delete"
                 >
@@ -133,7 +133,7 @@ export default function ClientTable({
               </>
             ) : (
               <button
-                onClick={() => onRestoreClick?.(item.uuid, item.clientName)}
+                onClick={() => onRestoreClick?.(item.uuid, item.client_name)}
                 className="btn-action btn-action-restore"
                 title="Restore"
               >
