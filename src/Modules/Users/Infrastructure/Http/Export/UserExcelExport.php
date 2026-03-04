@@ -81,7 +81,10 @@ final class UserExcelExport implements
         ];
     }
 
-    public function map($user): array
+    /**
+     * @param UserEloquentModel $user
+     */
+    public function map(mixed $user): array
     {
         return UserExportTransformer::transform($user);
     }

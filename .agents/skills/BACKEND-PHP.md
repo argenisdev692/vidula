@@ -736,10 +736,14 @@ Every API method: `@OA\Get`/`@OA\Post`/`@OA\Put`/`@OA\Delete`/`@OA\Patch`. Every
 
 ## §14 — Common Errors
 
-| Error                                       | Fix                                                                           |
-| ------------------------------------------- | ----------------------------------------------------------------------------- |
-| `Target class [role] does not exist`        | Add Spatie middleware aliases in `bootstrap/app.php` (§4)                     |
-| `Readonly class cannot extend non-readonly` | Remove `readonly` from classes extending `Data`/`AggregateRoot` (§5)          |
-| `->toISOString()` on string                 | Mapper already converts Carbon → string. Pass `$entity->createdAt ?? ''` (§5) |
-| 401 on `/api/*` from browser                | Use `/data` web JSON endpoints, not API routes (§6)                           |
-| 404 after route changes                     | `php artisan config:clear && cache:clear && route:clear && view:clear`        |
+| Error                                       | Fix                                                                                                                                                |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Target class [role] does not exist`        | Add Spatie middleware aliases in `bootstrap/app.php` (§4)                                                                                          |
+| `Readonly class cannot extend non-readonly` | Remove `readonly` from classes extending `Data`/`AggregateRoot` (§5)                                                                               |
+| `->toISOString()` on string                 | Mapper already converts Carbon → string. Pass `$entity->createdAt ?? ''` (§5)                                                                      |
+| 401 on `/api/*` from browser                | Use `/data` web JSON endpoints, not API routes (§6)                                                                                                |
+| 404 after route changes                     | `php artisan config:clear && cache:clear && route:clear && view:clear`                                                                             |
+| Frontend receives camelCase keys            | Add `#[MapOutputName(SnakeCaseMapper::class)]` on every `Data` ReadModel/DTO that serializes to JSON. Frontend always expects `snake_case`.        |
+| DTO receives snake_case from request        | Add `#[MapInputName(SnakeCaseMapper::class)]` on every `Data` DTO that receives `snake_case` request data (e.g. `last_name` → `lastName`).         |
+| Admin-created user needs password           | Auto-generate in Handler: `'password' => Hash::make(Str::password(8))`. Never require password from admin form.                                    |
+| Role stored as column but doesn't exist     | Roles use Spatie Permission pivot table. Assign via `$model->assignRole('ROLE_NAME')` after `create()`, never pass `role` to the `create()` array. |

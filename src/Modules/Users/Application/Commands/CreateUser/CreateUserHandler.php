@@ -5,17 +5,20 @@ declare(strict_types=1);
 namespace Modules\Users\Application\Commands\CreateUser;
 
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
 use Modules\Users\Domain\Entities\User;
-use Modules\Users\Domain\Enums\UserStatus;
 use Modules\Users\Domain\Events\UserCreatedByAdmin;
 use Modules\Users\Domain\Ports\UserRepositoryPort;
 use Shared\Domain\Events\DomainEventPublisher;
+use Shared\Infrastructure\Audit\AuditInterface;
 use Illuminate\Support\Facades\Cache;
+use Modules\Users\Infrastructure\Persistence\Eloquent\Models\UserEloquentModel;
 
 final readonly class CreateUserHandler
 {
     public function __construct(
         private UserRepositoryPort $userRepository,
+        private AuditInterface $audit,
     ) {
     }
 
@@ -23,24 +26,32 @@ final readonly class CreateUserHandler
     {
         $dto = $command->dto;
         $uuid = Str::uuid()->toString();
-        $setupToken = Str::random(60);
 
+        $namePart = Str::slug($dto->name, '');
+        $lastNamePart = substr(Str::slug($dto->lastName, ''), 0, 1);
+        $generatedUsername = strtolower($namePart . $lastNamePart . random_int(100, 999));
+
+        // Only insert columns that exist in the users migration
         $user = $this->userRepository->create([
             'uuid' => $uuid,
             'name' => $dto->name,
             'last_name' => $dto->lastName,
             'email' => $dto->email,
-            'username' => $dto->username,
+            'password' => Hash::make(Str::password(8)),
+            'username' => $dto->username ?? $generatedUsername,
             'phone' => $dto->phone,
             'address' => $dto->address,
             'city' => $dto->city,
             'state' => $dto->state,
             'country' => $dto->country,
             'zip_code' => $dto->zipCode,
-            'status' => UserStatus::PendingSetup->value,
-            'setup_token' => $setupToken,
-            'setup_token_expires_at' => now()->addDays(7)->toDateTimeString(),
         ]);
+
+        // Assign role via Spatie Permission (pivot table, not a column)
+        if ($dto->role) {
+            $eloquentUser = UserEloquentModel::query()->where('uuid', $uuid)->first();
+            $eloquentUser?->assignRole(strtoupper($dto->role));
+        }
 
         // Invalidate list cache
         $this->invalidateListCache();
@@ -50,9 +61,16 @@ final readonly class CreateUserHandler
             new UserCreatedByAdmin(
                 aggregateId: $uuid,
                 email: $dto->email,
-                setupToken: $setupToken,
+                setupToken: '',
                 occurredOn: now()->toDateTimeString()
             )
+        );
+
+        // Audit business action
+        $this->audit->log(
+            logName: 'users.created',
+            description: "User created by admin: {$dto->email}",
+            properties: ['uuid' => $uuid, 'email' => $dto->email, 'name' => $dto->name],
         );
 
         return $user;

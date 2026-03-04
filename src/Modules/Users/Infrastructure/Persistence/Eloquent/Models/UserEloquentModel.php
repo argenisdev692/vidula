@@ -23,7 +23,7 @@ use Modules\CompanyData\Infrastructure\Persistence\Eloquent\Models\CompanyDataEl
  * 
  * @internal — Infrastructure only. Use UserRepositoryPort.
  */
-class UserEloquentModel extends Authenticatable
+final class UserEloquentModel extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, TwoFactorAuthenticatable, HasOneTimePasswords, HasRoles, LogsActivity, SoftDeletes;
@@ -41,9 +41,25 @@ class UserEloquentModel extends Authenticatable
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logFillable()
+            ->logOnly([
+                'uuid',
+                'name',
+                'last_name',
+                'username',
+                'email',
+                'phone',
+                'address',
+                'zip_code',
+                'city',
+                'state',
+                'country',
+                'gender',
+                'status',
+                'profile_photo_path',
+            ])
             ->logOnlyDirty()
-            ->dontSubmitEmptyLogs();
+            ->dontSubmitEmptyLogs()
+            ->useLogName('system.users');
     }
 
     /**
@@ -137,9 +153,9 @@ class UserEloquentModel extends Authenticatable
     /**
      * @param \Illuminate\Database\Eloquent\Builder<static> $query
      */
-    public function scopeInDateRange($query, ?string $from, ?string $to): void
+    public function scopeInDateRange(\Illuminate\Database\Eloquent\Builder $query, ?string $from, ?string $to): void
     {
-        $query->when($from, fn($q) => $q->whereDate('created_at', '>=', $from))
-            ->when($to, fn($q) => $q->whereDate('created_at', '<=', $to));
+        $query->when($from, fn(\Illuminate\Database\Eloquent\Builder $q): \Illuminate\Database\Eloquent\Builder => $q->whereDate('created_at', '>=', $from))
+            ->when($to, fn(\Illuminate\Database\Eloquent\Builder $q): \Illuminate\Database\Eloquent\Builder => $q->whereDate('created_at', '<=', $to));
     }
 }

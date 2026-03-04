@@ -4,27 +4,34 @@ declare(strict_types=1);
 
 namespace Modules\Users\Infrastructure\ExternalServices\Storage;
 
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Modules\Users\Domain\Ports\StoragePort;
 
 /**
- * AvatarStorageAdapter
+ * AvatarStorageAdapter — Infrastructure adapter for avatar file storage.
  */
 final class AvatarStorageAdapter implements StoragePort
 {
     private const AVATARS_DISK = 'public';
     private const AVATARS_DIR = 'avatars';
 
-    public function upload(UploadedFile $file): string
+    /**
+     * @param resource $stream   Readable stream resource
+     * @param string   $filename Original filename (for extension detection)
+     */
+    public function upload(mixed $stream, string $filename): string
     {
-        $path = $file->store(self::AVATARS_DIR, self::AVATARS_DISK);
+        $extension = pathinfo($filename, PATHINFO_EXTENSION) ?: 'jpg';
+        $storedName = self::AVATARS_DIR . '/' . Str::uuid()->toString() . '.' . $extension;
 
-        if (!$path) {
+        $result = Storage::disk(self::AVATARS_DISK)->put($storedName, $stream);
+
+        if (!$result) {
             throw new \RuntimeException("Failed to upload avatar.");
         }
 
-        return $path;
+        return $storedName;
     }
 
     public function delete(string $path): void

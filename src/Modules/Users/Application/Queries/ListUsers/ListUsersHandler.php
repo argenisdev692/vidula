@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Users\Application\Queries\ListUsers;
 
+use Modules\Users\Application\DTOs\UserFilterDTO;
 use Modules\Users\Application\Queries\ReadModels\UserListReadModel;
 use Modules\Users\Domain\Ports\UserRepositoryPort;
 use Illuminate\Support\Facades\Cache;
@@ -40,7 +41,7 @@ final readonly class ListUsersHandler
     /**
      * @return array{data: list<UserListReadModel>, meta: array{total: int, perPage: int, currentPage: int, lastPage: int}}
      */
-    private function fetchAndMapUsers($filters): array
+    private function fetchAndMapUsers(UserFilterDTO $filters): array
     {
         $result = $this->userRepository->findAllPaginated(
             filters: $filters->toArray(),

@@ -1,22 +1,21 @@
 import * as React from 'react';
-import { 
-  createColumnHelper, 
-  type ColumnDef, 
-  type RowSelectionState, 
+import {
+  createColumnHelper,
+  type RowSelectionState,
   type OnChangeFn,
 } from '@tanstack/react-table';
 import { DataTable } from '@/shadcn/data-table';
 import { Link } from '@inertiajs/react';
+import { RestoreConfirmModal } from '@/shadcn/RestoreConfirmModal';
 import UserStatusBadge from '@/modules/users/components/UserStatusBadge';
 import type { UserListItem } from '@/types/users';
 import { useUserMutations } from '@/modules/users/hooks/useUserMutations';
 import { formatDateShort } from '@/common/helpers/formatDate';
-
 import { Eye, Pencil, Trash2, CheckCircle } from 'lucide-react';
 
 interface UsersTableProps {
   data: UserListItem[];
-  isLoading: boolean;
+  isPending: boolean;
   isError?: boolean;
   onDelete: (uuid: string, name: string, email: string) => void;
   initials: (name: string, lastName: string) => string;
@@ -29,16 +28,17 @@ const columnHelper = createColumnHelper<UserListItem>();
 
 export default function UsersTable({
   data,
-  isLoading,
+  isPending,
   isError = false,
   onDelete,
   initials,
   rowSelection,
   onRowSelectionChange,
-}: UsersTableProps) {
+}: UsersTableProps): React.JSX.Element {
   const { restoreUser } = useUserMutations();
-  
-  const columns = React.useMemo<ColumnDef<UserListItem, any>[]>(() => [
+  const [pendingRestore, setPendingRestore] = React.useState<{ uuid: string; name: string } | null>(null);
+
+  const columns = React.useMemo(() => [
     columnHelper.display({
       id: 'select',
       header: ({ table }) => (
@@ -47,7 +47,7 @@ export default function UsersTable({
           checked={table.getIsAllPageRowsSelected()}
           onChange={table.getToggleAllPageRowsSelectedHandler()}
           aria-label="Select all"
-          className="h-4 w-4 rounded border-gray-300 accent-(--accent-primary) cursor-pointer"
+          className="h-4 w-4 rounded border border-(--border-default) accent-(--accent-primary) cursor-pointer"
         />
       ),
       cell: ({ row }) => (
@@ -56,7 +56,7 @@ export default function UsersTable({
           checked={row.getIsSelected()}
           onChange={row.getToggleSelectedHandler()}
           aria-label="Select row"
-          className="h-4 w-4 rounded border-gray-300 accent-(--accent-primary) cursor-pointer"
+          className="h-4 w-4 rounded border border-(--border-default) accent-(--accent-primary) cursor-pointer"
         />
       ),
     }),
@@ -77,18 +77,18 @@ export default function UsersTable({
                 className="flex h-9 w-9 items-center justify-center rounded-lg text-[11px] font-bold shadow-sm"
                 style={{
                   background: 'var(--grad-primary)',
-                  color: '#ffffff',
+                  color: 'var(--text-primary)',
                 }}
               >
                 {initials(user.name, user.last_name)}
               </div>
             )}
             <div>
-              <p className="text-sm font-semibold uppercase leading-tight text-gray-900 dark:text-gray-100">
+              <p className="text-sm font-semibold capitalize leading-tight text-(--text-primary)">
                 {user.full_name}
               </p>
               {user.username && (
-                <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-disabled)' }}>
+                <p className="text-[11px] mt-0.5 text-(--text-muted)">
                   @{user.username}
                 </p>
               )}
@@ -103,8 +103,8 @@ export default function UsersTable({
           const user = info.row.original;
           return (
               <div className="flex flex-col">
-                  <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{user.email || '—'}</span>
-                  <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{user.phone || ''}</span>
+                  <span className="text-sm text-(--text-secondary)">{user.email || '—'}</span>
+                  <span className="text-[11px] text-(--text-muted)">{user.phone || ''}</span>
               </div>
           );
       }
@@ -118,7 +118,7 @@ export default function UsersTable({
       cell: (info) => {
         const val = info.getValue() as string | undefined;
         return (
-          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+          <span className="text-sm text-(--text-muted)">
             {formatDateShort(val)}
           </span>
         );
@@ -130,7 +130,7 @@ export default function UsersTable({
       cell: (info) => {
         const user = info.row.original;
         const isDeleted = !!user.deleted_at;
-        
+
         return (
           <div className="flex items-center justify-end gap-2 pr-4">
             <Link
@@ -140,7 +140,7 @@ export default function UsersTable({
             >
                <Eye size={16} />
             </Link>
-            
+
             {!isDeleted && (
               <Link
                  href={`/users/${user.uuid}/edit`}
@@ -153,17 +153,16 @@ export default function UsersTable({
 
             {isDeleted ? (
               <button
-                  onClick={() => restoreUser.mutate(user.uuid)}
-                  className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-green-500/10 text-(--accent-success) shadow-sm transition-colors"
+                  onClick={() => setPendingRestore({ uuid: user.uuid, name: user.full_name })}
+                  className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--accent-success) shadow-sm transition-colors"
                   title="Restore User"
-                  disabled={restoreUser.isPending}
               >
                   <CheckCircle size={16} />
               </button>
             ) : (
               <button
                  onClick={() => onDelete(user.uuid, user.full_name, user.email)}
-                 className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-red-500/10 text-(--accent-error) shadow-sm transition-colors"
+                 className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--accent-error) shadow-sm transition-colors"
                  title="Delete User"
               >
                  <Trash2 size={16} />
@@ -173,18 +172,33 @@ export default function UsersTable({
         );
       },
     }),
-  ], [onDelete, initials, restoreUser]);
+  ], [onDelete, initials]);
 
   return (
-    <DataTable
-      columns={columns}
-      data={data}
-      isLoading={isLoading}
-      isError={isError}
-      noDataMessage="No users found"
-      rowSelection={rowSelection}
-      onRowSelectionChange={onRowSelectionChange}
-      getRowId={(row: UserListItem) => row.uuid}
-    />
+    <>
+      <DataTable
+        /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+        columns={columns as any}
+        data={data}
+        isLoading={isPending}
+        isError={isError}
+        noDataMessage="No users found"
+        rowSelection={rowSelection}
+        onRowSelectionChange={onRowSelectionChange}
+        getRowId={(row: UserListItem) => row.uuid}
+      />
+
+      <RestoreConfirmModal
+        open={pendingRestore !== null}
+        entityLabel={pendingRestore?.name ?? ''}
+        onConfirm={async () => {
+          if (!pendingRestore) return;
+          await restoreUser.mutateAsync(pendingRestore.uuid);
+          setPendingRestore(null);
+        }}
+        onCancel={() => setPendingRestore(null)}
+        isRestoring={restoreUser.isPending}
+      />
+    </>
   );
 }

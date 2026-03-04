@@ -25,14 +25,15 @@ use Modules\Users\Application\Queries\GetUser\GetUserHandler;
 use Modules\Users\Application\Queries\GetUser\GetUserQuery;
 use Modules\Users\Application\Queries\ListUsers\ListUsersHandler;
 use Modules\Users\Application\Queries\ListUsers\ListUsersQuery;
-use Modules\Users\Domain\Ports\UserRepositoryPort;
 use Modules\Users\Infrastructure\Http\Requests\CreateUserRequest;
 use Modules\Users\Infrastructure\Http\Requests\UpdateUserRequest;
 use Modules\Users\Infrastructure\Http\Requests\UserFilterRequest;
 use Modules\Users\Infrastructure\Http\Resources\UserResource;
 
 /**
- * AdminUserController — Full CRUD API for super-admin user management.
+ * AdminUserController — Full CRUD Web-JSON API for super-admin user management.
+ *
+ * @OA\Tag(name="Admin Users", description="Super-admin user management (web session)")
  */
 final class AdminUserController
 {
@@ -48,6 +49,18 @@ final class AdminUserController
     ) {
     }
 
+    /**
+     * @OA\Get(
+     *     path="/users/data/admin",
+     *     tags={"Admin Users"},
+     *     summary="List users (paginated, filtered)",
+     *     @OA\Parameter(name="page", in="query", required=false, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="per_page", in="query", required=false, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="search", in="query", required=false, @OA\Schema(type="string")),
+     *     @OA\Parameter(name="status", in="query", required=false, @OA\Schema(type="string")),
+     *     @OA\Response(response=200, description="Paginated user list")
+     * )
+     */
     public function index(UserFilterRequest $request): JsonResponse
     {
         $filters = UserFilterDTO::from($request->validated());
@@ -56,6 +69,16 @@ final class AdminUserController
         return response()->json($result);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/users/data/admin/{uuid}",
+     *     tags={"Admin Users"},
+     *     summary="Get single user",
+     *     @OA\Parameter(name="uuid", in="path", required=true, @OA\Schema(type="string", format="uuid")),
+     *     @OA\Response(response=200, description="User details"),
+     *     @OA\Response(response=404, description="User not found")
+     * )
+     */
     public function show(string $uuid): JsonResponse
     {
         $user = $this->getHandler->handle(new GetUserQuery($uuid));
@@ -65,6 +88,16 @@ final class AdminUserController
         ]);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/users/data/admin",
+     *     tags={"Admin Users"},
+     *     summary="Create user",
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/CreateUserDTO")),
+     *     @OA\Response(response=201, description="User created"),
+     *     @OA\Response(response=422, description="Validation error")
+     * )
+     */
     public function store(CreateUserRequest $request): JsonResponse
     {
         $dto = CreateUserDTO::from($request->validated());
@@ -75,6 +108,17 @@ final class AdminUserController
         ], 201);
     }
 
+    /**
+     * @OA\Put(
+     *     path="/users/data/admin/{uuid}",
+     *     tags={"Admin Users"},
+     *     summary="Update user",
+     *     @OA\Parameter(name="uuid", in="path", required=true, @OA\Schema(type="string", format="uuid")),
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/UpdateUserDTO")),
+     *     @OA\Response(response=200, description="User updated"),
+     *     @OA\Response(response=404, description="User not found")
+     * )
+     */
     public function update(UpdateUserRequest $request, string $uuid): JsonResponse
     {
         $dto = UpdateUserDTO::from($request->validated());
@@ -85,6 +129,16 @@ final class AdminUserController
         ]);
     }
 
+    /**
+     * @OA\Delete(
+     *     path="/users/data/admin/{uuid}",
+     *     tags={"Admin Users"},
+     *     summary="Soft-delete user",
+     *     @OA\Parameter(name="uuid", in="path", required=true, @OA\Schema(type="string", format="uuid")),
+     *     @OA\Response(response=204, description="User deleted"),
+     *     @OA\Response(response=404, description="User not found")
+     * )
+     */
     public function destroy(string $uuid): JsonResponse
     {
         $this->deleteHandler->handle(new DeleteUserCommand($uuid));
@@ -92,6 +146,17 @@ final class AdminUserController
         return response()->json(null, 204);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/users/data/admin/bulk-delete",
+     *     tags={"Admin Users"},
+     *     summary="Bulk soft-delete users",
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         @OA\Property(property="uuids", type="array", @OA\Items(type="string", format="uuid"))
+     *     )),
+     *     @OA\Response(response=204, description="Users deleted")
+     * )
+     */
     public function bulkDelete(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -106,6 +171,15 @@ final class AdminUserController
         return response()->json(null, 204);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/users/data/admin/{uuid}/suspend",
+     *     tags={"Admin Users"},
+     *     summary="Suspend user",
+     *     @OA\Parameter(name="uuid", in="path", required=true, @OA\Schema(type="string", format="uuid")),
+     *     @OA\Response(response=200, description="User suspended")
+     * )
+     */
     public function suspend(string $uuid): JsonResponse
     {
         $this->suspendHandler->handle(new SuspendUserCommand($uuid));
@@ -113,6 +187,15 @@ final class AdminUserController
         return response()->json(['message' => 'User suspended successfully.']);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/users/data/admin/{uuid}/activate",
+     *     tags={"Admin Users"},
+     *     summary="Activate user",
+     *     @OA\Parameter(name="uuid", in="path", required=true, @OA\Schema(type="string", format="uuid")),
+     *     @OA\Response(response=200, description="User activated")
+     * )
+     */
     public function activate(string $uuid): JsonResponse
     {
         $this->activateHandler->handle(new ActivateUserCommand($uuid));
@@ -120,6 +203,15 @@ final class AdminUserController
         return response()->json(['message' => 'User activated successfully.']);
     }
 
+    /**
+     * @OA\Patch(
+     *     path="/users/data/admin/{uuid}/restore",
+     *     tags={"Admin Users"},
+     *     summary="Restore soft-deleted user",
+     *     @OA\Parameter(name="uuid", in="path", required=true, @OA\Schema(type="string", format="uuid")),
+     *     @OA\Response(response=200, description="User restored")
+     * )
+     */
     public function restore(string $uuid): JsonResponse
     {
         $this->restoreHandler->handle(new RestoreUserCommand($uuid));

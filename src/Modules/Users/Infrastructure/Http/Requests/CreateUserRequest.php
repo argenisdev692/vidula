@@ -23,8 +23,8 @@ final class CreateUserRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email',
-            'last_name' => 'nullable|string|max:255',
             'username' => 'nullable|string|max:255|unique:users,username',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
@@ -32,7 +32,7 @@ final class CreateUserRequest extends FormRequest
             'state' => 'nullable|string|max:255',
             'country' => 'nullable|string|max:255',
             'zip_code' => 'nullable|string|max:20',
-            'role' => 'nullable|string|exists:roles,name',
+            'role' => 'required|string',
         ];
     }
 }

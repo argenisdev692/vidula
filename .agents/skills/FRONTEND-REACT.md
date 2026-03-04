@@ -6,6 +6,12 @@
 
 ---
 
+> **CRITICAL — Backend ↔ Frontend Contract**: All TypeScript interfaces use `snake_case` keys (`full_name`, `created_at`, `deleted_at`).
+> Every Spatie `Data` class that serializes to JSON **MUST** have `#[MapOutputName(SnakeCaseMapper::class)]`.
+> If a field shows `undefined` in the table, verify the backend Data class has this attribute.
+
+---
+
 ## §0 — Token-First Principle (ABSOLUTE RULE)
 
 **Never use hex values, Tailwind color names like `bg-red-600`, or `bg-[#hex]` in components. All colors from `var(--token)` only.**
@@ -291,20 +297,46 @@ export function use{Entities}(filters: {Entity}Filters) {
 ### Mutation Hook
 
 ```ts
+import { sileo } from 'sileo';
+import type { AxiosError } from 'axios';
+
+/**
+ * MANDATORY: Helper to safely extract the best error message from Axios
+ * This prevents showing generic "Request failed with status code 422" messages.
+ */
+function getErrorMessage(err: AxiosError | any, defaultMsg: string): string {
+  if (err?.response?.data?.message) {
+      return err.response.data.message;
+  }
+  return err?.message || defaultMsg;
+}
+
 export function use{Entity}Mutations() {
     const queryClient = useQueryClient();
 
+    const create{Entity} = useMutation({
+        mutationFn: (payload: Create{Entity}Payload) => axios.post(`/{module}/data/admin`, payload),
+        onSuccess: () => {
+            sileo.success({ title: '{Entity} created successfully' });
+            queryClient.invalidateQueries({ queryKey: ["{entities}"] });
+        },
+        onError: (err: AxiosError) => {
+            sileo.error({ title: getErrorMessage(err, 'Failed to create {entity}') });
+        }
+    });
+
     const delete{Entity} = useMutation({
         mutationFn: (uuid: string) => axios.delete(`/{module}/data/admin/${uuid}`),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["{entities}"] }),
+        onSuccess: () => {
+             sileo.success({ title: '{Entity} deleted successfully' });
+             queryClient.invalidateQueries({ queryKey: ["{entities}"] });
+        },
+        onError: (err: AxiosError) => {
+             sileo.error({ title: getErrorMessage(err, 'Failed to delete {entity}') });
+        }
     });
 
-    const restore{Entity} = useMutation({
-        mutationFn: (uuid: string) => axios.patch(`/{module}/data/admin/${uuid}/restore`),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["{entities}"] }),
-    });
-
-    return { delete{Entity}, restore{Entity} };
+    return { create{Entity}, delete{Entity} };
 }
 ```
 
@@ -425,6 +457,10 @@ export default function {Entities}IndexPage(): React.JSX.Element {
 ## §9 — Components
 
 ### Buttons
+
+**Primary Buttons / Add New (CRUD)**
+Must always use the dual class combination for the modern gradient and shadow:
+`className="btn-modern btn-modern-primary flex items-center gap-2 ..."`
 
 ```css
 .btn-primary {

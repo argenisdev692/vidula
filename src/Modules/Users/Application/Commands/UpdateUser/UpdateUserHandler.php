@@ -7,6 +7,7 @@ namespace Modules\Users\Application\Commands\UpdateUser;
 use Modules\Users\Domain\Entities\User;
 use Modules\Users\Domain\Exceptions\UserNotFoundException;
 use Modules\Users\Domain\Ports\UserRepositoryPort;
+use Shared\Infrastructure\Audit\AuditInterface;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -16,6 +17,7 @@ final readonly class UpdateUserHandler
 {
     public function __construct(
         private UserRepositoryPort $repository,
+        private AuditInterface $audit,
     ) {
     }
 
@@ -24,7 +26,7 @@ final readonly class UpdateUserHandler
         $existing = $this->repository->findByUuid($command->uuid);
 
         if ($existing === null) {
-            throw UserNotFoundException::withUuid($command->uuid);
+            throw UserNotFoundException::forUuid($command->uuid);
         }
 
         $user = $this->repository->update($command->uuid, $command->dto->toArray());
@@ -32,6 +34,13 @@ final readonly class UpdateUserHandler
         // Invalidate caches
         Cache::forget("user_read_{$command->uuid}");
         $this->invalidateListCache();
+
+        // Audit business action
+        $this->audit->log(
+            logName: 'users.updated',
+            description: "User updated: {$command->uuid}",
+            properties: ['uuid' => $command->uuid, 'changes' => $command->dto->toArray()],
+        );
 
         return $user;
     }

@@ -16,7 +16,7 @@ export interface UserListItem {
   profile_photo_path: string | null;
   created_at: string;
   updated_at: string;
-  deleted_at?: string | null;
+  deleted_at: string | null;
   role: string | null;
   // Address info
   address?: string | null;
@@ -40,7 +40,6 @@ export interface CreateUserPayload {
   name: string;
   last_name: string;
   email: string;
-  username?: string;
   phone?: string;
   role: string;
 }

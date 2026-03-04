@@ -10,7 +10,7 @@ import { DataTableBulkActions } from '@/shadcn/DataTableBulkActions';
 import { DeleteConfirmModal } from '@/shadcn/DeleteConfirmModal';
 import { DataTableDateRangeFilter } from '@/common/data-table/DataTableDateRangeFilter';
 import { ExportButton } from '@/common/export/ExportButton';
-import type { UserFilters, UserListItem } from '@/types/users';
+import type { UserFilters, UserListItem, UserStatus } from '@/types/users';
 import { Search, ChevronLeft, ChevronRight, UserPlus } from 'lucide-react';
 
 /**
@@ -129,7 +129,7 @@ export default function UsersIndexPage(): React.JSX.Element {
     <>
       <Head title="System Users" />
       <AppLayout>
-      <div className="flex flex-col gap-6 animate-in fade-in duration-500">
+      <div className="flex flex-col gap-6 animate-in fade-in duration-300">
         {/* ── Header ── */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -137,12 +137,12 @@ export default function UsersIndexPage(): React.JSX.Element {
               System Users
             </h1>
             <p className="text-sm mt-1 text-(--text-muted) font-medium">
-              Oversee and manage platform accounts — <span className="text-(--accent-primary)">{meta.total} users</span> recorded
+              Oversee and manage platform accounts — <span className="text-(--accent-primary)">{meta.total} {meta.total === 1 ? 'record' : 'records'} found</span>
             </p>
           </div>
           <Link
             href="/users/create"
-            className="btn-modern btn-modern-primary inline-flex items-center gap-2 px-5 py-2 font-bold shadow-sm"
+            className="btn-modern btn-modern-primary px-5 py-2.5 font-bold shadow-lg hover:shadow-xl transition-all"
           >
             <UserPlus size={16} />
             New User
@@ -167,7 +167,7 @@ export default function UsersIndexPage(): React.JSX.Element {
 
             <select
               value={filters.status || ''}
-              onChange={(e) => startSearchTransition(() => setFilters(p => ({ ...p, status: (e.target.value || undefined) as any, page: 1 })))}
+              onChange={(e) => startSearchTransition(() => setFilters(p => ({ ...p, status: (e.target.value || undefined) as UserStatus | undefined, page: 1 })))}
               className="bg-transparent text-sm outline-none text-(--text-primary) border border-(--border-default) rounded-lg px-2 py-1 focus:border-(--accent-primary) transition-colors"
             >
               <option value="">All Status</option>
@@ -210,7 +210,7 @@ export default function UsersIndexPage(): React.JSX.Element {
         <div className="card-modern overflow-hidden border border-(--border-default) shadow-xl">
           <UsersTable
             data={optimisticUsers}
-            isLoading={isPending}
+            isPending={isPending}
             isError={isError}
             onDelete={handleDeleteClick}
             initials={initials}
