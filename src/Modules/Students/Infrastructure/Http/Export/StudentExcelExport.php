@@ -99,7 +99,7 @@ final class StudentExcelExport implements
             $student->address ?? '—',
             $student->status,
             $student->active ? 'Yes' : 'No',
-            $student->created_at?->toIso8601String(),
+            $student->created_at?->format('F j, Y') ?? '—',
         ];
     }
 

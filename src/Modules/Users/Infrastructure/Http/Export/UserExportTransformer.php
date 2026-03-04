@@ -44,14 +44,28 @@ final class UserExportTransformer
     }
 
     /**
-     * Format date fields to ISO8601
+     * Format date fields to human-readable format (e.g., "March 3, 2026")
      */
     private static function formatDates(array $data): array
     {
-        if ($data['created_at'] !== null) {
-            $data['created_at'] = $data['created_at']->toIso8601String();
+        $dateFields = ['created_at'];
+        
+        foreach ($dateFields as $field) {
+            if (isset($data[$field]) && $data[$field] !== null) {
+                try {
+                    // Handle both Carbon instances and strings
+                    if ($data[$field] instanceof \DateTimeInterface) {
+                        $data[$field] = $data[$field]->format('F j, Y');
+                    } elseif (is_string($data[$field])) {
+                        $date = new \DateTimeImmutable($data[$field]);
+                        $data[$field] = $date->format('F j, Y');
+                    }
+                } catch (\Exception) {
+                    // Keep original value if parsing fails
+                }
+            }
         }
-
+        
         return $data;
     }
 

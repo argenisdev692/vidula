@@ -88,7 +88,7 @@ final class CompanyDataExcelExport implements
             $company->phone,
             $company->address,
             $company->website,
-            $company->created_at?->toIso8601String(),
+            $company->created_at?->format('F j, Y') ?? '—',
         ];
     }
 

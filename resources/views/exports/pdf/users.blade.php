@@ -49,7 +49,7 @@
 
         thead th {
             padding: 10px 8px;
-            text-align: left;
+            text-align: center;
             font-weight: 600;
             font-size: 10px;
             text-transform: uppercase;
@@ -70,6 +70,8 @@
         tbody td {
             padding: 8px;
             font-size: 9px;
+            text-align: center;
+            vertical-align: middle;
         }
 
         .footer {

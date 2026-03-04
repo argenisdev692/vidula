@@ -44,14 +44,17 @@
         th {
             background-color: #f3f4f6;
             color: #333;
-            text-align: left;
+            text-align: center;
             padding: 8px;
             border: 1px solid #e5e7eb;
+            font-weight: bold;
         }
 
         td {
             padding: 8px;
             border: 1px solid #e5e7eb;
+            text-align: center;
+            vertical-align: middle;
         }
 
         tr:nth-child(even) {

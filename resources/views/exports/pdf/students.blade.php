@@ -34,16 +34,19 @@
             background: #3B6EF8;
             color: #ffffff;
             padding: 8px 6px;
-            text-align: left;
+            text-align: center;
             font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            font-weight: bold;
         }
 
         td {
             padding: 6px;
             border-bottom: 1px solid #e0e0e0;
             font-size: 11px;
+            text-align: center;
+            vertical-align: middle;
         }
 
         tr:nth-child(even) {
@@ -122,7 +125,7 @@
                         <span class="badge {{ $statusClass }}">{{ $row->status ?? 'DRAFT' }}</span>
                     </td>
                     <td>{{ $row->active ? 'Yes' : 'No' }}</td>
-                    <td>{{ $row->created_at?->format('Y-m-d') ?? '—' }}</td>
+                    <td>{{ $row->created_at?->format('F j, Y') ?? '—' }}</td>
                 </tr>
             @empty
                 <tr>

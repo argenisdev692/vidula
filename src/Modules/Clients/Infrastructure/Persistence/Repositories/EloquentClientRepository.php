@@ -103,8 +103,20 @@ final class EloquentClientRepository implements ClientRepositoryPort
     public function findAllPaginated(array $filters = [], int $page = 1, int $perPage = 15): array
     {
         $query = ClientEloquentModel::query()
-            ->select(['id', 'uuid', 'user_id', 'client_name', 'email', 'status', 'phone', 'address', 'nif', 'website', 'facebook_link', 'instagram_link', 'linkedin_link', 'twitter_link', 'latitude', 'longitude', 'notes', 'created_at', 'updated_at', 'deleted_at'])
-            ->when($filters['user_uuid'] ?? null, function ($q, $userUuid) {
+            ->select(['id', 'uuid', 'user_id', 'client_name', 'email', 'status', 'phone', 'address', 'nif', 'website', 'facebook_link', 'instagram_link', 'linkedin_link', 'twitter_link', 'latitude', 'longitude', 'notes', 'created_at', 'updated_at', 'deleted_at']);
+
+        // Handle soft deletes based on status filter
+        $status = $filters['status'] ?? '';
+        if ($status === 'deleted') {
+            $query->onlyTrashed();
+        } elseif ($status === 'active') {
+            // Only non-deleted (default behavior)
+        } else {
+            // Show all (including soft-deleted)
+            $query->withTrashed();
+        }
+
+        $query->when($filters['user_uuid'] ?? null, function ($q, $userUuid) {
                 $user = UserEloquentModel::select(['id'])->where('uuid', $userUuid)->first();
                 return $user ? $q->where('user_id', $user->id) : $q->where('user_id', 0);
             })
