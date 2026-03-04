@@ -7,7 +7,6 @@ use Modules\Clients\Domain\ValueObjects\ClientId;
 use Modules\Clients\Domain\ValueObjects\UserId;
 use Modules\Clients\Domain\ValueObjects\SocialLinks;
 use Modules\Clients\Domain\ValueObjects\Coordinates;
-use Modules\Clients\Domain\Enums\CompanyStatus;
 use Modules\Clients\Infrastructure\Persistence\Eloquent\Models\ClientEloquentModel;
 
 final class ClientMapper
@@ -34,8 +33,8 @@ final class ClientMapper
                 website: $model->website
             ),
             'coordinates' => new Coordinates(
-                latitude: (float) $model->latitude,
-                longitude: (float) $model->longitude
+                latitude: $model->latitude !== null ? (float) $model->latitude : null,
+                longitude: $model->longitude !== null ? (float) $model->longitude : null
             ),
         ];
     }
@@ -50,7 +49,7 @@ final class ClientMapper
         return new Client(
             id: new ClientId($model->uuid),
             userId: new UserId($model->user?->uuid ?? ''),
-            companyName: $model->company ?? '',
+            clientName: $model->client_name ?? '',
             email: $model->email,
             phone: $model->phone,
             address: $model->address,

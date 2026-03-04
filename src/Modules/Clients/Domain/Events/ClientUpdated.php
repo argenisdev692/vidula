@@ -10,7 +10,7 @@ final readonly class ClientUpdated extends DomainEvent
 {
     public function __construct(
         string $aggregateId,
-        public string $companyName,
+        public string $clientName,
         ?string $occurredOn = null
     ) {
         parent::__construct($aggregateId, $occurredOn);
@@ -26,7 +26,7 @@ final readonly class ClientUpdated extends DomainEvent
     {
         return [
             'aggregateId' => $this->aggregateId,
-            'companyName' => $this->companyName,
+            'clientName' => $this->clientName,
             'occurredOn' => $this->occurredOn->format('c'),
         ];
     }

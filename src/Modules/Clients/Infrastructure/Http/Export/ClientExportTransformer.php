@@ -43,7 +43,7 @@ final class ClientExportTransformer
         return [
             'id' => $client->uuid,
             'uuid' => $client->uuid,
-            'company_name' => $client->companyName,
+            'client_name' => $client->clientName,
             'email' => $client->email,
             'phone' => $client->phone,
             'address' => $client->address,
@@ -54,7 +54,7 @@ final class ClientExportTransformer
             'twitter' => $client->socialLinks['twitter'] ?? null,
             'latitude' => $client->coordinates['latitude'] ?? null,
             'longitude' => $client->coordinates['longitude'] ?? null,
-            'created_at' => is_string($client->createdAt) ? $client->createdAt : null, // Not strictly 8601 anymore, maybe string
+            'created_at' => is_string($client->createdAt) ? $client->createdAt : null,
             'updated_at' => is_string($client->updatedAt) ? $client->updatedAt : null,
         ];
     }
@@ -66,7 +66,7 @@ final class ClientExportTransformer
     {
         return [
             'uuid' => $client->uuid,
-            'company_name' => $client->companyName,
+            'client_name' => $client->clientName,
             'email' => $client->email,
             'phone' => $client->phone,
             'address' => $client->address,
@@ -92,4 +92,3 @@ final class ClientExportTransformer
         return array_map(fn($value) => $value ?? '', $data);
     }
 }
-

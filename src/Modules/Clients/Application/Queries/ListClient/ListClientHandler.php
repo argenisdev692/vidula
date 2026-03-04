@@ -67,7 +67,7 @@ final readonly class ListClientHandler
         return new ClientReadModel(
             uuid: $client->id->value,
             userUuid: $client->userId->value,
-            companyName: $client->companyName,
+            clientName: $client->clientName,
             email: $client->email,
             phone: $client->phone,
             address: $client->address,

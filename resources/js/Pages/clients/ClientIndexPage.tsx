@@ -8,6 +8,7 @@ import { useClientMutations } from '@/modules/clients/hooks/useClientMutations';
 import ClientTable from './components/ClientTable';
 import { DataTableBulkActions } from '@/shadcn/DataTableBulkActions';
 import { DeleteConfirmModal } from '@/shadcn/DeleteConfirmModal';
+import { RestoreConfirmModal } from '@/shadcn/RestoreConfirmModal';
 import { DataTableDateRangeFilter } from '@/common/data-table/DataTableDateRangeFilter';
 import { ExportButton } from '@/common/export/ExportButton';
 import type { ClientFilters } from '@/types/api';
@@ -25,6 +26,7 @@ export default function ClientIndexPage(): React.JSX.Element {
   const [search, setSearch]   = React.useState<string>(filters.search ?? '');
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [pendingDelete, setPendingDelete] = React.useState<{ uuid: string; name: string } | null>(null);
+  const [pendingRestore, setPendingRestore] = React.useState<{ uuid: string; name: string } | null>(null);
   const [isDeletingBulk, setIsDeletingBulk] = React.useState<boolean>(false);
 
   const [isPendingExport, startExportTransition] = React.useTransition();
@@ -40,6 +42,12 @@ export default function ClientIndexPage(): React.JSX.Element {
   const meta = data?.meta ?? { currentPage: 1, lastPage: 1, perPage: 15, total: 0 };
   const pageWindow = buildPageWindow(meta.currentPage, meta.lastPage);
 
+  // ── Optimistic delete (§8) ──
+  const [optimisticItems, setOptimisticItems] = React.useOptimistic(
+    clientList,
+    (state, deletedUuid: string) => state.filter(i => i.uuid !== deletedUuid),
+  );
+
   // ── Handlers ──
   function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>): void {
     const value = e.target.value;
@@ -49,14 +57,31 @@ export default function ClientIndexPage(): React.JSX.Element {
     });
   }
 
-  function handleDeleteClick(uuid: string, companyName: string): void {
-    setPendingDelete({ uuid, name: companyName });
+  function handleDeleteClick(uuid: string, clientName: string): void {
+    setPendingDelete({ uuid, name: clientName });
   }
 
-  function handleConfirmSingleDelete(): void {
+  function handleRestoreClick(uuid: string, clientName: string): void {
+    setPendingRestore({ uuid, name: clientName });
+  }
+
+  async function handleConfirmSingleDelete(): Promise<void> {
     if (!pendingDelete) return;
-    deleteClient.mutate(pendingDelete.uuid, {
-      onSuccess: () => setPendingDelete(null),
+    React.startTransition(async () => {
+      setOptimisticItems(pendingDelete.uuid);
+      try {
+        await deleteClient.mutateAsync(pendingDelete.uuid);
+        setPendingDelete(null);
+      } catch {
+        /* auto-reverts */
+      }
+    });
+  }
+
+  function handleConfirmRestore(): void {
+    if (!pendingRestore) return;
+    restoreClient.mutate(pendingRestore.uuid, {
+      onSuccess: () => setPendingRestore(null),
     });
   }
 
@@ -87,8 +112,10 @@ export default function ClientIndexPage(): React.JSX.Element {
 
   function handleBulkRestore(): void {
     if (!selectedUuids.length) return;
-    restoreClient.mutate(selectedUuids as any, {
-      onSuccess: () => setRowSelection({}),
+    selectedUuids.forEach(uuid => {
+      restoreClient.mutate(uuid, {
+        onSuccess: () => setRowSelection({}),
+      });
     });
   }
 
@@ -119,7 +146,7 @@ export default function ClientIndexPage(): React.JSX.Element {
                   Clients
                 </h1>
                 <p className="text-sm font-medium mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                  {meta.total} {meta.total === 1 ? 'record' : 'records'} registered
+                  {meta.total} {meta.total === 1 ? 'record' : 'records'} found
                 </p>
               </div>
             </div>
@@ -136,16 +163,16 @@ export default function ClientIndexPage(): React.JSX.Element {
           {/* ── Toolbar ── */}
           <div
             className="flex flex-col gap-3 rounded-xl px-4 py-3 sm:flex-row sm:items-center"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)' }}
+            style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-default)' }}
           >
             {/* Search */}
             <div className="flex flex-1 items-center gap-3">
-              <Search size={14} style={{ color: 'var(--text-disabled)', flexShrink: 0 }} />
+              <Search size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
               <input
                 type="text"
                 value={search}
                 onChange={handleSearchChange}
-                placeholder="Search by company, email, NIF…"
+                placeholder="Search by client name, email, NIF…"
                 className="flex-1 bg-transparent text-sm outline-none"
                 style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}
               />
@@ -161,7 +188,7 @@ export default function ClientIndexPage(): React.JSX.Element {
                   setFilters(p => ({ ...p, status: e.target.value || undefined, page: 1 }))
                 )}
                 className="rounded-lg px-3 py-1.5 text-sm outline-none transition-colors"
-                style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-default)' }}
+                style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-default)' }}
               >
                 <option value="">All Status</option>
                 <option value="active">Active</option>
@@ -198,10 +225,11 @@ export default function ClientIndexPage(): React.JSX.Element {
           {/* ── Table card ── */}
           <div className="card-modern shadow-xl overflow-hidden">
             <ClientTable
-              data={clientList}
+              data={optimisticItems}
               isLoading={isPending}
               isError={isError}
               onDelete={handleDeleteClick}
+              onRestoreClick={handleRestoreClick}
               rowSelection={rowSelection}
               onRowSelectionChange={setRowSelection}
             />
@@ -237,7 +265,7 @@ export default function ClientIndexPage(): React.JSX.Element {
                       onClick={() => goToPage(page)}
                       className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-semibold transition-all"
                       style={page === meta.currentPage
-                        ? { background: 'var(--accent-primary)', color: '#fff' }
+                        ? { background: 'var(--accent-primary)', color: 'var(--text-primary)' }
                         : { color: 'var(--text-muted)', border: '1px solid var(--border-default)' }
                       }
                     >
@@ -261,12 +289,21 @@ export default function ClientIndexPage(): React.JSX.Element {
 
         </div>
 
+        {/* ── Modals ── */}
         <DeleteConfirmModal
           open={pendingDelete !== null}
           entityLabel={pendingDelete?.name ?? ''}
           onConfirm={handleConfirmSingleDelete}
           onCancel={() => setPendingDelete(null)}
           isDeleting={deleteClient.isPending}
+        />
+
+        <RestoreConfirmModal
+          open={pendingRestore !== null}
+          entityLabel={pendingRestore?.name ?? ''}
+          onConfirm={handleConfirmRestore}
+          onCancel={() => setPendingRestore(null)}
+          isRestoring={restoreClient.isPending}
         />
       </AppLayout>
     </>

@@ -21,6 +21,7 @@ final class EloquentClientRepository implements ClientRepositoryPort
     public function findById(ClientId $id): ?Client
     {
         $model = ClientEloquentModel::withTrashed()
+            ->select(['id', 'uuid', 'user_id', 'client_name', 'email', 'status', 'phone', 'address', 'nif', 'website', 'facebook_link', 'instagram_link', 'linkedin_link', 'twitter_link', 'latitude', 'longitude', 'notes', 'created_at', 'updated_at', 'deleted_at'])
             ->where('uuid', $id->value)
             ->first();
 
@@ -29,13 +30,14 @@ final class EloquentClientRepository implements ClientRepositoryPort
 
     public function findByUserId(UserId $userId): ?Client
     {
-        $user = UserEloquentModel::where('uuid', $userId->value)->first();
+        $user = UserEloquentModel::select(['id', 'uuid'])->where('uuid', $userId->value)->first();
 
         if (!$user) {
             return null;
         }
 
         $model = ClientEloquentModel::withTrashed()
+            ->select(['id', 'uuid', 'user_id', 'client_name', 'email', 'status', 'phone', 'address', 'nif', 'website', 'facebook_link', 'instagram_link', 'linkedin_link', 'twitter_link', 'latitude', 'longitude', 'notes', 'created_at', 'updated_at', 'deleted_at'])
             ->where('user_id', $user->id)
             ->first();
 
@@ -53,10 +55,11 @@ final class EloquentClientRepository implements ClientRepositoryPort
         $model->fill([
             'uuid' => $client->id->value,
             'user_id' => $user->id,
-            'company' => $client->companyName,
+            'client_name' => $client->clientName,
             'email' => $client->email,
             'phone' => $client->phone,
             'address' => $client->address,
+            'nif' => $client->nif,
             'website' => $client->socialLinks?->website,
             'facebook_link' => $client->socialLinks?->facebook,
             'instagram_link' => $client->socialLinks?->instagram,
@@ -100,11 +103,12 @@ final class EloquentClientRepository implements ClientRepositoryPort
     public function findAllPaginated(array $filters = [], int $page = 1, int $perPage = 15): array
     {
         $query = ClientEloquentModel::query()
+            ->select(['id', 'uuid', 'user_id', 'client_name', 'email', 'status', 'phone', 'address', 'nif', 'website', 'facebook_link', 'instagram_link', 'linkedin_link', 'twitter_link', 'latitude', 'longitude', 'notes', 'created_at', 'updated_at', 'deleted_at'])
             ->when($filters['user_uuid'] ?? null, function ($q, $userUuid) {
-                $user = UserEloquentModel::where('uuid', $userUuid)->first();
+                $user = UserEloquentModel::select(['id'])->where('uuid', $userUuid)->first();
                 return $user ? $q->where('user_id', $user->id) : $q->where('user_id', 0);
             })
-            ->when($filters['search'] ?? null, fn($q, $search) => $q->where('company', 'like', "%{$search}%"))
+            ->when($filters['search'] ?? null, fn($q, $search) => $q->where('client_name', 'like', "%{$search}%"))
             ->orderBy($filters['sort_by'] ?? 'created_at', $filters['sort_dir'] ?? 'desc');
 
         $paginator = $query->paginate(perPage: $perPage, page: $page);

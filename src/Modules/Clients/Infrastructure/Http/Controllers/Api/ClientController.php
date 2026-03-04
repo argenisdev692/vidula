@@ -26,8 +26,11 @@ use Modules\Clients\Infrastructure\Http\Requests\UpdateClientRequest;
 use Modules\Clients\Infrastructure\Http\Export\ClientPdfExport;
 use Modules\Clients\Infrastructure\Persistence\Export\ClientExcelExport;
 use Maatwebsite\Excel\Facades\Excel;
+
 /**
  * ClientController
+ *
+ * @OA\Tag(name="Clients", description="Client CRUD operations")
  */
 final class ClientController
 {
@@ -41,6 +44,17 @@ final class ClientController
     ) {
     }
 
+    /**
+     * @OA\Get(
+     *     path="/clients/data/admin/export",
+     *     operationId="exportClients",
+     *     tags={"Clients"},
+     *     summary="Export clients to Excel or PDF",
+     *     @OA\Parameter(name="format", in="query", required=false, @OA\Schema(type="string", enum={"excel", "pdf"})),
+     *     @OA\Response(response=200, description="File download"),
+     *     security={{"sanctum":{}}}
+     * )
+     */
     public function export(Request $request): mixed
     {
         $format = $request->query('format', 'excel');
@@ -56,6 +70,19 @@ final class ClientController
         return Excel::download($excelExport, 'clients.xlsx');
     }
 
+    /**
+     * @OA\Get(
+     *     path="/clients/data/admin",
+     *     operationId="listClients",
+     *     tags={"Clients"},
+     *     summary="List all clients (paginated)",
+     *     @OA\Parameter(name="search", in="query", required=false, @OA\Schema(type="string")),
+     *     @OA\Parameter(name="page", in="query", required=false, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="perPage", in="query", required=false, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Paginated list of clients"),
+     *     security={{"sanctum":{}}}
+     * )
+     */
     public function index(Request $request): JsonResponse
     {
         $filters = ClientFilterDTO::from($request->all());
@@ -64,6 +91,18 @@ final class ClientController
         return response()->json($result);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/clients/data/admin/{uuid}",
+     *     operationId="showClient",
+     *     tags={"Clients"},
+     *     summary="Show a single client",
+     *     @OA\Parameter(name="uuid", in="path", required=true, @OA\Schema(type="string", format="uuid")),
+     *     @OA\Response(response=200, description="Client detail"),
+     *     @OA\Response(response=404, description="Client not found"),
+     *     security={{"sanctum":{}}}
+     * )
+     */
     public function show(Request $request, ?string $uuid = null): JsonResponse
     {
         $isUserUuid = $uuid === null;
@@ -78,6 +117,18 @@ final class ClientController
         return response()->json(['data' => $result]);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/clients/data/admin",
+     *     operationId="storeClient",
+     *     tags={"Clients"},
+     *     summary="Create a new client",
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/CreateClientDTO")),
+     *     @OA\Response(response=201, description="Client created"),
+     *     @OA\Response(response=422, description="Validation error"),
+     *     security={{"sanctum":{}}}
+     * )
+     */
     public function store(CreateClientRequest $request): JsonResponse
     {
         $dto = CreateClientDTO::from($request->validated());
@@ -89,6 +140,19 @@ final class ClientController
         ], 201);
     }
 
+    /**
+     * @OA\Put(
+     *     path="/clients/data/admin/{uuid}",
+     *     operationId="updateClient",
+     *     tags={"Clients"},
+     *     summary="Update an existing client",
+     *     @OA\Parameter(name="uuid", in="path", required=true, @OA\Schema(type="string", format="uuid")),
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/UpdateClientDTO")),
+     *     @OA\Response(response=200, description="Client updated"),
+     *     @OA\Response(response=404, description="Client not found"),
+     *     security={{"sanctum":{}}}
+     * )
+     */
     public function update(UpdateClientRequest $request, ?string $uuid = null): JsonResponse
     {
         $isUserId = $uuid === null;
@@ -106,6 +170,18 @@ final class ClientController
         ]);
     }
 
+    /**
+     * @OA\Delete(
+     *     path="/clients/data/admin/{uuid}",
+     *     operationId="deleteClient",
+     *     tags={"Clients"},
+     *     summary="Soft-delete a client",
+     *     @OA\Parameter(name="uuid", in="path", required=true, @OA\Schema(type="string", format="uuid")),
+     *     @OA\Response(response=200, description="Client deleted"),
+     *     @OA\Response(response=404, description="Client not found"),
+     *     security={{"sanctum":{}}}
+     * )
+     */
     public function destroy(string $uuid): JsonResponse
     {
         $this->deleteHandler->handle(new DeleteClientCommand($uuid));
@@ -115,6 +191,19 @@ final class ClientController
         ]);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/clients/data/admin/bulk-delete",
+     *     operationId="bulkDeleteClients",
+     *     tags={"Clients"},
+     *     summary="Bulk soft-delete multiple clients",
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         @OA\Property(property="uuids", type="array", @OA\Items(type="string", format="uuid"))
+     *     )),
+     *     @OA\Response(response=204, description="Clients deleted"),
+     *     security={{"sanctum":{}}}
+     * )
+     */
     public function bulkDelete(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -129,6 +218,17 @@ final class ClientController
         return response()->json(null, 204);
     }
 
+    /**
+     * @OA\Patch(
+     *     path="/clients/data/admin/{uuid}/restore",
+     *     operationId="restoreClient",
+     *     tags={"Clients"},
+     *     summary="Restore a soft-deleted client",
+     *     @OA\Parameter(name="uuid", in="path", required=true, @OA\Schema(type="string", format="uuid")),
+     *     @OA\Response(response=200, description="Client restored"),
+     *     security={{"sanctum":{}}}
+     * )
+     */
     public function restore(string $uuid): JsonResponse
     {
         $this->restoreHandler->handle(new RestoreClientCommand($uuid));

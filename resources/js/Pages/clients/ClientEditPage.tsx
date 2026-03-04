@@ -4,21 +4,19 @@ import AppLayout from '@/pages/layouts/AppLayout';
 import { useClient } from '@/modules/clients/hooks/useClient';
 import { useClientMutations } from '@/modules/clients/hooks/useClientMutations';
 import { PremiumField } from '@/shadcn/PremiumField';
-import { UpdateClientDTO } from '@/types/api';
+import type { UpdateClientDTO } from '@/types/api';
 import { ArrowLeft, Save, Building2, Share2, MapPin } from 'lucide-react';
-
-import { AuthPageProps } from '@/types/auth';
+import type { AuthPageProps } from '@/types/auth';
 
 export default function ClientEditPage(): React.JSX.Element {
-  const { props } = usePage<AuthPageProps & { companyId?: string }>();
-  // If companyId is in props, it's admin editing another company. Otherwise it's 'me'.
-  const uuid = props.companyId; 
+  const { props } = usePage<AuthPageProps & { clientId?: string }>();
+  const uuid = props.clientId;
 
-  const { data: company, isPending } = useClient(uuid);
+  const { data: client, isPending } = useClient(uuid);
   const { updateClient } = useClientMutations();
 
   const [form, setForm] = React.useState<UpdateClientDTO>({
-    companyName: '',
+    clientName: '',
     email: '',
     phone: '',
     address: '',
@@ -31,23 +29,23 @@ export default function ClientEditPage(): React.JSX.Element {
   });
 
   React.useEffect(() => {
-    if (company) {
+    if (client) {
       setForm({
-        companyName: company.companyName || '',
-        email: company.email || '',
-        phone: company.phone || '',
-        address: company.address || '',
-        nif: company.nif || '',
-        website: company.socialLinks?.website || '',
-        facebookLink: company.socialLinks?.facebook || '',
-        instagramLink: company.socialLinks?.instagram || '',
-        linkedinLink: company.socialLinks?.linkedin || '',
-        twitterLink: company.socialLinks?.twitter || '',
-        latitude: company.coordinates?.latitude || undefined,
-        longitude: company.coordinates?.longitude || undefined,
+        clientName: client.clientName || '',
+        email: client.email || '',
+        phone: client.phone || '',
+        address: client.address || '',
+        nif: client.nif || '',
+        website: client.socialLinks?.website || '',
+        facebookLink: client.socialLinks?.facebook || '',
+        instagramLink: client.socialLinks?.instagram || '',
+        linkedinLink: client.socialLinks?.linkedin || '',
+        twitterLink: client.socialLinks?.twitter || '',
+        latitude: client.coordinates?.latitude || undefined,
+        longitude: client.coordinates?.longitude || undefined,
       });
     }
-  }, [company]);
+  }, [client]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -58,22 +56,25 @@ export default function ClientEditPage(): React.JSX.Element {
     e.preventDefault();
     updateClient.mutate({ userUuid: uuid, payload: form }, {
       onSuccess: () => {
-        // Assuming we want to stay or go back to list if admin
         if (uuid) {
-            router.visit('/client');
-        } else {
-            // Toast or stay
+          router.visit('/clients');
         }
-      }
+      },
     });
   };
 
   if (isPending) {
     return (
       <AppLayout>
+        <Head title="Edit Client" />
         <div className="flex h-[50vh] flex-col items-center justify-center gap-4">
-            <div className="h-10 w-10 border-4 border-(--accent-primary) border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm font-medium text-(--text-disabled) animate-pulse">Loading Corporate Identity...</p>
+          <div
+            className="h-10 w-10 rounded-full animate-spin"
+            style={{ border: '4px solid var(--accent-primary)', borderTopColor: 'transparent' }}
+          />
+          <p className="text-sm font-medium animate-pulse" style={{ color: 'var(--text-muted)' }}>
+            Loading client data...
+          </p>
         </div>
       </AppLayout>
     );
@@ -81,183 +82,218 @@ export default function ClientEditPage(): React.JSX.Element {
 
   return (
     <AppLayout>
-      <Head title={`Client Profile | ${company?.companyName}`} />
+      <Head title={`Edit Client | ${client?.clientName ?? ''}`} />
       <div className="max-w-5xl mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
-        
+
         {/* ── Header ── */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <Link
-              href="/client"
-              className="flex h-10 w-10 items-center justify-center rounded-xl bg-(--bg-card) border border-(--border-default) text-(--text-muted) hover:bg-(--bg-hover) transition-all shadow-sm"
+              href="/clients"
+              className="flex h-10 w-10 items-center justify-center rounded-xl shadow-sm transition-all"
+              style={{
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border-default)',
+                color: 'var(--text-muted)',
+              }}
             >
               <ArrowLeft size={20} />
             </Link>
             <div>
-              <h1 className="text-3xl font-extrabold tracking-tight text-(--text-primary)">
-                Corporate Profile
+              <h1 className="text-3xl font-extrabold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+                Edit Client
               </h1>
-              <p className="text-sm text-(--text-muted) font-medium">Manage legal and contact information for <span className="text-(--accent-primary)">{company?.companyName}</span></p>
+              <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+                Manage information for <span style={{ color: 'var(--accent-primary)' }}>{client?.clientName}</span>
+              </p>
             </div>
           </div>
 
           <button
             onClick={handleSubmit}
             disabled={updateClient.isPending}
-            className="btn-modern-primary flex items-center gap-2 px-8 py-3 shadow-xl hover:shadow-(--accent-primary)/20 transition-all font-bold"
+            className="btn-modern btn-modern-primary flex items-center gap-2 px-8 py-3 shadow-xl font-bold"
           >
-            {updateClient.isPending ? 'Syncing...' : <><Save size={18} /> Save Identity</>}
+            {updateClient.isPending ? 'Saving...' : <><Save size={18} /> Save Changes</>}
           </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* ── Left Column: Main Info ── */}
-            <div className="lg:col-span-2 space-y-8">
-                <section className="card-modern p-8 space-y-8 shadow-2xl border border-(--border-default) glass-morphism">
-                    <div className="flex items-center gap-3">
-                        <Building2 className="text-(--accent-primary)" size={24} />
-                        <h2 className="text-xl font-bold text-(--text-primary)">Core Information</h2>
-                    </div>
+          {/* ── Left Column: Main Info ── */}
+          <div className="lg:col-span-2 space-y-8">
+            <section
+              className="card-modern p-8 space-y-8 shadow-2xl"
+              style={{ border: '1px solid var(--border-default)' }}
+            >
+              <div className="flex items-center gap-3">
+                <Building2 size={24} style={{ color: 'var(--accent-primary)' }} />
+                <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Core Information</h2>
+              </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="md:col-span-2">
-                            <PremiumField 
-                                label="Official Company Name" 
-                                name="companyName" 
-                                value={form.companyName} 
-                                onChange={handleChange} 
-                                required 
-                                placeholder="Acme Corporation S.A."
-                            />
-                        </div>
-                        <div className="md:col-span-2">
-                            <PremiumField 
-                                label="NIF" 
-                                name="nif" 
-                                value={form.nif || ''} 
-                                onChange={handleChange} 
-                                placeholder="A12345678"
-                            />
-                        </div>
-                        <PremiumField 
-                            label="Business Email" 
-                            name="email" 
-                            type="email"
-                            value={form.email || ''} 
-                            onChange={handleChange} 
-                            placeholder="billing@acme.com"
-                        />
-                        <PremiumField 
-                            label="Public Phone" 
-                            name="phone" 
-                            value={form.phone || ''} 
-                            onChange={handleChange} 
-                            placeholder="+1 800-ACME-CORP"
-                        />
-                        <div className="md:col-span-2">
-                           <PremiumField 
-                                label="Primary Address" 
-                                name="address" 
-                                value={form.address || ''} 
-                                onChange={handleChange} 
-                                isTextArea
-                                placeholder="123 Corporate Way, Silicon Valley, CA"
-                            />
-                        </div>
-                    </div>
-                </section>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2">
+                  <PremiumField
+                    label="Client Name"
+                    name="clientName"
+                    value={form.clientName || ''}
+                    onChange={handleChange}
+                    required
+                    placeholder="Acme Corporation S.A."
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <PremiumField
+                    label="NIF"
+                    name="nif"
+                    value={form.nif || ''}
+                    onChange={handleChange}
+                    placeholder="A12345678"
+                  />
+                </div>
+                <PremiumField
+                  label="Business Email"
+                  name="email"
+                  type="email"
+                  value={form.email || ''}
+                  onChange={handleChange}
+                  placeholder="billing@acme.com"
+                />
+                <PremiumField
+                  label="Phone"
+                  name="phone"
+                  value={form.phone || ''}
+                  onChange={handleChange}
+                  placeholder="+1 800 000 0000"
+                />
+                <div className="md:col-span-2">
+                  <PremiumField
+                    label="Address"
+                    name="address"
+                    value={form.address || ''}
+                    onChange={handleChange}
+                    isTextArea
+                    placeholder="123 Corporate Way, Silicon Valley, CA"
+                  />
+                </div>
+              </div>
+            </section>
 
-                <section className="card-modern p-8 space-y-8 shadow-2xl border border-(--border-default) glass-morphism">
-                    <div className="flex items-center gap-3">
-                        <Share2 className="text-(--accent-primary)" size={24} />
-                        <h2 className="text-xl font-bold text-(--text-primary)">Social Media & Public Presence</h2>
-                    </div>
+            <section
+              className="card-modern p-8 space-y-8 shadow-2xl"
+              style={{ border: '1px solid var(--border-default)' }}
+            >
+              <div className="flex items-center gap-3">
+                <Share2 size={24} style={{ color: 'var(--accent-primary)' }} />
+                <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Social Media & Public Presence</h2>
+              </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="md:col-span-2">
-                             <PremiumField 
-                                label="Official Website" 
-                                name="website" 
-                                type="url"
-                                value={form.website || ''} 
-                                onChange={handleChange} 
-                                placeholder="https://acme.com"
-                            />
-                        </div>
-                        <PremiumField 
-                            label="LinkedIn" 
-                            name="linkedinLink" 
-                            value={form.linkedinLink || ''} 
-                            onChange={handleChange} 
-                            placeholder="linkedin.com/company/acme"
-                        />
-                        <PremiumField 
-                            label="Instagram" 
-                            name="instagramLink" 
-                            value={form.instagramLink || ''} 
-                            onChange={handleChange} 
-                            placeholder="instagram.com/acme"
-                        />
-                        <PremiumField 
-                            label="Twitter / X" 
-                            name="twitterLink" 
-                            value={form.twitterLink || ''} 
-                            onChange={handleChange} 
-                            placeholder="x.com/acme"
-                        />
-                        <PremiumField 
-                            label="Facebook" 
-                            name="facebookLink" 
-                            value={form.facebookLink || ''} 
-                            onChange={handleChange} 
-                            placeholder="facebook.com/acme"
-                        />
-                    </div>
-                </section>
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2">
+                  <PremiumField
+                    label="Official Website"
+                    name="website"
+                    type="url"
+                    value={form.website || ''}
+                    onChange={handleChange}
+                    placeholder="https://acme.com"
+                  />
+                </div>
+                <PremiumField
+                  label="LinkedIn"
+                  name="linkedinLink"
+                  value={form.linkedinLink || ''}
+                  onChange={handleChange}
+                  placeholder="linkedin.com/company/acme"
+                />
+                <PremiumField
+                  label="Instagram"
+                  name="instagramLink"
+                  value={form.instagramLink || ''}
+                  onChange={handleChange}
+                  placeholder="instagram.com/acme"
+                />
+                <PremiumField
+                  label="Twitter / X"
+                  name="twitterLink"
+                  value={form.twitterLink || ''}
+                  onChange={handleChange}
+                  placeholder="x.com/acme"
+                />
+                <PremiumField
+                  label="Facebook"
+                  name="facebookLink"
+                  value={form.facebookLink || ''}
+                  onChange={handleChange}
+                  placeholder="facebook.com/acme"
+                />
+              </div>
+            </section>
+          </div>
 
-            {/* ── Right Column: Sidebar ── */}
-            <div className="space-y-8">
-                <section className="card-modern p-6 bg-(--bg-surface) border border-(--border-subtle) space-y-6">
-                    <div className="flex items-center gap-3 mb-2">
-                        <MapPin className="text-(--accent-primary)" size={20} />
-                        <h3 className="text-sm font-bold uppercase tracking-widest text-(--text-muted)">Geolocation</h3>
-                    </div>
+          {/* ── Right Column: Sidebar ── */}
+          <div className="space-y-8">
+            <section
+              className="card-modern p-6 space-y-6"
+              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <MapPin size={20} style={{ color: 'var(--accent-primary)' }} />
+                <h3
+                  className="text-sm font-bold uppercase tracking-widest"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  Geolocation
+                </h3>
+              </div>
 
-                    <div className="space-y-4">
-                        <PremiumField 
-                            label="Latitude" 
-                            name="latitude" 
-                            type="number"
-                            step="any"
-                            value={form.latitude?.toString() || ''} 
-                            onChange={(e) => setForm(p => ({ ...p, latitude: parseFloat(e.target.value) }))} 
-                        />
-                        <PremiumField 
-                            label="Longitude" 
-                            name="longitude" 
-                            type="number"
-                            step="any"
-                            value={form.longitude?.toString() || ''} 
-                            onChange={(e) => setForm(p => ({ ...p, longitude: parseFloat(e.target.value) }))} 
-                        />
-                    </div>
-                    
-                    <div className="p-4 rounded-xl bg-(--bg-card) border border-(--border-default) shadow-inner">
-                        <p className="text-[11px] text-(--text-disabled) leading-relaxed text-center italic">
-                            Used for public map listings and service discovery.
-                        </p>
-                    </div>
-                </section>
+              <div className="space-y-4">
+                <PremiumField
+                  label="Latitude"
+                  name="latitude"
+                  type="number"
+                  step="any"
+                  value={form.latitude?.toString() || ''}
+                  onChange={(e) => setForm(p => ({ ...p, latitude: parseFloat(e.target.value) || undefined }))}
+                />
+                <PremiumField
+                  label="Longitude"
+                  name="longitude"
+                  type="number"
+                  step="any"
+                  value={form.longitude?.toString() || ''}
+                  onChange={(e) => setForm(p => ({ ...p, longitude: parseFloat(e.target.value) || undefined }))}
+                />
+              </div>
 
-                <section className="card-modern p-6 bg-(--bg-surface) border border-(--border-subtle) space-y-4">
-                     <h3 className="text-sm font-bold uppercase tracking-widest text-(--text-muted)">Status</h3>
-                     <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-(--bg-card) border border-(--border-default)">
-                         <span className="text-sm font-medium text-(--text-primary)">Public Visibility</span>
-                         <div className={`h-2.5 w-2.5 rounded-full shadow-sm animate-pulse ${!company?.deletedAt ? 'bg-(--accent-success)' : 'bg-(--accent-warning)'}`} />
-                     </div>
-                </section>
-            </div>
+              <div
+                className="p-4 rounded-xl shadow-inner"
+                style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-default)' }}
+              >
+                <p className="text-[11px] leading-relaxed text-center italic" style={{ color: 'var(--text-muted)' }}>
+                  Used for map listings and service discovery.
+                </p>
+              </div>
+            </section>
+
+            <section
+              className="card-modern p-6 space-y-4"
+              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}
+            >
+              <h3 className="text-sm font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
+                Status
+              </h3>
+              <div
+                className="flex items-center justify-between px-4 py-3 rounded-xl"
+                style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-default)' }}
+              >
+                <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Visibility</span>
+                <div
+                  className="h-2.5 w-2.5 rounded-full shadow-sm animate-pulse"
+                  style={{ background: !client?.deletedAt ? 'var(--accent-success)' : 'var(--accent-warning)' }}
+                />
+              </div>
+            </section>
+          </div>
         </div>
       </div>
     </AppLayout>

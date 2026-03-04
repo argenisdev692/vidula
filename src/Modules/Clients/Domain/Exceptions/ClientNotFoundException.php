@@ -10,11 +10,11 @@ final class ClientNotFoundException extends DomainException
 {
     public static function forUser(string $userId): self
     {
-        return new self("Company data for user [{$userId}] not found.");
+        return new self("Client for user [{$userId}] not found.");
     }
 
     public static function forId(string $id): self
     {
-        return new self("Company data with ID [{$id}] not found.");
+        return new self("Client with ID [{$id}] not found.");
     }
 }

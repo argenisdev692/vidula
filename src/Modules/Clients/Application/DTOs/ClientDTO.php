@@ -16,12 +16,12 @@ final class ClientDTO extends Data
 {
     public function __construct(
         public string $id,
-        public int $userId,
-        public ?string $name,
-        public string $companyName,
+        public string $userId,
+        public string $clientName,
         public ?string $email,
         public ?string $phone,
         public ?string $address,
+        public ?string $nif,
         public ?string $website,
         public ?string $facebookLink,
         public ?string $instagramLink,
@@ -29,31 +29,28 @@ final class ClientDTO extends Data
         public ?string $twitterLink,
         public ?float $latitude,
         public ?float $longitude,
-        public ?string $signaturePath,
         public ?string $createdAt,
         public ?string $updatedAt,
     ) {
     }
-
 
     public static function fromEntity(Client $entity): self
     {
         return new self(
             id: $entity->id->value,
             userId: $entity->userId->value,
-            name: $entity->name,
-            companyName: $entity->companyName,
+            clientName: $entity->clientName,
             email: $entity->email,
             phone: $entity->phone,
             address: $entity->address,
-            website: $entity->website,
-            facebookLink: $entity->facebookLink,
-            instagramLink: $entity->instagramLink,
-            linkedinLink: $entity->linkedinLink,
-            twitterLink: $entity->twitterLink,
-            latitude: $entity->latitude,
-            longitude: $entity->longitude,
-            signaturePath: $entity->signaturePath,
+            nif: $entity->nif,
+            website: $entity->socialLinks?->website,
+            facebookLink: $entity->socialLinks?->facebook,
+            instagramLink: $entity->socialLinks?->instagram,
+            linkedinLink: $entity->socialLinks?->linkedin,
+            twitterLink: $entity->socialLinks?->twitter,
+            latitude: $entity->coordinates?->latitude,
+            longitude: $entity->coordinates?->longitude,
             createdAt: $entity->createdAt,
             updatedAt: $entity->updatedAt,
         );

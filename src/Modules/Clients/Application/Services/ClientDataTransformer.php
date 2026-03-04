@@ -8,7 +8,7 @@ use Modules\Clients\Application\Queries\ReadModels\ClientReadModel;
 
 /**
  * ClientDataTransformer - Using PHP 8.5 Pipe Operator
- * 
+ *
  * Transforms client data through a pipeline of operations
  */
 final readonly class ClientDataTransformer
@@ -32,7 +32,7 @@ final readonly class ClientDataTransformer
     {
         return [
             'uuid' => $client->uuid,
-            'company_name' => $client->companyName,
+            'client_name' => $client->clientName,
             'email' => $client->email ?? 'N/A',
             'phone' => $client->phone ?? 'N/A',
             'address' => $client->address ?? 'N/A',
@@ -105,15 +105,15 @@ final readonly class ClientDataTransformer
     private static function normalizeUrls(array $data): array
     {
         $urlFields = ['website', 'facebook_link', 'instagram_link', 'linkedin_link', 'twitter_link'];
-        
+
         foreach ($urlFields as $field) {
             if (isset($data[$field]) && !empty($data[$field])) {
-                $data[$field] = filter_var($data[$field], FILTER_VALIDATE_URL) 
-                    ? $data[$field] 
+                $data[$field] = filter_var($data[$field], FILTER_VALIDATE_URL)
+                    ? $data[$field]
                     : null;
             }
         }
-        
+
         return $data;
     }
 
@@ -122,11 +122,11 @@ final readonly class ClientDataTransformer
         if (isset($data['latitude'])) {
             $data['latitude'] = max(-90, min(90, (float) $data['latitude']));
         }
-        
+
         if (isset($data['longitude'])) {
             $data['longitude'] = max(-180, min(180, (float) $data['longitude']));
         }
-        
+
         return $data;
     }
 }

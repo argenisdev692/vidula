@@ -259,14 +259,14 @@ export interface ProductFilters {
 
 // ── Clients ────────────────────────────────────────────────
 export interface ClientListItem {
-  uuid: string; // uuid
+  uuid: string;
   userUuid: string;
-  companyName: string;
+  clientName: string;
   nif: string | null;
   email: string | null;
   phone: string | null;
   createdAt: string;
-  deletedAt?: string | null;
+  deletedAt: string | null;
 }
 
 export interface ClientDetail extends ClientListItem {
@@ -287,7 +287,7 @@ export interface ClientFilters {
 
 export interface CreateClientDTO {
   userUuid: string;
-  companyName: string;
+  clientName: string;
   email?: string | null;
   phone?: string | null;
   address?: string | null;
@@ -302,7 +302,7 @@ export interface CreateClientDTO {
 }
 
 export interface UpdateClientDTO {
-  companyName: string;
+  clientName?: string;
   email?: string | null;
   phone?: string | null;
   address?: string | null;

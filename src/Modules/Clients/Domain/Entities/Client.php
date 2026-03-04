@@ -6,21 +6,19 @@ use Modules\Clients\Domain\ValueObjects\ClientId;
 use Modules\Clients\Domain\ValueObjects\UserId;
 use Modules\Clients\Domain\ValueObjects\SocialLinks;
 use Modules\Clients\Domain\ValueObjects\Coordinates;
-use Modules\Clients\Domain\Enums\CompanyStatus;
 use Shared\Domain\Entities\AggregateRoot;
 
 /**
  * Client — Domain Entity (Aggregate Root)
- * 
- * Fully immutable entity using readonly properties.
- * Use clone with to create modified copies.
+ *
+ * Independent CRUD entity. No dependency on Company module.
  */
 final class Client extends AggregateRoot
 {
     public function __construct(
         public ClientId $id,
         public UserId $userId,
-        public string $companyName,
+        public string $clientName,
         public ?string $email = null,
         public ?string $phone = null,
         public ?string $address = null,
@@ -36,7 +34,7 @@ final class Client extends AggregateRoot
     public static function create(
         ClientId $id,
         UserId $userId,
-        string $companyName,
+        string $clientName,
         ?string $email = null,
         ?string $phone = null,
         ?string $address = null,
@@ -47,7 +45,7 @@ final class Client extends AggregateRoot
         $client = new self(
             id: $id,
             userId: $userId,
-            companyName: $companyName,
+            clientName: $clientName,
             email: $email,
             phone: $phone,
             address: $address,
@@ -60,7 +58,7 @@ final class Client extends AggregateRoot
 
         $client->recordDomainEvent(new \Modules\Clients\Domain\Events\ClientCreated(
             aggregateId: $id->value,
-            companyName: $companyName,
+            clientName: $clientName,
             occurredOn: date('c')
         ));
 
@@ -68,10 +66,10 @@ final class Client extends AggregateRoot
     }
 
     /**
-     * Update client information using clone with
+     * Update client information using clone with (PHP 8.5)
      */
     public function update(
-        ?string $companyName = null,
+        ?string $clientName = null,
         ?string $email = null,
         ?string $phone = null,
         ?string $address = null,
@@ -79,19 +77,20 @@ final class Client extends AggregateRoot
         ?SocialLinks $socialLinks = null,
         ?Coordinates $coordinates = null
     ): self {
-        $updated = clone $this;
-        $updated->companyName = $companyName ?? $this->companyName;
-        $updated->email = $email ?? $this->email;
-        $updated->phone = $phone ?? $this->phone;
-        $updated->address = $address ?? $this->address;
-        $updated->nif = $nif ?? $this->nif;
-        $updated->socialLinks = $socialLinks ?? $this->socialLinks;
-        $updated->coordinates = $coordinates ?? $this->coordinates;
-        $updated->updatedAt = date('c');
+        $updated = clone($this, [
+            'clientName' => $clientName ?? $this->clientName,
+            'email' => $email ?? $this->email,
+            'phone' => $phone ?? $this->phone,
+            'address' => $address ?? $this->address,
+            'nif' => $nif ?? $this->nif,
+            'socialLinks' => $socialLinks ?? $this->socialLinks,
+            'coordinates' => $coordinates ?? $this->coordinates,
+            'updatedAt' => date('c'),
+        ]);
 
         $updated->recordDomainEvent(new \Modules\Clients\Domain\Events\ClientUpdated(
             aggregateId: $this->id->value,
-            companyName: $updated->companyName,
+            clientName: $updated->clientName,
             occurredOn: date('c')
         ));
 
@@ -103,10 +102,10 @@ final class Client extends AggregateRoot
      */
     public function softDelete(): self
     {
-        $updated = clone $this;
-        $updated->deletedAt = date('c');
-        $updated->updatedAt = date('c');
-        return $updated;
+        return clone($this, [
+            'deletedAt' => date('c'),
+            'updatedAt' => date('c'),
+        ]);
     }
 
     /**
@@ -114,9 +113,9 @@ final class Client extends AggregateRoot
      */
     public function restore(): self
     {
-        $updated = clone $this;
-        $updated->deletedAt = null;
-        $updated->updatedAt = date('c');
-        return $updated;
+        return clone($this, [
+            'deletedAt' => null,
+            'updatedAt' => date('c'),
+        ]);
     }
 }

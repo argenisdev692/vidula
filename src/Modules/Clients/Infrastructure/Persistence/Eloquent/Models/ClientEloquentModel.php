@@ -14,9 +14,6 @@ use Spatie\Activitylog\Traits\LogsActivity;
 use Modules\Users\Infrastructure\Persistence\Eloquent\Models\UserEloquentModel;
 
 /**
- * ClientEloquentModel
- */
-/**
  * @internal — Only the ClientMapper may access this model directly.
  */
 final class ClientEloquentModel extends Model
@@ -36,8 +33,9 @@ final class ClientEloquentModel extends Model
     protected $fillable = [
         'uuid',
         'user_id',
-        'company',
+        'client_name',
         'email',
+        'status',
         'phone',
         'address',
         'tax_id',
@@ -55,9 +53,18 @@ final class ClientEloquentModel extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logFillable()
+            ->logOnly([
+                'client_name',
+                'email',
+                'status',
+                'phone',
+                'address',
+                'nif',
+                'website',
+            ])
             ->logOnlyDirty()
-            ->dontSubmitEmptyLogs();
+            ->dontSubmitEmptyLogs()
+            ->useLogName('clients.client');
     }
 
     public function user(): BelongsTo

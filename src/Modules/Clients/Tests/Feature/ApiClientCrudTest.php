@@ -15,7 +15,7 @@ beforeEach(function () {
     // Generate a user to authenticate with during tests
 });
 
-it('lists company data', function () {
+it('lists client data', function () {
     $user = User::factory()->create();
     ClientEloquentModel::factory()->count(3)->create(['user_id' => $user->id]);
 
@@ -24,17 +24,17 @@ it('lists company data', function () {
         ->assertOk()
         ->assertJsonStructure([
             'data' => [
-                '*' => ['uuid', 'userUuid', 'companyName', 'createdAt']
+                '*' => ['uuid', 'userUuid', 'clientName', 'createdAt']
             ],
             'meta' => ['total', 'perPage']
         ]);
 });
 
-it('creates company data', function () {
+it('creates client data', function () {
     $user = User::factory()->create();
     $payload = [
         'userUuid' => $user->uuid,
-        'companyName' => 'Acme Corp',
+        'clientName' => 'Acme Corp',
         'email' => 'contact@acme.com',
         'phone' => '1234567890'
     ];
@@ -46,7 +46,7 @@ it('creates company data', function () {
 
     $this->assertDatabaseHas('clients', [
         'user_id' => $user->id,
-        'company' => 'Acme Corp'
+        'client_name' => 'Acme Corp'
     ]);
 });
 
@@ -55,47 +55,47 @@ it('validates required fields on create', function () {
     $this->actingAs($user)
         ->postJson(route('client.data.store'), [])
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['userUuid', 'companyName']);
+        ->assertJsonValidationErrors(['userUuid', 'clientName']);
 });
 
-it('shows company data', function () {
+it('shows client data', function () {
     $user = User::factory()->create();
     $uuid = (string) Str::uuid();
     $client = ClientEloquentModel::factory()->create([
         'uuid' => $uuid,
         'user_id' => $user->id,
-        'company' => 'Show Test Corp'
+        'client_name' => 'Show Test Corp'
     ]);
 
     $this->actingAs($user)
         ->getJson(route('client.data.show', $uuid))
         ->assertOk()
-        ->assertJsonPath('data.companyName', 'Show Test Corp');
+        ->assertJsonPath('data.clientName', 'Show Test Corp');
 });
 
-it('updates company data', function () {
+it('updates client data', function () {
     $user = User::factory()->create();
     $uuid = (string) Str::uuid();
     $client = ClientEloquentModel::factory()->create([
         'uuid' => $uuid,
         'user_id' => $user->id,
-        'company' => 'Old Name'
+        'client_name' => 'Old Name'
     ]);
 
     $this->actingAs($user)
         ->putJson(route('client.data.update', $uuid), [
-            'companyName' => 'New Name'
+            'clientName' => 'New Name'
         ])
         ->assertOk()
         ->assertJson(['message' => 'Client updated successfully']);
 
     $this->assertDatabaseHas('clients', [
         'uuid' => $uuid,
-        'company' => 'New Name'
+        'client_name' => 'New Name'
     ]);
 });
 
-it('soft deletes company data', function () {
+it('soft deletes client data', function () {
     $user = User::factory()->create();
     $uuid = (string) Str::uuid();
     $client = ClientEloquentModel::factory()->create([
@@ -115,7 +115,7 @@ it('soft deletes company data', function () {
     expect(ClientEloquentModel::withTrashed()->where('uuid', $uuid)->first()->deleted_at)->not->toBeNull();
 });
 
-it('restores soft deleted company data', function () {
+it('restores soft deleted client data', function () {
     $user = User::factory()->create();
     $uuid = (string) Str::uuid();
     $client = ClientEloquentModel::factory()->create([
@@ -132,7 +132,7 @@ it('restores soft deleted company data', function () {
     expect(ClientEloquentModel::where('uuid', $uuid)->first()->deleted_at)->toBeNull();
 });
 
-it('exports company data to excel', function () {
+it('exports client data to excel', function () {
     $user = User::factory()->create();
     ClientEloquentModel::factory()->count(3)->create();
 
@@ -142,7 +142,7 @@ it('exports company data to excel', function () {
         ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 });
 
-it('exports company data to pdf', function () {
+it('exports client data to pdf', function () {
     $user = User::factory()->create();
     ClientEloquentModel::factory()->count(3)->create();
 

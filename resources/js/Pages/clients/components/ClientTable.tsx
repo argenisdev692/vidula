@@ -16,7 +16,7 @@ interface ClientTableProps {
   onRowSelectionChange: OnChangeFn<RowSelectionState>;
 }
 
-// ── columnHelper outside component (performance) ──
+// ── columnHelper outside component (§7) ──
 const columnHelper = createColumnHelper<ClientListItem>();
 
 export default function ClientTable({
@@ -27,8 +27,8 @@ export default function ClientTable({
   onRestoreClick,
   rowSelection,
   onRowSelectionChange,
-}: ClientTableProps) {
-  const columns = React.useMemo<ColumnDef<ClientListItem, any>[]>(() => [
+}: ClientTableProps): React.JSX.Element {
+  const columns = React.useMemo<ColumnDef<ClientListItem, unknown>[]>(() => [
     columnHelper.display({
       id: 'select',
       header: ({ table }) => (
@@ -37,7 +37,8 @@ export default function ClientTable({
           checked={table.getIsAllPageRowsSelected()}
           onChange={table.getToggleAllPageRowsSelectedHandler()}
           aria-label="Select all"
-          className="h-4 w-4 rounded border-gray-300 accent-(--accent-primary) cursor-pointer"
+          className="h-4 w-4 rounded cursor-pointer"
+          style={{ accentColor: 'var(--accent-primary)' }}
         />
       ),
       cell: ({ row }) => (
@@ -46,11 +47,12 @@ export default function ClientTable({
           checked={row.getIsSelected()}
           onChange={row.getToggleSelectedHandler()}
           aria-label="Select row"
-          className="h-4 w-4 rounded border-gray-300 accent-(--accent-primary) cursor-pointer"
+          className="h-4 w-4 rounded cursor-pointer"
+          style={{ accentColor: 'var(--accent-primary)' }}
         />
       ),
     }),
-    columnHelper.accessor('companyName', {
+    columnHelper.accessor('clientName', {
       header: 'Client',
       cell: (info) => {
         const item = info.row.original;
@@ -66,8 +68,8 @@ export default function ClientTable({
               <UserSquare2 size={16} />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold uppercase text-gray-900 dark:text-gray-100">
-                {item.companyName}
+              <p className="truncate text-sm font-semibold uppercase" style={{ color: 'var(--text-primary)' }}>
+                {item.clientName}
               </p>
             </div>
           </div>
@@ -84,7 +86,7 @@ export default function ClientTable({
     }),
     columnHelper.accessor('phone', {
       header: 'Phone',
-      cell: (info) => <span className="text-sm text-(--text-secondary)">{info.getValue() ?? '—'}</span>,
+      cell: (info) => <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{info.getValue() ?? '—'}</span>,
     }),
     columnHelper.accessor('createdAt', {
       header: 'Created',
@@ -105,30 +107,37 @@ export default function ClientTable({
         const isDeleted = !!item.deletedAt;
         return (
           <div className="flex items-center justify-end gap-2 pr-4">
-            <Link href={`/clients/${item.uuid}`} className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors" title="View">
-              <Eye size={16} />
+            <Link
+              href={`/clients/${item.uuid}`}
+              className="btn-action btn-action-view"
+              title="View"
+            >
+              <Eye size={14} />
             </Link>
             {!isDeleted ? (
               <>
-                <Link href={`/clients/${item.uuid}/edit`} className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors" title="Edit">
-                  <Pencil size={16} />
+                <Link
+                  href={`/clients/${item.uuid}/edit`}
+                  className="btn-action btn-action-edit"
+                  title="Edit"
+                >
+                  <Pencil size={14} />
                 </Link>
                 <button
-                  onClick={() => onDelete(item.uuid, item.companyName)}
-                  className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-red-500/10 text-(--accent-error) shadow-sm transition-colors"
+                  onClick={() => onDelete(item.uuid, item.clientName)}
+                  className="btn-action btn-action-delete"
                   title="Delete"
                 >
-                  <Trash2 size={16} />
+                  <Trash2 size={14} />
                 </button>
               </>
             ) : (
-              // Deleted row: Provide restore button
               <button
-                onClick={() => onRestoreClick?.(item.uuid, item.companyName)}
-                className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-green-500/10 text-(--accent-success) shadow-sm transition-colors"
+                onClick={() => onRestoreClick?.(item.uuid, item.clientName)}
+                className="btn-action btn-action-restore"
                 title="Restore"
               >
-                <CheckCircle size={16} />
+                <CheckCircle size={14} />
               </button>
             )}
           </div>

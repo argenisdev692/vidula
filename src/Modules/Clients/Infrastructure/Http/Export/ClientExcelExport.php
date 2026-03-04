@@ -59,7 +59,7 @@ final class ClientExcelExport implements
         return [
             'ID',
             'UUID',
-            'Company Name',
+            'Client Name',
             'Email',
             'Phone',
             'Address',

@@ -8,11 +8,13 @@ use Modules\Clients\Domain\Exceptions\ClientNotFoundException;
 use Modules\Clients\Domain\Ports\ClientRepositoryPort;
 use Modules\Clients\Domain\ValueObjects\ClientId;
 use Illuminate\Support\Facades\Cache;
+use Shared\Infrastructure\Audit\AuditInterface;
 
 final readonly class DeleteClientHandler
 {
     public function __construct(
-        private ClientRepositoryPort $repository
+        private ClientRepositoryPort $repository,
+        private AuditInterface $audit,
     ) {
     }
 
@@ -26,6 +28,12 @@ final readonly class DeleteClientHandler
         }
 
         $this->repository->delete($id);
+
+        $this->audit->log(
+            logName: 'clients.client',
+            description: "Client deleted: {$client->clientName}",
+            properties: ['uuid' => $command->id, 'clientName' => $client->clientName],
+        );
 
         try {
             Cache::tags(['clients_list'])->flush();

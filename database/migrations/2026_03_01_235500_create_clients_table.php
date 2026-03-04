@@ -11,7 +11,7 @@ return new class extends Migration {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('company');
+            $table->string('client_name');
             $table->string('email')->nullable();
             $table->string('status')->default('DRAFT');
             $table->string('phone')->nullable();

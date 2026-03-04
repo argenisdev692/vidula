@@ -11,11 +11,13 @@ use Modules\Clients\Domain\ValueObjects\SocialLinks;
 use Modules\Clients\Domain\ValueObjects\ClientId;
 use Modules\Clients\Domain\ValueObjects\UserId;
 use Illuminate\Support\Facades\Cache;
+use Shared\Infrastructure\Audit\AuditInterface;
 
 final readonly class UpdateClientHandler
 {
     public function __construct(
-        private ClientRepositoryPort $repository
+        private ClientRepositoryPort $repository,
+        private AuditInterface $audit,
     ) {
     }
 
@@ -33,7 +35,6 @@ final readonly class UpdateClientHandler
 
         $dto = $command->dto;
 
-        // Create new SocialLinks and Coordinates value objects
         $socialLinks = new SocialLinks(
             facebook: $dto->facebookLink ?? $client->socialLinks?->facebook,
             instagram: $dto->instagramLink ?? $client->socialLinks?->instagram,
@@ -47,18 +48,24 @@ final readonly class UpdateClientHandler
             longitude: $dto->longitude ?? $client->coordinates?->longitude
         );
 
-        // Use clone with to create updated client
         $updatedClient = clone($client, [
-            'companyName' => $dto->companyName ?? $client->companyName,
+            'clientName' => $dto->clientName ?? $client->clientName,
             'email' => $dto->email ?? $client->email,
             'phone' => $dto->phone ?? $client->phone,
             'address' => $dto->address ?? $client->address,
+            'nif' => $dto->nif ?? $client->nif,
             'socialLinks' => $socialLinks,
             'coordinates' => $coordinates,
             'updatedAt' => date('c'),
         ]);
 
         $this->repository->save($updatedClient);
+
+        $this->audit->log(
+            logName: 'clients.client',
+            description: "Client updated: {$updatedClient->clientName}",
+            properties: ['uuid' => $updatedClient->id->value, 'clientName' => $updatedClient->clientName],
+        );
 
         // Invalidate caches
         try {

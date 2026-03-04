@@ -3,26 +3,13 @@ import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/pages/layouts/AppLayout';
 import { useClientMutations } from '@/modules/clients/hooks/useClientMutations';
 import type { CreateClientDTO } from '@/types/api';
+import { ArrowLeft, Save } from 'lucide-react';
 
-// ══════════════════════════════════════════════════════════════
-// Icons
-// ══════════════════════════════════════════════════════════════
-const ic = {
-  w: 16, h: 16, viewBox: '0 0 24 24', fill: 'none',
-  stroke: 'currentColor', strokeWidth: 2,
-  strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const,
-};
-const IconArrowLeft = () => <svg {...ic}><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>;
-const IconSave = () => <svg {...ic}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>;
-
-// ══════════════════════════════════════════════════════════════
-// ClientCreatePage
-// ══════════════════════════════════════════════════════════════
 export default function ClientCreatePage(): React.JSX.Element {
   const { createClient: createMutation } = useClientMutations();
   const [formData, setFormData] = React.useState<CreateClientDTO>({
-    userUuid: '', 
-    companyName: '',
+    userUuid: '',
+    clientName: '',
     email: '',
     phone: '',
     nif: '',
@@ -43,196 +30,212 @@ export default function ClientCreatePage(): React.JSX.Element {
     e.preventDefault();
     createMutation.mutate(formData, {
       onSuccess: () => {
-        router.visit('/client');
+        router.visit('/clients');
       },
-      onError: (error) => {
-        console.error('Failed to create company data:', error);
-        alert('Failed to save company data. Please check the console.');
-      }
     });
   };
 
   return (
     <AppLayout>
-      <Head title="Create Company Profile" />
-      <div style={{ fontFamily: 'var(--font-sans)', maxWidth: '800px', margin: '0 auto' }}>
-        
+      <Head title="New Client" />
+      <div
+        className="max-w-4xl mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12"
+        style={{ fontFamily: 'var(--font-sans)' }}
+      >
+
         {/* ── Header ── */}
-        <div className="mb-6 flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <Link
-              href="/client"
-              className="flex h-9 w-9 items-center justify-center rounded-lg transition-all hover:bg-(--bg-hover)"
-              style={{ color: 'var(--text-muted)' }}
+              href="/clients"
+              className="flex h-10 w-10 items-center justify-center rounded-xl transition-all shadow-sm"
+              style={{
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border-default)',
+                color: 'var(--text-muted)',
+              }}
             >
-              <IconArrowLeft />
+              <ArrowLeft size={20} />
             </Link>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-                New Company Profile
+              <h1
+                className="text-2xl font-extrabold tracking-tight"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                New Client
               </h1>
-              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                Enter the details below to register a new corporate entity.
+              <p className="text-sm font-medium mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                Enter the details below to register a new client.
               </p>
             </div>
           </div>
           <button
             onClick={handleSubmit}
             disabled={createMutation.isPending}
-            className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all disabled:opacity-50"
-            style={{
-              background: 'var(--accent-primary)',
-              color: 'var(--color-white)',
-            }}
+            className="btn-modern btn-modern-primary flex items-center gap-2 px-6 py-2.5 font-bold shadow-lg"
           >
-            {createMutation.isPending ? 'Saving...' : <><IconSave /> Save Profile</>}
+            {createMutation.isPending ? 'Saving...' : <><Save size={16} /> Save Client</>}
           </button>
         </div>
 
         {/* ── Form Card ── */}
-        <div className="card">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              {/* Company Name */}
-              <div>
-                <label className="input-label" htmlFor="companyName">Company Name *</label>
-                <input
-                  id="companyName"
-                  name="companyName"
-                  type="text"
-                  required
-                  value={formData.companyName}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="e.g. Acme Corp"
-                />
-              </div>
+        <div className="card-modern p-8 shadow-2xl" style={{ border: '1px solid var(--border-default)' }}>
+          <form onSubmit={handleSubmit} className="space-y-8">
 
-              <div>
-                <label className="input-label" htmlFor="nif">NIF</label>
-                <input
-                  id="nif"
-                  name="nif"
-                  type="text"
-                  value={formData.nif || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="e.g. A12345678"
-                />
-              </div>
+            {/* ── Section: Core Information ── */}
+            <div>
+              <h3
+                className="text-sm font-bold uppercase tracking-widest mb-6"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                Core Information
+              </h3>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {/* Client Name */}
+                <div>
+                  <label className="input-label" htmlFor="clientName" style={{ color: 'var(--text-secondary)' }}>Client Name *</label>
+                  <input
+                    id="clientName"
+                    name="clientName"
+                    type="text"
+                    required
+                    value={formData.clientName}
+                    onChange={handleChange}
+                    className="input"
+                    placeholder="e.g. Acme Corp"
+                  />
+                </div>
 
-              {/* Email */}
-              <div>
-                <label className="input-label" htmlFor="email">Contact Email</label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="contact@acmecorp.com"
-                />
-              </div>
+                <div>
+                  <label className="input-label" htmlFor="nif" style={{ color: 'var(--text-secondary)' }}>NIF</label>
+                  <input
+                    id="nif"
+                    name="nif"
+                    type="text"
+                    value={formData.nif || ''}
+                    onChange={handleChange}
+                    className="input"
+                    placeholder="e.g. A12345678"
+                  />
+                </div>
 
-              {/* Phone */}
-              <div>
-                <label className="input-label" htmlFor="phone">Phone Number</label>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="text"
-                  value={formData.phone || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="+1 (555) 000-0000"
-                />
-              </div>
-              
-              {/* Website */}
-              <div className="md:col-span-2">
-                <label className="input-label" htmlFor="website">Website URL</label>
-                <input
-                  id="website"
-                  name="website"
-                  type="url"
-                  value={formData.website || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="https://www.acmecorp.com"
-                />
-              </div>
+                {/* Email */}
+                <div>
+                  <label className="input-label" htmlFor="email" style={{ color: 'var(--text-secondary)' }}>Contact Email</label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email || ''}
+                    onChange={handleChange}
+                    className="input"
+                    placeholder="contact@acmecorp.com"
+                  />
+                </div>
 
-              {/* Address */}
-              <div className="md:col-span-2">
-                <label className="input-label" htmlFor="address">Address</label>
-                <textarea
-                  id="address"
-                  name="address"
-                  rows={3}
-                  value={formData.address || ''}
-                  onChange={handleChange}
-                  className="input h-auto! pt-2"
-                  placeholder="123 Corporate Blvd, Suite 100..."
-                />
+                {/* Phone */}
+                <div>
+                  <label className="input-label" htmlFor="phone" style={{ color: 'var(--text-secondary)' }}>Phone Number</label>
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="text"
+                    value={formData.phone || ''}
+                    onChange={handleChange}
+                    className="input"
+                    placeholder="+1 (555) 000-0000"
+                  />
+                </div>
+
+                {/* Website */}
+                <div className="md:col-span-2">
+                  <label className="input-label" htmlFor="website" style={{ color: 'var(--text-secondary)' }}>Website URL</label>
+                  <input
+                    id="website"
+                    name="website"
+                    type="url"
+                    value={formData.website || ''}
+                    onChange={handleChange}
+                    className="input"
+                    placeholder="https://www.acmecorp.com"
+                  />
+                </div>
+
+                {/* Address */}
+                <div className="md:col-span-2">
+                  <label className="input-label" htmlFor="address" style={{ color: 'var(--text-secondary)' }}>Address</label>
+                  <textarea
+                    id="address"
+                    name="address"
+                    rows={3}
+                    value={formData.address || ''}
+                    onChange={handleChange}
+                    className="input h-auto! pt-2"
+                    placeholder="123 Corporate Blvd, Suite 100..."
+                  />
+                </div>
               </div>
             </div>
 
-            <hr style={{ borderColor: 'var(--border-subtle)', margin: '24px 0' }} />
+            <hr style={{ borderColor: 'var(--border-subtle)' }} />
 
-            <h3 className="mb-4 text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
-              Social Links
-            </h3>
-
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <div>
-                <label className="input-label" htmlFor="linkedinLink">LinkedIn</label>
-                <input
-                  id="linkedinLink"
-                  name="linkedinLink"
-                  type="url"
-                  value={formData.linkedinLink || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="https://linkedin.com/company/acmecorp"
-                />
-              </div>
-              <div>
-                <label className="input-label" htmlFor="twitterLink">Twitter (X)</label>
-                <input
-                  id="twitterLink"
-                  name="twitterLink"
-                  type="url"
-                  value={formData.twitterLink || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="https://twitter.com/acmecorp"
-                />
-              </div>
-              <div>
-                <label className="input-label" htmlFor="facebookLink">Facebook</label>
-                <input
-                  id="facebookLink"
-                  name="facebookLink"
-                  type="url"
-                  value={formData.facebookLink || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="https://facebook.com/acmecorp"
-                />
-              </div>
-              <div>
-                <label className="input-label" htmlFor="instagramLink">Instagram</label>
-                <input
-                  id="instagramLink"
-                  name="instagramLink"
-                  type="url"
-                  value={formData.instagramLink || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="https://instagram.com/acmecorp"
-                />
+            {/* ── Section: Social Links ── */}
+            <div>
+              <h3
+                className="text-sm font-bold uppercase tracking-widest mb-6"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                Social Links
+              </h3>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div>
+                  <label className="input-label" htmlFor="linkedinLink" style={{ color: 'var(--text-secondary)' }}>LinkedIn</label>
+                  <input
+                    id="linkedinLink"
+                    name="linkedinLink"
+                    type="url"
+                    value={formData.linkedinLink || ''}
+                    onChange={handleChange}
+                    className="input"
+                    placeholder="https://linkedin.com/company/acmecorp"
+                  />
+                </div>
+                <div>
+                  <label className="input-label" htmlFor="twitterLink" style={{ color: 'var(--text-secondary)' }}>Twitter (X)</label>
+                  <input
+                    id="twitterLink"
+                    name="twitterLink"
+                    type="url"
+                    value={formData.twitterLink || ''}
+                    onChange={handleChange}
+                    className="input"
+                    placeholder="https://twitter.com/acmecorp"
+                  />
+                </div>
+                <div>
+                  <label className="input-label" htmlFor="facebookLink" style={{ color: 'var(--text-secondary)' }}>Facebook</label>
+                  <input
+                    id="facebookLink"
+                    name="facebookLink"
+                    type="url"
+                    value={formData.facebookLink || ''}
+                    onChange={handleChange}
+                    className="input"
+                    placeholder="https://facebook.com/acmecorp"
+                  />
+                </div>
+                <div>
+                  <label className="input-label" htmlFor="instagramLink" style={{ color: 'var(--text-secondary)' }}>Instagram</label>
+                  <input
+                    id="instagramLink"
+                    name="instagramLink"
+                    type="url"
+                    value={formData.instagramLink || ''}
+                    onChange={handleChange}
+                    className="input"
+                    placeholder="https://instagram.com/acmecorp"
+                  />
+                </div>
               </div>
             </div>
 

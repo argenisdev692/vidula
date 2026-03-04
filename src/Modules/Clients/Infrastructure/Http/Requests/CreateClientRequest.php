@@ -17,10 +17,11 @@ final class CreateClientRequest extends FormRequest
     {
         return [
             'userUuid' => ['required', 'string', 'uuid', 'exists:users,uuid'],
-            'companyName' => ['required', 'string', 'max:255'],
+            'clientName' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
             'address' => ['nullable', 'string', 'max:1000'],
+            'nif' => ['nullable', 'string', 'max:50'],
             'website' => ['nullable', 'url', 'max:255'],
             'facebookLink' => ['nullable', 'url', 'max:255'],
             'instagramLink' => ['nullable', 'url', 'max:255'],
