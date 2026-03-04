@@ -57,7 +57,9 @@ final class HandlersTest extends TestCase
     {
         $dto = new CreateUserDTO(
             name: 'Alice',
+            lastName: 'Smith',
             email: 'alice@example.com',
+            role: 'USER',
         );
 
         $this->mockRepo

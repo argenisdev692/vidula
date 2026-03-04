@@ -40,9 +40,14 @@ final readonly class GetUserHandler
                 phone: $user->phone,
                 status: $user->status->value,
                 profilePhotoPath: $user->profilePhotoPath,
+                address: $user->address,
+                city: $user->city,
+                state: $user->state,
+                country: $user->country,
+                zipCode: $user->zipCode,
                 createdAt: $user->createdAt,
                 updatedAt: $user->updatedAt,
-                roles: [], // To be populated if needed
+                roles: [],
                 permissions: []
             );
         });

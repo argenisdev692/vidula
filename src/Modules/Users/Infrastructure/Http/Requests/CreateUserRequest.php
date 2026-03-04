@@ -24,7 +24,7 @@ final class CreateUserRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email',
+            'email' => 'required|email|max:255|unique:users,email,NULL,id,deleted_at,NULL',
             'username' => 'nullable|string|max:255|unique:users,username',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',

@@ -25,7 +25,7 @@ final class UpdateUserRequest extends FormRequest
 
         return [
             'name' => 'sometimes|string|max:255',
-            'email' => "sometimes|email|max:255|unique:users,email,{$userId}",
+            'email' => "sometimes|email|max:255|unique:users,email,{$userId},id,deleted_at,NULL",
             'last_name' => 'nullable|string|max:255',
             'username' => "nullable|string|max:255|unique:users,username,{$userId}",
             'phone' => 'nullable|string|max:20',

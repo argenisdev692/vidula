@@ -95,7 +95,7 @@ export default function UserEditPage({ user }: UserEditPageProps): React.JSX.Ele
             <button
               onClick={(e) => void handleSubmit(e as unknown as React.FormEvent)}
               disabled={updateUser.isPending}
-              className="btn-modern-primary flex items-center gap-2 px-6 py-2.5 shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
+              className="btn-modern btn-modern-primary flex items-center gap-2 px-6 py-2.5 shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
             >
               {updateUser.isPending ? (
                 <span className="animate-pulse">Saving...</span>
