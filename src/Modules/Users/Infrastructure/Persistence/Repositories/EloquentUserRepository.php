@@ -39,6 +39,7 @@ final class EloquentUserRepository implements UserRepositoryPort
     public function findByUuid(string $uuid): ?User
     {
         $model = UserEloquentModel::query()
+            ->withTrashed()  // ✅ Include soft-deleted users
             ->select(self::SELECT_COLUMNS)
             ->where('uuid', $uuid)
             ->first();
@@ -63,12 +64,21 @@ final class EloquentUserRepository implements UserRepositoryPort
     public function findAllPaginated(array $filters = [], int $page = 1, int $perPage = 15): array
     {
         $query = UserEloquentModel::query()
-            ->select(self::SELECT_COLUMNS)
-            ->when(
-                $filters['status'] ?? null,
-                fn($q, $status) => $q->where('status', $status)
-            )
-            ->when(
+            ->select(self::SELECT_COLUMNS);
+
+        // Handle soft deletes based on status filter
+        $status = $filters['status'] ?? '';
+        if ($status === 'deleted') {
+            $query->onlyTrashed();
+        } elseif ($status === 'active' || $status === 'suspended' || $status === 'banned' || $status === 'pending_setup') {
+            // Only non-deleted with specific status
+            $query->where('status', $status);
+        } else {
+            // Show all (including soft-deleted)
+            $query->withTrashed();
+        }
+
+        $query->when(
                 $filters['search'] ?? null,
                 fn($q, $search) => $q->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")

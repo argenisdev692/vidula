@@ -34,7 +34,7 @@ final readonly class GetUserHandler
             return new UserReadModel(
                 uuid: $user->uuid,
                 name: $user->name,
-                lastName: $user->lastName,
+                lastName: $user->lastName ?? '',  // ✅ Handle null
                 email: $user->email ?? '',
                 username: $user->username,
                 phone: $user->phone,
@@ -47,6 +47,7 @@ final readonly class GetUserHandler
                 zipCode: $user->zipCode,
                 createdAt: $user->createdAt,
                 updatedAt: $user->updatedAt,
+                deletedAt: $user->deletedAt,  // ✅ Added for soft-delete detection
                 roles: [],
                 permissions: []
             );

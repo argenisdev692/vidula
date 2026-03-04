@@ -52,7 +52,7 @@ final class UserPageController
         $user = $this->getHandler->handle(new GetUserQuery($uuid));
 
         return Inertia::render('users/UserShowPage', [
-            'user' => new UserResource($user),
+            'user' => $user,  // ✅ Pass ReadModel directly (has MapOutputName)
         ]);
     }
 
@@ -64,7 +64,7 @@ final class UserPageController
         $user = $this->getHandler->handle(new GetUserQuery($uuid));
 
         return Inertia::render('users/UserEditPage', [
-            'user' => new UserResource($user),
+            'user' => $user,  // ✅ Pass ReadModel directly (has MapOutputName)
         ]);
     }
 

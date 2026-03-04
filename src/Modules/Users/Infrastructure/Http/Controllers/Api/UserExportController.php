@@ -27,7 +27,7 @@ final class UserExportController
         $filters = UserFilterDTO::from($request->all());
 
         if ($format === 'pdf') {
-            $pdfExport = new UserPdfExport($filters, $this->repository);
+            $pdfExport = new UserPdfExport($filters);
             return $pdfExport->stream();
         }
 

@@ -597,6 +597,10 @@ Route::middleware(['auth:sanctum', 'role:super-admin'])->prefix('/api/{module}/a
 
 ## §8 — Exports (Excel + PDF)
 
+### Export Date Format Rule
+
+**CRITICAL**: All dates in exports (Excel and PDF) MUST use human-readable format `F j, Y` (e.g., "March 3, 2026"), NOT ISO8601.
+
 ### ExportController
 
 ```php
@@ -625,7 +629,7 @@ final class {Module}ExportController
 }
 ```
 
-### ExcelExport
+### ExcelExport with Date Formatting
 
 ```php
 final class {Entity}ExcelExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize
@@ -643,10 +647,160 @@ final class {Entity}ExcelExport implements FromQuery, WithHeadings, WithMapping,
 
     public function map($row): array
     {
-        return [$row->name, $row->email ?? '—', $row->status, $row->created_at?->format('M j, Y')];
+        return [
+            $row->name, 
+            $row->email ?? '—', 
+            $row->status, 
+            $row->created_at?->format('F j, Y') ?? '—'  // ✅ Human-readable format
+        ];
     }
 }
 ```
+
+### Export Transformer Pattern (Recommended)
+
+For complex exports, use a dedicated transformer with pipe operator:
+
+```php
+final class {Entity}ExportTransformer
+{
+    #[\NoDiscard]
+    public static function transformForExcel({Entity}ReadModel $entity): array
+    {
+        return $entity
+            |> self::extractBaseData(...)
+            |> self::formatDates(...)
+            |> self::sanitizeOutput(...);
+    }
+
+    #[\NoDiscard]
+    public static function transformForPdf({Entity}ReadModel $entity): array
+    {
+        return $entity
+            |> self::extractPdfData(...)
+            |> self::formatDates(...)
+            |> self::sanitizeOutput(...);
+    }
+
+    private static function extractBaseData({Entity}ReadModel $entity): array
+    {
+        return [
+            'uuid' => $entity->uuid,
+            'name' => $entity->name,
+            'email' => $entity->email,
+            'created_at' => is_string($entity->createdAt) ? $entity->createdAt : null,
+            'updated_at' => is_string($entity->updatedAt) ? $entity->updatedAt : null,
+        ];
+    }
+
+    private static function extractPdfData({Entity}ReadModel $entity): array
+    {
+        return [
+            'uuid' => $entity->uuid,
+            'name' => $entity->name,
+            'email' => $entity->email,
+            'created_at' => is_string($entity->createdAt) ? $entity->createdAt : null,
+        ];
+    }
+
+    /**
+     * Format date fields to human-readable format (e.g., "March 3, 2026")
+     */
+    private static function formatDates(array $data): array
+    {
+        $dateFields = ['created_at', 'updated_at'];
+        
+        foreach ($dateFields as $field) {
+            if (isset($data[$field]) && is_string($data[$field]) && $data[$field] !== '') {
+                try {
+                    $date = new \DateTimeImmutable($data[$field]);
+                    $data[$field] = $date->format('F j, Y');  // ✅ "March 3, 2026"
+                } catch (\Exception) {
+                    // Keep original value if parsing fails
+                }
+            }
+        }
+        
+        return $data;
+    }
+
+    private static function sanitizeOutput(array $data): array
+    {
+        return array_map(fn($value) => $value ?? '', $data);
+    }
+}
+```
+
+### PDF Blade Template Rules
+
+**MANDATORY styling for all PDF exports:**
+
+```blade
+<style>
+    body {
+        font-family: sans-serif;
+        font-size: 11px;
+        color: #333;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    th {
+        background-color: #f3f4f6;
+        color: #333;
+        text-align: center;        /* ✅ MANDATORY: centered headers */
+        padding: 8px;
+        border: 1px solid #e5e7eb;
+        font-weight: bold;         /* ✅ MANDATORY: bold headers */
+    }
+
+    td {
+        padding: 8px;
+        border: 1px solid #e5e7eb;
+        text-align: center;        /* ✅ MANDATORY: centered content */
+        vertical-align: middle;    /* ✅ MANDATORY: vertical centering */
+    }
+
+    tr:nth-child(even) {
+        background-color: #fafafa;
+    }
+</style>
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Created At</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach($rows as $row)
+            <tr>
+                <td>{{ $row['name'] }}</td>
+                <td>{{ $row['email'] }}</td>
+                <td>{{ $row['created_at'] }}</td>  {{-- Already formatted by transformer --}}
+            </tr>
+        @endforeach
+    </tbody>
+</table>
+```
+
+### Export Checklist
+
+- [ ] Dates formatted as `F j, Y` (e.g., "March 3, 2026") in both Excel and PDF
+- [ ] PDF table headers: `text-align: center` + `font-weight: bold`
+- [ ] PDF table cells: `text-align: center` + `vertical-align: middle`
+- [ ] Transformer uses pipe operator for data transformation
+- [ ] `formatDates()` method handles both Carbon instances and strings
+- [ ] Null values sanitized to empty strings or '—'
+- [ ] Export route registered BEFORE `/{uuid}` route
+- [ ] Both Excel and PDF reuse same `FilterDTO`
+- [ ] Generated timestamp uses `now()->format('F j, Y H:i')`
 
 ---
 

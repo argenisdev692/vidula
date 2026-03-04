@@ -642,6 +642,91 @@ Configure in `globals.css`:
 
 ---
 
+## §12.1 — Export Functionality
+
+### Export Button Component
+
+Every index page MUST include an `ExportButton` component that triggers Excel/PDF downloads:
+
+```tsx
+import { ExportButton } from '@/common/export/ExportButton';
+
+// In IndexPage component
+const [isPendingExport, startExportTransition] = React.useTransition();
+
+function handleExport(format: 'excel' | 'pdf'): void {
+    startExportTransition(() => {
+        const params = new URLSearchParams({ format });
+        if (filters.search) params.append('search', filters.search);
+        if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
+        if (filters.dateTo) params.append('dateTo', filters.dateTo);
+        if (filters.status) params.append('status', filters.status);
+        window.open(`/{module}/data/admin/export?${params}`, '_blank');
+    });
+}
+
+// In render
+<ExportButton onExport={handleExport} isExporting={isPendingExport} />
+```
+
+### Export Rules
+
+1. **Always use `useTransition`** to wrap export operations
+2. **Pass all active filters** to the export endpoint via query params
+3. **Open in new tab** using `window.open(..., '_blank')`
+4. **Show loading state** via `isExporting` prop
+5. **Date format**: Backend returns dates as "March 3, 2026" (human-readable)
+6. **Export route**: Must be registered BEFORE `/{uuid}` route in backend
+
+### Export Button Placement
+
+Place export button in the toolbar, after date range filter:
+
+```tsx
+<div className="flex items-center gap-3 flex-wrap">
+    {/* Search */}
+    <div className="flex flex-1 items-center gap-3">
+        <Search size={14} />
+        <input type="text" value={search} onChange={handleSearchChange} />
+    </div>
+
+    <div className="h-6 w-px" style={{ background: 'var(--border-subtle)' }} />
+
+    {/* Status Filter */}
+    <select value={filters.status ?? ''} onChange={...}>
+        <option value="">All Status</option>
+        <option value="active">Active</option>
+        <option value="deleted">Deleted</option>
+    </select>
+
+    <div className="h-6 w-px" style={{ background: 'var(--border-subtle)' }} />
+
+    {/* Date Range */}
+    <DataTableDateRangeFilter
+        dateFrom={filters.dateFrom}
+        dateTo={filters.dateTo}
+        onChange={(range) => setFilters(p => ({ ...p, ...range, page: 1 }))}
+    />
+
+    <div className="h-6 w-px" style={{ background: 'var(--border-subtle)' }} />
+
+    {/* Export */}
+    <ExportButton onExport={handleExport} isExporting={isPendingExport} />
+</div>
+```
+
+### Export Checklist
+
+- [ ] `ExportButton` component imported from `@/common/export/ExportButton`
+- [ ] `useTransition` hook wraps export handler
+- [ ] All active filters passed as query params
+- [ ] Export opens in new tab (`window.open(..., '_blank')`)
+- [ ] Loading state shown during export
+- [ ] Export button placed after date range filter in toolbar
+- [ ] Vertical separators (`div.h-6.w-px`) between toolbar sections
+
+---
+
 ## §13 — TypeScript Contracts
 
 ```ts
