@@ -88,7 +88,7 @@
     <table>
         <thead>
             <tr>
-                <th>Company</th>
+                <th>Client</th>
                 <th>Email</th>
                 <th>Phone</th>
                 <th>Website</th>
@@ -98,7 +98,7 @@
         <tbody>
             @foreach($rows as $row)
                 <tr>
-                    <td>{{ $row['company_name'] }}</td>
+                    <td>{{ $row['client_name'] ?? '' }}</td>
                     <td>{{ $row['email'] }}</td>
                     <td>{{ $row['phone'] }}</td>
                     <td>{{ $row['website'] }}</td>
