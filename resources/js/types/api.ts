@@ -268,7 +268,9 @@ export interface CreateProductDTO {
   status?: string;
 }
 
-export interface UpdateProductDTO extends Partial<CreateProductDTO> {}
+export interface UpdateProductDTO extends Partial<CreateProductDTO> {
+  slug?: string;
+}
 
 // ── Clients ────────────────────────────────────────────────
 export interface ClientListItem {

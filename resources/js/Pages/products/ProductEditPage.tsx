@@ -21,6 +21,7 @@ export default function ProductEditPage(): React.JSX.Element {
   const [form, setForm] = React.useState<UpdateProductDTO>({
     type: '',
     title: '',
+    slug: '',
     price: 0,
     currency: '',
     description: '',
@@ -34,13 +35,14 @@ export default function ProductEditPage(): React.JSX.Element {
       setForm({
         type: product.type,
         title: product.title,
+        slug: product.slug,
         price: product.price,
         currency: product.currency,
         description: product.description || '',
         level: product.level,
         language: product.language,
         status: product.status,
-      });
+      } as any);
     }
   }, [product]);
 
@@ -54,7 +56,7 @@ export default function ProductEditPage(): React.JSX.Element {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateProduct.mutate({ userUuid: uuid, payload: form as any }, {
+    updateProduct.mutate({ productUuid: uuid, payload: form as any }, {
       onSuccess: () => {
         router.visit('/products');
       }
@@ -85,7 +87,7 @@ export default function ProductEditPage(): React.JSX.Element {
   return (
     <AppLayout>
       <Head title={`Edit Product | ${product?.title}`} />
-      <PermissionGuard permissions={['EDIT PRODUCTS']}>
+      <PermissionGuard permissions={['UPDATE PRODUCTS']}>
         <div className="max-w-5xl mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-300 pb-12">
           
           {/* ── Header ── */}
@@ -176,8 +178,7 @@ export default function ProductEditPage(): React.JSX.Element {
                                 style={{ 
                                   background: 'var(--bg-card)', 
                                   border: '1px solid var(--border-default)', 
-                                  color: 'var(--text-primary)',
-                                  focusRing: 'var(--accent-primary)'
+                                  color: 'var(--text-primary)'
                                 }}
                             >
                                 <option value="EUR">Euro (EUR)</option>

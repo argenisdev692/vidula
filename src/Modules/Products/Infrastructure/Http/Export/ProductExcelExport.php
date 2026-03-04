@@ -23,6 +23,7 @@ final class ProductExcelExport implements FromQuery, WithHeadings, WithMapping, 
     public function query(): Builder
     {
         return ProductEloquentModel::query()
+            ->with(['user:id,uuid'])
             ->when(
                 $this->filters->search,
                 fn(Builder $q, string $search): Builder => $q

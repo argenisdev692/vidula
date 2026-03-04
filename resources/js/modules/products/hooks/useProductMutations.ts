@@ -32,13 +32,13 @@ export const useProductMutations = () => {
   });
 
   const updateProduct = useMutation({
-    mutationFn: ({ userUuid, payload }: { userUuid?: string; payload: any }) => {
-      const url = userUuid ? `/products/data/admin/${userUuid}` : '/products/data/me';
+    mutationFn: ({ productUuid, payload }: { productUuid?: string; payload: any }) => {
+      const url = productUuid ? `/products/data/admin/${productUuid}` : '/products/data/me';
       return axios.put(url, payload);
     },
     onSuccess: (_, variables) => {
       sileo.success({ title: 'Product updated successfully' });
-      queryClient.invalidateQueries({ queryKey: ['products', variables.userUuid || 'me'] });
+      queryClient.invalidateQueries({ queryKey: ['products', variables.productUuid || 'me'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },
     onError: (err: AxiosError) => {

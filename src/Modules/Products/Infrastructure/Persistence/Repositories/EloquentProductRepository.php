@@ -19,6 +19,7 @@ final class EloquentProductRepository implements ProductRepositoryPort
     public function findById(ProductId $id): ?Product
     {
         $model = ProductEloquentModel::withTrashed()
+            ->with(['user:id,uuid'])
             ->where('uuid', $id->value)
             ->first();
 
@@ -28,6 +29,7 @@ final class EloquentProductRepository implements ProductRepositoryPort
     public function findBySlug(string $slug): ?Product
     {
         $model = ProductEloquentModel::withTrashed()
+            ->with(['user:id,uuid'])
             ->where('slug', $slug)
             ->first();
 
@@ -74,14 +76,17 @@ final class EloquentProductRepository implements ProductRepositoryPort
     public function findAllPaginated(array $filters = [], int $page = 1, int $perPage = 15): array
     {
         $query = ProductEloquentModel::query()
+            ->with(['user:id,uuid'])
             ->when($filters['type'] ?? null, fn($q, $type) => $q->where('type', $type))
             ->when($filters['status'] ?? null, fn($q, $status) => $q->where('status', $status))
             ->when($filters['level'] ?? null, fn($q, $level) => $q->where('level', $level))
             ->when($filters['language'] ?? null, fn($q, $lang) => $q->where('language', $lang))
-            ->when($filters['search'] ?? null, fn($q, $search) => 
-                $q->where(function($query) use ($search) {
+            ->when(
+                $filters['search'] ?? null,
+                fn($q, $search) =>
+                $q->where(function ($query) use ($search) {
                     $query->where('title', 'like', "%{$search}%")
-                          ->orWhere('description', 'like', "%{$search}%");
+                        ->orWhere('description', 'like', "%{$search}%");
                 })
             )
             ->orderBy($filters['sort_by'] ?? 'created_at', $filters['sort_dir'] ?? 'desc');

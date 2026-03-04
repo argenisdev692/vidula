@@ -178,12 +178,12 @@ export default function ProductShowPage(): React.JSX.Element {
                 <div className="space-y-4">
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-tighter block" style={{ color: 'var(--text-disabled)' }}>Created</span>
-                    <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{product.created_at}</span>
+                    <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{formatDateShort(product.created_at)}</span>
                   </div>
                   {product.updated_at && (
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-tighter block" style={{ color: 'var(--text-disabled)' }}>Latest Update</span>
-                      <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{product.updated_at}</span>
+                      <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{formatDateShort(product.updated_at)}</span>
                     </div>
                   )}
                 </div>
