@@ -70,6 +70,7 @@ final class Product extends AggregateRoot
         return $product;
     }
 
+    #[\NoDiscard('Callers must capture the updated Product entity')]
     public function update(
         string $title,
         string $slug,
@@ -79,15 +80,16 @@ final class Product extends AggregateRoot
         string $language,
         ?string $thumbnail
     ): self {
-        $updated = clone $this;
-        $updated->title = $title;
-        $updated->slug = $slug;
-        $updated->description = $description;
-        $updated->price = $price;
-        $updated->level = $level;
-        $updated->language = $language;
-        $updated->thumbnail = $thumbnail;
-        $updated->updatedAt = date('c');
+        $updated = clone($this, [
+            'title' => $title,
+            'slug' => $slug,
+            'description' => $description,
+            'price' => $price,
+            'level' => $level,
+            'language' => $language,
+            'thumbnail' => $thumbnail,
+            'updatedAt' => date('c'),
+        ]);
 
         $updated->recordDomainEvent(new ProductUpdated(
             aggregateId: $this->id->value,
@@ -98,44 +100,48 @@ final class Product extends AggregateRoot
         return $updated;
     }
 
+    #[\NoDiscard('Callers must capture the published Product entity')]
     public function publish(): self
     {
         if ($this->status->isPublished()) {
             return $this;
         }
 
-        $updated = clone $this;
-        $updated->status = ProductStatus::Published;
-        $updated->updatedAt = date('c');
-        return $updated;
+        return clone($this, [
+            'status' => ProductStatus::Published,
+            'updatedAt' => date('c'),
+        ]);
     }
 
+    #[\NoDiscard('Callers must capture the archived Product entity')]
     public function archive(): self
     {
         if ($this->status->isArchived()) {
             return $this;
         }
 
-        $updated = clone $this;
-        $updated->status = ProductStatus::Archived;
-        $updated->updatedAt = date('c');
-        return $updated;
+        return clone($this, [
+            'status' => ProductStatus::Archived,
+            'updatedAt' => date('c'),
+        ]);
     }
 
+    #[\NoDiscard('Callers must capture the Product entity with updated thumbnail')]
     public function updateThumbnail(?string $thumbnail): self
     {
-        $updated = clone $this;
-        $updated->thumbnail = $thumbnail;
-        $updated->updatedAt = date('c');
-        return $updated;
+        return clone($this, [
+            'thumbnail' => $thumbnail,
+            'updatedAt' => date('c'),
+        ]);
     }
 
+    #[\NoDiscard('Callers must capture the Product entity with changed price')]
     public function changePrice(Money $newPrice): self
     {
-        $updated = clone $this;
-        $updated->price = $newPrice;
-        $updated->updatedAt = date('c');
-        return $updated;
+        return clone($this, [
+            'price' => $newPrice,
+            'updatedAt' => date('c'),
+        ]);
     }
 
     public function isPublished(): bool

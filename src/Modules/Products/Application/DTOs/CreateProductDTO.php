@@ -3,13 +3,15 @@ declare(strict_types=1);
 
 namespace Modules\Products\Application\DTOs;
 
+use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 
 /**
  * @OA\Schema(
  *     schema="CreateProductDTO",
- *     required={"userId", "type", "title", "slug", "price", "currency", "level", "language"},
- *     @OA\Property(property="userId", type="integer"),
+ *     required={"user_id", "type", "title", "slug", "price", "currency", "level", "language"},
+ *     @OA\Property(property="user_id", type="string", format="uuid"),
  *     @OA\Property(property="type", type="string"),
  *     @OA\Property(property="title", type="string"),
  *     @OA\Property(property="slug", type="string"),
@@ -21,10 +23,11 @@ use Spatie\LaravelData\Data;
  *     @OA\Property(property="thumbnail", type="string", nullable=true)
  * )
  */
+#[MapInputName(SnakeCaseMapper::class)]
 final class CreateProductDTO extends Data
 {
     public function __construct(
-        public int $userId,
+        public string $userId,
         public string $type,
         public string $title,
         public string $slug,

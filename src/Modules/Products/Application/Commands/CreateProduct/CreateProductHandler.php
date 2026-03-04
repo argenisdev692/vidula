@@ -13,6 +13,7 @@ use Modules\Products\Domain\Ports\ProductRepositoryPort;
 use Modules\Products\Domain\ValueObjects\Money;
 use Modules\Products\Domain\ValueObjects\ProductId;
 use Modules\Products\Domain\ValueObjects\UserId;
+use Shared\Infrastructure\Audit\AuditInterface;
 
 /**
  * CreateProductHandler
@@ -20,8 +21,10 @@ use Modules\Products\Domain\ValueObjects\UserId;
 final readonly class CreateProductHandler
 {
     public function __construct(
-        private ProductRepositoryPort $repository
-    ) {}
+        private ProductRepositoryPort $repository,
+        private AuditInterface $audit
+    ) {
+    }
 
     public function handle(CreateProductCommand $command): void
     {
@@ -42,6 +45,16 @@ final readonly class CreateProductHandler
         );
 
         $this->repository->save($product);
+
+        $this->audit->log(
+            logName: 'products.product',
+            description: 'Product created',
+            properties: [
+                'product_uuid' => $uuid,
+                'title' => $dto->title,
+                'type' => $dto->type,
+            ]
+        );
 
         // Clear cache
         try {

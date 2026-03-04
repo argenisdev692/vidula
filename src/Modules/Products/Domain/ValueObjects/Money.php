@@ -8,23 +8,28 @@ use InvalidArgumentException;
 
 final readonly class Money
 {
-    public string $currency;
-
     public function __construct(
-        public float $amount,
-        string $currency
+        public float $amount {
+            set {
+                if($value < 0) {
+                    throw new InvalidArgumentException(
+                    "Price cannot be negative, got: {$value}"
+                    );
+                }
+                $this->amount = $value;
+            }
+        },
+        public string $currency {
+            set {
+                if(strlen($value) !== 3) {
+                    throw new InvalidArgumentException(
+                    "Currency must be 3 characters (ISO 4217), got: {$value}"
+                    );
+                }
+                $this->currency = strtoupper($value);
+            }
+        }
     ) {
-        if ($amount < 0) {
-            throw new InvalidArgumentException(
-                "Price cannot be negative, got: {$amount}"
-            );
-        }
-        if (strlen($currency) !== 3) {
-            throw new InvalidArgumentException(
-                "Currency must be 3 characters (ISO 4217), got: {$currency}"
-            );
-        }
-        $this->currency = strtoupper($currency);
     }
 
     #[\NoDiscard]

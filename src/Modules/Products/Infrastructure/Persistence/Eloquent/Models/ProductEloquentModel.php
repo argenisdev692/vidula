@@ -50,9 +50,10 @@ final class ProductEloquentModel extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logFillable()
+            ->logOnly(['title', 'slug', 'type', 'price', 'currency', 'status', 'level', 'language', 'description'])
             ->logOnlyDirty()
-            ->dontSubmitEmptyLogs();
+            ->dontSubmitEmptyLogs()
+            ->useLogName('products.product');
     }
 
     public function user(): BelongsTo

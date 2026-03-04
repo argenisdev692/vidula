@@ -1,5 +1,17 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+import axios, { type AxiosError } from 'axios';
+import { sileo } from 'sileo';
+
+/**
+ * MANDATORY: Helper to safely extract the best error message from Axios
+ * This prevents showing generic "Request failed with status code 422" messages.
+ */
+function getErrorMessage(err: AxiosError | any, defaultMsg: string): string {
+  if (err?.response?.data?.message) {
+      return err.response.data.message;
+  }
+  return err?.message || defaultMsg;
+}
 
 /**
  * useProductMutations — Mutations for Products module.
@@ -13,7 +25,11 @@ export const useProductMutations = () => {
       return axios.post('/products/data/admin', payload);
     },
     onSuccess: () => {
+      sileo.success({ title: 'Product created successfully' });
       queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+    onError: (err: AxiosError) => {
+      sileo.error({ title: getErrorMessage(err, 'Failed to create product') });
     },
   });
 
@@ -23,8 +39,12 @@ export const useProductMutations = () => {
       return axios.put(url, payload);
     },
     onSuccess: (_, variables) => {
+      sileo.success({ title: 'Product updated successfully' });
       queryClient.invalidateQueries({ queryKey: ['product', variables.userUuid || 'me'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+    onError: (err: AxiosError) => {
+      sileo.error({ title: getErrorMessage(err, 'Failed to update product') });
     },
   });
 
@@ -34,7 +54,11 @@ export const useProductMutations = () => {
       return axios.delete(`/products/data/admin/${uuids}`);
     },
     onSuccess: () => {
+      sileo.success({ title: 'Product deleted successfully' });
       queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+    onError: (err: AxiosError) => {
+      sileo.error({ title: getErrorMessage(err, 'Failed to delete product') });
     },
   });
 
@@ -44,7 +68,11 @@ export const useProductMutations = () => {
       return axios.patch(`/products/data/admin/${uuids}/restore`);
     },
     onSuccess: () => {
+      sileo.success({ title: 'Product restored successfully' });
       queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+    onError: (err: AxiosError) => {
+      sileo.error({ title: getErrorMessage(err, 'Failed to restore product') });
     },
   });
 
@@ -55,4 +83,3 @@ export const useProductMutations = () => {
     restoreProduct,
   };
 };
-

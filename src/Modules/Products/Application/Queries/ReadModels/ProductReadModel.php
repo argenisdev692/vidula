@@ -3,13 +3,15 @@ declare(strict_types=1);
 
 namespace Modules\Products\Application\Queries\ReadModels;
 
+use Spatie\LaravelData\Attributes\MapOutputName;
 use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 
 /**
  * @OA\Schema(
  *     schema="ProductListItem",
  *     @OA\Property(property="id", type="string", format="uuid"),
- *     @OA\Property(property="userId", type="string", format="uuid"),
+ *     @OA\Property(property="user_id", type="string", format="uuid"),
  *     @OA\Property(property="type", type="string"),
  *     @OA\Property(property="title", type="string"),
  *     @OA\Property(property="slug", type="string"),
@@ -20,11 +22,12 @@ use Spatie\LaravelData\Data;
  *     @OA\Property(property="thumbnail", type="string", nullable=true),
  *     @OA\Property(property="level", type="string"),
  *     @OA\Property(property="language", type="string"),
- *     @OA\Property(property="createdAt", type="string", format="date-time", nullable=true),
- *     @OA\Property(property="updatedAt", type="string", format="date-time", nullable=true),
- *     @OA\Property(property="deletedAt", type="string", format="date-time", nullable=true)
+ *     @OA\Property(property="created_at", type="string", format="date-time", nullable=true),
+ *     @OA\Property(property="updated_at", type="string", format="date-time", nullable=true),
+ *     @OA\Property(property="deleted_at", type="string", format="date-time", nullable=true)
  * )
  */
+#[MapOutputName(SnakeCaseMapper::class)]
 final class ProductReadModel extends Data
 {
     public function __construct(

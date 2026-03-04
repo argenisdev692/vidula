@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import axios from 'axios';
 import type { ProductListItem, ProductFilters, PaginatedResponse } from '@/types/api';
 
@@ -18,6 +18,7 @@ export const useProducts = (filters: ProductFilters) => {
       });
       return data;
     },
-    placeholderData: (previousData) => previousData,
+    placeholderData: keepPreviousData, // ✅ v5
+    staleTime: 1000 * 60 * 2,
   });
 };

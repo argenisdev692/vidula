@@ -59,6 +59,14 @@ export default function ProductIndexPage(): React.JSX.Element {
     });
   }
 
+  function handleRestoreClick(uuid: string, name: string): void {
+    restoreProduct.mutate([uuid], {
+      onSuccess: () => {
+        // Optional: show success message or handle UI updates
+      },
+    });
+  }
+
   function handleExport(format: 'excel' | 'pdf'): void {
     startExportTransition(() => {
       const params = new URLSearchParams({ format });
@@ -200,6 +208,7 @@ export default function ProductIndexPage(): React.JSX.Element {
               isLoading={isPending}
               isError={isError}
               onDelete={handleDeleteClick}
+              onRestore={handleRestoreClick}
               rowSelection={rowSelection}
               onRowSelectionChange={setRowSelection}
             />

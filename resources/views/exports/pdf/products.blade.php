@@ -3,44 +3,75 @@
 
 <head>
     <style>
+        body {
+            font-family: sans-serif;
+            font-size: 11px;
+            color: #333;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 20px;
         }
 
-        table,
-        th,
-        td {
-            border: 1px solid black;
+        th {
+            background-color: #f3f4f6;
+            color: #333;
+            text-align: center;
+            padding: 8px;
+            border: 1px solid #e5e7eb;
+            font-weight: bold;
         }
 
-        th,
         td {
             padding: 8px;
+            border: 1px solid #e5e7eb;
             text-align: center;
             vertical-align: middle;
+        }
+
+        tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+
+        h2 {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .meta {
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 15px;
         }
     </style>
 </head>
 
 <body>
-    <h2>Products List</h2>
+    <h2>Products Export</h2>
+    <div class="meta">Generated: {{ $generatedAt }}</div>
+    
     <table>
         <thead>
             <tr>
-                <th>ID</th>
-                <th>Name</th>
+                <th>Title</th>
+                <th>Type</th>
                 <th>Price</th>
-                <th>SKU</th>
+                <th>Level</th>
+                <th>Status</th>
+                <th>Created At</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($items as $item)
+            @foreach($rows as $row)
                 <tr>
-                    <td>{{ $item->id ?? '' }}</td>
-                    <td>{{ $item->name ?? '' }}</td>
-                    <td>{{ $item->price ?? '' }}</td>
-                    <td>{{ $item->sku ?? '' }}</td>
+                    <td>{{ $row['title'] }}</td>
+                    <td>{{ $row['type'] }}</td>
+                    <td>{{ $row['price'] }} {{ $row['currency'] }}</td>
+                    <td>{{ $row['level'] }}</td>
+                    <td>{{ $row['status'] }}</td>
+                    <td>{{ $row['created_at'] }}</td>
                 </tr>
             @endforeach
         </tbody>

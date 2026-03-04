@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Products\Application\Queries\ListProduct;
 
 use Illuminate\Support\Facades\Cache;
+use Modules\Products\Application\DTOs\ProductFilterDTO;
 use Modules\Products\Application\Queries\ReadModels\ProductReadModel;
 use Modules\Products\Domain\Ports\ProductRepositoryPort;
 
@@ -35,7 +36,7 @@ final readonly class ListProductHandler
         }
     }
 
-    private function fetchData($filters): array
+    private function fetchData(ProductFilterDTO $filters): array
     {
         $result = $this->repository->findAllPaginated(
             filters: $filters->toArray(),
