@@ -17,6 +17,7 @@ interface UserEditPageProps {
 // UserEditPage
 // ══════════════════════════════════════════════════════════════
 export default function UserEditPage({ user }: UserEditPageProps): React.JSX.Element {
+  const fullName = [user.name, user.last_name].filter(Boolean).join(' ') || 'Unknown User';
   const { updateUser } = useUserMutations();
   const [form, setForm] = React.useState<UpdateUserPayload>({
     name: user.name,
@@ -70,9 +71,9 @@ export default function UserEditPage({ user }: UserEditPageProps): React.JSX.Ele
 
   return (
     <>
-      <Head title={`Edit — ${user.full_name}`} />
+      <Head title={`Edit — ${fullName}`} />
       <AppLayout>
-        <div className="max-w-4xl mx-auto flex flex-col gap-8 animate-in fade-in duration-300">
+        <form onSubmit={handleSubmit} className="max-w-4xl mx-auto flex flex-col gap-8 animate-in fade-in duration-300">
           {/* ── Header ── */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -87,13 +88,13 @@ export default function UserEditPage({ user }: UserEditPageProps): React.JSX.Ele
                   Edit User
                 </h1>
                 <p className="text-sm text-(--text-muted)">
-                  {user.full_name}
+                  {fullName}
                 </p>
               </div>
             </div>
 
             <button
-              onClick={(e) => void handleSubmit(e as unknown as React.FormEvent)}
+              type="submit"
               disabled={updateUser.isPending}
               className="btn-modern btn-modern-primary flex items-center gap-2 px-6 py-2.5 shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
             >
@@ -119,11 +120,11 @@ export default function UserEditPage({ user }: UserEditPageProps): React.JSX.Ele
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <PremiumField label="First Name" name="name" value={form.name ?? ''} onChange={handleChange} required error={errors.name} placeholder="John" />
-                  <PremiumField label="Last Name" name="last_name" value={form.last_name ?? ''} onChange={handleChange} placeholder="Doe" />
+                  <PremiumField label="Last Name" name="last_name" value={form.last_name ?? ''} onChange={handleChange} required error={errors.last_name} placeholder="Doe" />
                   <div className="md:col-span-2">
-                    <PremiumField label="Email Address" name="email" type="email" value={form.email ?? ''} onChange={handleChange} error={errors.email} placeholder="john.doe@example.com" />
+                    <PremiumField label="Email Address" name="email" type="email" value={form.email ?? ''} onChange={handleChange} required error={errors.email} placeholder="john.doe@example.com" />
                   </div>
-                  <PremiumField label="Username" name="username" value={form.username ?? ''} onChange={handleChange} placeholder="johndoe" />
+                  <PremiumField label="Username" name="username" value={form.username ?? ''} onChange={handleChange} required error={errors.username} placeholder="johndoe" />
                   <PremiumField label="Phone Number" name="phone" value={form.phone ?? ''} onChange={handleChange} placeholder="+1 (555) 000-0000" />
                 </div>
               </div>
@@ -150,7 +151,7 @@ export default function UserEditPage({ user }: UserEditPageProps): React.JSX.Ele
               </div>
             </div>
           </div>
-        </div>
+        </form>
       </AppLayout>
     </>
   );

@@ -12,6 +12,7 @@ use Modules\Auth\Domain\ValueObjects\UserEmail;
 use Modules\Auth\Domain\ValueObjects\Password;
 use Modules\Auth\Domain\ValueObjects\Username;
 use Modules\Auth\Domain\Exceptions\ValidationException;
+use Shared\Infrastructure\Audit\AuditInterface;
 use Illuminate\Support\Str;
 
 /**
@@ -23,7 +24,9 @@ final readonly class RegisterUserHandler
         private UserRepositoryPort $userRepository,
         private PasswordHashingService $passwordHashingService,
         private UsernameSuggestionService $usernameSuggestionService,
-    ) {}
+        private AuditInterface $audit,
+    ) {
+    }
 
     #[\NoDiscard]
     public function handle(RegisterUserCommand $command): User
@@ -32,21 +35,22 @@ final readonly class RegisterUserHandler
             |> $this->validateCommand(...)
             |> $this->prepareUserData(...)
             |> $this->createUser(...)
-            |> $this->persistUser(...);
+            |> $this->persistUser(...)
+            |> $this->logAudit(...);
     }
 
     private function validateCommand(RegisterUserCommand $command): RegisterUserCommand
     {
         // Validate email
         $email = new UserEmail($command->email);
-        
+
         if ($this->userRepository->findByEmail($email) !== null) {
             throw new ValidationException('Email already registered');
         }
 
         // Validate password
         $password = Password::fromPlainText($command->password);
-        
+
         if (!$password->meetsComplexityRequirements()) {
             throw new ValidationException('Password does not meet complexity requirements');
         }
@@ -105,5 +109,16 @@ final readonly class RegisterUserHandler
         ];
 
         return $this->userRepository->create($data);
+    }
+
+    private function logAudit(User $user): User
+    {
+        $this->audit->log(
+            logName: 'auth.user_registered',
+            description: "User registered interactively: {$user->email}",
+            properties: ['uuid' => $user->uuid, 'email' => $user->email],
+        );
+
+        return $user;
     }
 }

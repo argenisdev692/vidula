@@ -40,12 +40,14 @@ export const PremiumField = ({
       {isTextArea ? (
         <textarea
           id={fieldId}
+          required={required}
           className={cn(baseClasses, "min-h-[100px] resize-y")}
           {...(props as any)}
         />
       ) : (
         <input
           id={fieldId}
+          required={required}
           className={baseClasses}
           {...props}
         />

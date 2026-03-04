@@ -438,7 +438,7 @@ export default function LoginPage(): React.JSX.Element {
               </button>
 
               {resendTimer > 0 ? (
-                <span style={{ color: 'var(--text-disabled)' }}>
+                <span style={{ color: 'var(--text-muted)' }}>
                   Resend in {resendTimer}s
                 </span>
               ) : (

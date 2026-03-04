@@ -7,6 +7,7 @@ namespace Modules\Auth\Application\Commands\UpdateUser;
 use Modules\Auth\Domain\Entities\User;
 use Modules\Auth\Domain\Ports\UserRepositoryPort;
 use Modules\Auth\Domain\Exceptions\UserNotFoundException;
+use Shared\Infrastructure\Audit\AuditInterface;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -16,7 +17,9 @@ final readonly class UpdateUserHandler
 {
     public function __construct(
         private UserRepositoryPort $userRepository,
-    ) {}
+        private AuditInterface $audit,
+    ) {
+    }
 
     #[\NoDiscard]
     public function handle(UpdateUserCommand $command): User
@@ -25,7 +28,8 @@ final readonly class UpdateUserHandler
             |> $this->findUser(...)
             |> $this->updateUser(...)
             |> $this->persistUser(...)
-            |> $this->clearCache(...);
+            |> $this->clearCache(...)
+            |> $this->logAudit(...);
     }
 
     private function findUser(UpdateUserCommand $command): array
@@ -33,7 +37,7 @@ final readonly class UpdateUserHandler
         $user = $this->userRepository->findById($command->userId);
 
         if ($user === null) {
-            throw UserNotFoundException::withId($command->userId);
+            throw UserNotFoundException::withIdentifier((string) $command->userId);
         }
 
         return ['user' => $user, 'command' => $command];
@@ -80,6 +84,17 @@ final readonly class UpdateUserHandler
         } catch (\Exception $e) {
             // Tags not supported, cache will expire naturally
         }
+
+        return $user;
+    }
+
+    private function logAudit(User $user): User
+    {
+        $this->audit->log(
+            logName: 'auth.user_updated',
+            description: "User updated profile interactively",
+            properties: ['uuid' => $user->uuid],
+        );
 
         return $user;
     }

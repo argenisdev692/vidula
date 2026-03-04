@@ -47,7 +47,7 @@ export default function UserCreatePage(): React.JSX.Element {
   return (
     <AppLayout>
       <Head title="Create Platform User" />
-      <div className="max-w-4xl mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <form onSubmit={handleSubmit} className="max-w-4xl mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
         
         {/* ── Header ── */}
         <div className="flex items-center justify-between">
@@ -65,7 +65,7 @@ export default function UserCreatePage(): React.JSX.Element {
           </div>
 
           <button
-            onClick={handleSubmit}
+            type="submit"
             disabled={createUser.isPending}
             className="btn-modern btn-modern-primary flex items-center gap-2 px-6 py-2.5 shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
           >
@@ -166,7 +166,7 @@ export default function UserCreatePage(): React.JSX.Element {
                 </div>
             </div>
         </div>
-      </div>
+      </form>
     </AppLayout>
   );
 }

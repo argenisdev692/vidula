@@ -82,12 +82,13 @@ final class User extends AggregateRoot
         ?string $phone = null,
         ?string $username = null,
     ): self {
-        $updated = clone $this;
-        $updated->name = $name;
-        $updated->lastName = $lastName;
-        $updated->phone = $phone;
-        $updated->username = $username;
-        $updated->updatedAt = date('c');
+        $updated = clone($this, [
+            'name' => $name,
+            'lastName' => $lastName,
+            'phone' => $phone,
+            'username' => $username,
+            'updatedAt' => date('c'),
+        ]);
 
         $updated->recordDomainEvent(new UserUpdated(
             userId: $this->id,
@@ -104,10 +105,11 @@ final class User extends AggregateRoot
      */
     public function changeEmail(string $email): self
     {
-        $updated = clone $this;
-        $updated->email = $email;
-        $updated->isEmailVerified = false;
-        $updated->updatedAt = date('c');
+        $updated = clone($this, [
+            'email' => $email,
+            'isEmailVerified' => false,
+            'updatedAt' => date('c'),
+        ]);
 
         $updated->recordDomainEvent(new UserEmailChanged(
             userId: $this->id,
@@ -125,10 +127,10 @@ final class User extends AggregateRoot
      */
     public function verifyEmail(): self
     {
-        $updated = clone $this;
-        $updated->isEmailVerified = true;
-        $updated->updatedAt = date('c');
-        return $updated;
+        return clone($this, [
+            'isEmailVerified' => true,
+            'updatedAt' => date('c'),
+        ]);
     }
 
     /**
@@ -136,10 +138,10 @@ final class User extends AggregateRoot
      */
     public function updateAvatar(string $path): self
     {
-        $updated = clone $this;
-        $updated->profilePhotoPath = $path;
-        $updated->updatedAt = date('c');
-        return $updated;
+        return clone($this, [
+            'profilePhotoPath' => $path,
+            'updatedAt' => date('c'),
+        ]);
     }
 
     /**
@@ -147,10 +149,10 @@ final class User extends AggregateRoot
      */
     public function removeAvatar(): self
     {
-        $updated = clone $this;
-        $updated->profilePhotoPath = null;
-        $updated->updatedAt = date('c');
-        return $updated;
+        return clone($this, [
+            'profilePhotoPath' => null,
+            'updatedAt' => date('c'),
+        ]);
     }
 
     /**

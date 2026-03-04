@@ -11,6 +11,7 @@ use Modules\Auth\Domain\ValueObjects\Password;
 use Modules\Auth\Domain\Exceptions\UserNotFoundException;
 use Modules\Auth\Domain\Exceptions\InvalidCredentialsException;
 use Modules\Auth\Domain\Events\PasswordChanged;
+use Shared\Infrastructure\Audit\AuditInterface;
 
 /**
  * ChangePasswordHandler — Handles password changes with PHP 8.5 pipe operator.
@@ -20,7 +21,9 @@ final readonly class ChangePasswordHandler
     public function __construct(
         private UserRepositoryPort $userRepository,
         private PasswordHashingService $passwordHashingService,
-    ) {}
+        private AuditInterface $audit,
+    ) {
+    }
 
     #[\NoDiscard]
     public function handle(ChangePasswordCommand $command): User
@@ -30,7 +33,8 @@ final readonly class ChangePasswordHandler
             |> $this->verifyCurrentPassword(...)
             |> $this->hashNewPassword(...)
             |> $this->updatePassword(...)
-            |> $this->emitEvent(...);
+            |> $this->emitEvent(...)
+            |> $this->logAudit(...);
     }
 
     private function findUser(ChangePasswordCommand $command): array
@@ -38,7 +42,7 @@ final readonly class ChangePasswordHandler
         $user = $this->userRepository->findById($command->userId);
 
         if ($user === null) {
-            throw UserNotFoundException::withId($command->userId);
+            throw UserNotFoundException::withIdentifier((string) $command->userId);
         }
 
         return ['user' => $user, 'command' => $command];
@@ -52,7 +56,7 @@ final readonly class ChangePasswordHandler
         // Get hashed password from database
         // Note: This would need to be added to the repository
         // For now, we'll assume verification happens here
-        
+
         return $data;
     }
 
@@ -84,10 +88,22 @@ final readonly class ChangePasswordHandler
         // Emit PasswordChanged event
         $event = new PasswordChanged(
             userId: $user->id,
+            method: 'self_change',
             occurredAt: date('c'),
         );
 
         // Event would be dispatched here
+
+        return $user;
+    }
+
+    private function logAudit(User $user): User
+    {
+        $this->audit->log(
+            logName: 'auth.password_changed',
+            description: "User changed password interactively",
+            properties: ['uuid' => $user->uuid],
+        );
 
         return $user;
     }

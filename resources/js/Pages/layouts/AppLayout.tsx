@@ -59,7 +59,6 @@ const IconMenu    = () => <Menu size={icSize} />;
 const IconSettings = () => <Settings size={icSize} />;
 const IconArrowLeft = () => <ArrowLeft size={16} />;
 const IconClose = () => <X size={16} />;
-const IconBuilding = () => <Building2 size={icSize} />;
 
 // ══════════════════════════════════════════════════════════════════
 // Nav Groups — Collapsible sections per §9.1
@@ -99,7 +98,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Management',
     icon: <Package size={14} />,
     items: [
-      { label: 'Company Profiles', href: '/company-data', icon: <Building2 size={icSize} />, description: 'Corporate entities', permission: 'VIEW ANY COMPANY' },
+      { label: 'Company', href: '/company-data', icon: <Building2 size={icSize} />, description: 'Corporate entities' },
       { label: 'Products', href: '/products', icon: <Package size={icSize} />, description: 'Manage products', permission: 'VIEW ANY PRODUCTS' },
     ],
   },
@@ -305,20 +304,7 @@ function AvatarDropdown(): React.JSX.Element {
             </p>
           </div>
 
-          {/* Company Identity → /profile (includes company data) */}
-          <Link
-            href="/profile"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors"
-            style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--bg-hover)'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'transparent'; }}
-          >
-            <IconBuilding />
-            My Company
-          </Link>
-
-          {/* Settings → /profile */}
+          {/* Profile → /profile */}
           <Link
             href="/profile"
             onClick={() => setOpen(false)}
@@ -328,7 +314,7 @@ function AvatarDropdown(): React.JSX.Element {
             onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'transparent'; }}
           >
             <IconSettings />
-            Settings
+            Profile
           </Link>
 
           {/* Divider */}
@@ -412,7 +398,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }): React.JSX.Elemen
         (item) => currentPath === item.href || currentPath.startsWith(item.href + '/')
       );
       if (hasActiveItem) saved[group.label] = true;
-      if (saved[group.label] === undefined) saved[group.label] = false; // default closed
+      if (saved[group.label] === undefined) saved[group.label] = group.label === 'Overview';
     }
     return saved;
   });
@@ -467,7 +453,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }): React.JSX.Elemen
       {/* ── Nav Groups ── */}
       <nav className="flex-1 overflow-y-auto px-3 pt-4 pb-2">
         {NAV_GROUPS.map((group) => {
-          const isExpanded = expandedGroups[group.label] ?? true;
+          const isExpanded = expandedGroups[group.label] ?? (group.label === 'Overview');
           const hasActiveChild = group.items.some(
             (item) => currentPath === item.href || currentPath.startsWith(item.href + '/')
           );
@@ -479,7 +465,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }): React.JSX.Elemen
                 onClick={() => toggleGroup(group.label)}
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150"
                 style={{
-                  color: hasActiveChild ? 'var(--text-primary)' : 'var(--text-disabled)',
+                  color: hasActiveChild ? 'var(--text-primary)' : 'var(--text-secondary)',
                   background: 'transparent',
                   border: 'none',
                   cursor: 'pointer',
@@ -488,7 +474,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }): React.JSX.Elemen
                 aria-expanded={isExpanded}
                 aria-label={`Toggle ${group.label} section`}
               >
-                <span style={{ color: hasActiveChild ? 'var(--accent-primary)' : 'var(--text-disabled)' }}>
+                <span style={{ color: hasActiveChild ? 'var(--accent-primary)' : 'var(--text-secondary)' }}>
                   {group.icon}
                 </span>
                 <span className="flex-1 text-left text-[10px] font-semibold uppercase tracking-[1.8px]">
@@ -499,7 +485,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }): React.JSX.Elemen
                   className="transition-transform duration-200"
                   style={{
                     transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)',
-                    color: 'var(--text-disabled)',
+                    color: 'var(--text-secondary)',
                   }}
                 />
               </button>

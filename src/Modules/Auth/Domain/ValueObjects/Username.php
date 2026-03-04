@@ -14,31 +14,33 @@ namespace Modules\Auth\Domain\ValueObjects;
  */
 final readonly class Username
 {
-    public string $value;
+    public function __construct(
+        public string $value {
+            set {
+                $normalized = strtolower(trim($value));
 
-    public function __construct(string $value)
-    {
-        $normalized = strtolower(trim($value));
+                if(strlen($normalized) < 3) {
+                    throw new \InvalidArgumentException('Username must be at least 3 characters long');
+                }
 
-        if (strlen($normalized) < 3) {
-            throw new \InvalidArgumentException('Username must be at least 3 characters long');
-        }
+                if(strlen($normalized) > 30) {
+                    throw new \InvalidArgumentException('Username must not exceed 30 characters');
+                }
 
-        if (strlen($normalized) > 30) {
-            throw new \InvalidArgumentException('Username must not exceed 30 characters');
-        }
+                if(!preg_match('/^[a-z0-9_-]+$/', $normalized)) {
+                    throw new \InvalidArgumentException(
+                    'Username can only contain lowercase letters, numbers, underscores, and hyphens'
+                    );
+                }
 
-        if (!preg_match('/^[a-z0-9_-]+$/', $normalized)) {
-            throw new \InvalidArgumentException(
-                'Username can only contain lowercase letters, numbers, underscores, and hyphens'
-            );
-        }
+                if(preg_match('/^[0-9]/', $normalized)) {
+                    throw new \InvalidArgumentException('Username cannot start with a number');
+                }
 
-        if (preg_match('/^[0-9]/', $normalized)) {
-            throw new \InvalidArgumentException('Username cannot start with a number');
-        }
-
-        $this->value = $normalized;
+                $this->value = $normalized;
+            }
+        },
+    ) {
     }
 
     #[\NoDiscard]

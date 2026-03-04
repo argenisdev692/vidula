@@ -78,7 +78,7 @@ export default function AuthLayout({ children }: AuthLayoutProps): React.JSX.Ele
         {/* Footer */}
         <p
           className="mt-6 text-center text-xs"
-          style={{ color: 'var(--text-disabled)' }}
+          style={{ color: 'var(--text-secondary)' }}
         >
           © {new Date().getFullYear()} Vidula. All rights reserved.
         </p>

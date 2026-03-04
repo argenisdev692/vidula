@@ -8,10 +8,16 @@ use Modules\Users\Infrastructure\Http\Controllers\Web\UserPageController;
 use Modules\Users\Infrastructure\Http\Controllers\Api\UserController;
 
 Route::get('/', function () {
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
     return redirect()->route('login');
 });
 
 Route::get('/login', function () {
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
     return Inertia::render('auth/LoginPage');
 })->name('login');
 

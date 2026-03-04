@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Users\Infrastructure\Persistence\Eloquent\Models\UserEloquentModel;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 /**
  * SocialiteProviderEloquentModel — OAuth connection between a User and a third-party provider.
@@ -17,7 +19,7 @@ use Modules\Users\Infrastructure\Persistence\Eloquent\Models\UserEloquentModel;
  */
 final class SocialiteProviderEloquentModel extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, LogsActivity;
 
     protected $table = 'socialite_providers';
 
@@ -61,5 +63,14 @@ final class SocialiteProviderEloquentModel extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(UserEloquentModel::class, 'user_id');
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['provider', 'provider_id', 'user_id'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->useLogName('auth.socialite');
     }
 }
