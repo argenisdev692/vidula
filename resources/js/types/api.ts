@@ -257,6 +257,19 @@ export interface ProductFilters {
   dateTo?: string;
 }
 
+export interface CreateProductDTO {
+  type: string;
+  title: string;
+  price: number;
+  currency: string;
+  description?: string;
+  level?: string;
+  language?: string;
+  status?: string;
+}
+
+export interface UpdateProductDTO extends Partial<CreateProductDTO> {}
+
 // ── Clients ────────────────────────────────────────────────
 export interface ClientListItem {
   uuid: string;

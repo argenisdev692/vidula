@@ -2,244 +2,202 @@ import * as React from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/pages/layouts/AppLayout';
 import { useProductMutations } from '@/modules/products/hooks/useProductMutations';
+import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
+import { PremiumField } from '@/shadcn/PremiumField';
 import type { CreateProductDTO } from '@/types/api';
+import { ArrowLeft, Save, Package, Tag, DollarSign } from 'lucide-react';
 
-// ══════════════════════════════════════════════════════════════
-// Icons
-// ══════════════════════════════════════════════════════════════
-const ic = {
-  w: 16, h: 16, viewBox: '0 0 24 24', fill: 'none',
-  stroke: 'currentColor', strokeWidth: 2,
-  strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const,
-};
-const IconArrowLeft = () => <svg {...ic}><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>;
-const IconSave = () => <svg {...ic}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>;
-
-// ══════════════════════════════════════════════════════════════
-// ProductCreatePage
-// ══════════════════════════════════════════════════════════════
 export default function ProductCreatePage(): React.JSX.Element {
   const { createProduct: createMutation } = useProductMutations();
   const [formData, setFormData] = React.useState<CreateProductDTO>({
-    user_id: 1, // Defaulting to 1 for now, or this could come from auth context
-    company_name: '',
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-    website: '',
-    facebook_link: '',
-    instagram_link: '',
-    linkedin_link: '',
-    twitter_link: '',
+    type: 'COURSE', // Default type
+    title: '',
+    price: 0,
+    currency: 'EUR',
+    description: '',
+    level: 'BEGINNER',
+    language: 'SPANISH',
+    status: 'ACTIVE',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ 
+        ...prev, 
+        [name]: name === 'price' ? parseFloat(value) || 0 : value 
+    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     createMutation.mutate(formData, {
       onSuccess: () => {
-        router.visit('/product');
-      },
-      onError: (error) => {
-        console.error('Failed to create company data:', error);
-        alert('Failed to save company data. Please check the console.');
+        router.visit('/products');
       }
     });
   };
 
   return (
     <AppLayout>
-      <Head title="Create Company Profile" />
-      <div style={{ fontFamily: 'var(--font-sans)', maxWidth: '800px', margin: '0 auto' }}>
-        
-        {/* ── Header ── */}
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/product"
-              className="flex h-9 w-9 items-center justify-center rounded-lg transition-all hover:bg-(--bg-hover)"
-              style={{ color: 'var(--text-muted)' }}
+      <Head title="Create New Product" />
+      <PermissionGuard permissions={['CREATE PRODUCTS']}>
+        <div className="max-w-4xl mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-300 pb-12">
+          
+          {/* ── Header ── */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link
+                href="/products"
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-(--bg-card) border border-(--border-default) text-(--text-muted) hover:bg-(--bg-hover) transition-all shadow-sm"
+              >
+                <ArrowLeft size={20} />
+              </Link>
+              <div>
+                <h1 className="text-2xl font-extrabold tracking-tight text-(--text-primary)">
+                  New Catalog Entry
+                </h1>
+                <p className="text-sm font-medium text-(--text-muted)">
+                   Register a new educational product or service.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleSubmit}
+              disabled={createMutation.isPending}
+              className="btn-modern-primary flex items-center gap-2 px-8 py-2.5 shadow-xl hover:shadow-(--accent-primary)/20 transition-all font-bold disabled:opacity-50"
             >
-              <IconArrowLeft />
-            </Link>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-                New Company Profile
-              </h1>
-              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                Enter the details below to register a new corporate entity.
-              </p>
-            </div>
+              {createMutation.isPending ? 'Saving...' : <><Save size={18} /> Save Product</>}
+            </button>
           </div>
-          <button
-            onClick={handleSubmit}
-            disabled={createMutation.isPending}
-            className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all disabled:opacity-50"
-            style={{
-              background: 'var(--accent-primary)',
-              color: 'var(--color-white)',
-            }}
-          >
-            {createMutation.isPending ? 'Saving...' : <><IconSave /> Save Profile</>}
-          </button>
-        </div>
 
-        {/* ── Form Card ── */}
-        <div className="card">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              {/* Company Name */}
-              <div>
-                <label className="input-label" htmlFor="company_name">Company Name *</label>
-                <input
-                  id="company_name"
-                  name="company_name"
-                  type="text"
-                  required
-                  value={formData.company_name}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="e.g. Acme Corp"
-                />
-              </div>
+            {/* ── Main Section ── */}
+            <div className="lg:col-span-2 space-y-8">
+                <section className="card-modern p-8 space-y-8 shadow-2xl glass-morphism">
+                    <div className="flex items-center gap-3">
+                        <Package className="text-(--accent-primary)" size={24} />
+                        <h2 className="text-xl font-bold text-(--text-primary)">Base Information</h2>
+                    </div>
 
-              {/* Representative Name */}
-              <div>
-                <label className="input-label" htmlFor="name">Representative Name</label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  value={formData.name || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="e.g. Jane Doe"
-                />
-              </div>
+                    <div className="grid grid-cols-1 gap-6">
+                        <PremiumField 
+                            label="Product Title" 
+                            name="title" 
+                            value={formData.title} 
+                            onChange={handleChange} 
+                            required 
+                            placeholder="e.g. Master in Web Development"
+                        />
+                        <PremiumField 
+                            label="Description" 
+                            name="description" 
+                            value={formData.description} 
+                            onChange={handleChange} 
+                            isTextArea
+                            placeholder="Detailed explanation of the product..."
+                        />
+                    </div>
+                </section>
 
-              {/* Email */}
-              <div>
-                <label className="input-label" htmlFor="email">Contact Email</label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="contact@acmecorp.com"
-                />
-              </div>
+                <section className="card-modern p-8 space-y-8 shadow-2xl glass-morphism">
+                    <div className="flex items-center gap-3">
+                        <DollarSign className="text-(--accent-success)" size={24} />
+                        <h2 className="text-xl font-bold text-(--text-primary)">Commercial Settings</h2>
+                    </div>
 
-              {/* Phone */}
-              <div>
-                <label className="input-label" htmlFor="phone">Phone Number</label>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="text"
-                  value={formData.phone || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="+1 (555) 000-0000"
-                />
-              </div>
-              
-              {/* Website */}
-              <div className="md:col-span-2">
-                <label className="input-label" htmlFor="website">Website URL</label>
-                <input
-                  id="website"
-                  name="website"
-                  type="url"
-                  value={formData.website || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="https://www.acmecorp.com"
-                />
-              </div>
-
-              {/* Address */}
-              <div className="md:col-span-2">
-                <label className="input-label" htmlFor="address">Address</label>
-                <textarea
-                  id="address"
-                  name="address"
-                  rows={3}
-                  value={formData.address || ''}
-                  onChange={handleChange}
-                  className="input h-auto! pt-2"
-                  placeholder="123 Corporate Blvd, Suite 100..."
-                />
-              </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <PremiumField 
+                            label="Price" 
+                            name="price" 
+                            type="number"
+                            step="0.01"
+                            value={formData.price} 
+                            onChange={handleChange} 
+                            required 
+                        />
+                        <div className="flex flex-col gap-2">
+                            <label className="text-[11px] font-bold uppercase tracking-widest text-(--text-secondary)">Currency</label>
+                            <select 
+                                name="currency" 
+                                value={formData.currency} 
+                                onChange={(e) => setFormData(p => ({ ...p, currency: e.target.value }))}
+                                className="w-full rounded-xl px-4 py-3 text-sm bg-(--bg-card) border border-(--border-default) text-(--text-primary) outline-none focus:ring-2 focus:ring-(--accent-primary)"
+                            >
+                                <option value="EUR">Euro (EUR)</option>
+                                <option value="USD">Dollar (USD)</option>
+                                <option value="GBP">Pound (GBP)</option>
+                            </select>
+                        </div>
+                    </div>
+                </section>
             </div>
 
-            <hr style={{ borderColor: 'var(--border-subtle)', margin: '24px 0' }} />
+            {/* ── Sidebar ── */}
+            <div className="space-y-8">
+                <section className="card-modern p-6 bg-(--bg-surface) border border-(--border-subtle) space-y-6">
+                    <div className="flex items-center gap-3 mb-2">
+                        <Tag className="text-(--accent-primary)" size={18} />
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-(--text-muted)">Classification</h3>
+                    </div>
 
-            <h3 className="mb-4 text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
-              Social Links
-            </h3>
+                    <div className="space-y-4">
+                        <div className="flex flex-col gap-2">
+                             <label className="text-[10px] font-bold uppercase tracking-wider text-(--text-disabled)">Product Type</label>
+                             <select 
+                                name="type" 
+                                value={formData.type} 
+                                onChange={(e) => setFormData(p => ({ ...p, type: e.target.value }))}
+                                className="w-full rounded-xl px-3 py-2 text-xs bg-(--bg-card) border border-(--border-default) text-(--text-primary)"
+                            >
+                                <option value="COURSE">Course</option>
+                                <option value="WORKSHOP">Workshop</option>
+                                <option value="EBOOK">E-Book</option>
+                                <option value="BAGGAGE">Baggage</option>
+                            </select>
+                        </div>
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <div>
-                <label className="input-label" htmlFor="linkedin_link">LinkedIn</label>
-                <input
-                  id="linkedin_link"
-                  name="linkedin_link"
-                  type="url"
-                  value={formData.linkedin_link || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="https://linkedin.com/company/acmecorp"
-                />
-              </div>
-              <div>
-                <label className="input-label" htmlFor="twitter_link">Twitter (X)</label>
-                <input
-                  id="twitter_link"
-                  name="twitter_link"
-                  type="url"
-                  value={formData.twitter_link || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="https://twitter.com/acmecorp"
-                />
-              </div>
-              <div>
-                <label className="input-label" htmlFor="facebook_link">Facebook</label>
-                <input
-                  id="facebook_link"
-                  name="facebook_link"
-                  type="url"
-                  value={formData.facebook_link || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="https://facebook.com/acmecorp"
-                />
-              </div>
-              <div>
-                <label className="input-label" htmlFor="instagram_link">Instagram</label>
-                <input
-                  id="instagram_link"
-                  name="instagram_link"
-                  type="url"
-                  value={formData.instagram_link || ''}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="https://instagram.com/acmecorp"
-                />
-              </div>
+                        <div className="flex flex-col gap-2">
+                             <label className="text-[10px] font-bold uppercase tracking-wider text-(--text-disabled)">Difficulty Level</label>
+                             <select 
+                                name="level" 
+                                value={formData.level} 
+                                onChange={(e) => setFormData(p => ({ ...p, level: e.target.value }))}
+                                className="w-full rounded-xl px-3 py-2 text-xs bg-(--bg-card) border border-(--border-default) text-(--text-primary)"
+                            >
+                                <option value="BEGINNER">Beginner</option>
+                                <option value="INTERMEDIATE">Intermediate</option>
+                                <option value="ADVANCED">Advanced</option>
+                                <option value="EXPERT">Expert</option>
+                            </select>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                             <label className="text-[10px] font-bold uppercase tracking-wider text-(--text-disabled)">Language</label>
+                             <select 
+                                name="language" 
+                                value={formData.language} 
+                                onChange={(e) => setFormData(p => ({ ...p, language: e.target.value }))}
+                                className="w-full rounded-xl px-3 py-2 text-xs bg-(--bg-card) border border-(--border-default) text-(--text-primary)"
+                            >
+                                <option value="SPANISH">Spanish</option>
+                                <option value="ENGLISH">English</option>
+                                <option value="PORTUGUESE">Portuguese</option>
+                                <option value="FRENCH">French</option>
+                            </select>
+                        </div>
+                    </div>
+                </section>
+
+                <div className="p-4 rounded-xl border border-dashed border-(--border-subtle) text-center">
+                    <p className="text-[10px] text-(--text-disabled) leading-relaxed">
+                        Validation will occur upon saving. Ensure all mandatory fields marked with * are filled.
+                    </p>
+                </div>
             </div>
-
           </form>
         </div>
-      </div>
+      </PermissionGuard>
     </AppLayout>
   );
 }

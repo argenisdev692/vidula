@@ -121,8 +121,9 @@ export function DataTable<TData, TValue>({
                   style={{
                     borderBottom: '1px solid var(--border-subtle)',
                     ...(isDeleted && {
-                      background: 'color-mix(in srgb, var(--accent-error) 6%, transparent)',
-                      opacity: 0.65,
+                      background: 'var(--deleted-row-bg)',
+                      opacity: 'var(--deleted-row-opacity)',
+                      borderLeft: '2px solid var(--deleted-row-border)',
                     }),
                   }}
                 >

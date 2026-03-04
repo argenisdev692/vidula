@@ -3,51 +3,36 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import AppLayout from '@/pages/layouts/AppLayout';
 import { useSingleProduct } from '@/modules/products/hooks/useProduct';
 import ProductStatusBadge from '@/modules/products/components/ProductStatusBadge';
+import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
 import type { PageProps } from '@inertiajs/core';
+import { ArrowLeft, Edit, Globe, Tag, Info, Layers, Calendar, DollarSign } from 'lucide-react';
 
-// ══════════════════════════════════════════════════════════════
-// Icons
-// ══════════════════════════════════════════════════════════════
-const ic = {
-  w: 16, h: 16, viewBox: '0 0 24 24', fill: 'none',
-  stroke: 'currentColor', strokeWidth: 2,
-  strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const,
-};
-const IconArrowLeft = () => <svg {...ic}><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>;
-const IconEdit = () => <svg {...ic}><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>;
-const IconMail = () => <svg {...ic}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>;
-const IconPhone = () => <svg {...ic}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>;
-const IconGlobe = () => <svg {...ic}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>;
-const IconMapPin = () => <svg {...ic}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>;
-const IconBuilding = () => <svg {...ic}><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg>;
+import { formatDateShort } from '@/common/helpers/formatDate';
 
-// ══════════════════════════════════════════════════════════════
-// ProductShowPage
-// ══════════════════════════════════════════════════════════════
 export default function ProductShowPage(): React.JSX.Element {
-  const { props } = usePage<PageProps & { companyId: string }>();
+  const { props } = usePage<PageProps & { productId: string }>();
   
-  // Extract uuid from url if inertia prop doesn't supply it directly (it's the last segment)
-  const urlParts = window.location.pathname.split('/');
-  const finalUuid = props.companyId || urlParts[urlParts.length - 1]; 
+  const urlParts = typeof window !== 'undefined' ? window.location.pathname.split('/') : [];
+  const finalUuid = props.productId || (urlParts.length > 0 ? urlParts[urlParts.length - 1] : ''); 
 
-  const { data: company, isPending, isError } = useSingleProduct(finalUuid);
+  const { data: product, isPending, isError } = useSingleProduct(finalUuid);
 
   if (isPending) {
     return (
       <AppLayout>
-        <div className="flex h-[50vh] items-center justify-center">
-          <p style={{ color: 'var(--text-muted)' }}>Loading company profile...</p>
+        <div className="flex h-[50vh] flex-col items-center justify-center gap-4 animate-pulse">
+           <div className="h-10 w-10 border-4 rounded-full animate-spin" style={{ borderColor: 'var(--accent-primary)', borderTopColor: 'transparent' }} />
+           <p style={{ color: 'var(--text-muted)' }}>Loading product details...</p>
         </div>
       </AppLayout>
     );
   }
 
-  if (isError || !company) {
+  if (isError || !product) {
     return (
       <AppLayout>
         <div className="flex h-[50vh] items-center justify-center">
-          <p style={{ color: 'var(--accent-error)' }}>Failed to load company profile.</p>
+          <p style={{ color: 'var(--accent-error)' }}>Failed to load product details.</p>
         </div>
       </AppLayout>
     );
@@ -55,214 +40,159 @@ export default function ProductShowPage(): React.JSX.Element {
 
   return (
     <AppLayout>
-      <Head title={`${company.company_name} Profile`} />
-      <div style={{ fontFamily: 'var(--font-sans)', maxWidth: '900px', margin: '0 auto' }}>
-        
-        {/* ── Header ── */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
+      <Head title={`${product.title} - Product Details`} />
+      <PermissionGuard permissions={['VIEW ANY PRODUCTS']}>
+        <div className="max-w-5xl mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-300 pb-12">
+          
+          {/* ── Header ── */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4">
+              <Link
+                href="/products"
+                className="flex h-10 w-10 items-center justify-center rounded-xl shadow-sm transition-all"
+                style={{ 
+                  background: 'var(--bg-card)', 
+                  border: '1px solid var(--border-default)', 
+                  color: 'var(--text-muted)' 
+                }}
+              >
+                <ArrowLeft size={20} />
+              </Link>
+              <div>
+                <h1 className="text-3xl font-extrabold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+                  {product.title}
+                </h1>
+                <div className="mt-1 flex items-center gap-3">
+                  <ProductStatusBadge status={product.deleted_at ? 'deleted' : 'active'} />
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    {product.type.toUpperCase()} • ID: {product.id.substring(0, 8)}...
+                  </span>
+                </div>
+              </div>
+            </div>
             <Link
-              href="/product"
-              className="flex h-9 w-9 items-center justify-center rounded-lg transition-all hover:bg-(--bg-hover)"
-              style={{ color: 'var(--text-muted)' }}
+              href={`/products/${product.id}/edit`}
+              className="btn-modern btn-modern-primary flex items-center gap-2 px-6 py-2.5 shadow-xl transition-all font-bold"
             >
-              <IconArrowLeft />
+              <Edit size={18} /> Edit Product
             </Link>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-                {company.company_name}
-              </h1>
-              <div className="mt-1 flex items-center gap-3">
-                <ProductStatusBadge status={company.deleted_at ? 'deleted' : 'active'} />
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  ID: {company.id.substring(0, 8)}...
-                </span>
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  Registered: {new Date(company.created_at).toLocaleDateString()}
-                </span>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              
+            {/* ── Main content (Left) ── */}
+            <div className="lg:col-span-2 space-y-8">
+              
+              {/* Product Info Card */}
+              <div className="card-modern p-8 shadow-2xl glass-morphism">
+                <div className="flex items-center gap-3 mb-6">
+                   <Info style={{ color: 'var(--accent-primary)' }} size={24} />
+                   <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Product Overview</h2>
+                </div>
+                
+                <div className="space-y-6">
+                  <div>
+                    <label className="text-[11px] font-bold uppercase tracking-widest mb-2 block" style={{ color: 'var(--text-disabled)' }}>
+                      Description
+                    </label>
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-secondary)' }}>
+                      {product.description || 'No description provided.'}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                    <div>
+                        <label className="text-[11px] font-bold uppercase tracking-widest mb-1 block" style={{ color: 'var(--text-disabled)' }}>
+                          Level
+                        </label>
+                        <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                           <Layers size={14} style={{ color: 'var(--accent-info)' }} />
+                           {product.level}
+                        </div>
+                    </div>
+                    <div>
+                        <label className="text-[11px] font-bold uppercase tracking-widest mb-1 block" style={{ color: 'var(--text-disabled)' }}>
+                          Language
+                        </label>
+                        <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                           <Globe size={14} style={{ color: 'var(--accent-info)' }} />
+                           {product.language}
+                        </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pricing & Commercial Card */}
+              <div className="card-modern p-8 shadow-2xl glass-morphism">
+                <div className="flex items-center gap-3 mb-6">
+                   <DollarSign style={{ color: 'var(--accent-success)' }} size={24} />
+                   <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Pricing & Commercial</h2>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-8">
+                  <div className="p-4 rounded-xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)' }}>
+                      <label className="text-[10px] font-bold uppercase tracking-widest mb-1 block" style={{ color: 'var(--text-disabled)' }}>
+                        Base Price
+                      </label>
+                      <div className="text-2xl font-black" style={{ color: 'var(--accent-success)' }}>
+                        {product.price} <span className="text-sm font-normal">{product.currency}</span>
+                      </div>
+                  </div>
+                  <div className="p-4 rounded-xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)' }}>
+                      <label className="text-[10px] font-bold uppercase tracking-widest mb-1 block" style={{ color: 'var(--text-disabled)' }}>
+                        Module Identifier
+                      </label>
+                      <div className="text-sm font-mono mt-1" style={{ color: 'var(--text-secondary)' }}>
+                        {product.slug}
+                      </div>
+                  </div>
+                </div>
               </div>
             </div>
+
+            {/* ── Sidebar (Right) ── */}
+            <div className="space-y-8">
+              <div className="card-modern p-6" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+                <div className="flex items-center gap-3 mb-6">
+                   <Tag style={{ color: 'var(--accent-primary)' }} size={20} />
+                   <h3 className="text-sm font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Attributes</h3>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                     <span className="text-xs" style={{ color: 'var(--text-disabled)' }}>Type</span>
+                     <span className="text-xs font-bold uppercase" style={{ color: 'var(--text-secondary)' }}>{product.type}</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                     <span className="text-xs" style={{ color: 'var(--text-disabled)' }}>Status</span>
+                     <ProductStatusBadge status={product.deleted_at ? 'deleted' : 'active'} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="card-modern p-6" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+                <div className="flex items-center gap-3 mb-6">
+                   <Calendar style={{ color: 'var(--accent-primary)' }} size={20} />
+                   <h3 className="text-sm font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Project Dates</h3>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-tighter block" style={{ color: 'var(--text-disabled)' }}>Created</span>
+                    <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{product.created_at}</span>
+                  </div>
+                  {product.updated_at && (
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-tighter block" style={{ color: 'var(--text-disabled)' }}>Latest Update</span>
+                      <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{product.updated_at}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
           </div>
-          <Link
-            href={`/product/${company.id}/edit`}
-            className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all hover:bg-(--bg-hover)"
-            style={{
-              background: 'var(--accent-primary)',
-              color: 'var(--color-white)',
-            }}
-          >
-            <IconEdit /> Edit Profile
-          </Link>
         </div>
-
-        {/* ── Grid Layout ── */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            
-          {/* Main Info Column */}
-          <div className="md:col-span-2 space-y-6">
-            
-            {/* Contact Details Card */}
-            <div className="card-modern shadow-md">
-              <h2 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">
-                Contact Information
-              </h2>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="pt-0.5" style={{ color: 'var(--text-muted)' }}>
-                    <IconBuilding />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>
-                      Representative Name
-                    </p>
-                    <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      {company.name ?? 'Not specified'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="pt-0.5" style={{ color: 'var(--text-muted)' }}>
-                    <IconMail />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>
-                      Email Address
-                    </p>
-                    <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      {company.email ? (
-                        <a href={`mailto:${company.email}`} className="hover:underline" style={{ color: 'var(--accent-info)' }}>
-                           {company.email}
-                        </a>
-                      ) : 'Not specified'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="pt-0.5" style={{ color: 'var(--text-muted)' }}>
-                    <IconPhone />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>
-                      Phone Number
-                    </p>
-                    <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      {company.phone ? (
-                        <a href={`tel:${company.phone}`} className="hover:underline" style={{ color: 'var(--accent-info)' }}>
-                           {company.phone}
-                        </a>
-                      ) : 'Not specified'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="pt-0.5" style={{ color: 'var(--text-muted)' }}>
-                    <IconGlobe />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>
-                      Website
-                    </p>
-                    <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      {company.website ? (
-                        <a href={company.website} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--accent-info)' }}>
-                           {company.website}
-                        </a>
-                      ) : 'Not specified'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="pt-0.5" style={{ color: 'var(--text-muted)' }}>
-                    <IconMapPin />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>
-                      Address
-                    </p>
-                    <p className="mt-1 text-sm whitespace-pre-wrap leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                      {company.address ?? 'Not specified'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Geographic Coordinates Card (if map is needed later) */}
-            <div className="card-modern shadow-md">
-               <h2 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">
-                Geographic Data
-              </h2>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                   <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Latitude</p>
-                   <p className="mt-1 text-sm font-mono" style={{ color: 'var(--text-secondary)' }}>{company.latitude ?? '—'}</p>
-                </div>
-                <div>
-                   <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Longitude</p>
-                   <p className="mt-1 text-sm font-mono" style={{ color: 'var(--text-secondary)' }}>{company.longitude ?? '—'}</p>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Social Links & Metadata Column */}
-          <div className="space-y-6">
-            <div className="card-modern">
-              <h2 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">
-                Social Profiles
-              </h2>
-              <div className="space-y-4">
-                {[
-                  { label: 'LinkedIn', url: company.linkedin_link },
-                  { label: 'Twitter', url: company.twitter_link },
-                  { label: 'Facebook', url: company.facebook_link },
-                  { label: 'Instagram', url: company.instagram_link },
-                ].map((social) => (
-                  <div key={social.label}>
-                    <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>
-                      {social.label}
-                    </p>
-                    <p className="mt-1 text-sm truncate" style={{ color: 'var(--text-secondary)' }}>
-                      {social.url ? (
-                        <a href={social.url} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--accent-info)' }}>
-                           {new URL(social.url).hostname.replace('www.', '')}
-                        </a>
-                      ) : '—'}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="card-modern">
-               <h2 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">
-                Metadata
-              </h2>
-              <div className="space-y-4 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                 <div className="flex justify-between border-b pb-2" style={{ borderColor: 'var(--border-subtle)' }}>
-                     <span style={{ color: 'var(--text-disabled)' }}>Owner User ID:</span>
-                     <span className="font-mono">{company.user_id}</span>
-                 </div>
-                 <div className="flex justify-between border-b pb-2" style={{ borderColor: 'var(--border-subtle)' }}>
-                     <span style={{ color: 'var(--text-disabled)' }}>Created At:</span>
-                     <span>{new Date(company.created_at).toLocaleString()}</span>
-                 </div>
-                 <div className="flex justify-between border-b pb-2" style={{ borderColor: 'var(--border-subtle)' }}>
-                     <span style={{ color: 'var(--text-disabled)' }}>Updated At:</span>
-                     <span>{company.updated_at ? new Date(company.updated_at).toLocaleString() : 'Never'}</span>
-                 </div>
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-      </div>
+      </PermissionGuard>
     </AppLayout>
   );
 }

@@ -55,6 +55,19 @@
     --input-border-focus: var(--blue-500);
     --input-height: 44px;
     --input-radius: var(--radius-md);
+
+    /* soft-delete row tokens */
+    --deleted-row-bg: color-mix(
+        in srgb,
+        var(--accent-error) 8%,
+        var(--bg-card)
+    );
+    --deleted-row-border: color-mix(
+        in srgb,
+        var(--accent-error) 25%,
+        transparent
+    );
+    --deleted-row-opacity: 0.65;
 }
 
 /* ── Light Mode override if needed (Default is Dark) ── */

@@ -7,11 +7,11 @@ import { ProductDetail } from '@/types/api';
  */
 export const useSingleProduct = (uuid?: string) => {
   return useQuery({
-    queryKey: ['product', uuid || 'me'],
+    queryKey: ['products', uuid || 'me'],
     queryFn: async () => {
       // Backend controller: show(Request $request, ?string $uuid = null)
       // If uuid is null, it uses $request->user()?->uuid
-      const url = uuid ? `/product/data/admin/${uuid}` : '/product/data/me';
+      const url = uuid ? `/products/data/admin/${uuid}` : '/products/data/me';
       const { data } = await axios.get<{ data: ProductDetail }>(url);
       return data.data;
     },

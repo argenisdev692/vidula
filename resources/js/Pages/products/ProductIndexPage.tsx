@@ -8,9 +8,11 @@ import { useProductMutations } from '@/modules/products/hooks/useProductMutation
 import ProductTable from './components/ProductTable';
 import { DataTableBulkActions } from '@/shadcn/DataTableBulkActions';
 import { DeleteConfirmModal } from '@/shadcn/DeleteConfirmModal';
+import { RestoreConfirmModal } from '@/shadcn/RestoreConfirmModal';
+import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
 import { DataTableDateRangeFilter } from '@/common/data-table/DataTableDateRangeFilter';
 import { ExportButton } from '@/common/export/ExportButton';
-import type { ProductFilters } from '@/types/api';
+import type { ProductFilters, ProductListItem } from '@/types/api';
 import { Plus, Search, ChevronLeft, ChevronRight, Package } from 'lucide-react';
 
 function buildPageWindow(current: number, last: number): number[] {
@@ -24,6 +26,7 @@ export default function ProductIndexPage(): React.JSX.Element {
   const [search, setSearch]   = React.useState<string>(filters.search ?? '');
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [pendingDelete, setPendingDelete] = React.useState<{ uuid: string; name: string } | null>(null);
+  const [pendingRestore, setPendingRestore] = React.useState<{ uuid: string; name: string } | null>(null);
   const [isDeletingBulk, setIsDeletingBulk] = React.useState<boolean>(false);
 
   const [isPendingExport, startExportTransition] = React.useTransition();
@@ -38,6 +41,12 @@ export default function ProductIndexPage(): React.JSX.Element {
   const productList = data?.data ?? [];
   const meta = data?.meta ?? { currentPage: 1, lastPage: 1, perPage: 15, total: 0 };
   const pageWindow = buildPageWindow(meta.currentPage, meta.lastPage);
+
+  // ── Optimistic Updates ──
+  const [optimisticItems, setOptimisticItems] = React.useOptimistic<ProductListItem[], string>(
+    productList,
+    (state, deletedUuid) => state.filter(i => i.id !== deletedUuid)
+  );
 
   // ── Handlers ──
   function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>): void {
@@ -54,16 +63,25 @@ export default function ProductIndexPage(): React.JSX.Element {
 
   function handleConfirmSingleDelete(): void {
     if (!pendingDelete) return;
-    deleteProduct.mutate(pendingDelete.uuid, {
-      onSuccess: () => setPendingDelete(null),
+    React.startTransition(async () => {
+      setOptimisticItems(pendingDelete.uuid);
+      try {
+        await deleteProduct.mutateAsync(pendingDelete.uuid);
+        setPendingDelete(null);
+      } catch {
+        // Optimistic UI auto-reverts on throw or error in mutation handler
+      }
     });
   }
 
   function handleRestoreClick(uuid: string, name: string): void {
-    restoreProduct.mutate([uuid], {
-      onSuccess: () => {
-        // Optional: show success message or handle UI updates
-      },
+    setPendingRestore({ uuid, name });
+  }
+
+  function handleConfirmRestore(): void {
+    if (!pendingRestore) return;
+    restoreProduct.mutate([pendingRestore.uuid], {
+      onSuccess: () => setPendingRestore(null),
     });
   }
 
@@ -107,10 +125,11 @@ export default function ProductIndexPage(): React.JSX.Element {
     <>
       <Head title="Products" />
       <AppLayout>
-        <div
-          className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500"
-          style={{ fontFamily: 'var(--font-sans)' }}
-        >
+        <PermissionGuard permissions={['VIEW ANY PRODUCTS']}>
+          <div
+            className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-300"
+            style={{ fontFamily: 'var(--font-sans)' }}
+          >
 
           {/* ── Header ── */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -126,13 +145,14 @@ export default function ProductIndexPage(): React.JSX.Element {
                   Products
                 </h1>
                 <p className="text-sm font-medium mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                  {meta.total} {meta.total === 1 ? 'product' : 'products'} in catalogue
+                  {meta.total} {meta.total === 1 ? 'record' : 'records'} found
                 </p>
               </div>
             </div>
 
             <Link
               href="/products/create"
+              prefetch
               className="btn-modern btn-modern-primary inline-flex items-center gap-2 px-5 py-2 font-bold shadow-sm"
             >
               <Plus size={16} />
@@ -204,7 +224,7 @@ export default function ProductIndexPage(): React.JSX.Element {
           {/* ── Table card ── */}
           <div className="card-modern shadow-xl overflow-hidden">
             <ProductTable
-              data={productList}
+              data={optimisticItems}
               isLoading={isPending}
               isError={isError}
               onDelete={handleDeleteClick}
@@ -275,6 +295,15 @@ export default function ProductIndexPage(): React.JSX.Element {
           onCancel={() => setPendingDelete(null)}
           isDeleting={deleteProduct.isPending}
         />
+
+        <RestoreConfirmModal
+          open={pendingRestore !== null}
+          entityLabel={pendingRestore?.name ?? ''}
+          onConfirm={handleConfirmRestore}
+          onCancel={() => setPendingRestore(null)}
+          isRestoring={restoreProduct.isPending}
+        />
+        </PermissionGuard>
       </AppLayout>
     </>
   );

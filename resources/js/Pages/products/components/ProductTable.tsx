@@ -19,6 +19,11 @@ interface ProductTableProps {
 // ✅ columnHelper OUTSIDE component (module-level constant)
 const columnHelper = createColumnHelper<ProductListItem>();
 
+const IconEye = () => <Eye size={16} />;
+const IconPencil = () => <Pencil size={16} />;
+const IconTrash = () => <Trash2 size={16} />;
+const IconRestore = () => <CheckCircle size={16} />;
+
 export default function ProductTable({
   data,
   isLoading,
@@ -114,7 +119,7 @@ export default function ProductTable({
           <div className="flex items-center justify-end gap-2 pr-4">
             <Link 
               href={`/products/${item.id}`} 
-              className="p-1.5 rounded-md border shadow-sm transition-colors" 
+              className="p-1.5 rounded-md border shadow-sm transition-colors hover:bg-(--bg-hover)" 
               style={{ 
                 borderColor: 'var(--border-default)', 
                 background: 'var(--bg-card)', 
@@ -122,13 +127,13 @@ export default function ProductTable({
               }}
               title="View"
             >
-              <Eye size={16} />
+              <IconEye />
             </Link>
             {!isDeleted ? (
               <>
                 <Link 
                   href={`/products/${item.id}/edit`} 
-                  className="p-1.5 rounded-md border shadow-sm transition-colors" 
+                  className="p-1.5 rounded-md border shadow-sm transition-colors hover:bg-(--bg-hover)" 
                   style={{ 
                     borderColor: 'var(--border-default)', 
                     background: 'var(--bg-card)', 
@@ -136,11 +141,11 @@ export default function ProductTable({
                   }}
                   title="Edit"
                 >
-                  <Pencil size={16} />
+                  <IconPencil />
                 </Link>
                 <button
                   onClick={() => onDelete(item.id, item.title)}
-                  className="p-1.5 rounded-md border shadow-sm transition-colors"
+                  className="p-1.5 rounded-md border shadow-sm transition-colors hover:bg-(--bg-hover)"
                   style={{ 
                     borderColor: 'var(--border-default)', 
                     background: 'var(--bg-card)', 
@@ -148,13 +153,13 @@ export default function ProductTable({
                   }}
                   title="Delete"
                 >
-                  <Trash2 size={16} />
+                  <IconTrash />
                 </button>
               </>
             ) : (
               <button
                 onClick={() => onRestore?.(item.id, item.title)}
-                className="p-1.5 rounded-md border shadow-sm transition-colors"
+                className="p-1.5 rounded-md border shadow-sm transition-colors hover:bg-(--bg-hover)"
                 style={{
                   borderColor: 'var(--border-default)',
                   background: 'var(--bg-card)',
@@ -162,7 +167,7 @@ export default function ProductTable({
                 }}
                 title="Restore"
               >
-                <CheckCircle size={16} />
+                <IconRestore />
               </button>
             )}
           </div>

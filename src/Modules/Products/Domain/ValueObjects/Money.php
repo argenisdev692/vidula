@@ -6,10 +6,10 @@ namespace Modules\Products\Domain\ValueObjects;
 
 use InvalidArgumentException;
 
-final readonly class Money
+final class Money
 {
     public function __construct(
-        public float $amount {
+        public private(set) float $amount {
             set {
                 if($value < 0) {
                     throw new InvalidArgumentException(
@@ -19,7 +19,7 @@ final readonly class Money
                 $this->amount = $value;
             }
         },
-        public string $currency {
+        public private(set) string $currency {
             set {
                 if(strlen($value) !== 3) {
                     throw new InvalidArgumentException(
