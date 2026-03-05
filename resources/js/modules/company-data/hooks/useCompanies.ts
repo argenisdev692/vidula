@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import axios from 'axios';
 import { CompanyDataListItem, CompanyDataFilters, PaginatedResponse } from '@/types/api';
 
@@ -14,6 +14,6 @@ export const useCompanies = (filters: CompanyDataFilters) => {
       });
       return data;
     },
-    placeholderData: (previousData) => previousData,
+    placeholderData: keepPreviousData,
   });
 };

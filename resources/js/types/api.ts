@@ -75,15 +75,20 @@ export interface UsersIndexPageProps {
 // ── Company Data ────────────────────────────────────────────────
 
 export interface CompanyDataListItem {
-  id: string; // This corresponds to the UUID
-  user_id: number;
+  uuid: string;
+  user_uuid: string;
   name: string | null;
   company_name: string;
   email: string | null;
   phone: string | null;
   address: string | null;
   website: string | null;
-  created_at: string; // ISO 8601
+  status?: string;
+  social_links?: any;
+  coordinates?: any;
+  signature_url?: string | null;
+  created_at: string | null;
+  updated_at?: string | null;
   deleted_at?: string | null;
 }
 
@@ -95,8 +100,6 @@ export interface CompanyDataDetail extends CompanyDataListItem {
   latitude: number | null;
   longitude: number | null;
   signature_path: string | null;
-  updated_at: string | null;
-  deleted_at: string | null;
 }
 
 export interface CreateCompanyDataDTO {

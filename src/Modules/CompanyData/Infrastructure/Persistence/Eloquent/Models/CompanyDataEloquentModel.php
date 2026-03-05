@@ -14,7 +14,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 use Modules\Users\Infrastructure\Persistence\Eloquent\Models\UserEloquentModel;
 
 /**
- * CompanyDataEloquentModel
+ * @internal Infrastructure-only — never import from Domain or Application layers.
  */
 final class CompanyDataEloquentModel extends Model
 {
@@ -52,9 +52,24 @@ final class CompanyDataEloquentModel extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logFillable()
+            ->logOnly([
+                'company_name',
+                'name',
+                'email',
+                'phone',
+                'address',
+                'website',
+                'facebook_link',
+                'instagram_link',
+                'linkedin_link',
+                'twitter_link',
+                'latitude',
+                'longitude',
+                'status',
+            ])
             ->logOnlyDirty()
-            ->dontSubmitEmptyLogs();
+            ->dontSubmitEmptyLogs()
+            ->useLogName('company.company_data');
     }
 
     public function user(): BelongsTo
@@ -66,7 +81,7 @@ final class CompanyDataEloquentModel extends Model
         Builder $query,
         ?string $from,
         ?string $to,
-        string $column = 'created_at'
+        string $column = 'created_at',
     ): Builder {
         return $query
             ->when($from, fn($q) => $q->whereDate($column, '>=', $from))

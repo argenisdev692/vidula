@@ -45,6 +45,8 @@ import {
   GraduationCap,
   UserCheck,
   Package,
+  BookOpen,
+  FolderOpen,
 } from 'lucide-react';
 
 const icSize = 18;
@@ -98,8 +100,15 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Management',
     icon: <Package size={14} />,
     items: [
-      { label: 'Company', href: '/company-data', icon: <Building2 size={icSize} />, description: 'Corporate entities' },
+      { label: 'Company', href: '/company-data', icon: <Building2 size={icSize} />, description: 'Corporate entities', permission: 'VIEW_COMPANY_DATA' },
       { label: 'Products', href: '/products', icon: <Package size={icSize} />, description: 'Manage products', permission: 'VIEW ANY PRODUCTS' },
+    ],
+  },
+  {
+    label: 'Blog',
+    icon: <BookOpen size={14} />,
+    items: [
+      { label: 'Categories', href: '/blog-categories', icon: <FolderOpen size={icSize} />, description: 'Manage blog categories', permission: 'VIEW ANY BLOG_CATEGORIES' },
     ],
   },
 ];
@@ -398,7 +407,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }): React.JSX.Elemen
         (item) => currentPath === item.href || currentPath.startsWith(item.href + '/')
       );
       if (hasActiveItem) saved[group.label] = true;
-      if (saved[group.label] === undefined) saved[group.label] = group.label === 'Overview';
+      if (saved[group.label] === undefined) saved[group.label] = group.label === 'Overview'; // Blog and others default closed
     }
     return saved;
   });

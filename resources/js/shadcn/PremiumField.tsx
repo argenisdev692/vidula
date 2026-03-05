@@ -32,7 +32,7 @@ export const PremiumField = ({
     <div className="flex flex-col gap-2 group animate-in slide-in-from-top-2 duration-300">
       <label
         htmlFor={fieldId}
-        className="text-[11px] font-bold uppercase tracking-widest text-(--text-secondary) group-focus-within:text-(--accent-primary) transition-colors"
+        className="text-[11px] font-bold uppercase tracking-widest text-(--text-muted) group-focus-within:text-(--accent-primary) transition-colors"
       >
         {label} {required && <span className="text-(--accent-error) ml-1">*</span>}
       </label>

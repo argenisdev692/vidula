@@ -1,0 +1,15 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Blog\Domain\Exceptions;
+
+use Shared\Domain\Exceptions\DomainException;
+
+final class BlogCategoryNotFoundException extends DomainException
+{
+    public static function forUuid(string $uuid): self
+    {
+        return new self("Blog category with UUID [{$uuid}] not found.");
+    }
+}

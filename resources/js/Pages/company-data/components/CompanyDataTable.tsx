@@ -1,10 +1,13 @@
 import * as React from 'react';
-import { createColumnHelper, type ColumnDef, type RowSelectionState, type OnChangeFn } from '@tanstack/react-table';
+import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
 import { Link } from '@inertiajs/react';
 import { DataTable } from '@/shadcn/data-table';
 import type { CompanyDataListItem } from '@/types/api';
+import { formatDateShort } from '@/common/helpers/formatDate';
 
-import { Building2, Eye, Pencil, Trash2 } from 'lucide-react';
+import { Building2, Eye, Pencil } from 'lucide-react';
+
+const columnHelper = createColumnHelper<CompanyDataListItem>();
 
 // ══════════════════════════════════════════════════════════════
 // Props
@@ -12,21 +15,19 @@ import { Building2, Eye, Pencil, Trash2 } from 'lucide-react';
 interface CompanyDataTableProps {
   data: CompanyDataListItem[];
   isLoading: boolean;
-  isError: boolean;
-  onDelete: (uuid: string, name: string) => void;
-  rowSelection: RowSelectionState;
-  onRowSelectionChange: OnChangeFn<RowSelectionState>;
+  isError?: boolean;
+  onDelete?: (uuid: string, name: string) => void;
+  rowSelection: Record<string, boolean>;
+  onRowSelectionChange: (updater: any) => void;
 }
 
 export default function CompanyDataTable({
   data,
   isLoading,
   isError,
-  onDelete,
   rowSelection,
   onRowSelectionChange,
 }: CompanyDataTableProps) {
-  const columnHelper = createColumnHelper<CompanyDataListItem>();
 
   const columns = React.useMemo<ColumnDef<CompanyDataListItem, any>[]>(() => [
     columnHelper.display({
@@ -59,8 +60,8 @@ export default function CompanyDataTable({
             <div
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xs font-bold"
               style={{
-                background: 'color-mix(in srgb, var(--purple-500) 15%, transparent)',
-                color: 'var(--purple-500)',
+                background: 'color-mix(in srgb, var(--accent-secondary) 15%, transparent)',
+                color: 'var(--accent-secondary)',
               }}
             >
               <Building2 size={16} />
@@ -90,10 +91,10 @@ export default function CompanyDataTable({
     columnHelper.accessor('created_at', {
       header: 'Created',
       cell: (info) => {
-        const val = info.getValue();
+        const val = info.getValue() as string | null | undefined;
         return (
-          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            {val ? new Date(val).toLocaleDateString() : '—'}
+          <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+            {val ? formatDateShort(val) : '—'}
           </span>
         );
       },
@@ -106,31 +107,26 @@ export default function CompanyDataTable({
         return (
           <div className="flex items-center justify-end gap-2 pr-4">
             <Link
-              href={`/company-data/${company.id}`}
+              href={`/company-data/${company.user_uuid}`}
+              prefetch
               className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors"
               title="View"
             >
               <Eye size={16} />
             </Link>
             <Link
-              href={`/company-data/${company.id}/edit`}
+              href={`/company-data/${company.user_uuid}/edit`}
+              prefetch
               className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors"
               title="Edit"
             >
               <Pencil size={16} />
             </Link>
-            <button
-              onClick={() => onDelete(company.id, company.company_name)}
-              className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-red-500/10 text-(--accent-error) shadow-sm transition-colors"
-              title="Delete"
-            >
-              <Trash2 size={16} />
-            </button>
           </div>
         );
       },
     }),
-  ], [columnHelper, onDelete]);
+  ], [columnHelper]);
 
   return (
     <DataTable
@@ -141,6 +137,8 @@ export default function CompanyDataTable({
       noDataMessage="No companies found"
       rowSelection={rowSelection}
       onRowSelectionChange={onRowSelectionChange}
+      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+      getRowId={(row: any) => row.uuid}
     />
   );
 }

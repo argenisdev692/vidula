@@ -34,6 +34,7 @@ final class CompanyData extends AggregateRoot
     ) {
     }
 
+    #[\NoDiscard('Created entity must be captured')]
     public static function create(
         CompanyDataId $id,
         UserId $userId,
@@ -43,7 +44,7 @@ final class CompanyData extends AggregateRoot
         ?string $address = null,
         SocialLinks $socialLinks = new SocialLinks(),
         Coordinates $coordinates = new Coordinates(null, null),
-        CompanyStatus $status = CompanyStatus::Active
+        CompanyStatus $status = CompanyStatus::Active,
     ): self {
         return new self(
             id: $id,
@@ -56,53 +57,35 @@ final class CompanyData extends AggregateRoot
             socialLinks: $socialLinks,
             coordinates: $coordinates,
             signaturePath: null,
-            status: $status
+            status: $status,
         );
     }
 
+    #[\NoDiscard('Updated entity must be persisted')]
     public function update(
         string $companyName,
         ?string $email,
         ?string $phone,
         ?string $address,
         SocialLinks $socialLinks,
-        Coordinates $coordinates
+        Coordinates $coordinates,
     ): self {
-        return new self(
-            id: $this->id,
-            userId: $this->userId,
-            companyName: $companyName,
-            name: $this->name,
-            email: $email,
-            phone: $phone,
-            address: $address,
-            socialLinks: $socialLinks,
-            coordinates: $coordinates,
-            signaturePath: $this->signaturePath,
-            status: $this->status,
-            createdAt: $this->createdAt,
-            updatedAt: (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
-            deletedAt: $this->deletedAt
-        );
+        return clone($this, [
+            'companyName' => $companyName,
+            'email' => $email,
+            'phone' => $phone,
+            'address' => $address,
+            'socialLinks' => $socialLinks,
+            'coordinates' => $coordinates,
+            'updatedAt' => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
+        ]);
     }
 
+    #[\NoDiscard('Soft-deleted entity must be persisted')]
     public function softDelete(): self
     {
-        return new self(
-            id: $this->id,
-            userId: $this->userId,
-            companyName: $this->companyName,
-            name: $this->name,
-            email: $this->email,
-            phone: $this->phone,
-            address: $this->address,
-            socialLinks: $this->socialLinks,
-            coordinates: $this->coordinates,
-            signaturePath: $this->signaturePath,
-            status: $this->status,
-            createdAt: $this->createdAt,
-            updatedAt: $this->updatedAt,
-            deletedAt: (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM)
-        );
+        return clone($this, [
+            'deletedAt' => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
+        ]);
     }
 }

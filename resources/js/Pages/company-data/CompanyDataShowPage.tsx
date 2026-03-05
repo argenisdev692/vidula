@@ -75,21 +75,17 @@ export default function CompanyDataShowPage(): React.JSX.Element {
               <div className="mt-1 flex items-center gap-3">
                 <CompanyDataStatusBadge status={company.deleted_at ? 'deleted' : 'active'} />
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  ID: {company.id.substring(0, 8)}...
+                  ID: {company.uuid.substring(0, 8)}...
                 </span>
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  Registered: {new Date(company.created_at).toLocaleDateString()}
+                  Registered: {company.created_at ? new Date(company.created_at).toLocaleDateString() : '—'}
                 </span>
               </div>
             </div>
           </div>
           <Link
-            href={`/company-data/${company.id}/edit`}
-            className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all hover:bg-(--bg-hover)"
-            style={{
-              background: 'var(--accent-primary)',
-              color: 'var(--color-white)',
-            }}
+            href={`/company-data/${company.user_uuid}/edit`}
+            className="btn-modern btn-modern-primary inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all text-white"
           >
             <IconEdit /> Edit Profile
           </Link>
@@ -245,12 +241,12 @@ export default function CompanyDataShowPage(): React.JSX.Element {
               </h2>
               <div className="space-y-4 text-sm" style={{ color: 'var(--text-secondary)' }}>
                  <div className="flex justify-between border-b pb-2" style={{ borderColor: 'var(--border-subtle)' }}>
-                     <span style={{ color: 'var(--text-disabled)' }}>Owner User ID:</span>
-                     <span className="font-mono">{company.user_id}</span>
+                     <span style={{ color: 'var(--text-disabled)' }}>Owner User UUID:</span>
+                     <span className="font-mono">{company.user_uuid}</span>
                  </div>
                  <div className="flex justify-between border-b pb-2" style={{ borderColor: 'var(--border-subtle)' }}>
                      <span style={{ color: 'var(--text-disabled)' }}>Created At:</span>
-                     <span>{new Date(company.created_at).toLocaleString()}</span>
+                     <span>{company.created_at ? new Date(company.created_at).toLocaleString() : '—'}</span>
                  </div>
                  <div className="flex justify-between border-b pb-2" style={{ borderColor: 'var(--border-subtle)' }}>
                      <span style={{ color: 'var(--text-disabled)' }}>Updated At:</span>

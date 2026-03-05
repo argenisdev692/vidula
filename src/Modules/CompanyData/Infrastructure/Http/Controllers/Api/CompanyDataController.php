@@ -25,7 +25,7 @@ use Modules\CompanyData\Infrastructure\Http\Requests\CreateCompanyDataRequest;
 use Modules\CompanyData\Infrastructure\Http\Requests\UpdateCompanyDataRequest;
 
 /**
- * CompanyDataController
+ * @OA\Tag(name="CompanyData", description="Company profile data management")
  */
 final class CompanyDataController
 {
@@ -35,10 +35,25 @@ final class CompanyDataController
         private readonly DeleteCompanyDataHandler $deleteHandler,
         private readonly RestoreCompanyDataHandler $restoreHandler,
         private readonly ListCompanyDataHandler $listHandler,
-        private readonly GetCompanyDataHandler $getHandler
+        private readonly GetCompanyDataHandler $getHandler,
     ) {
     }
 
+    /**
+     * @OA\Get(
+     *     path="/company-data/data/admin",
+     *     tags={"CompanyData"},
+     *     summary="List company data (paginated)",
+     *     @OA\Parameter(name="search", in="query", required=false, @OA\Schema(type="string")),
+     *     @OA\Parameter(name="page", in="query", required=false, @OA\Schema(type="integer", default=1)),
+     *     @OA\Parameter(name="per_page", in="query", required=false, @OA\Schema(type="integer", default=15)),
+     *     @OA\Response(response=200, description="Paginated list", @OA\JsonContent(
+     *         @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/CompanyDataReadModel")),
+     *         @OA\Property(property="meta", type="object")
+     *     )),
+     *     security={{"sanctum": {}}}
+     * )
+     */
     public function index(Request $request): JsonResponse
     {
         $filters = CompanyDataFilterDTO::from($request->all());
@@ -47,6 +62,19 @@ final class CompanyDataController
         return response()->json($result);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/company-data/data/admin/{uuid}",
+     *     tags={"CompanyData"},
+     *     summary="Show company data by UUID",
+     *     @OA\Parameter(name="uuid", in="path", required=true, @OA\Schema(type="string", format="uuid")),
+     *     @OA\Response(response=200, description="Company data", @OA\JsonContent(
+     *         @OA\Property(property="data", ref="#/components/schemas/CompanyDataReadModel")
+     *     )),
+     *     @OA\Response(response=404, description="Not found"),
+     *     security={{"sanctum": {}}}
+     * )
+     */
     public function show(Request $request, ?string $uuid = null): JsonResponse
     {
         $targetUuid = $uuid ?? $request->user()?->uuid;
@@ -60,6 +88,16 @@ final class CompanyDataController
         return response()->json(['data' => $result]);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/company-data/data/admin",
+     *     tags={"CompanyData"},
+     *     summary="Create company data",
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/CreateCompanyDataDTO")),
+     *     @OA\Response(response=201, description="Created"),
+     *     security={{"sanctum": {}}}
+     * )
+     */
     public function store(CreateCompanyDataRequest $request): JsonResponse
     {
         $dto = CreateCompanyDataDTO::from($request->validated());
@@ -70,6 +108,17 @@ final class CompanyDataController
         ], 201);
     }
 
+    /**
+     * @OA\Put(
+     *     path="/company-data/data/admin/{uuid}",
+     *     tags={"CompanyData"},
+     *     summary="Update company data",
+     *     @OA\Parameter(name="uuid", in="path", required=true, @OA\Schema(type="string", format="uuid")),
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/UpdateCompanyDataDTO")),
+     *     @OA\Response(response=200, description="Updated"),
+     *     security={{"sanctum": {}}}
+     * )
+     */
     public function update(UpdateCompanyDataRequest $request, ?string $uuid = null): JsonResponse
     {
         $targetUuid = $uuid ?? $request->user()?->uuid;
@@ -86,6 +135,16 @@ final class CompanyDataController
         ]);
     }
 
+    /**
+     * @OA\Delete(
+     *     path="/company-data/data/admin/{uuid}",
+     *     tags={"CompanyData"},
+     *     summary="Soft-delete company data",
+     *     @OA\Parameter(name="uuid", in="path", required=true, @OA\Schema(type="string", format="uuid")),
+     *     @OA\Response(response=200, description="Deleted"),
+     *     security={{"sanctum": {}}}
+     * )
+     */
     public function destroy(string $uuid): JsonResponse
     {
         $this->deleteHandler->handle(new DeleteCompanyDataCommand($uuid));
@@ -95,6 +154,16 @@ final class CompanyDataController
         ]);
     }
 
+    /**
+     * @OA\Patch(
+     *     path="/company-data/data/admin/{uuid}/restore",
+     *     tags={"CompanyData"},
+     *     summary="Restore soft-deleted company data",
+     *     @OA\Parameter(name="uuid", in="path", required=true, @OA\Schema(type="string", format="uuid")),
+     *     @OA\Response(response=200, description="Restored"),
+     *     security={{"sanctum": {}}}
+     * )
+     */
     public function restore(string $uuid): JsonResponse
     {
         $this->restoreHandler->handle(new RestoreCompanyDataCommand($uuid));

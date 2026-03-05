@@ -30,7 +30,7 @@ class DatabaseSeeder extends Seeder
         $this->call(BlogCategorySeeder::class);
 
         // Permissions for New Modules
-        $modules = ['USERS', 'PRODUCTS', 'CLIENTS', 'STUDENTS'];
+        $modules = ['USERS', 'PRODUCTS', 'CLIENTS', 'STUDENTS', 'BLOG_CATEGORIES'];
         $actions = ['VIEW ANY', 'VIEW', 'CREATE', 'UPDATE', 'DELETE', 'RESTORE', 'FORCE DELETE'];
 
         foreach ($modules as $module) {
@@ -39,13 +39,25 @@ class DatabaseSeeder extends Seeder
                     ['name' => "{$action} {$module}", 'guard_name' => 'web'],
                     ['uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString()]
                 );
+                \Spatie\Permission\Models\Permission::firstOrCreate(
+                    ['name' => "{$action} {$module}", 'guard_name' => 'sanctum'],
+                    ['uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString()]
+                );
             }
         }
 
+        $this->call(\Modules\CompanyData\Infrastructure\Persistence\Eloquent\Seeders\CompanyDataPermissionsSeeder::class);
+
         /** @var \Spatie\Permission\Models\Role|null $superAdmin */
-        $superAdmin = \Spatie\Permission\Models\Role::where('name', 'SUPER_ADMIN')->first();
+        $superAdmin = \Spatie\Permission\Models\Role::where('name', 'SUPER_ADMIN')->where('guard_name', 'web')->first();
         if ($superAdmin) {
-            $superAdmin->givePermissionTo(\Spatie\Permission\Models\Permission::all());
+            $superAdmin->givePermissionTo(\Spatie\Permission\Models\Permission::where('guard_name', 'web')->get());
+        }
+
+        /** @var \Spatie\Permission\Models\Role|null $superAdminSanctum */
+        $superAdminSanctum = \Spatie\Permission\Models\Role::where('name', 'SUPER_ADMIN')->where('guard_name', 'sanctum')->first();
+        if ($superAdminSanctum) {
+            $superAdminSanctum->givePermissionTo(\Spatie\Permission\Models\Permission::where('guard_name', 'sanctum')->get());
         }
 
         // NEW MODULES DATA

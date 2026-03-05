@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Modules\Blog\Infrastructure\Persistence\Eloquent\Models\BlogCategory;
+use Modules\Blog\Infrastructure\Persistence\Eloquent\Models\BlogCategoryEloquentModel;
 use Ramsey\Uuid\Uuid;
 
-class BlogCategorySeeder extends Seeder
+final class BlogCategorySeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -15,27 +17,41 @@ class BlogCategorySeeder extends Seeder
     {
         $blogCategories = [
             [
-                'blog_category_name' => 'Roofing',
-                'blog_category_description' => 'Valor por defecto',
-                'blog_category_image' => 'Valor por defecto',
+                'blog_category_name' => 'AI',
+                'blog_category_description' => 'Artificial Intelligence trends, tools and insights',
+                'blog_category_image' => null,
                 'user_id' => 1,
             ],
             [
-                'blog_category_name' => 'Water Mitigation',
-                'blog_category_description' => 'Categoría para contenido relacionado con mitigación de agua',
-                'blog_category_image' => 'Valor por defecto',
+                'blog_category_name' => 'Software',
+                'blog_category_description' => 'Software development, engineering and best practices',
+                'blog_category_image' => null,
+                'user_id' => 1,
+            ],
+            [
+                'blog_category_name' => 'Marketing Online',
+                'blog_category_description' => 'Digital marketing strategies, SEO and content marketing',
+                'blog_category_image' => null,
+                'user_id' => 1,
+            ],
+            [
+                'blog_category_name' => 'Social Network',
+                'blog_category_description' => 'Social media platforms, networking and community building',
+                'blog_category_image' => null,
                 'user_id' => 1,
             ],
         ];
 
         foreach ($blogCategories as $category) {
-            BlogCategory::create([
-                'uuid' => Uuid::uuid4()->toString(),
-                'blog_category_name' => $category['blog_category_name'],
-                'blog_category_description' => $category['blog_category_description'],
-                'blog_category_image' => $category['blog_category_image'],
-                'user_id' => $category['user_id'],
-            ]);
+            BlogCategoryEloquentModel::query()->updateOrCreate(
+                ['blog_category_name' => $category['blog_category_name']],
+                [
+                    'uuid' => Uuid::uuid4()->toString(),
+                    'blog_category_description' => $category['blog_category_description'],
+                    'blog_category_image' => $category['blog_category_image'],
+                    'user_id' => $category['user_id'],
+                ],
+            );
         }
     }
 }
