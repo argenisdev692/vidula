@@ -363,7 +363,8 @@ export function use{Entity}Mutations() {
 3. `columnHelper` MUST NOT appear in `useMemo` deps
 4. Never hide TanStack API behind wrapper abstractions
 5. All table logic (`useReactTable`, `getCoreRowModel`, `getSortedRowModel`, `flexRender`) comes from `@tanstack/react-table`
-6. HTML rendering uses `@/shadcn/table` primitives (thin `<table>`/`<tr>`/`<td>` wrappers)
+6. HTML rendering uses `@/shadcn/table` primitives (thin `<table>`/`<tr>`/`<td>` wrappers).
+7. **Centered Cells (MANDATORY)**: All table cells (`TableHead` and `TableCell`) MUST be centered by default (`text-align: center`). Ensure consistency with PDF exports.
 
 ### Table Template
 
@@ -649,24 +650,24 @@ Configure in `globals.css`:
 Every index page MUST include an `ExportButton` component that triggers Excel/PDF downloads:
 
 ```tsx
-import { ExportButton } from '@/common/export/ExportButton';
+import { ExportButton } from "@/common/export/ExportButton";
 
 // In IndexPage component
 const [isPendingExport, startExportTransition] = React.useTransition();
 
-function handleExport(format: 'excel' | 'pdf'): void {
+function handleExport(format: "excel" | "pdf"): void {
     startExportTransition(() => {
         const params = new URLSearchParams({ format });
-        if (filters.search) params.append('search', filters.search);
-        if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
-        if (filters.dateTo) params.append('dateTo', filters.dateTo);
-        if (filters.status) params.append('status', filters.status);
-        window.open(`/{module}/data/admin/export?${params}`, '_blank');
+        if (filters.search) params.append("search", filters.search);
+        if (filters.dateFrom) params.append("dateFrom", filters.dateFrom);
+        if (filters.dateTo) params.append("dateTo", filters.dateTo);
+        if (filters.status) params.append("status", filters.status);
+        window.open(`/{module}/data/admin/export?${params}`, "_blank");
     });
 }
 
 // In render
-<ExportButton onExport={handleExport} isExporting={isPendingExport} />
+<ExportButton onExport={handleExport} isExporting={isPendingExport} />;
 ```
 
 ### Export Rules

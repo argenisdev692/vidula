@@ -648,22 +648,26 @@ final class {Entity}ExcelExport implements FromQuery, WithHeadings, WithMapping,
     public function map($row): array
     {
         return [
-            $row->name, 
-            $row->email ?? '—', 
-            $row->status, 
+            $row->name,
+            $row->email ?? '—',
+            $row->status,
             $row->created_at?->format('F j, Y') ?? '—'  // ✅ Human-readable format
         ];
     }
 }
 ```
 
-### Export Transformer Pattern (Recommended)
+### Export Transformer Pattern (MANDATORY)
 
-For complex exports, use a dedicated transformer with pipe operator:
+Every module with export functionality MUST use a dedicated transformer with the pipe operator (`|>`) to ensure consistent data formatting (especially dates and null values).
 
 ```php
+// Canonical Example: Modules\Clients\Infrastructure\Http\Export\ClientExportTransformer
 final class {Entity}ExportTransformer
 {
+    /**
+     * Transform entity to export array for Excel
+     */
     #[\NoDiscard]
     public static function transformForExcel({Entity}ReadModel $entity): array
     {
@@ -673,6 +677,9 @@ final class {Entity}ExportTransformer
             |> self::sanitizeOutput(...);
     }
 
+    /**
+     * Transform entity to export array for PDF
+     */
     #[\NoDiscard]
     public static function transformForPdf({Entity}ReadModel $entity): array
     {
@@ -693,23 +700,13 @@ final class {Entity}ExportTransformer
         ];
     }
 
-    private static function extractPdfData({Entity}ReadModel $entity): array
-    {
-        return [
-            'uuid' => $entity->uuid,
-            'name' => $entity->name,
-            'email' => $entity->email,
-            'created_at' => is_string($entity->createdAt) ? $entity->createdAt : null,
-        ];
-    }
-
     /**
-     * Format date fields to human-readable format (e.g., "March 3, 2026")
+     * Format date fields to human-readable format "March 3, 2026"
      */
     private static function formatDates(array $data): array
     {
         $dateFields = ['created_at', 'updated_at'];
-        
+
         foreach ($dateFields as $field) {
             if (isset($data[$field]) && is_string($data[$field]) && $data[$field] !== '') {
                 try {
@@ -720,10 +717,13 @@ final class {Entity}ExportTransformer
                 }
             }
         }
-        
+
         return $data;
     }
 
+    /**
+     * Sanitize output values (convert null to empty string)
+     */
     private static function sanitizeOutput(array $data): array
     {
         return array_map(fn($value) => $value ?? '', $data);
