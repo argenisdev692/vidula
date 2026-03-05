@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\CompanyData\Infrastructure\Http\Export;
 
-use Illuminate\Database\Eloquent\Builder;
+
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -31,7 +31,7 @@ final class CompanyDataExcelExport implements
     ) {
     }
 
-    public function query(): Builder
+    public function query()
     {
         return CompanyDataEloquentModel::query()
             ->select([
@@ -45,7 +45,7 @@ final class CompanyDataExcelExport implements
                 'website',
                 'created_at',
             ])
-            ->whereNull('deleted_at')
+            ->where('deleted_at', '=', null)
             ->when(
                 $this->filters->search,
                 fn($q, $s) => $q->where(function ($q) use ($s): void {
