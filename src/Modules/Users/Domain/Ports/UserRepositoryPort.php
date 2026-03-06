@@ -31,6 +31,8 @@ interface UserRepositoryPort
      */
     public function create(array $data): User;
 
+    public function assignRole(string $uuid, string $role): void;
+
     /**
      * @param array<string, mixed> $data
      */

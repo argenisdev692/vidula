@@ -38,7 +38,7 @@ final class UsersPermissionsSeeder extends Seeder
         $role->syncPermissions($permissions);
 
         // ── Also give Super Admin all permissions ──
-        $superAdmin = Role::firstOrCreate(['name' => 'Super Admin', 'guard_name' => 'web']);
+        $superAdmin = Role::firstOrCreate(['name' => 'SUPER_ADMIN', 'guard_name' => 'web']);
         $superAdmin->givePermissionTo($permissions);
     }
 }

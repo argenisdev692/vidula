@@ -1,8 +1,9 @@
 import * as React from 'react';
 import { Link, Head, router } from '@inertiajs/react';
 import AppLayout from '@/pages/layouts/AppLayout';
+import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
 import { useUserMutations } from '@/modules/users/hooks/useUserMutations';
-import { PremiumField } from '@/shadcn/PremiumField';
+import { PremiumField } from '@/common/form/PremiumField';
 import type { UpdateUserPayload, UserDetail } from '@/types/users';
 import { ArrowLeft, Save } from 'lucide-react';
 
@@ -73,12 +74,14 @@ export default function UserEditPage({ user }: UserEditPageProps): React.JSX.Ele
     <>
       <Head title={`Edit — ${fullName}`} />
       <AppLayout>
+        <PermissionGuard permissions={['UPDATE_USERS']}>
         <form onSubmit={handleSubmit} className="max-w-4xl mx-auto flex flex-col gap-8 animate-in fade-in duration-300">
           {/* ── Header ── */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link
                 href={`/users/${user.uuid}`}
+                prefetch
                 className="flex h-10 w-10 items-center justify-center rounded-xl bg-(--bg-card) border border-(--border-default) text-(--text-muted) hover:bg-(--bg-hover) hover:text-(--accent-primary) transition-all shadow-sm"
               >
                 <ArrowLeft size={20} />
@@ -152,6 +155,7 @@ export default function UserEditPage({ user }: UserEditPageProps): React.JSX.Ele
             </div>
           </div>
         </form>
+        </PermissionGuard>
       </AppLayout>
     </>
   );

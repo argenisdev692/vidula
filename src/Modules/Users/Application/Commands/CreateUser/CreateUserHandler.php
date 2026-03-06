@@ -12,7 +12,6 @@ use Modules\Users\Domain\Ports\UserRepositoryPort;
 use Shared\Domain\Events\DomainEventPublisher;
 use Shared\Infrastructure\Audit\AuditInterface;
 use Illuminate\Support\Facades\Cache;
-use Modules\Users\Infrastructure\Persistence\Eloquent\Models\UserEloquentModel;
 
 final readonly class CreateUserHandler
 {
@@ -47,10 +46,8 @@ final readonly class CreateUserHandler
             'zip_code' => $dto->zipCode,
         ]);
 
-        // Assign role via Spatie Permission (pivot table, not a column)
         if ($dto->role) {
-            $eloquentUser = UserEloquentModel::query()->where('uuid', $uuid)->first();
-            $eloquentUser?->assignRole(strtoupper($dto->role));
+            $this->userRepository->assignRole($uuid, $dto->role);
         }
 
         // Invalidate list cache

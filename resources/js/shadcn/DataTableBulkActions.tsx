@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { DeleteConfirmModal } from '@/shadcn/DeleteConfirmModal';
+import { DeleteConfirmModal } from '@/common/data-table/DeleteConfirmModal';
 
 // ══════════════════════════════════════════════════════════════════
 // DataTableBulkActions
@@ -90,7 +90,7 @@ export function DataTableBulkActions({
             fontSize: '0.75rem',
             fontWeight: 700,
             background: 'var(--accent-primary)',
-            color: '#fff',
+            color: 'var(--text-primary)',
           }}
         >
           {count}
@@ -114,9 +114,9 @@ export function DataTableBulkActions({
               fontSize: '0.8125rem',
               fontWeight: 600,
               cursor: (isRestoring || isDeleting) ? 'not-allowed' : 'pointer',
-              border: '1px solid color-mix(in srgb, var(--accent-success, #22c55e) 30%, var(--border-default))',
-              background: 'color-mix(in srgb, var(--accent-success, #22c55e) 10%, transparent)',
-              color: 'var(--accent-success, #22c55e)',
+              border: '1px solid color-mix(in srgb, var(--accent-success) 30%, var(--border-default))',
+              background: 'color-mix(in srgb, var(--accent-success) 10%, transparent)',
+              color: 'var(--accent-success)',
               fontFamily: 'var(--font-sans)',
               transition: 'all 0.15s',
               opacity: (isRestoring || isDeleting) ? 0.5 : 1,

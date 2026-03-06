@@ -18,8 +18,8 @@ use Modules\Users\Domain\Exceptions\UserNotFoundException;
 use Modules\Users\Domain\Ports\UserRepositoryPort;
 use Modules\Users\Domain\ValueObjects\UserId;
 use PHPUnit\Framework\MockObject\MockObject;
-use PHPUnit\Framework\TestCase;
 use Shared\Infrastructure\Audit\AuditInterface;
+use Tests\TestCase;
 
 /**
  * Handlers Test — Application layer tests with mocked repository + audit.
@@ -66,6 +66,10 @@ final class HandlersTest extends TestCase
             ->expects($this->once())
             ->method('create')
             ->willReturn($this->makeDummyUser());
+
+        $this->mockRepo
+            ->expects($this->once())
+            ->method('assignRole');
 
         $handler = new CreateUserHandler($this->mockRepo, $this->mockAudit);
         $result = $handler->handle(new CreateUserCommand($dto));

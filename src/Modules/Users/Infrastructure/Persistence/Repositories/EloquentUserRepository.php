@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Users\Infrastructure\Persistence\Repositories;
 
+use BackedEnum;
 use Modules\Users\Domain\Entities\User;
 use Modules\Users\Domain\Ports\UserRepositoryPort;
 use Modules\Users\Infrastructure\Persistence\Mappers\UserMapper;
@@ -68,6 +69,8 @@ final class EloquentUserRepository implements UserRepositoryPort
 
         // Handle soft deletes based on status filter
         $status = $filters['status'] ?? '';
+        $status = $status instanceof BackedEnum ? $status->value : $status;
+
         if ($status === 'deleted') {
             $query->onlyTrashed();
         } elseif ($status === 'active' || $status === 'suspended' || $status === 'banned' || $status === 'pending_setup') {
@@ -130,6 +133,13 @@ final class EloquentUserRepository implements UserRepositoryPort
         $model = UserEloquentModel::query()->create($data);
 
         return UserMapper::toDomain($model);
+    }
+
+    public function assignRole(string $uuid, string $role): void
+    {
+        $model = UserEloquentModel::query()->where('uuid', $uuid)->first();
+
+        $model?->assignRole(strtoupper($role));
     }
 
     /**

@@ -100,13 +100,14 @@ final class UserMapperIntegrationTest extends TestCase
 
         $repo->softDelete($uuid);
 
-        // Should not find by default (SoftDeletes)
-        $this->assertNull($repo->findByUuid($uuid));
+        $deleted = $repo->findByUuid($uuid);
+        $this->assertNotNull($deleted);
+        $this->assertSame(UserStatus::Deleted, $deleted->status);
 
-        // Restore
         $repo->restore($uuid);
         $restored = $repo->findByUuid($uuid);
         $this->assertNotNull($restored);
         $this->assertSame('SoftDel', $restored->name);
+        $this->assertSame(UserStatus::Active, $restored->status);
     }
 }

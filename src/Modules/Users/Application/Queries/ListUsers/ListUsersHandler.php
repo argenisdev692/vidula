@@ -6,6 +6,7 @@ namespace Modules\Users\Application\Queries\ListUsers;
 
 use Modules\Users\Application\DTOs\UserFilterDTO;
 use Modules\Users\Application\Queries\ReadModels\UserListReadModel;
+use Modules\Users\Domain\Entities\User;
 use Modules\Users\Domain\Ports\UserRepositoryPort;
 use Illuminate\Support\Facades\Cache;
 
@@ -22,7 +23,8 @@ final readonly class ListUsersHandler
     public function handle(ListUsersQuery $query): array
     {
         $filters = $query->filters;
-        $cacheKey = "users_list_" . md5(serialize($filters->toArray()));
+        $cachePayload = json_encode($filters->toArray()) ?: '[]';
+        $cacheKey = 'users_list_' . md5($cachePayload);
         $ttl = 60 * 15; // 15 minutes
 
         try {
@@ -68,7 +70,7 @@ final readonly class ListUsersHandler
     /**
      * Map domain User entity to UserListReadModel
      */
-    private static function mapToReadModel($user): UserListReadModel
+    private static function mapToReadModel(User $user): UserListReadModel
     {
         return new UserListReadModel(
             uuid: $user->uuid,

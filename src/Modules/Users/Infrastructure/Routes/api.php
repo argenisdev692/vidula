@@ -15,7 +15,7 @@ use Modules\Users\Infrastructure\Http\Controllers\Api\UserExportController;
 Route::middleware(['auth:sanctum'])->group(function () {
 
     // Admin Routes
-    Route::middleware(['role:super-admin'])->prefix('admin')->group(function () {
+    Route::middleware(['role:SUPER_ADMIN'])->prefix('admin')->group(function () {
         Route::get('/export', UserExportController::class)->name('api.admin.users.export');
         Route::get('/', [AdminUserController::class, 'index'])->name('api.admin.users.index');
         Route::get('/{uuid}', [AdminUserController::class, 'show'])->name('api.admin.users.show')->whereUuid('uuid');

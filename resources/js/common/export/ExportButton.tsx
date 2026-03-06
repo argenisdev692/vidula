@@ -55,6 +55,7 @@ export function ExportButton({ onExport, isExporting }: ExportButtonProps): Reac
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={isExporting}
+        aria-label="Export data"
         className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border px-4 text-sm font-medium transition-all hover:shadow-sm"
         style={{
           background: 'var(--bg-card)',
@@ -66,7 +67,10 @@ export function ExportButton({ onExport, isExporting }: ExportButtonProps): Reac
         <IconDownload />
         <span className="hidden sm:inline">Export</span>
         {isExporting && (
-           <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+           <div
+             className="h-3 w-3 animate-spin rounded-full border-2 border-t-transparent"
+             style={{ borderColor: 'var(--accent-primary)', borderTopColor: 'transparent' }}
+           />
         )}
       </button>
 
@@ -83,9 +87,17 @@ export function ExportButton({ onExport, isExporting }: ExportButtonProps): Reac
               onExport('excel');
               setIsOpen(false);
             }}
-            className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 transition-all hover:bg-muted"
+            aria-label="Export as Excel"
+            className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all"
+            style={{ color: 'var(--text-primary)' }}
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10 text-green-500">
+            <div
+              className="flex h-8 w-8 items-center justify-center rounded-lg"
+              style={{
+                background: 'color-mix(in srgb, var(--accent-success) 12%, transparent)',
+                color: 'var(--accent-success)',
+              }}
+            >
               <IconExcel />
             </div>
             <div className="flex flex-col items-start">
@@ -99,9 +111,17 @@ export function ExportButton({ onExport, isExporting }: ExportButtonProps): Reac
               onExport('pdf');
               setIsOpen(false);
             }}
-            className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 transition-all hover:bg-muted"
+            aria-label="Export as PDF"
+            className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all"
+            style={{ color: 'var(--text-primary)' }}
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/10 text-red-500">
+            <div
+              className="flex h-8 w-8 items-center justify-center rounded-lg"
+              style={{
+                background: 'color-mix(in srgb, var(--accent-error) 12%, transparent)',
+                color: 'var(--accent-error)',
+              }}
+            >
               <IconPdf />
             </div>
             <div className="flex flex-col items-start">

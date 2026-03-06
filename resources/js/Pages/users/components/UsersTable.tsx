@@ -4,9 +4,10 @@ import {
   type RowSelectionState,
   type OnChangeFn,
 } from '@tanstack/react-table';
-import { DataTable } from '@/shadcn/data-table';
+import { DataTable } from '@/common/data-table/DataTable';
 import { Link } from '@inertiajs/react';
-import { RestoreConfirmModal } from '@/shadcn/RestoreConfirmModal';
+import { RestoreConfirmModal } from '@/common/data-table/RestoreConfirmModal';
+import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
 import UserStatusBadge from '@/modules/users/components/UserStatusBadge';
 import type { UserListItem } from '@/types/users';
 import { useUserMutations } from '@/modules/users/hooks/useUserMutations';
@@ -133,40 +134,54 @@ export default function UsersTable({
 
         return (
           <div className="flex items-center justify-end gap-2 pr-4">
-            <Link
-               href={`/users/${user.uuid}`}
-               className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors"
-               title="View Profile"
-            >
-               <Eye size={16} />
-            </Link>
+            <PermissionGuard permissions={['VIEW_USERS']}>
+              <Link
+                 href={`/users/${user.uuid}`}
+                 prefetch
+                 className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors"
+                 title="View Profile"
+                 aria-label="View user details"
+              >
+                 <Eye size={16} />
+              </Link>
+            </PermissionGuard>
 
             {!isDeleted && (
-              <Link
-                 href={`/users/${user.uuid}/edit`}
-                 className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors"
-                 title="Edit User"
-              >
-                 <Pencil size={16} />
-              </Link>
+              <PermissionGuard permissions={['UPDATE_USERS']}>
+                <Link
+                   href={`/users/${user.uuid}/edit`}
+                   prefetch
+                   className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors"
+                   title="Edit User"
+                   aria-label="Edit user"
+                >
+                   <Pencil size={16} />
+                </Link>
+              </PermissionGuard>
             )}
 
             {isDeleted ? (
-              <button
-                  onClick={() => setPendingRestore({ uuid: user.uuid, name: user.full_name })}
-                  className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--accent-success) shadow-sm transition-colors"
-                  title="Restore User"
-              >
-                  <CheckCircle size={16} />
-              </button>
+              <PermissionGuard permissions={['UPDATE_USERS']}>
+                <button
+                    onClick={() => setPendingRestore({ uuid: user.uuid, name: user.full_name })}
+                    className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--accent-success) shadow-sm transition-colors"
+                    title="Restore User"
+                    aria-label="Restore user"
+                >
+                    <CheckCircle size={16} />
+                </button>
+              </PermissionGuard>
             ) : (
-              <button
-                 onClick={() => onDelete(user.uuid, user.full_name, user.email)}
-                 className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--accent-error) shadow-sm transition-colors"
-                 title="Delete User"
-              >
-                 <Trash2 size={16} />
-              </button>
+              <PermissionGuard permissions={['DELETE_USERS']}>
+                <button
+                   onClick={() => onDelete(user.uuid, user.full_name, user.email)}
+                   className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--accent-error) shadow-sm transition-colors"
+                   title="Delete User"
+                   aria-label="Delete user"
+                >
+                   <Trash2 size={16} />
+                </button>
+              </PermissionGuard>
             )}
           </div>
         );
@@ -177,10 +192,9 @@ export default function UsersTable({
   return (
     <>
       <DataTable
-        /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-        columns={columns as any}
+        columns={columns}
         data={data}
-        isLoading={isPending}
+        isPending={isPending}
         isError={isError}
         noDataMessage="No users found"
         rowSelection={rowSelection}

@@ -1,9 +1,10 @@
 import * as React from 'react';
 import { Link, Head, router } from '@inertiajs/react';
 import AppLayout from '@/pages/layouts/AppLayout';
+import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
 import UserStatusBadge from '@/modules/users/components/UserStatusBadge';
 import { useUserMutations } from '@/modules/users/hooks/useUserMutations';
-import { DeleteConfirmModal } from '@/shadcn/DeleteConfirmModal';
+import { DeleteConfirmModal } from '@/common/data-table/DeleteConfirmModal';
 import { formatDateShort } from '@/common/helpers/formatDate';
 import type { UserDetail } from '@/types/users';
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
@@ -51,12 +52,14 @@ export default function UserShowPage({ user }: UserShowPageProps): React.JSX.Ele
     <>
       <Head title={`User — ${user.full_name}`} />
       <AppLayout>
+        <PermissionGuard permissions={['VIEW_USERS']}>
         <div style={{ fontFamily: 'var(--font-sans)' }}>
           {/* ── Header ── */}
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <Link
                 href="/users"
+                prefetch
                 className="flex h-9 w-9 items-center justify-center rounded-lg border border-(--border-default) bg-(--bg-card) text-(--text-muted) hover:bg-(--bg-hover) transition-all"
               >
                 <ArrowLeft size={16} />
@@ -72,18 +75,23 @@ export default function UserShowPage({ user }: UserShowPageProps): React.JSX.Ele
             </div>
 
             <div className="flex gap-3">
-              <Link
-                href={`/users/${user.uuid}/edit`}
-                className="btn-modern btn-modern-primary px-4 py-2 inline-flex items-center gap-2"
-              >
-                <Pencil size={16} /> Edit
-              </Link>
-              <button
-                onClick={() => setPendingDelete(true)}
-                className="btn-modern btn-modern-danger px-4 py-2 inline-flex items-center gap-2"
-              >
-                <Trash2 size={16} /> Delete
-              </button>
+              <PermissionGuard permissions={['UPDATE_USERS']}>
+                <Link
+                  href={`/users/${user.uuid}/edit`}
+                  prefetch
+                  className="btn-modern btn-modern-primary px-4 py-2 inline-flex items-center gap-2"
+                >
+                  <Pencil size={16} /> Edit
+                </Link>
+              </PermissionGuard>
+              <PermissionGuard permissions={['DELETE_USERS']}>
+                <button
+                  onClick={() => setPendingDelete(true)}
+                  className="btn-modern btn-modern-danger px-4 py-2 inline-flex items-center gap-2"
+                >
+                  <Trash2 size={16} /> Delete
+                </button>
+              </PermissionGuard>
             </div>
           </div>
 
@@ -163,6 +171,7 @@ export default function UserShowPage({ user }: UserShowPageProps): React.JSX.Ele
           onCancel={() => setPendingDelete(false)}
           isDeleting={deleteUser.isPending}
         />
+        </PermissionGuard>
       </AppLayout>
     </>
   );

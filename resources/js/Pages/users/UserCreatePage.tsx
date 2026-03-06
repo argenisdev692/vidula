@@ -1,8 +1,9 @@
 import * as React from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/pages/layouts/AppLayout';
+import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
 import { useUserMutations } from '@/modules/users/hooks/useUserMutations';
-import { PremiumField } from '@/shadcn/PremiumField';
+import { PremiumField } from '@/common/form/PremiumField';
 import type { CreateUserPayload } from '@/types/users';
 import { ArrowLeft, Save } from 'lucide-react';
 
@@ -47,6 +48,7 @@ export default function UserCreatePage(): React.JSX.Element {
   return (
     <AppLayout>
       <Head title="Create Platform User" />
+      <PermissionGuard permissions={['CREATE_USERS']}>
       <form onSubmit={handleSubmit} className="max-w-4xl mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
         
         {/* ── Header ── */}
@@ -54,6 +56,7 @@ export default function UserCreatePage(): React.JSX.Element {
           <div className="flex items-center gap-4">
             <Link
               href="/users"
+              prefetch
               className="flex h-10 w-10 items-center justify-center rounded-xl bg-(--bg-card) border border-(--border-default) text-(--text-muted) hover:bg-(--bg-hover) hover:text-(--accent-primary) transition-all shadow-sm"
             >
               <ArrowLeft size={20} />
@@ -144,7 +147,7 @@ export default function UserCreatePage(): React.JSX.Element {
                         </div>
 
                         <div className="flex flex-col gap-2">
-                             <label className="text-[11px] font-bold uppercase tracking-widest text-(--text-muted)">
+                             <label className="text-[11px] font-bold uppercase tracking-widest text-(--text-secondary)">
                                Assign Role <span className="text-(--accent-error)">*</span>
                              </label>
                              <select 
@@ -167,6 +170,7 @@ export default function UserCreatePage(): React.JSX.Element {
             </div>
         </div>
       </form>
+      </PermissionGuard>
     </AppLayout>
   );
 }

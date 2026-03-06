@@ -11,8 +11,15 @@
     --bg-elevated: #131126;
     --bg-overlay: #1a1830;
 
+    --bg-app: var(--bg-base);
+    --bg-card: var(--bg-elevated);
+    --bg-hover: var(--bg-overlay);
+
     --blue-500: #3b6ef8;
     --purple-500: #8b3cf7;
+
+    --blue-400: var(--blue-500);
+    --purple-400: var(--purple-500);
 
     --text-primary: #f0eeff;
     --text-secondary: #9b8fc4;
@@ -22,6 +29,7 @@
     --border-subtle: rgba(139, 60, 247, 0.12);
     --border-default: rgba(139, 60, 247, 0.22);
     --border-strong: rgba(94, 143, 250, 0.4);
+    --border-hover: var(--border-strong);
 
     --accent-primary: #3b6ef8;
     --accent-secondary: #8b3cf7;
@@ -33,6 +41,8 @@
     --grad-primary: linear-gradient(135deg, #2456e8 0%, #6d28d9 100%);
     --grad-glow: linear-gradient(135deg, #3b6ef8 0%, #8b3cf7 100%);
     --grad-text: linear-gradient(90deg, #5e8ffa, #c084fc);
+    --blue-glow: color-mix(in srgb, var(--accent-primary) 35%, transparent);
+    --purple-glow: color-mix(in srgb, var(--accent-secondary) 35%, transparent);
 
     --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
     --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
@@ -75,8 +85,12 @@
     --bg-base: #f8fafc;
     --bg-surface: #ffffff;
     --bg-elevated: #f1f5f9;
+    --bg-app: var(--bg-base);
+    --bg-card: var(--bg-elevated);
+    --bg-hover: color-mix(in srgb, var(--accent-primary) 8%, var(--bg-surface));
     --text-primary: #0f172a;
     --text-secondary: #475569;
+    --border-hover: var(--border-strong);
 }
 
 /* ── Base ── */
@@ -87,6 +101,23 @@ body {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     scrollbar-color: var(--purple-500) var(--bg-base);
+}
+
+:focus {
+    outline: none;
+}
+
+:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+}
+
+[data-sileo-container] {
+    --sileo-bg: var(--bg-card);
+    --sileo-border: var(--border-default);
+    --sileo-text: var(--text-primary);
+    font-family: var(--font-sans);
 }
 
 /* Custom Scrollbar styled for Dark Theme */
@@ -121,7 +152,7 @@ body {
 
 .btn-modern-primary {
     background: var(--grad-primary);
-    color: #ffffff;
+    color: var(--text-primary);
     border: 1px solid rgba(59, 110, 248, 0.3);
     box-shadow: 0 4px 12px var(--blue-glow);
     padding: 8px 16px; /* Reduced as requested */
@@ -130,6 +161,45 @@ body {
 .btn-modern-primary:hover {
     transform: translateY(-1px);
     box-shadow: 0 6px 16px var(--purple-glow);
+}
+
+.btn-modern-danger {
+    background: color-mix(in srgb, var(--accent-error) 15%, transparent);
+    color: var(--accent-error);
+    border: 1px solid color-mix(in srgb, var(--accent-error) 35%, transparent);
+    padding: 8px 16px;
+}
+
+.btn-modern-danger:hover {
+    background: color-mix(in srgb, var(--accent-error) 22%, transparent);
+}
+
+.btn-primary {
+    background: var(--accent-primary);
+    color: var(--text-primary);
+    border-radius: var(--radius-md);
+    transition: var(--transition);
+}
+
+.btn-primary:hover {
+    filter: brightness(0.92);
+}
+
+.btn-ghost {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border-default);
+}
+
+.btn-ghost:hover {
+    background: var(--bg-hover);
+    color: var(--text-secondary);
+}
+
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
 }
 
 /* CRUD Actions - Premium & Compact */

@@ -40,21 +40,6 @@ const IconTrash = () => (
   </svg>
 );
 
-const Spinner = () => (
-  <svg
-    width={16}
-    height={16}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={2.5}
-    strokeLinecap="round"
-    style={{ animation: 'spin 0.8s linear infinite' }}
-  >
-    <path d="M21 12a9 9 0 11-6.219-8.56" />
-  </svg>
-);
-
 export function DeleteConfirmModal({
   open,
   entityLabel,
@@ -62,6 +47,8 @@ export function DeleteConfirmModal({
   onCancel,
   isDeleting = false,
 }: DeleteConfirmModalProps): React.JSX.Element | null {
+  const confirmRef = React.useRef<HTMLButtonElement>(null);
+
   // ── Close on Escape ──────────────────────────────────────────
   React.useEffect(() => {
     if (!open) return;
@@ -80,6 +67,12 @@ export function DeleteConfirmModal({
       document.body.style.overflow = '';
     }
     return () => { document.body.style.overflow = ''; };
+  }, [open]);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const timer = window.setTimeout(() => confirmRef.current?.focus(), 100);
+    return () => window.clearTimeout(timer);
   }, [open]);
 
   if (!open) return null;
@@ -108,7 +101,7 @@ export function DeleteConfirmModal({
           alignItems: 'center',
           justifyContent: 'center',
           padding: '1rem',
-          background: 'color-mix(in srgb, #000 55%, transparent)',
+          background: 'color-mix(in srgb, var(--bg-void) 55%, transparent)',
           backdropFilter: 'blur(6px)',
           WebkitBackdropFilter: 'blur(6px)',
         }}
@@ -128,7 +121,7 @@ export function DeleteConfirmModal({
             fontFamily: 'var(--font-sans)',
             background: 'color-mix(in srgb, var(--bg-card) 92%, transparent)',
             border: '1px solid color-mix(in srgb, var(--accent-error) 30%, var(--border-default))',
-            boxShadow: '0 24px 60px color-mix(in srgb, #000 40%, transparent), 0 0 0 1px color-mix(in srgb, var(--accent-error) 10%, transparent)',
+            boxShadow: '0 24px 60px color-mix(in srgb, var(--bg-void) 40%, transparent), 0 0 0 1px color-mix(in srgb, var(--accent-error) 10%, transparent)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
           }}
@@ -226,6 +219,7 @@ export function DeleteConfirmModal({
 
             {/* Confirm delete */}
             <button
+              ref={confirmRef}
               onClick={onConfirm}
               disabled={isDeleting}
               style={{

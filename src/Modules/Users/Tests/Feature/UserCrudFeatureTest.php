@@ -56,7 +56,9 @@ final class UserCrudFeatureTest extends TestCase
         $response = $this->actingAs($this->admin)
             ->postJson('/users/data/admin', [
                 'name' => 'New User',
+                'last_name' => 'Tester',
                 'email' => 'newuser@example.com',
+                'role' => 'USER',
             ]);
 
         $response->assertStatus(201)
@@ -69,7 +71,7 @@ final class UserCrudFeatureTest extends TestCase
             ->postJson('/users/data/admin', []);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['name', 'email']);
+            ->assertJsonValidationErrors(['name', 'last_name', 'email', 'role']);
     }
 
     // ── SHOW ──

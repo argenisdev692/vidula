@@ -8,24 +8,24 @@ use Modules\Users\Infrastructure\Http\Controllers\Web\UserPageController;
 use Modules\Users\Infrastructure\Http\Controllers\Api\UserController;
 
 Route::get('/', function () {
-    if (auth()->check()) {
-        return redirect()->route('dashboard');
-    }
-    return redirect()->route('login');
+    return auth()->check()
+        ? redirect()->route('dashboard')
+        : redirect()->route('login');
 });
 
 Route::get('/login', function () {
-    if (auth()->check()) {
-        return redirect()->route('dashboard');
-    }
     return Inertia::render('auth/LoginPage');
-})->name('login');
+})->middleware('guest')->name('login');
 
 // ── Authenticated Routes ──────────────────────────────────────
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', function () {
         return Inertia::render('dashboard/DashboardPage');
     })->name('dashboard');
+
+    Route::get('/kanban', function () {
+        return Inertia::render('kanban/KanbanPage');
+    })->name('kanban');
 
     Route::get('/profile', function () {
         return Inertia::render('profile/ProfilePage');

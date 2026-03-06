@@ -21,6 +21,19 @@ final class UserExportController
     ) {
     }
 
+    /**
+     * @OA\Get(
+     *     path="/users/data/admin/export",
+     *     tags={"Admin Users"},
+     *     summary="Export users to Excel or PDF",
+     *     @OA\Parameter(name="format", in="query", required=false, @OA\Schema(type="string", enum={"excel","pdf"})),
+     *     @OA\Parameter(name="search", in="query", required=false, @OA\Schema(type="string")),
+     *     @OA\Parameter(name="status", in="query", required=false, @OA\Schema(type="string", enum={"active","suspended","banned","deleted","pending_setup"})),
+     *     @OA\Parameter(name="date_from", in="query", required=false, @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="date_to", in="query", required=false, @OA\Schema(type="string", format="date")),
+     *     @OA\Response(response=200, description="Users exported successfully")
+     * )
+     */
     public function __invoke(Request $request): mixed
     {
         $format = $request->query('format', 'excel');

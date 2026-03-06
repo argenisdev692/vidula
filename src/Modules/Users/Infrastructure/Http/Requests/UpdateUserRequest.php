@@ -21,13 +21,13 @@ final class UpdateUserRequest extends FormRequest
      */
     public function rules(): array
     {
-        $userId = $this->route('id');
+        $userUuid = (string) $this->route('uuid');
 
         return [
             'name' => 'sometimes|string|max:255',
-            'email' => "sometimes|email|max:255|unique:users,email,{$userId},id,deleted_at,NULL",
+            'email' => "sometimes|email|max:255|unique:users,email,{$userUuid},uuid,deleted_at,NULL",
             'last_name' => 'nullable|string|max:255',
-            'username' => "nullable|string|max:255|unique:users,username,{$userId}",
+            'username' => "nullable|string|max:255|unique:users,username,{$userUuid},uuid",
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
             'city' => 'nullable|string|max:255',

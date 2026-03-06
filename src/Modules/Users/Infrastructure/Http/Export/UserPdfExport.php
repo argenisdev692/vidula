@@ -29,7 +29,7 @@ final class UserPdfExport
 
         $pdf = Pdf::loadView('exports.pdf.users', [
             'title' => 'Users Report',
-            'generatedAt' => now()->format('Y-m-d H:i:s'),
+            'generatedAt' => now()->format('F j, Y H:i'),
             'rows' => $rows,
         ]);
 

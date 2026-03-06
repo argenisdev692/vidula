@@ -102,7 +102,7 @@ export function RestoreConfirmModal({
           alignItems: 'center',
           justifyContent: 'center',
           padding: '1rem',
-          background: 'color-mix(in srgb, #000 55%, transparent)',
+          background: 'color-mix(in srgb, var(--bg-void) 55%, transparent)',
           backdropFilter: 'blur(6px)',
           WebkitBackdropFilter: 'blur(6px)',
         }}
@@ -122,7 +122,7 @@ export function RestoreConfirmModal({
             fontFamily: 'var(--font-sans)',
             background: 'color-mix(in srgb, var(--bg-card) 92%, transparent)',
             border: '1px solid color-mix(in srgb, var(--accent-success) 30%, var(--border-default))',
-            boxShadow: '0 24px 60px color-mix(in srgb, #000 40%, transparent), 0 0 0 1px color-mix(in srgb, var(--accent-success) 10%, transparent)',
+            boxShadow: '0 24px 60px color-mix(in srgb, var(--bg-void) 40%, transparent), 0 0 0 1px color-mix(in srgb, var(--accent-success) 10%, transparent)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
           }}

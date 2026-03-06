@@ -3,11 +3,12 @@ import { Link, Head, useRemember, router } from '@inertiajs/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { type RowSelectionState } from '@tanstack/react-table';
 import AppLayout from '@/pages/layouts/AppLayout';
+import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
 import { useUsers } from '@/modules/users/hooks/useUsers';
 import { useUserMutations } from '@/modules/users/hooks/useUserMutations';
 import UsersTable from './components/UsersTable';
-import { DataTableBulkActions } from '@/shadcn/DataTableBulkActions';
-import { DeleteConfirmModal } from '@/shadcn/DeleteConfirmModal';
+import { DataTableBulkActions } from '@/common/data-table/DataTableBulkActions';
+import { DeleteConfirmModal } from '@/common/data-table/DeleteConfirmModal';
 import { DataTableDateRangeFilter } from '@/common/data-table/DataTableDateRangeFilter';
 import { ExportButton } from '@/common/export/ExportButton';
 import type { UserFilters, UserListItem, UserStatus } from '@/types/users';
@@ -79,8 +80,7 @@ export default function UsersIndexPage(): React.JSX.Element {
       try {
         await deleteUser.mutateAsync(pendingDelete.uuid);
         setPendingDelete(null);
-      } catch (err) {
-        console.error('Failed to delete user', err);
+      } catch {
       }
     });
   }
@@ -129,6 +129,7 @@ export default function UsersIndexPage(): React.JSX.Element {
     <>
       <Head title="System Users" />
       <AppLayout>
+      <PermissionGuard permissions={['VIEW_USERS']}>
       <div className="flex flex-col gap-6 animate-in fade-in duration-300">
         {/* ── Header ── */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -140,17 +141,20 @@ export default function UsersIndexPage(): React.JSX.Element {
               Oversee and manage platform accounts — <span className="text-(--accent-primary)">{meta.total} {meta.total === 1 ? 'record' : 'records'} found</span>
             </p>
           </div>
-          <Link
-            href="/users/create"
-            className="btn-modern btn-modern-primary px-5 py-2.5 font-bold shadow-lg hover:shadow-xl transition-all"
-          >
-            <UserPlus size={16} />
-            New User
-          </Link>
+          <PermissionGuard permissions={['CREATE_USERS']}>
+            <Link
+              href="/users/create"
+              prefetch
+              className="btn-modern btn-modern-primary px-5 py-2.5 font-bold shadow-lg hover:shadow-xl transition-all"
+            >
+              <UserPlus size={16} />
+              New User
+            </Link>
+          </PermissionGuard>
         </div>
 
         {/* ── Filters Bar ── */}
-        <div className="flex flex-col items-center gap-3 rounded-2xl px-5 py-4 sm:flex-row glass-morphism border border-(--border-default) shadow-sm">
+        <div className="card flex flex-col items-center gap-3 px-5 py-4 sm:flex-row shadow-sm">
           <div className="flex flex-1 items-center gap-3 w-full group">
             <Search size={18} className="text-(--text-disabled) group-focus-within:text-(--accent-primary) transition-colors" />
             <input
@@ -207,7 +211,7 @@ export default function UsersIndexPage(): React.JSX.Element {
         )}
 
         {/* ── Table Card ── */}
-        <div className="card-modern overflow-hidden border border-(--border-default) shadow-xl">
+        <div className="card overflow-hidden shadow-xl">
           <UsersTable
             data={optimisticUsers}
             isPending={isPending}
@@ -220,7 +224,10 @@ export default function UsersIndexPage(): React.JSX.Element {
 
           {/* ── Pagination ── */}
           {meta.lastPage > 1 && (
-            <div className="flex items-center justify-between px-6 py-4 bg-black/5 dark:bg-white/5 border-t border-(--border-subtle)">
+            <div
+              className="flex items-center justify-between px-6 py-4 border-t border-(--border-subtle)"
+              style={{ background: 'color-mix(in srgb, var(--bg-hover) 28%, transparent)' }}
+            >
               <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
                 Page <span style={{ color: 'var(--accent-primary)', fontWeight: 700 }}>{meta.currentPage}</span> / {meta.lastPage} • <span style={{ color: 'var(--accent-primary)', fontWeight: 700 }}>{meta.total}</span> Total
               </span>
@@ -237,11 +244,8 @@ export default function UsersIndexPage(): React.JSX.Element {
                     <button
                       key={p}
                       onClick={() => goToPage(p)}
-                      className={`h-9 w-9 rounded-xl text-xs font-bold transition-all ${
-                        meta.currentPage === p
-                          ? 'bg-(--accent-primary) text-white shadow-lg'
-                          : 'hover:bg-(--bg-hover) text-(--text-muted)'
-                      }`}
+                      className={`h-9 w-9 rounded-xl text-xs font-bold transition-all ${meta.currentPage === p ? 'shadow-lg' : 'hover:bg-(--bg-hover) text-(--text-muted)'}`}
+                      style={meta.currentPage === p ? { background: 'var(--accent-primary)', color: 'var(--text-primary)' } : undefined}
                     >
                       {p}
                     </button>
@@ -259,7 +263,7 @@ export default function UsersIndexPage(): React.JSX.Element {
           )}
         </div>
       </div>
-
+      </PermissionGuard>
       <DeleteConfirmModal
         open={pendingDelete !== null}
         entityLabel={pendingDelete ? `${pendingDelete.name} (${pendingDelete.email})` : ''}

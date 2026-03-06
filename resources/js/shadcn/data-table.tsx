@@ -3,7 +3,7 @@ import {
   getCoreRowModel,
   getSortedRowModel,
   flexRender,
-  type ColumnDef,
+  type TableOptions,
   type RowSelectionState,
   type OnChangeFn,
 } from '@tanstack/react-table';
@@ -16,9 +16,15 @@ import {
   TableRow,
 } from '@/shadcn/table';
 
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
+type SoftDeleteRow = {
+  deletedAt?: string | null;
+  deleted_at?: string | null;
+};
+
+interface DataTableProps<TData extends SoftDeleteRow> {
+  columns: TableOptions<TData>['columns'];
   data: TData[];
+  isPending?: boolean;
   isLoading?: boolean;
   isError?: boolean;
   noDataMessage?: string;
@@ -29,12 +35,13 @@ interface DataTableProps<TData, TValue> {
   rowSelection?: RowSelectionState;
   onRowSelectionChange?: OnChangeFn<RowSelectionState>;
   // Optional row ID function for stable IDs (avoids index-based IDs)
-  getRowId?: (row: TData) => string;
+  getRowId?: TableOptions<TData>['getRowId'];
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends SoftDeleteRow>({
   columns,
   data,
+  isPending = false,
   isLoading = false,
   isError = false,
   noDataMessage = 'No results.',
@@ -43,7 +50,7 @@ export function DataTable<TData, TValue>({
   rowSelection,
   onRowSelectionChange,
   getRowId,
-}: DataTableProps<TData, TValue>) {
+}: DataTableProps<TData>) {
   const table = useReactTable({
     data,
     columns,
@@ -93,7 +100,7 @@ export function DataTable<TData, TValue>({
                 {errorMessage}
               </TableCell>
             </TableRow>
-          ) : isLoading ? (
+          ) : (isPending || isLoading) ? (
             <TableRow className="hover:bg-transparent">
               <TableCell
                 colSpan={columns.length}
@@ -108,10 +115,7 @@ export function DataTable<TData, TValue>({
             </TableRow>
           ) : table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => {
-              // Soft-delete visual indicator
-              // Check if original data has `deletedAt` or `deleted_at` field and it is truthy
-              const orig = row.original as any;
-              const isDeleted = Boolean(orig?.deletedAt || orig?.deleted_at);
+              const isDeleted = Boolean(row.original.deletedAt || row.original.deleted_at);
               
               return (
                 <TableRow

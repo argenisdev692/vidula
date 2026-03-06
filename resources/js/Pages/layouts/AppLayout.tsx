@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
+import { useQueryClient } from '@tanstack/react-query';
 import type { AuthPageProps } from '@/types/auth';
 import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
 
@@ -92,7 +93,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'People',
     icon: <Users size={14} />,
     items: [
-      { label: 'Users', href: '/users', icon: <Users size={icSize} />, description: 'Manage system users', permission: 'VIEW ANY USERS' },
+      { label: 'Users', href: '/users', icon: <Users size={icSize} />, description: 'Manage system users', permission: 'VIEW_USERS' },
       { label: 'Students', href: '/students', icon: <GraduationCap size={icSize} />, description: 'Manage students', permission: 'VIEW ANY STUDENTS' },
       { label: 'Clients', href: '/clients', icon: <UserCheck size={icSize} />, description: 'Manage clients', permission: 'VIEW ANY CLIENTS' },
     ],
@@ -194,7 +195,7 @@ function ExpandableSearch(): React.JSX.Element {
           style={{
             background: 'var(--bg-surface)',
             borderBottom: '1px solid var(--border-subtle)',
-            boxShadow: '0 4px 20px color-mix(in srgb, #000 30%, transparent)',
+            boxShadow: '0 4px 20px color-mix(in srgb, var(--bg-void) 30%, transparent)',
           }}
         >
           <span style={{ color: 'var(--blue-400)' }}><IconSearch /></span>
@@ -233,6 +234,7 @@ function ExpandableSearch(): React.JSX.Element {
 function AvatarDropdown(): React.JSX.Element {
   const { auth } = usePage<AuthPageProps>().props;
   const user = auth.user;
+  const queryClient = useQueryClient();
   const [open, setOpen] = React.useState<boolean>(false);
   const ref = React.useRef<HTMLDivElement>(null);
 
@@ -276,7 +278,7 @@ function AvatarDropdown(): React.JSX.Element {
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[11px] font-bold"
             style={{
               background: 'var(--grad-primary)',
-              color: '#ffffff',
+              color: 'var(--text-primary)',
             }}
           >
             {initials}
@@ -299,7 +301,7 @@ function AvatarDropdown(): React.JSX.Element {
           style={{
             background: 'var(--bg-surface)',
             border: '1px solid var(--border-default)',
-            boxShadow: '0 8px 32px color-mix(in srgb, #000 24%, transparent)',
+            boxShadow: '0 8px 32px color-mix(in srgb, var(--bg-void) 24%, transparent)',
           }}
         >
           {/* User info header */}
@@ -318,6 +320,7 @@ function AvatarDropdown(): React.JSX.Element {
           {/* Profile → /profile */}
           <Link
             href="/profile"
+            prefetch
             onClick={() => setOpen(false)}
             className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors"
             style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}
@@ -333,7 +336,14 @@ function AvatarDropdown(): React.JSX.Element {
 
           {/* Logout */}
           <button
-            onClick={() => router.post('/logout')}
+            onClick={() => {
+              router.post('/logout', {}, {
+                onSuccess: () => {
+                  queryClient.clear();
+                  router.visit('/login');
+                },
+              });
+            }}
             className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors"
             style={{ color: 'var(--accent-error)', fontFamily: 'var(--font-sans)' }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'color-mix(in srgb, var(--accent-error) 10%, transparent)'; }}
@@ -517,6 +527,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }): React.JSX.Elemen
                       <Link
                         key={item.href}
                         href={item.href}
+                        prefetch
                         onClick={onClose}
                         className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-200 ${active ? 'sidebar-active shadow-sm' : ''}`}
                         style={{
@@ -526,8 +537,8 @@ function SidebarContent({ onClose }: { onClose?: () => void }): React.JSX.Elemen
                         <span
                           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-sm transition-all duration-200"
                           style={{
-                            background: active ? 'var(--grad-primary)' : 'rgba(255, 255, 255, 0.03)',
-                            color: active ? '#ffffff' : 'var(--text-muted)',
+                            background: active ? 'var(--grad-primary)' : 'color-mix(in srgb, var(--text-primary) 3%, transparent)',
+                            color: active ? 'var(--text-primary)' : 'var(--text-muted)',
                             border: active ? 'none' : '1px solid var(--border-default)',
                           }}
                         >
@@ -614,7 +625,7 @@ export default function AppLayout({ children }: AppLayoutProps): React.JSX.Eleme
           className="absolute inset-0"
           onClick={() => setMobileOpen(false)}
           style={{
-            background: 'color-mix(in srgb, #000 60%, transparent)',
+            background: 'color-mix(in srgb, var(--bg-void) 60%, transparent)',
             opacity: mobileOpen ? 1 : 0,
             transition: 'opacity 300ms cubic-bezier(0.4, 0, 0.2, 1)',
           }}
