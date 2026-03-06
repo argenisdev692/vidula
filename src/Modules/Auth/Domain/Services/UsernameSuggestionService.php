@@ -66,6 +66,6 @@ final readonly class UsernameSuggestionService
 
     private function isUsernameTaken(Username $username): bool
     {
-        return $this->userRepository->findByEmailOrPhone($username->value) !== null;
+        return $this->userRepository->findByUsername($username->value) !== null;
     }
 }

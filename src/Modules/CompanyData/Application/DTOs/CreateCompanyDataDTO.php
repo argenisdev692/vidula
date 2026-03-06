@@ -26,9 +26,18 @@ final class CreateCompanyDataDTO extends Data
     public function __construct(
         public string $userUuid,
         public string $companyName,
+        public ?string $name = null,
         public ?string $email = null,
         public ?string $phone = null,
         public ?string $address = null,
+        public ?string $website = null,
+        public ?string $facebookLink = null,
+        public ?string $instagramLink = null,
+        public ?string $linkedinLink = null,
+        public ?string $twitterLink = null,
+        public ?float $latitude = null,
+        public ?float $longitude = null,
+        public ?string $signaturePath = null,
     ) {
     }
 }

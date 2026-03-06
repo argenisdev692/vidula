@@ -3,19 +3,17 @@ import axios from 'axios';
 import { CompanyDataDetail } from '@/types/api';
 
 /**
- * useSingleCompanyData — Fetches a single company profile by UUID or for the current user.
+ * useSingleCompanyData — Fetches a single company profile by company UUID or for the current user.
  */
-export const useSingleCompanyData = (uuid?: string) => {
+export const useSingleCompanyData = (companyUuid?: string) => {
   return useQuery({
-    queryKey: ['company-data', uuid || 'me'],
+    queryKey: ['company-data', companyUuid || 'me'],
     queryFn: async () => {
-      // Backend controller: show(Request $request, ?string $uuid = null)
-      // If uuid is null, it uses $request->user()?->uuid
-      const url = uuid ? `/company-data/data/admin/${uuid}` : '/company-data/data/me';
+      const url = companyUuid ? `/company-data/data/admin/${companyUuid}` : '/company-data/data/me';
       const { data } = await axios.get<{ data: CompanyDataDetail }>(url);
       return data.data;
     },
-    enabled: !!uuid || true, // Always fetch if no uuid (me), or if uuid exists
+    enabled: companyUuid !== '',
   });
 };
 

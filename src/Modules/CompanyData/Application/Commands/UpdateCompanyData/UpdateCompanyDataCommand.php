@@ -9,7 +9,7 @@ use Modules\CompanyData\Application\DTOs\UpdateCompanyDataDTO;
 final readonly class UpdateCompanyDataCommand
 {
     public function __construct(
-        public string $userUuid,
+        public string $companyUuid,
         public UpdateCompanyDataDTO $dto
     ) {
     }

@@ -93,17 +93,20 @@ export interface CompanyDataListItem {
 }
 
 export interface CompanyDataDetail extends CompanyDataListItem {
+  name: string | null;
+  website: string | null;
   facebook_link: string | null;
   instagram_link: string | null;
   linkedin_link: string | null;
   twitter_link: string | null;
   latitude: number | null;
   longitude: number | null;
-  signature_path: string | null;
+  signature_url: string | null;
+  deleted_at?: string | null;
 }
 
 export interface CreateCompanyDataDTO {
-  user_id: number;
+  user_uuid: string;
   company_name: string;
   name?: string | null;
   email?: string | null;
@@ -120,25 +123,26 @@ export interface CreateCompanyDataDTO {
 }
 
 export interface UpdateCompanyDataDTO {
-  companyName: string;
+  company_name: string;
   name?: string | null;
   email?: string | null;
   phone?: string | null;
   address?: string | null;
   website?: string | null;
-  facebook?: string | null;
-  instagram?: string | null;
-  linkedin?: string | null;
-  twitter?: string | null;
+  facebook_link?: string | null;
+  instagram_link?: string | null;
+  linkedin_link?: string | null;
+  twitter_link?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  signature_path?: string | null;
 }
 
 export interface CompanyDataFilters {
   page?: number;
   perPage?: number;
   search?: string;
-  userId?: number;
+  userUuid?: string;
   dateFrom?: string;   // ISO 8601 'YYYY-MM-DD'
   dateTo?: string;     // ISO 8601 'YYYY-MM-DD'
   sortBy?: string;

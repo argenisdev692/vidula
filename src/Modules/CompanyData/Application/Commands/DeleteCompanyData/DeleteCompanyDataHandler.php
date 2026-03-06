@@ -37,9 +37,12 @@ final readonly class DeleteCompanyDataHandler
         );
 
         // Clear caches
+        Cache::forget("company_data_company_{$command->id}");
+        Cache::forget("company_data_user_{$companyData->userId->value}");
         Cache::forget("company_data_{$command->id}");
         Cache::forget("company_data_{$companyData->userId->value}");
         try {
+            Cache::tags(['company_data'])->flush();
             Cache::tags(['company_data_list'])->flush();
         } catch (\Exception) {
             // Tags not supported — expires naturally

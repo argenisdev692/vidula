@@ -45,17 +45,20 @@ final readonly class ChangePasswordHandler
             throw UserNotFoundException::withIdentifier((string) $command->userId);
         }
 
-        return ['user' => $user, 'command' => $command];
+        return [
+            'user' => $user,
+            'command' => $command,
+            'passwordHash' => $this->userRepository->getPasswordHashById($command->userId),
+        ];
     }
 
     private function verifyCurrentPassword(array $data): array
     {
         $command = $data['command'];
-        $currentPassword = Password::fromPlainText($command->currentPassword);
 
-        // Get hashed password from database
-        // Note: This would need to be added to the repository
-        // For now, we'll assume verification happens here
+        if ($data['passwordHash'] === null || !password_verify($command->currentPassword, $data['passwordHash'])) {
+            throw new InvalidCredentialsException();
+        }
 
         return $data;
     }
@@ -78,23 +81,21 @@ final readonly class ChangePasswordHandler
             'password' => $hashedPassword,
         ]);
 
-        return ['user' => $updatedUser];
+        return [
+            'user' => $updatedUser,
+            'event' => new PasswordChanged(
+                userId: $user->id,
+                method: 'self_change',
+                occurredAt: date('c'),
+            ),
+        ];
     }
 
     private function emitEvent(array $data): User
     {
-        $user = $data['user'];
+        event($data['event']);
 
-        // Emit PasswordChanged event
-        $event = new PasswordChanged(
-            userId: $user->id,
-            method: 'self_change',
-            occurredAt: date('c'),
-        );
-
-        // Event would be dispatched here
-
-        return $user;
+        return $data['user'];
     }
 
     private function logAudit(User $user): User

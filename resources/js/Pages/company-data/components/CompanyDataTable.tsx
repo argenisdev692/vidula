@@ -107,7 +107,7 @@ export default function CompanyDataTable({
         return (
           <div className="flex items-center justify-end gap-2 pr-4">
             <Link
-              href={`/company-data/${company.user_uuid}`}
+              href={`/company-data/${company.uuid}`}
               prefetch
               className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors"
               title="View"
@@ -115,7 +115,7 @@ export default function CompanyDataTable({
               <Eye size={16} />
             </Link>
             <Link
-              href={`/company-data/${company.user_uuid}/edit`}
+              href={`/company-data/${company.uuid}/edit`}
               prefetch
               className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors"
               title="Edit"
@@ -126,7 +126,7 @@ export default function CompanyDataTable({
         );
       },
     }),
-  ], [columnHelper]);
+  ], []);
 
   return (
     <DataTable

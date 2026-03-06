@@ -6,13 +6,18 @@ export type CompanyStatus = 'active' | 'inactive' | 'pending';
 
 export interface CompanyData {
   uuid: string;
-  userUuid: string;
-  companyName: string;
+  user_uuid: string;
+  company_name: string;
   name: string | null;
   email: string | null;
   phone: string | null;
   address: string | null;
-  socialLinks: {
+  website: string | null;
+  facebook_link: string | null;
+  instagram_link: string | null;
+  linkedin_link: string | null;
+  twitter_link: string | null;
+  social_links: {
     facebook?: string;
     instagram?: string;
     linkedin?: string;
@@ -23,31 +28,46 @@ export interface CompanyData {
     latitude: number | null;
     longitude: number | null;
   };
+  latitude: number | null;
+  longitude: number | null;
   status: CompanyStatus;
-  signatureUrl: string | null;
+  signature_url: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  deleted_at?: string | null;
 }
 
 export interface CreateCompanyDataPayload {
-  userUuid: string;
-  companyName: string;
-  email?: string;
-  phone?: string;
-  address?: string;
+  user_uuid: string;
+  company_name: string;
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  website?: string | null;
+  facebook_link?: string | null;
+  instagram_link?: string | null;
+  linkedin_link?: string | null;
+  twitter_link?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  signature_path?: string | null;
 }
 
 export interface UpdateCompanyDataPayload {
-  companyName: string;
-  name?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  website?: string;
-  facebook?: string;
-  instagram?: string;
-  linkedin?: string;
-  twitter?: string;
-  latitude?: number;
-  longitude?: number;
+  company_name: string;
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  website?: string | null;
+  facebook_link?: string | null;
+  instagram_link?: string | null;
+  linkedin_link?: string | null;
+  twitter_link?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  signature_path?: string | null;
 }
 
 export interface CompanyDataFilters {
@@ -55,6 +75,8 @@ export interface CompanyDataFilters {
   perPage?: number;
   search?: string;
   userUuid?: string;
+  dateFrom?: string;
+  dateTo?: string;
   sortBy?: string;
   sortDir?: 'asc' | 'desc';
 }

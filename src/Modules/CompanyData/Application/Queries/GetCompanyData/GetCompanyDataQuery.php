@@ -7,7 +7,8 @@ namespace Modules\CompanyData\Application\Queries\GetCompanyData;
 final readonly class GetCompanyDataQuery
 {
     public function __construct(
-        public string $userUuid
+        public ?string $companyUuid = null,
+        public ?string $userUuid = null,
     ) {
     }
 }

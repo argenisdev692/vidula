@@ -18,7 +18,11 @@ interface UserRepositoryPort
 
     public function findByEmailOrPhone(string $identifier): ?User;
 
+    public function findByUsername(string $username): ?User;
+
     public function findById(int $id): ?User;
+
+    public function getPasswordHashById(int $id): ?string;
 
     public function create(array $data): User;
 

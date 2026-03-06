@@ -47,6 +47,7 @@ import {
   Package,
   BookOpen,
   FolderOpen,
+  FileText,
 } from 'lucide-react';
 
 const icSize = 18;
@@ -109,6 +110,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: <BookOpen size={14} />,
     items: [
       { label: 'Categories', href: '/blog-categories', icon: <FolderOpen size={icSize} />, description: 'Manage blog categories', permission: 'VIEW ANY BLOG_CATEGORIES' },
+      { label: 'Posts', href: '/posts', icon: <FileText size={icSize} />, description: 'Manage blog posts', permission: 'VIEW ANY POSTS' },
     ],
   },
 ];

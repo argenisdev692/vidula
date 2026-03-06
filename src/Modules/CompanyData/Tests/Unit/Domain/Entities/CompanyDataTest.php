@@ -38,6 +38,7 @@ it('updates company data using clone', function (): void {
 
     $updated = $company->update(
         companyName: 'New Name',
+        name: 'Jane Doe',
         email: 'new@email.com',
         phone: '987654321',
         address: '456 New Street',
@@ -47,6 +48,7 @@ it('updates company data using clone', function (): void {
 
     expect($company->companyName)->toBe('Old Name') // Original is unchanged
         ->and($updated->companyName)->toBe('New Name')
+        ->and($updated->name)->toBe('Jane Doe')
         ->and($updated->socialLinks->website)->toBe('https://new.com')
         ->and($updated->coordinates->latitude)->toBe(10.0)
         ->and($updated->updatedAt)->not->toBeNull();

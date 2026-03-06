@@ -7,6 +7,7 @@ namespace Modules\Auth\Application\Commands\SendOtp;
 use Modules\Auth\Domain\Exceptions\UserNotFoundException;
 use Modules\Auth\Domain\Ports\OtpServicePort;
 use Modules\Auth\Domain\Ports\UserRepositoryPort;
+use Modules\Auth\Domain\ValueObjects\UserEmail;
 
 /**
  * SendOtpHandler — Validates user exists, generates OTP, sends notification.
@@ -21,7 +22,7 @@ final readonly class SendOtpHandler
 
     public function handle(SendOtpCommand $command): void
     {
-        $user = $this->userRepository->findByEmailOrPhone($command->identifier);
+        $user = $this->userRepository->findByEmail(new UserEmail($command->identifier));
 
         if ($user === null) {
             throw UserNotFoundException::withIdentifier($command->identifier);

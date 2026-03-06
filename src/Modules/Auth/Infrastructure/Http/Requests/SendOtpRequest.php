@@ -10,7 +10,7 @@ use Illuminate\Foundation\Http\FormRequest;
  * SendOtpRequest — Validates OTP send requests.
  *
  * Rules:
- * - identifier: required string (email or phone), max 255
+ * - identifier: required email, max 255
  */
 final class SendOtpRequest extends FormRequest
 {
@@ -25,7 +25,7 @@ final class SendOtpRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'identifier' => ['required', 'string', 'max:255'],
+            'identifier' => ['required', 'email:rfc,dns', 'max:255'],
         ];
     }
 }

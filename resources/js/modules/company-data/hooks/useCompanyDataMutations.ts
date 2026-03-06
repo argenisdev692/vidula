@@ -18,20 +18,24 @@ export const useCompanyDataMutations = () => {
   });
 
   const updateCompanyData = useMutation({
-    mutationFn: ({ userUuid, payload }: { userUuid?: string; payload: UpdateCompanyDataDTO }) => {
-      const url = userUuid ? `/company-data/data/admin/${userUuid}` : '/company-data/data/me';
+    mutationFn: ({ companyUuid, payload }: { companyUuid?: string; payload: UpdateCompanyDataDTO }) => {
+      const url = companyUuid ? `/company-data/data/admin/${companyUuid}` : '/company-data/data/me';
       return axios.put(url, payload);
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['company-data', variables.userUuid || 'me'] });
+      queryClient.invalidateQueries({ queryKey: ['company-data', variables.companyUuid || 'me'] });
       queryClient.invalidateQueries({ queryKey: ['companies'] });
     },
   });
 
   const deleteCompanyData = useMutation({
-    mutationFn: (uuid: string | string[]) => {
-      const uuids = Array.isArray(uuid) ? uuid.join(',') : uuid;
-      return axios.delete(`/company-data/data/admin/${uuids}`);
+    mutationFn: async (uuid: string | string[]): Promise<void> => {
+      if (Array.isArray(uuid)) {
+        await Promise.all(uuid.map((item) => axios.delete(`/company-data/data/admin/${item}`)));
+        return;
+      }
+
+      await axios.delete(`/company-data/data/admin/${uuid}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
@@ -39,9 +43,13 @@ export const useCompanyDataMutations = () => {
   });
 
   const restoreCompanyData = useMutation({
-    mutationFn: (uuid: string | string[]) => {
-      const uuids = Array.isArray(uuid) ? uuid.join(',') : uuid;
-      return axios.patch(`/company-data/data/admin/${uuids}/restore`);
+    mutationFn: async (uuid: string | string[]): Promise<void> => {
+      if (Array.isArray(uuid)) {
+        await Promise.all(uuid.map((item) => axios.patch(`/company-data/data/admin/${item}/restore`)));
+        return;
+      }
+
+      await axios.patch(`/company-data/data/admin/${uuid}/restore`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });

@@ -36,6 +36,7 @@ final readonly class RegisterUserHandler
             |> $this->prepareUserData(...)
             |> $this->createUser(...)
             |> $this->persistUser(...)
+            |> $this->dispatchDomainEvents(...)
             |> $this->logAudit(...);
     }
 
@@ -83,9 +84,9 @@ final readonly class RegisterUserHandler
         ];
     }
 
-    private function createUser(array $data): User
+    private function createUser(array $data): array
     {
-        return User::create(
+        $user = User::create(
             uuid: $data['uuid'],
             name: $data['name'],
             email: $data['email'],
@@ -93,22 +94,41 @@ final readonly class RegisterUserHandler
             lastName: $data['lastName'],
             phone: $data['phone'],
         );
+
+        return [
+            'user' => $user,
+            'hashedPassword' => $data['password'],
+        ];
     }
 
-    private function persistUser(User $user): User
+    private function persistUser(array $data): array
     {
-        $data = [
+        $user = $data['user'];
+
+        $payload = [
             'uuid' => $user->uuid,
             'name' => $user->name,
             'last_name' => $user->lastName,
             'email' => $user->email,
             'username' => $user->username,
             'phone' => $user->phone,
-            'password' => null, // Will be set separately
+            'password' => $data['hashedPassword'],
             'email_verified_at' => null,
         ];
 
-        return $this->userRepository->create($data);
+        return [
+            'user' => $this->userRepository->create($payload),
+            'events' => $user->pullDomainEvents(),
+        ];
+    }
+
+    private function dispatchDomainEvents(array $data): User
+    {
+        foreach ($data['events'] as $event) {
+            event($event);
+        }
+
+        return $data['user'];
     }
 
     private function logAudit(User $user): User

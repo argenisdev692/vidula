@@ -102,7 +102,13 @@ final readonly class LoginWithSocialiteHandler
             userAgent: $command->userAgent,
         );
 
-        return $user->pullDomainEvents()[0];
+        $events = $user->pullDomainEvents();
+
+        foreach ($events as $event) {
+            event($event);
+        }
+
+        return $events[0];
     }
 
     private function generateUsername(LoginWithSocialiteCommand $command): string
@@ -114,7 +120,7 @@ final readonly class LoginWithSocialiteHandler
         $username = $base;
         $counter = 1;
 
-        while ($this->userRepository->findByEmailOrPhone($username) !== null) {
+        while ($this->userRepository->findByUsername($username) !== null) {
             $username = $base . '_' . $counter;
             $counter++;
         }

@@ -49,7 +49,7 @@ final class OtpController extends Controller
             // Don't reveal if user exists — return success anyway (OWASP)
         }
 
-        return back()->with('success', 'If the account exists, an OTP has been sent.');
+        return back()->with('success', 'If the account exists, an OTP has been sent to the email address.');
     }
 
     /**
@@ -74,11 +74,11 @@ final class OtpController extends Controller
                 ->with('success', 'Authentication successful.');
         } catch (UserNotFoundException) {
             return back()->withErrors([
-                'identifier' => 'Invalid credentials.',
+                'identifier' => 'Invalid email address.',
             ]);
         } catch (InvalidOtpException) {
             return back()->withErrors([
-                'otp' => 'Invalid or expired OTP code.',
+                'otp' => 'Invalid or expired OTP code for this email address.',
             ]);
         }
     }

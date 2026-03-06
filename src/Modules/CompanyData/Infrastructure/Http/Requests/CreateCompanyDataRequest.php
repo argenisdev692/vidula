@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\CompanyData\Infrastructure\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 final class CreateCompanyDataRequest extends FormRequest
 {
@@ -16,7 +17,7 @@ final class CreateCompanyDataRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_id' => ['required', 'integer', 'exists:users,id'],
+            'user_uuid' => ['required', 'uuid', Rule::exists('users', 'uuid')],
             'company_name' => ['required', 'string', 'max:255'],
             'name' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],

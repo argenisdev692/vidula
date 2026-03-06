@@ -56,7 +56,7 @@ enum AuthProvider: string
             self::Github => 'Sign in with your GitHub account',
             self::Facebook => 'Sign in with your Facebook account',
             self::Microsoft => 'Sign in with your Microsoft account',
-            self::Otp => 'Sign in with a one-time password sent to your email or phone',
+            self::Otp => 'Sign in with a one-time password sent to your email address',
         };
     }
 

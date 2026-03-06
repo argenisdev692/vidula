@@ -43,20 +43,34 @@ final readonly class ListCompanyDataHandler
         );
 
         $mapped = array_map(
-            fn($companyData) => new CompanyDataReadModel(
-                uuid: $companyData->id->value,
-                userUuid: $companyData->userId->value,
-                companyName: $companyData->companyName,
-                email: $companyData->email,
-                phone: $companyData->phone,
-                address: $companyData->address,
-                socialLinks: $companyData->socialLinks->toArray(),
-                coordinates: $companyData->coordinates->toArray(),
-                status: $companyData->status->value,
-                signatureUrl: $companyData->signaturePath,
-                createdAt: $companyData->createdAt ?? '',
-                updatedAt: $companyData->updatedAt ?? '',
-            ),
+            function ($companyData): CompanyDataReadModel {
+                $socialLinks = $companyData->socialLinks->toArray();
+                $coordinates = $companyData->coordinates->toArray();
+
+                return new CompanyDataReadModel(
+                    uuid: $companyData->id->value,
+                    userUuid: $companyData->userId->value,
+                    companyName: $companyData->companyName,
+                    name: $companyData->name,
+                    email: $companyData->email,
+                    phone: $companyData->phone,
+                    address: $companyData->address,
+                    website: $socialLinks['website'] ?? null,
+                    facebookLink: $socialLinks['facebook'] ?? null,
+                    instagramLink: $socialLinks['instagram'] ?? null,
+                    linkedinLink: $socialLinks['linkedin'] ?? null,
+                    twitterLink: $socialLinks['twitter'] ?? null,
+                    socialLinks: $socialLinks,
+                    coordinates: $coordinates,
+                    latitude: $coordinates['latitude'],
+                    longitude: $coordinates['longitude'],
+                    status: $companyData->status->value,
+                    signatureUrl: $companyData->signaturePath,
+                    createdAt: $companyData->createdAt ?? '',
+                    updatedAt: $companyData->updatedAt ?? '',
+                    deletedAt: $companyData->deletedAt,
+                );
+            },
             $result['data'],
         );
 

@@ -26,12 +26,8 @@ const IconBuilding = () => <svg {...ic}><rect x="4" y="2" width="16" height="20"
 // ══════════════════════════════════════════════════════════════
 export default function CompanyDataShowPage(): React.JSX.Element {
   const { props } = usePage<PageProps & { companyId: string }>();
-  
-  // Extract uuid from url if inertia prop doesn't supply it directly (it's the last segment)
-  const urlParts = window.location.pathname.split('/');
-  const finalUuid = props.companyId || urlParts[urlParts.length - 1]; 
 
-  const { data: company, isPending, isError } = useSingleCompanyData(finalUuid);
+  const { data: company, isPending, isError } = useSingleCompanyData(props.companyId);
 
   if (isPending) {
     return (
@@ -84,7 +80,7 @@ export default function CompanyDataShowPage(): React.JSX.Element {
             </div>
           </div>
           <Link
-            href={`/company-data/${company.user_uuid}/edit`}
+            href={`/company-data/${company.uuid}/edit`}
             className="btn-modern btn-modern-primary inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all text-white"
           >
             <IconEdit /> Edit Profile
@@ -98,7 +94,7 @@ export default function CompanyDataShowPage(): React.JSX.Element {
           <div className="md:col-span-2 space-y-6">
             
             {/* Contact Details Card */}
-            <div className="card-modern shadow-md">
+            <div className="card-modern p-6 shadow-md">
               <h2 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">
                 Contact Information
               </h2>
@@ -188,7 +184,7 @@ export default function CompanyDataShowPage(): React.JSX.Element {
             </div>
 
             {/* Geographic Coordinates Card (if map is needed later) */}
-            <div className="card-modern shadow-md">
+            <div className="card-modern p-6 shadow-md">
                <h2 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">
                 Geographic Data
               </h2>
@@ -208,7 +204,7 @@ export default function CompanyDataShowPage(): React.JSX.Element {
 
           {/* Social Links & Metadata Column */}
           <div className="space-y-6">
-            <div className="card-modern">
+            <div className="card-modern p-6">
               <h2 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">
                 Social Profiles
               </h2>
@@ -226,7 +222,7 @@ export default function CompanyDataShowPage(): React.JSX.Element {
                     <p className="mt-1 text-sm truncate" style={{ color: 'var(--text-secondary)' }}>
                       {social.url ? (
                         <a href={social.url} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--accent-info)' }}>
-                           {new URL(social.url).hostname.replace('www.', '')}
+                           {social.url}
                         </a>
                       ) : '—'}
                     </p>
@@ -235,7 +231,7 @@ export default function CompanyDataShowPage(): React.JSX.Element {
               </div>
             </div>
 
-            <div className="card-modern">
+            <div className="card-modern p-6">
                <h2 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">
                 Metadata
               </h2>

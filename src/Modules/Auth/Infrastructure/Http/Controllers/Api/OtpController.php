@@ -28,7 +28,7 @@ final class OtpController extends Controller
     /**
      * @OA\Post(
      *     path="/api/auth/otp/send",
-     *     summary="Send OTP code via Email or SMS",
+     *     summary="Send OTP code via Email",
      *     tags={"Auth"},
      *     @OA\Response(response=200, description="OTP sent")
      * )
@@ -46,7 +46,7 @@ final class OtpController extends Controller
         }
 
         return response()->json([
-            'message' => 'If the account exists, an OTP has been sent.',
+            'message' => 'If the account exists, an OTP has been sent to the email address.',
         ]);
     }
 
@@ -83,7 +83,7 @@ final class OtpController extends Controller
             ]);
         } catch (UserNotFoundException | InvalidOtpException $e) {
             return response()->json([
-                'message' => 'Invalid credentials or OTP code.',
+                'message' => 'Invalid email address or OTP code.',
             ], 401);
         }
     }

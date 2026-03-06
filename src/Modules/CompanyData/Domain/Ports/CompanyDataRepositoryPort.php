@@ -17,6 +17,8 @@ interface CompanyDataRepositoryPort
 
     public function findByUserId(UserId $userId): ?CompanyData;
 
+    public function existsAny(): bool;
+
     public function save(CompanyData $companyData): void;
 
     public function delete(CompanyDataId $id): void;

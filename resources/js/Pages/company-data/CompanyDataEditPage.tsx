@@ -11,40 +11,40 @@ import { AuthPageProps } from '@/types/auth';
 
 export default function CompanyDataEditPage(): React.JSX.Element {
   const { props } = usePage<AuthPageProps & { companyId?: string }>();
-  // If companyId is in props, it's admin editing another company. Otherwise it's 'me'.
-  const uuid = props.companyId; 
+  const companyUuid = props.companyId;
 
-  const { data: company, isPending } = useCompanyData(uuid);
+  const { data: company, isPending } = useCompanyData(companyUuid);
   const { updateCompanyData } = useCompanyDataMutations();
 
   const [form, setForm] = React.useState<UpdateCompanyDataDTO>({
-    companyName: '',
+    company_name: '',
     name: '',
     email: '',
     phone: '',
     address: '',
     website: '',
-    facebook: '',
-    instagram: '',
-    linkedin: '',
-    twitter: '',
+    facebook_link: '',
+    instagram_link: '',
+    linkedin_link: '',
+    twitter_link: '',
   });
 
   React.useEffect(() => {
     if (company) {
       setForm({
-        companyName: company.company_name,
+        company_name: company.company_name,
         name: company.name || '',
         email: company.email || '',
         phone: company.phone || '',
         address: company.address || '',
         website: company.website || '',
-        facebook: company.facebook_link || '',
-        instagram: company.instagram_link || '',
-        linkedin: company.linkedin_link || '',
-        twitter: company.twitter_link || '',
+        facebook_link: company.facebook_link || '',
+        instagram_link: company.instagram_link || '',
+        linkedin_link: company.linkedin_link || '',
+        twitter_link: company.twitter_link || '',
         latitude: company.latitude || undefined,
         longitude: company.longitude || undefined,
+        signature_path: company.signature_url || undefined,
       });
     }
   }, [company]);
@@ -56,14 +56,9 @@ export default function CompanyDataEditPage(): React.JSX.Element {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateCompanyData.mutate({ userUuid: uuid, payload: form }, {
+    updateCompanyData.mutate({ companyUuid, payload: form }, {
       onSuccess: () => {
-        // Assuming we want to stay or go back to list if admin
-        if (uuid) {
-            router.visit('/company-data');
-        } else {
-            // Toast or stay
-        }
+        router.visit('/company-data');
       }
     });
   };
@@ -123,8 +118,8 @@ export default function CompanyDataEditPage(): React.JSX.Element {
                         <div className="md:col-span-2">
                             <PremiumField 
                                 label="Official Company Name" 
-                                name="companyName" 
-                                value={form.companyName} 
+                                name="company_name" 
+                                value={form.company_name} 
                                 onChange={handleChange} 
                                 required 
                                 placeholder="Acme Corporation S.A."
@@ -184,29 +179,29 @@ export default function CompanyDataEditPage(): React.JSX.Element {
                         </div>
                         <PremiumField 
                             label="LinkedIn" 
-                            name="linkedin" 
-                            value={form.linkedin || ''} 
+                            name="linkedin_link" 
+                            value={form.linkedin_link || ''} 
                             onChange={handleChange} 
                             placeholder="linkedin.com/company/acme"
                         />
                         <PremiumField 
                             label="Instagram" 
-                            name="instagram" 
-                            value={form.instagram || ''} 
+                            name="instagram_link" 
+                            value={form.instagram_link || ''} 
                             onChange={handleChange} 
                             placeholder="instagram.com/acme"
                         />
                         <PremiumField 
                             label="Twitter / X" 
-                            name="twitter" 
-                            value={form.twitter || ''} 
+                            name="twitter_link" 
+                            value={form.twitter_link || ''} 
                             onChange={handleChange} 
                             placeholder="x.com/acme"
                         />
                         <PremiumField 
                             label="Facebook" 
-                            name="facebook" 
-                            value={form.facebook || ''} 
+                            name="facebook_link" 
+                            value={form.facebook_link || ''} 
                             onChange={handleChange} 
                             placeholder="facebook.com/acme"
                         />
@@ -229,7 +224,7 @@ export default function CompanyDataEditPage(): React.JSX.Element {
                             type="number"
                             step="any"
                             value={form.latitude?.toString() || ''} 
-                            onChange={(e) => setForm(p => ({ ...p, latitude: parseFloat(e.target.value) }))} 
+                            onChange={(e) => setForm((p) => ({ ...p, latitude: e.target.value === '' ? undefined : parseFloat(e.target.value) }))} 
                         />
                         <PremiumField 
                             label="Longitude" 
@@ -237,7 +232,7 @@ export default function CompanyDataEditPage(): React.JSX.Element {
                             type="number"
                             step="any"
                             value={form.longitude?.toString() || ''} 
-                            onChange={(e) => setForm(p => ({ ...p, longitude: parseFloat(e.target.value) }))} 
+                            onChange={(e) => setForm((p) => ({ ...p, longitude: e.target.value === '' ? undefined : parseFloat(e.target.value) }))} 
                         />
                     </div>
                     

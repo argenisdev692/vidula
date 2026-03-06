@@ -30,7 +30,7 @@ class DatabaseSeeder extends Seeder
         $this->call(BlogCategorySeeder::class);
 
         // Permissions for New Modules
-        $modules = ['USERS', 'PRODUCTS', 'CLIENTS', 'STUDENTS', 'BLOG_CATEGORIES'];
+        $modules = ['USERS', 'PRODUCTS', 'CLIENTS', 'STUDENTS', 'BLOG_CATEGORIES', 'POSTS'];
         $actions = ['VIEW ANY', 'VIEW', 'CREATE', 'UPDATE', 'DELETE', 'RESTORE', 'FORCE DELETE'];
 
         foreach ($modules as $module) {

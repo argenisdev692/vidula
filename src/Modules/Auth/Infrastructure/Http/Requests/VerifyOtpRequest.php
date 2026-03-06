@@ -10,7 +10,7 @@ use Illuminate\Foundation\Http\FormRequest;
  * VerifyOtpRequest — Validates OTP verification requests.
  *
  * Rules:
- * - identifier: required string, max 255
+ * - identifier: required email, max 255
  * - code: required string, exactly 6 digits
  */
 final class VerifyOtpRequest extends FormRequest
@@ -26,7 +26,7 @@ final class VerifyOtpRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'identifier' => ['required', 'string', 'max:255'],
+            'identifier' => ['required', 'email:rfc,dns', 'max:255'],
             'code' => ['required', 'string', 'size:6', 'regex:/^\d{6}$/'],
         ];
     }

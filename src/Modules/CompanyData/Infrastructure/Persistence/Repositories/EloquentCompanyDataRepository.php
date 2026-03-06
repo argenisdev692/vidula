@@ -43,6 +43,11 @@ final class EloquentCompanyDataRepository implements CompanyDataRepositoryPort
         return $model ? CompanyDataMapper::toDomain($model) : null;
     }
 
+    public function existsAny(): bool
+    {
+        return CompanyDataEloquentModel::withTrashed()->exists();
+    }
+
     public function save(CompanyData $companyData): void
     {
         $model = CompanyDataEloquentModel::withTrashed()
@@ -89,13 +94,21 @@ final class EloquentCompanyDataRepository implements CompanyDataRepositoryPort
 
     public function findAllPaginated(array $filters = [], int $page = 1, int $perPage = 15): array
     {
+        $userUuid = $filters['user_uuid'] ?? $filters['userUuid'] ?? null;
+        $dateFrom = $filters['date_from'] ?? $filters['dateFrom'] ?? null;
+        $dateTo = $filters['date_to'] ?? $filters['dateTo'] ?? null;
+        $sortBy = $filters['sort_by'] ?? $filters['sortBy'] ?? 'created_at';
+        $sortDir = $filters['sort_dir'] ?? $filters['sortDir'] ?? 'desc';
+
         $query = CompanyDataEloquentModel::query()
-            ->when($filters['user_uuid'] ?? null, function ($q, $userUuid) {
+            ->withTrashed()
+            ->when($userUuid, function ($q, $userUuid) {
                 $user = UserEloquentModel::where('uuid', $userUuid)->first();
                 return $user ? $q->where('user_id', $user->id) : $q->where('user_id', 0);
             })
+            ->inDateRange($dateFrom, $dateTo)
             ->when($filters['search'] ?? null, fn($q, $search) => $q->where('company_name', 'like', "%{$search}%"))
-            ->orderBy($filters['sort_by'] ?? 'created_at', $filters['sort_dir'] ?? 'desc');
+            ->orderBy($sortBy, $sortDir);
 
         $paginator = $query->paginate(perPage: $perPage, page: $page);
 

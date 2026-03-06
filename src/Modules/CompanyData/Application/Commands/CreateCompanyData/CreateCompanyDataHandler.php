@@ -10,6 +10,8 @@ use Modules\CompanyData\Domain\Entities\CompanyData;
 use Modules\CompanyData\Domain\Enums\CompanyStatus;
 use Modules\CompanyData\Domain\Ports\CompanyDataRepositoryPort;
 use Modules\CompanyData\Domain\ValueObjects\CompanyDataId;
+use Modules\CompanyData\Domain\ValueObjects\Coordinates;
+use Modules\CompanyData\Domain\ValueObjects\SocialLinks;
 use Modules\CompanyData\Domain\ValueObjects\UserId;
 use Shared\Infrastructure\Audit\AuditInterface;
 use Illuminate\Validation\ValidationException;
@@ -27,8 +29,7 @@ final readonly class CreateCompanyDataHandler
 
     public function handle(CreateCompanyDataCommand $command): void
     {
-        $existing = $this->repository->findAllPaginated([], 1, 1);
-        if (($existing['meta']['total'] ?? 0) > 0) {
+        if ($this->repository->existsAny()) {
             throw ValidationException::withMessages([
                 'company_name' => 'Solo se permite registrar una empresa en el sistema.',
             ]);
@@ -41,9 +42,22 @@ final readonly class CreateCompanyDataHandler
             id: new CompanyDataId($uuid),
             userId: new UserId($dto->userUuid),
             companyName: $dto->companyName,
+            name: $dto->name,
             email: $dto->email,
             phone: $dto->phone,
             address: $dto->address,
+            socialLinks: new SocialLinks(
+                facebook: $dto->facebookLink,
+                instagram: $dto->instagramLink,
+                linkedin: $dto->linkedinLink,
+                twitter: $dto->twitterLink,
+                website: $dto->website,
+            ),
+            coordinates: new Coordinates(
+                latitude: $dto->latitude,
+                longitude: $dto->longitude,
+            ),
+            signaturePath: $dto->signaturePath,
             status: CompanyStatus::Active,
         );
 
@@ -58,6 +72,7 @@ final readonly class CreateCompanyDataHandler
 
         // Invalidate list caches
         try {
+            Cache::tags(['company_data'])->flush();
             Cache::tags(['company_data_list'])->flush();
         } catch (\Exception) {
             // Tags not supported — expires naturally

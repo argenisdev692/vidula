@@ -28,6 +28,7 @@ final readonly class UpdateUserHandler
             |> $this->findUser(...)
             |> $this->updateUser(...)
             |> $this->persistUser(...)
+            |> $this->dispatchDomainEvents(...)
             |> $this->clearCache(...)
             |> $this->logAudit(...);
     }
@@ -58,7 +59,7 @@ final readonly class UpdateUserHandler
         return ['user' => $updatedUser, 'originalUser' => $user];
     }
 
-    private function persistUser(array $data): User
+    private function persistUser(array $data): array
     {
         $user = $data['user'];
 
@@ -69,7 +70,19 @@ final readonly class UpdateUserHandler
             'username' => $user->username,
         ];
 
-        return $this->userRepository->update($user, $updateData);
+        return [
+            'user' => $this->userRepository->update($user, $updateData),
+            'events' => $user->pullDomainEvents(),
+        ];
+    }
+
+    private function dispatchDomainEvents(array $data): User
+    {
+        foreach ($data['events'] as $event) {
+            event($event);
+        }
+
+        return $data['user'];
     }
 
     private function clearCache(User $user): User

@@ -31,16 +31,18 @@ final class UpdateCompanyDataDTO extends Data
 {
     public function __construct(
         public string $companyName,
+        public ?string $name = null,
         public ?string $email = null,
         public ?string $phone = null,
         public ?string $address = null,
         public ?string $website = null,
-        public ?string $facebook = null,
-        public ?string $instagram = null,
-        public ?string $linkedin = null,
-        public ?string $twitter = null,
+        public ?string $facebookLink = null,
+        public ?string $instagramLink = null,
+        public ?string $linkedinLink = null,
+        public ?string $twitterLink = null,
         public ?float $latitude = null,
         public ?float $longitude = null,
+        public ?string $signaturePath = null,
     ) {
     }
 }

@@ -39,24 +39,26 @@ final class CompanyData extends AggregateRoot
         CompanyDataId $id,
         UserId $userId,
         string $companyName,
+        ?string $name = null,
         ?string $email = null,
         ?string $phone = null,
         ?string $address = null,
         SocialLinks $socialLinks = new SocialLinks(),
         Coordinates $coordinates = new Coordinates(null, null),
+        ?string $signaturePath = null,
         CompanyStatus $status = CompanyStatus::Active,
     ): self {
         return new self(
             id: $id,
             userId: $userId,
             companyName: $companyName,
-            name: null,
+            name: $name,
             email: $email,
             phone: $phone,
             address: $address,
             socialLinks: $socialLinks,
             coordinates: $coordinates,
-            signaturePath: null,
+            signaturePath: $signaturePath,
             status: $status,
         );
     }
@@ -64,19 +66,23 @@ final class CompanyData extends AggregateRoot
     #[\NoDiscard('Updated entity must be persisted')]
     public function update(
         string $companyName,
+        ?string $name,
         ?string $email,
         ?string $phone,
         ?string $address,
         SocialLinks $socialLinks,
         Coordinates $coordinates,
+        ?string $signaturePath = null,
     ): self {
         return clone($this, [
             'companyName' => $companyName,
+            'name' => $name,
             'email' => $email,
             'phone' => $phone,
             'address' => $address,
             'socialLinks' => $socialLinks,
             'coordinates' => $coordinates,
+            'signaturePath' => $signaturePath,
             'updatedAt' => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
         ]);
     }

@@ -24,7 +24,7 @@ it('lists company data', function () {
         ->assertOk()
         ->assertJsonStructure([
             'data' => [
-                '*' => ['id', 'userId', 'companyName', 'createdAt']
+                '*' => ['uuid', 'user_uuid', 'company_name', 'created_at']
             ],
             'meta' => ['total', 'perPage']
         ]);
@@ -33,7 +33,7 @@ it('lists company data', function () {
 it('creates company data', function () {
     $user = User::factory()->create();
     $payload = [
-        'user_id' => $user->id,
+        'user_uuid' => $user->uuid,
         'company_name' => 'Acme Corp',
         'email' => 'contact@acme.com',
         'phone' => '1234567890'
@@ -55,7 +55,7 @@ it('validates required fields on create', function () {
     $this->actingAs($user)
         ->postJson(route('api.admin.company_data.store'), [])
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['user_id', 'company_name']);
+        ->assertJsonValidationErrors(['user_uuid', 'company_name']);
 });
 
 it('shows company data', function () {
@@ -70,7 +70,7 @@ it('shows company data', function () {
     $this->actingAs($user)
         ->getJson(route('api.admin.company_data.show', $uuid))
         ->assertOk()
-        ->assertJsonPath('data.companyName', 'Show Test Corp');
+        ->assertJsonPath('data.company_name', 'Show Test Corp');
 });
 
 it('updates company data', function () {

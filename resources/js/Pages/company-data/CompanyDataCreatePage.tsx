@@ -1,16 +1,18 @@
 import * as React from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import AppLayout from '@/pages/layouts/AppLayout';
 import { useCompanyDataMutations } from '@/modules/company-data/hooks/useCompanyDataMutations';
 import { PremiumField } from '@/shadcn/PremiumField';
 import type { CreateCompanyDataDTO } from '@/types/api';
 import { ArrowLeft, Save, Building2, Share2, Info } from 'lucide-react';
+import type { AuthPageProps } from '@/types/auth';
 
 export default function CompanyDataCreatePage(): React.JSX.Element {
+  const { props } = usePage<AuthPageProps>();
   const { createCompanyData: createMutation } = useCompanyDataMutations();
 
   const [form, setForm] = React.useState<CreateCompanyDataDTO>({
-    user_id: 1,
+    user_uuid: props.auth.user?.uuid ?? '',
     company_name: '',
     name: '',
     email: '',

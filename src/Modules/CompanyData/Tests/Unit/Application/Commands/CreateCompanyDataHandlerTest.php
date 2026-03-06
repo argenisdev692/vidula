@@ -13,6 +13,7 @@ use Mockery\MockInterface;
 it('creates company data and records audit', function (): void {
     /** @var CompanyDataRepositoryPort&MockInterface $repository */
     $repository = Mockery::mock(CompanyDataRepositoryPort::class);
+    $repository->shouldReceive('existsAny')->once()->andReturn(false);
     $repository->shouldReceive('save')->once();
 
     /** @var AuditInterface&MockInterface $audit */

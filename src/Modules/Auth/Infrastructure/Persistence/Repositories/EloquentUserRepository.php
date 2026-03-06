@@ -31,10 +31,29 @@ final class EloquentUserRepository implements UserRepositoryPort
         return $eloquentUser ? UserMapper::toDomain($eloquentUser) : null;
     }
 
+    public function findByUsername(string $username): ?User
+    {
+        $eloquentUser = UserEloquentModel::query()
+            ->where('username', $username)
+            ->first();
+
+        return $eloquentUser ? UserMapper::toDomain($eloquentUser) : null;
+    }
+
     public function findById(int $id): ?User
     {
         $eloquentUser = UserEloquentModel::find($id);
         return $eloquentUser ? UserMapper::toDomain($eloquentUser) : null;
+    }
+
+    public function getPasswordHashById(int $id): ?string
+    {
+        /** @var string|null $password */
+        $password = UserEloquentModel::query()
+            ->whereKey($id)
+            ->value('password');
+
+        return $password;
     }
 
     public function create(array $data): User

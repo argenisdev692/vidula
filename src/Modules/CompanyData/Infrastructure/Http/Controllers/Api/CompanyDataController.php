@@ -6,6 +6,7 @@ namespace Modules\CompanyData\Infrastructure\Http\Controllers\Api;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\CompanyData\Domain\Exceptions\CompanyDataNotFoundException;
 use Modules\CompanyData\Application\Commands\CreateCompanyData\CreateCompanyDataCommand;
 use Modules\CompanyData\Application\Commands\CreateCompanyData\CreateCompanyDataHandler;
 use Modules\CompanyData\Application\Commands\DeleteCompanyData\DeleteCompanyDataCommand;
@@ -77,15 +78,15 @@ final class CompanyDataController
      */
     public function show(Request $request, ?string $uuid = null): JsonResponse
     {
-        $targetUuid = $uuid ?? $request->user()?->uuid;
+        try {
+            $result = $uuid !== null
+                ? $this->getHandler->handle(new GetCompanyDataQuery(companyUuid: $uuid))
+                : $this->getCurrentUserCompanyData($request);
 
-        if (!$targetUuid) {
-            return response()->json(['message' => 'User context not found'], 401);
+            return response()->json(['data' => $result]);
+        } catch (CompanyDataNotFoundException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 404);
         }
-
-        $result = $this->getHandler->handle(new GetCompanyDataQuery($targetUuid));
-
-        return response()->json(['data' => $result]);
     }
 
     /**
@@ -121,18 +122,18 @@ final class CompanyDataController
      */
     public function update(UpdateCompanyDataRequest $request, ?string $uuid = null): JsonResponse
     {
-        $targetUuid = $uuid ?? $request->user()?->uuid;
+        try {
+            $companyUuid = $uuid ?? $this->getCurrentUserCompanyData($request)->uuid;
 
-        if (!$targetUuid) {
-            return response()->json(['message' => 'User context not found'], 401);
+            $dto = UpdateCompanyDataDTO::from($request->validated());
+            $this->updateHandler->handle(new UpdateCompanyDataCommand($companyUuid, $dto));
+
+            return response()->json([
+                'message' => 'Company data updated successfully',
+            ]);
+        } catch (CompanyDataNotFoundException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 404);
         }
-
-        $dto = UpdateCompanyDataDTO::from($request->validated());
-        $this->updateHandler->handle(new UpdateCompanyDataCommand($targetUuid, $dto));
-
-        return response()->json([
-            'message' => 'Company data updated successfully',
-        ]);
     }
 
     /**
@@ -171,5 +172,16 @@ final class CompanyDataController
         return response()->json([
             'message' => 'Company data restored successfully',
         ]);
+    }
+
+    private function getCurrentUserCompanyData(Request $request): \Modules\CompanyData\Application\Queries\ReadModels\CompanyDataReadModel
+    {
+        $userUuid = $request->user()?->uuid;
+
+        if (!$userUuid) {
+            abort(401, 'User context not found');
+        }
+
+        return $this->getHandler->handle(new GetCompanyDataQuery(userUuid: $userUuid));
     }
 }

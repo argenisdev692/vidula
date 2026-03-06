@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Src\Providers;
 
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
+use Modules\Auth\Domain\Events\OtpGenerated;
+use Modules\Auth\Domain\Events\UserLoggedIn;
+use Modules\Auth\Infrastructure\Listeners\RecordAuthActivityListener;
 
 final class EventServiceProvider extends ServiceProvider
 {
@@ -14,7 +17,12 @@ final class EventServiceProvider extends ServiceProvider
      * @var array<class-string, array<int, class-string>>
      */
     protected $listen = [
-        // Global events
+        OtpGenerated::class => [
+            RecordAuthActivityListener::class,
+        ],
+        UserLoggedIn::class => [
+            RecordAuthActivityListener::class,
+        ],
     ];
 
     /**

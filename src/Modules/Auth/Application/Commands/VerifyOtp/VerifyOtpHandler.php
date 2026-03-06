@@ -10,6 +10,7 @@ use Modules\Auth\Domain\Exceptions\InvalidOtpException;
 use Modules\Auth\Domain\Exceptions\UserNotFoundException;
 use Modules\Auth\Domain\Ports\OtpServicePort;
 use Modules\Auth\Domain\Ports\UserRepositoryPort;
+use Modules\Auth\Domain\ValueObjects\UserEmail;
 
 /**
  * VerifyOtpHandler — Validates OTP, authenticates user, emits domain event.
@@ -27,7 +28,7 @@ final readonly class VerifyOtpHandler
      */
     public function handle(VerifyOtpCommand $command): array
     {
-        $user = $this->userRepository->findByEmailOrPhone($command->identifier);
+        $user = $this->userRepository->findByEmail(new UserEmail($command->identifier));
 
         if ($user === null) {
             throw UserNotFoundException::withIdentifier($command->identifier);
@@ -47,6 +48,12 @@ final readonly class VerifyOtpHandler
             userAgent: $command->userAgent,
         );
 
-        return ['user' => $user, 'event' => $user->pullDomainEvents()[0]];
+        $events = $user->pullDomainEvents();
+
+        foreach ($events as $event) {
+            event($event);
+        }
+
+        return ['user' => $user, 'event' => $events[0]];
     }
 }
