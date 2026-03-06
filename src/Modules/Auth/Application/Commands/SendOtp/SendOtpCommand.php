@@ -7,7 +7,7 @@ namespace Modules\Auth\Application\Commands\SendOtp;
 /**
  * SendOtpCommand — Request to generate and send an OTP.
  */
-readonly class SendOtpCommand
+final readonly class SendOtpCommand
 {
     public function __construct(
         public string $identifier,

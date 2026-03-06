@@ -7,7 +7,7 @@ namespace Modules\Auth\Application\Commands\VerifyOtp;
 /**
  * VerifyOtpCommand — Request to verify an OTP and authenticate.
  */
-readonly class VerifyOtpCommand
+final readonly class VerifyOtpCommand
 {
     public function __construct(
         public string $identifier,

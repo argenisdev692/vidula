@@ -55,7 +55,7 @@ final class OtpController extends Controller
     /**
      * POST /login/otp/verify
      */
-    public function verify(VerifyOtpRequest $request)
+    public function verify(VerifyOtpRequest $request): RedirectResponse
     {
         try {
             $result = $this->verifyOtpHandler->handle(

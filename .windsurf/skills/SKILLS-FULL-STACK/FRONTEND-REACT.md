@@ -1,16 +1,17 @@
+---
+name: frontend-react
+description: Primary guide for frontend tasks with React 19, Inertia 2.0, and strict TypeScript, including TanStack, token-based styling, components, and the project's UI patterns.
+---
+
 # FRONTEND-REACT.md — React 19 + Inertia 2.0 + Styles · Enterprise Frontend Bible (2026)
 
 > **Authority**: This file is the SINGLE SOURCE OF TRUTH for all frontend rules.
 > **Stack**: React 19 · Inertia.js 2.0 · TypeScript 5 (strict) · TanStack Query v5 · TanStack Table v8 · Tailwind CSS v4 · shadcn/ui · Framer Motion · Sileo (toasts)
 > **Design**: Developer UI inspired by VS Code, Linear, Raycast, Vercel. Dark-first, token-driven.
 
----
-
 > **CRITICAL — Backend ↔ Frontend Contract**: All TypeScript interfaces use `snake_case` keys (`full_name`, `created_at`, `deleted_at`).
 > Every Spatie `Data` class that serializes to JSON **MUST** have `#[MapOutputName(SnakeCaseMapper::class)]`.
 > If a field shows `undefined` in the table, verify the backend Data class has this attribute.
-
----
 
 ## §0 — Token-First Principle (ABSOLUTE RULE)
 

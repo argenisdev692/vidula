@@ -1,3 +1,8 @@
+---
+name: architecture-react-inertia
+description: Directory tree and file placement rules for the React and Inertia frontend, including common, modules, pages, shadcn, and the project's structural conventions.
+---
+
 # ARCHITECTURE-REACT-INERTIA.md
 
 # React 19 + Inertia.js 2.0 · Frontend Architecture (2026)

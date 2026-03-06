@@ -1,3 +1,8 @@
+---
+name: backend-php
+description: Primary guide for backend tasks with PHP 8.5 and Laravel 12, including layered architecture, CQRS, routes, security, DTOs, mappers, and the project's enterprise conventions.
+---
+
 # BACKEND-PHP.md — PHP 8.5 + Laravel 12 · Enterprise Backend Bible (2026)
 
 > **Authority**: This file is the SINGLE SOURCE OF TRUTH for all PHP backend rules.

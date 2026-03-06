@@ -1,3 +1,8 @@
+---
+name: architecture-intermediate-php
+description: Directory tree and file placement rules for the modular PHP and Laravel backend, including the project's Shared, Modules, Providers, and Middleware layers.
+---
+
 ```
 src/
 │

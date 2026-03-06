@@ -7,7 +7,7 @@ namespace Modules\Auth\Domain\Events;
 /**
  * OtpGenerated — Fired when a new OTP is created for a user.
  */
-readonly class OtpGenerated
+final readonly class OtpGenerated
 {
     public function __construct(
         public string $identifier,

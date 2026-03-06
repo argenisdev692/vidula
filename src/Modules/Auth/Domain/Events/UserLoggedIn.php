@@ -7,7 +7,7 @@ namespace Modules\Auth\Domain\Events;
 /**
  * UserLoggedIn — Domain event fired after successful authentication.
  */
-readonly class UserLoggedIn
+final readonly class UserLoggedIn
 {
     public function __construct(
         public int $userId,

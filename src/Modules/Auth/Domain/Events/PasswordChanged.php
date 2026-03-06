@@ -7,7 +7,7 @@ namespace Modules\Auth\Domain\Events;
 /**
  * PasswordChanged — Fired when a user changes or resets their password.
  */
-readonly class PasswordChanged
+final readonly class PasswordChanged
 {
     public function __construct(
         public int $userId,
