@@ -1,9 +1,10 @@
 import * as React from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AppLayout from '@/pages/layouts/AppLayout';
+import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
 import { useStudent } from '@/modules/students/hooks/useStudent';
 import { useStudentMutations } from '@/modules/students/hooks/useStudentMutations';
-import { PremiumField } from '@/shadcn/PremiumField';
+import { PremiumField } from '@/common/form/PremiumField';
 import type { UpdateStudentDTO, StudentStatus } from '@/types/api';
 import type { PageProps } from '@inertiajs/core';
 import { ArrowLeft, Save, User, FileText } from 'lucide-react';
@@ -31,7 +32,7 @@ export default function StudentEditPage(): React.JSX.Element {
       email: (formData.get('email') as string) || null,
       phone: (formData.get('phone') as string) || null,
       dni: (formData.get('dni') as string) || null,
-      birthDate: (formData.get('birthDate') as string) || null,
+      birthDate: (formData.get('birth_date') as string) || null,
       address: (formData.get('address') as string) || null,
       notes: (formData.get('notes') as string) || null,
       status: (formData.get('status') as StudentStatus) || 'DRAFT',
@@ -78,6 +79,7 @@ export default function StudentEditPage(): React.JSX.Element {
   return (
     <AppLayout>
       <Head title={`Edit Student | ${student.name}`} />
+      <PermissionGuard permissions={['UPDATE_STUDENTS']}>
       <div className="max-w-4xl mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
 
         {/* ── Header ── */}
@@ -169,10 +171,10 @@ export default function StudentEditPage(): React.JSX.Element {
                   />
                   <PremiumField
                     label="Birth Date"
-                    name="birthDate"
+                    name="birth_date"
                     type="date"
                     defaultValue={student.birthDate || ''}
-                    error={errors.birthDate}
+                    error={errors['birth_date']}
                   />
                   <div className="md:col-span-2">
                     <PremiumField
@@ -246,7 +248,7 @@ export default function StudentEditPage(): React.JSX.Element {
                 <div className="space-y-2 text-xs" style={{ color: 'var(--text-muted)' }}>
                   <div className="flex justify-between">
                     <span>UUID</span>
-                    <span className="font-mono text-(--text-disabled)">{student.id.substring(0, 8)}...</span>
+                    <span className="font-mono text-(--text-disabled)">{student.uuid.substring(0, 8)}...</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Created</span>
@@ -264,6 +266,7 @@ export default function StudentEditPage(): React.JSX.Element {
           </div>
         </form>
       </div>
+      </PermissionGuard>
     </AppLayout>
   );
 }

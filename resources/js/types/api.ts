@@ -342,7 +342,7 @@ export interface UpdateClientDTO {
 export type StudentStatus = 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'GRADUATED' | 'SUSPENDED';
 
 export interface StudentListItem {
-  id: string; // uuid
+  uuid: string;
   name: string;
   email: string | null;
   phone: string | null;

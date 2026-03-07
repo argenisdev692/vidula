@@ -96,6 +96,7 @@
     <table>
         <thead>
             <tr>
+                <th>UUID</th>
                 <th>Name</th>
                 <th>Email</th>
                 <th>Phone</th>
@@ -108,13 +109,14 @@
         <tbody>
             @forelse($rows as $row)
                 <tr>
-                    <td>{{ $row->name }}</td>
-                    <td>{{ $row->email ?? '—' }}</td>
-                    <td>{{ $row->phone ?? '—' }}</td>
-                    <td>{{ $row->dni ?? '—' }}</td>
+                    <td>{{ $row['uuid'] ?? '—' }}</td>
+                    <td>{{ $row['name'] ?? '—' }}</td>
+                    <td>{{ $row['email'] ?? '—' }}</td>
+                    <td>{{ $row['phone'] ?? '—' }}</td>
+                    <td>{{ $row['dni'] ?? '—' }}</td>
                     <td>
                         @php
-                            $statusClass = match (strtolower($row->status ?? 'draft')) {
+                            $statusClass = match (strtolower($row['status'] ?? 'draft')) {
                                 'active' => 'badge-active',
                                 'inactive' => 'badge-inactive',
                                 'graduated' => 'badge-graduated',
@@ -122,14 +124,14 @@
                                 default => 'badge-draft',
                             };
                         @endphp
-                        <span class="badge {{ $statusClass }}">{{ $row->status ?? 'DRAFT' }}</span>
+                        <span class="badge {{ $statusClass }}">{{ $row['status'] ?? 'DRAFT' }}</span>
                     </td>
-                    <td>{{ $row->active ? 'Yes' : 'No' }}</td>
-                    <td>{{ $row->created_at?->format('F j, Y') ?? '—' }}</td>
+                    <td>{{ $row['active'] ?? '—' }}</td>
+                    <td>{{ $row['created_at'] ?? '—' }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" style="text-align: center; color: #999; padding: 20px;">No students found</td>
+                    <td colspan="8" style="text-align: center; color: #999; padding: 20px;">No students found</td>
                 </tr>
             @endforelse
         </tbody>

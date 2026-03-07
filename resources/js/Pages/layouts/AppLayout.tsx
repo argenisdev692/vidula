@@ -96,7 +96,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: <Users size={14} />,
     items: [
       { label: 'Users', href: '/users', icon: <Users size={icSize} />, description: 'Manage system users', permission: 'VIEW_USERS' },
-      { label: 'Students', href: '/students', icon: <GraduationCap size={icSize} />, description: 'Manage students', permission: 'VIEW_ANY_STUDENTS' },
+      { label: 'Students', href: '/students', icon: <GraduationCap size={icSize} />, description: 'Manage students', permission: 'VIEW_STUDENTS' },
       { label: 'Clients', href: '/clients', icon: <UserCheck size={icSize} />, description: 'Manage clients', permission: 'VIEW_CLIENTS' },
     ],
   },

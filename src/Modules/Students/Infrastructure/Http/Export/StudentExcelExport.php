@@ -12,6 +12,7 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
+use Modules\Students\Application\Queries\ReadModels\StudentReadModel;
 use Modules\Students\Application\DTOs\StudentFilterDTO;
 use Modules\Students\Infrastructure\Persistence\Eloquent\Models\StudentEloquentModel;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
@@ -72,7 +73,6 @@ final class StudentExcelExport implements
     public function headings(): array
     {
         return [
-            'ID',
             'UUID',
             'Name',
             'Email',
@@ -88,18 +88,34 @@ final class StudentExcelExport implements
 
     public function map($student): array
     {
+        $row = StudentExportTransformer::transformForExcel(new StudentReadModel(
+            uuid: $student->uuid,
+            name: $student->name,
+            email: $student->email,
+            phone: $student->phone,
+            dni: $student->dni,
+            birthDate: $student->birth_date?->format('Y-m-d'),
+            address: $student->address,
+            avatar: null,
+            notes: null,
+            status: $student->status,
+            active: $student->active,
+            createdAt: $student->created_at?->toIso8601String(),
+            updatedAt: null,
+            deletedAt: null,
+        ));
+
         return [
-            $student->id,
-            $student->uuid,
-            $student->name,
-            $student->email ?? '—',
-            $student->phone ?? '—',
-            $student->dni ?? '—',
-            $student->birth_date ?? '—',
-            $student->address ?? '—',
-            $student->status,
-            $student->active ? 'Yes' : 'No',
-            $student->created_at?->format('F j, Y') ?? '—',
+            $row['uuid'],
+            $row['name'],
+            $row['email'],
+            $row['phone'],
+            $row['dni'],
+            $row['birth_date'],
+            $row['address'],
+            $row['status'],
+            $row['active'],
+            $row['created_at'],
         ];
     }
 

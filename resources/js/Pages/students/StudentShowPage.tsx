@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import AppLayout from '@/pages/layouts/AppLayout';
+import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
+import { useAuthorization } from '@/modules/auth/hooks/useAuthorization';
 import { useStudent } from '@/modules/students/hooks/useStudent';
 import StudentStatusBadge from '@/modules/students/components/StudentStatusBadge';
 import type { PageProps } from '@inertiajs/core';
@@ -16,6 +18,8 @@ import {
 export default function StudentShowPage(): React.JSX.Element {
   const { props } = usePage<PageProps & { studentId: string }>();
   const uuid = props.studentId;
+  const { hasPermission } = useAuthorization();
+  const canUpdateStudents = hasPermission('UPDATE_STUDENTS');
 
   const { data: student, isPending, isError } = useStudent(uuid);
 
@@ -45,6 +49,7 @@ export default function StudentShowPage(): React.JSX.Element {
   return (
     <AppLayout>
       <Head title={`${student.name} | Student`} />
+      <PermissionGuard permissions={['VIEW_STUDENTS']}>
       <div style={{ fontFamily: 'var(--font-sans)', maxWidth: '900px', margin: '0 auto' }}>
 
         {/* ── Header ── */}
@@ -64,7 +69,7 @@ export default function StudentShowPage(): React.JSX.Element {
               <div className="mt-1 flex items-center gap-3">
                 <StudentStatusBadge status={student.deletedAt ? 'deleted' : student.status} />
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  ID: {student.id.substring(0, 8)}...
+                  ID: {student.uuid.substring(0, 8)}...
                 </span>
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                   Registered: {new Date(student.createdAt).toLocaleDateString()}
@@ -72,12 +77,14 @@ export default function StudentShowPage(): React.JSX.Element {
               </div>
             </div>
           </div>
-          <Link
-            href={`/students/${student.id}/edit`}
-            className="btn-modern btn-modern-primary inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all shadow-md hover:shadow-lg"
-          >
-            <Pencil size={16} /> Edit Student
-          </Link>
+          {canUpdateStudents && (
+            <Link
+              href={`/students/${student.uuid}/edit`}
+              className="btn-modern btn-modern-primary inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all shadow-md hover:shadow-lg"
+            >
+              <Pencil size={16} /> Edit Student
+            </Link>
+          )}
         </div>
 
         {/* ── Grid Layout ── */}
@@ -159,6 +166,7 @@ export default function StudentShowPage(): React.JSX.Element {
           </div>
         </div>
       </div>
+      </PermissionGuard>
     </AppLayout>
   );
 }

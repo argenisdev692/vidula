@@ -1,8 +1,9 @@
 import * as React from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/pages/layouts/AppLayout';
+import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
 import { useStudentMutations } from '@/modules/students/hooks/useStudentMutations';
-import { PremiumField } from '@/shadcn/PremiumField';
+import { PremiumField } from '@/common/form/PremiumField';
 import type { CreateStudentDTO, StudentStatus } from '@/types/api';
 import { ArrowLeft, Save, User, FileText } from 'lucide-react';
 
@@ -23,7 +24,7 @@ export default function StudentCreatePage(): React.JSX.Element {
       email: (formData.get('email') as string) || null,
       phone: (formData.get('phone') as string) || null,
       dni: (formData.get('dni') as string) || null,
-      birthDate: (formData.get('birthDate') as string) || null,
+      birthDate: (formData.get('birth_date') as string) || null,
       address: (formData.get('address') as string) || null,
       notes: (formData.get('notes') as string) || null,
       status: (formData.get('status') as StudentStatus) || 'DRAFT',
@@ -46,6 +47,7 @@ export default function StudentCreatePage(): React.JSX.Element {
   return (
     <AppLayout>
       <Head title="New Student" />
+      <PermissionGuard permissions={['CREATE_STUDENTS']}>
       <div className="max-w-4xl mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
 
         {/* ── Header ── */}
@@ -129,9 +131,9 @@ export default function StudentCreatePage(): React.JSX.Element {
                   />
                   <PremiumField
                     label="Birth Date"
-                    name="birthDate"
+                    name="birth_date"
                     type="date"
-                    error={errors.birthDate}
+                    error={errors['birth_date']}
                   />
                   <div className="md:col-span-2">
                     <PremiumField
@@ -219,6 +221,7 @@ export default function StudentCreatePage(): React.JSX.Element {
           </div>
         </form>
       </div>
+      </PermissionGuard>
     </AppLayout>
   );
 }

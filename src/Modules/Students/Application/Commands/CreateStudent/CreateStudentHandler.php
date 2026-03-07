@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use Modules\Students\Domain\Entities\Student;
 use Modules\Students\Domain\Ports\StudentRepositoryPort;
 use Modules\Students\Domain\ValueObjects\StudentId;
+use Shared\Infrastructure\Audit\AuditInterface;
 
 /**
  * CreateStudentHandler
@@ -16,7 +17,8 @@ use Modules\Students\Domain\ValueObjects\StudentId;
 final readonly class CreateStudentHandler
 {
     public function __construct(
-        private StudentRepositoryPort $repository
+        private StudentRepositoryPort $repository,
+        private AuditInterface $audit,
     ) {
     }
 
@@ -40,6 +42,18 @@ final readonly class CreateStudentHandler
         );
 
         $this->repository->save($student);
+
+        $this->audit->log(
+            logName: 'students.created',
+            description: "Student created: {$student->name}",
+            properties: [
+                'uuid' => $uuid,
+                'name' => $student->name,
+                'email' => $student->email,
+                'status' => $student->status,
+                'active' => $student->active,
+            ],
+        );
 
         // Clear cache
         try {

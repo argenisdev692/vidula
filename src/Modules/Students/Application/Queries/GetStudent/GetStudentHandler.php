@@ -30,7 +30,7 @@ final readonly class GetStudentHandler
             }
 
             return new StudentReadModel(
-                id: $student->id->value,
+                uuid: $student->id->value,
                 name: $student->name,
                 email: $student->email,
                 phone: $student->phone,

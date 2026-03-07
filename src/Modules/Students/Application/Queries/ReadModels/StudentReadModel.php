@@ -9,7 +9,7 @@ use Spatie\LaravelData\Data;
 /**
  * @OA\Schema(
  *     schema="StudentReadModel",
- *     @OA\Property(property="id", type="string", format="uuid"),
+ *     @OA\Property(property="uuid", type="string", format="uuid"),
  *     @OA\Property(property="name", type="string"),
  *     @OA\Property(property="email", type="string", nullable=true),
  *     @OA\Property(property="phone", type="string", nullable=true),
@@ -28,7 +28,7 @@ use Spatie\LaravelData\Data;
 final class StudentReadModel extends Data
 {
     public function __construct(
-        public string $id,
+        public string $uuid,
         public string $name,
         public ?string $email,
         public ?string $phone,

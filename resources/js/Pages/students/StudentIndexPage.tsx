@@ -3,12 +3,14 @@ import { Link, Head, useRemember, router } from '@inertiajs/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { type RowSelectionState } from '@tanstack/react-table';
 import AppLayout from '@/pages/layouts/AppLayout';
+import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
+import { useAuthorization } from '@/modules/auth/hooks/useAuthorization';
 import { useStudents } from '@/modules/students/hooks/useStudents';
 import { useStudentMutations } from '@/modules/students/hooks/useStudentMutations';
 import StudentsTable from './components/StudentsTable';
-import { DataTableBulkActions } from '@/shadcn/DataTableBulkActions';
-import { DeleteConfirmModal } from '@/shadcn/DeleteConfirmModal';
-import { RestoreConfirmModal } from '@/shadcn/RestoreConfirmModal';
+import { DataTableBulkActions } from '@/common/data-table/DataTableBulkActions';
+import { DeleteConfirmModal } from '@/common/data-table/DeleteConfirmModal';
+import { RestoreConfirmModal } from '@/common/data-table/RestoreConfirmModal';
 import { DataTableDateRangeFilter } from '@/common/data-table/DataTableDateRangeFilter';
 import { ExportButton } from '@/common/export/ExportButton';
 import type { StudentFilters, StudentListItem } from '@/types/api';
@@ -21,12 +23,15 @@ import { Search, ChevronLeft, ChevronRight, GraduationCap } from 'lucide-react';
  * - bulk delete via useMutation (consistente con el resto de mutations)
  */
 export default function StudentIndexPage(): React.JSX.Element {
+  const { hasPermission } = useAuthorization();
   const [filters, setFilters] = useRemember<StudentFilters>({ page: 1, perPage: 15 }, 'student-filters');
   const [search, setSearch] = React.useState<string>(filters.search || '');
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [pendingDelete, setPendingDelete] = React.useState<{ uuid: string; name: string } | null>(null);
   const [pendingRestore, setPendingRestore] = React.useState<{ uuid: string; name: string } | null>(null);
   const [isDeletingBulk, setIsDeletingBulk] = React.useState<boolean>(false);
+  const canCreateStudents = hasPermission('CREATE_STUDENTS');
+  const canDeleteStudents = hasPermission('DELETE_STUDENTS');
 
   // React 19: useTransition for non-blocking updates
   const [isPendingExport, startExportTransition] = React.useTransition();
@@ -41,7 +46,7 @@ export default function StudentIndexPage(): React.JSX.Element {
 
   const [optimisticStudents, setOptimisticStudents] = React.useOptimistic(
     studentList,
-    (state: StudentListItem[], deletedUuid: string) => state.filter(s => s.id !== deletedUuid)
+    (state: StudentListItem[], deletedUuid: string) => state.filter((student) => student.uuid !== deletedUuid)
   );
 
   const { deleteStudent, restoreStudent } = useStudentMutations();
@@ -81,9 +86,7 @@ export default function StudentIndexPage(): React.JSX.Element {
       try {
         await deleteStudent.mutateAsync(pendingDelete.uuid);
         setPendingDelete(null);
-      } catch (err) {
-        // React revierte automáticamente el estado optimista si hay error
-        console.error('Failed to delete student', err);
+      } catch {
       }
     });
   }
@@ -98,8 +101,7 @@ export default function StudentIndexPage(): React.JSX.Element {
     try {
       await restoreStudent.mutateAsync(pendingRestore.uuid);
       setPendingRestore(null);
-    } catch (err) {
-      console.error('Failed to restore student', err);
+    } catch {
     }
   }
 
@@ -110,7 +112,7 @@ export default function StudentIndexPage(): React.JSX.Element {
   );
 
   function handleBulkDelete(): void {
-    if (!selectedUuids.length) return;
+    if (!canDeleteStudents || selectedUuids.length === 0) return;
     setIsDeletingBulk(true);
     router.post('/students/data/admin/bulk-delete', { uuids: selectedUuids }, {
       onSuccess: () => {
@@ -141,6 +143,7 @@ export default function StudentIndexPage(): React.JSX.Element {
     <>
       <Head title="Students" />
       <AppLayout>
+      <PermissionGuard permissions={['VIEW_STUDENTS']}>
       <div className="flex flex-col gap-6 animate-in fade-in duration-500">
         {/* ── Header ── */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -149,16 +152,18 @@ export default function StudentIndexPage(): React.JSX.Element {
               Students
             </h1>
             <p className="text-sm mt-1 text-(--text-muted) font-medium">
-              Manage student profiles — <span className="text-(--accent-primary)">{meta.total} registered</span>
+              Manage student profiles — <span className="text-(--accent-primary)">{meta.total} {meta.total === 1 ? 'record' : 'records'} found</span>
             </p>
           </div>
-          <Link
-            href="/students/create"
-            className="btn-modern btn-modern-primary inline-flex items-center gap-2 px-5 py-2 font-bold shadow-sm"
-          >
-            <GraduationCap size={16} />
-            New Student
-          </Link>
+          {canCreateStudents && (
+            <Link
+              href="/students/create"
+              className="btn-modern btn-modern-primary inline-flex items-center gap-2 px-5 py-2 font-bold shadow-sm"
+            >
+              <GraduationCap size={16} />
+              New Student
+            </Link>
+          )}
         </div>
 
         {/* ── Filters Bar ── */}
@@ -213,7 +218,7 @@ export default function StudentIndexPage(): React.JSX.Element {
         </div>
 
         {/* ── Bulk Actions Bar ── */}
-        {selectedUuids.length > 0 && (
+        {canDeleteStudents && selectedUuids.length > 0 && (
           <DataTableBulkActions
             count={selectedUuids.length}
             onDelete={handleBulkDelete}
@@ -274,14 +279,17 @@ export default function StudentIndexPage(): React.JSX.Element {
           )}
         </div>
       </div>
+      </PermissionGuard>
 
-      <DeleteConfirmModal
-        open={pendingDelete !== null}
-        entityLabel={pendingDelete?.name ?? ''}
-        onConfirm={handleConfirmSingleDelete}
-        onCancel={() => setPendingDelete(null)}
-        isDeleting={deleteStudent.isPending}
-      />
+      {canDeleteStudents && (
+        <DeleteConfirmModal
+          open={pendingDelete !== null}
+          entityLabel={pendingDelete?.name ?? ''}
+          onConfirm={handleConfirmSingleDelete}
+          onCancel={() => setPendingDelete(null)}
+          isDeleting={deleteStudent.isPending}
+        />
+      )}
       <RestoreConfirmModal
         open={pendingRestore !== null}
         entityLabel={pendingRestore?.name ?? ''}

@@ -9,7 +9,7 @@ use Spatie\LaravelData\Data;
 final class StudentListReadModel extends Data
 {
     public function __construct(
-        public string $id,
+        public string $uuid,
         public string $name,
         public ?string $email,
         public ?string $phone,

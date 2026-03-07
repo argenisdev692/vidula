@@ -8,6 +8,15 @@ use Illuminate\Foundation\Http\FormRequest;
 
 final class UpdateStudentRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('birthDate') && ! $this->has('birth_date')) {
+            $this->merge([
+                'birth_date' => $this->input('birthDate'),
+            ]);
+        }
+    }
+
     public function authorize(): bool
     {
         return true;

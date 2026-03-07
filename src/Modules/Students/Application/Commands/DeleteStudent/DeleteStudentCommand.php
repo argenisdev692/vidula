@@ -7,6 +7,6 @@ namespace Modules\Students\Application\Commands\DeleteStudent;
 final readonly class DeleteStudentCommand
 {
     public function __construct(
-        public string $id
+        public string $uuid
     ) {}
 }

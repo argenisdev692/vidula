@@ -6,6 +6,7 @@ namespace Modules\Students\Infrastructure\Http\Export;
 
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Response;
+use Modules\Students\Application\Queries\ReadModels\StudentReadModel;
 use Modules\Students\Application\DTOs\StudentFilterDTO;
 use Modules\Students\Infrastructure\Persistence\Eloquent\Models\StudentEloquentModel;
 
@@ -21,6 +22,7 @@ final class StudentPdfExport
         $rows = StudentEloquentModel::query()
             ->withTrashed()
             ->select([
+                'uuid',
                 'name',
                 'email',
                 'phone',
@@ -30,6 +32,7 @@ final class StudentPdfExport
                 'status',
                 'active',
                 'created_at',
+                'deleted_at',
             ])
             ->when(
                 $this->filters->search,
@@ -47,7 +50,24 @@ final class StudentPdfExport
                 fn($q) => $q->inDateRange($this->filters->dateFrom, $this->filters->dateTo)
             )
             ->orderBy($this->filters->sortBy ?? 'created_at', $this->filters->sortDir ?? 'desc')
-            ->get();
+            ->get()
+            ->map(static fn (StudentEloquentModel $student): array => StudentExportTransformer::transformForPdf(new StudentReadModel(
+                uuid: $student->uuid,
+                name: $student->name,
+                email: $student->email,
+                phone: $student->phone,
+                dni: $student->dni,
+                birthDate: $student->birth_date?->format('Y-m-d'),
+                address: $student->address,
+                avatar: null,
+                notes: null,
+                status: $student->status,
+                active: $student->active,
+                createdAt: $student->created_at?->toIso8601String(),
+                updatedAt: null,
+                deletedAt: $student->deleted_at?->toIso8601String(),
+            )))
+            ->all();
 
         $pdf = Pdf::loadView('exports.pdf.students', [
             'title' => 'Students Report',

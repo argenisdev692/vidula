@@ -1,12 +1,12 @@
 import * as React from 'react';
 import {
   createColumnHelper,
-  type ColumnDef,
   type RowSelectionState,
   type OnChangeFn,
 } from '@tanstack/react-table';
-import { DataTable } from '@/shadcn/data-table';
+import { DataTable } from '@/common/data-table/DataTable';
 import { Link } from '@inertiajs/react';
+import { useAuthorization } from '@/modules/auth/hooks/useAuthorization';
 import type { StudentListItem } from '@/types/api';
 import { formatDateShort } from '@/common/helpers/formatDate';
 import { Eye, Pencil, Trash2, CheckCircle, GraduationCap } from 'lucide-react';
@@ -39,29 +39,35 @@ export default function StudentsTable({
   rowSelection,
   onRowSelectionChange,
 }: StudentsTableProps) {
+  const { hasPermission } = useAuthorization();
+  const canViewStudents = hasPermission('VIEW_STUDENTS');
+  const canUpdateStudents = hasPermission('UPDATE_STUDENTS');
+  const canDeleteStudents = hasPermission('DELETE_STUDENTS');
 
-  const columns = React.useMemo<ColumnDef<StudentListItem, any>[]>(() => [
-    columnHelper.display({
-      id: 'select',
-      header: ({ table }) => (
-        <input
-          type="checkbox"
-          checked={table.getIsAllPageRowsSelected()}
-          onChange={table.getToggleAllPageRowsSelectedHandler()}
-          aria-label="Select all"
-          className="h-4 w-4 rounded border-(--border-default) accent-(--accent-primary) cursor-pointer"
-        />
-      ),
-      cell: ({ row }) => (
-        <input
-          type="checkbox"
-          checked={row.getIsSelected()}
-          onChange={row.getToggleSelectedHandler()}
-          aria-label="Select row"
-          className="h-4 w-4 rounded border-(--border-default) accent-(--accent-primary) cursor-pointer"
-        />
-      ),
-    }),
+  const columns = React.useMemo(() => [
+    ...(canDeleteStudents ? [
+      columnHelper.display({
+        id: 'select',
+        header: ({ table }) => (
+          <input
+            type="checkbox"
+            checked={table.getIsAllPageRowsSelected()}
+            onChange={table.getToggleAllPageRowsSelectedHandler()}
+            aria-label="Select all"
+            className="h-4 w-4 rounded border-(--border-default) accent-(--accent-primary) cursor-pointer"
+          />
+        ),
+        cell: ({ row }) => (
+          <input
+            type="checkbox"
+            checked={row.getIsSelected()}
+            onChange={row.getToggleSelectedHandler()}
+            aria-label="Select row"
+            className="h-4 w-4 rounded border-(--border-default) accent-(--accent-primary) cursor-pointer"
+          />
+        ),
+      }),
+    ] : []),
     columnHelper.accessor('name', {
       header: 'Student',
       cell: (info) => {
@@ -144,51 +150,59 @@ export default function StudentsTable({
 
         return (
           <div className="flex items-center justify-end gap-2 pr-4">
-            <Link
-              href={`/students/${student.id}`}
-              className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors"
-              title="View Profile"
-              aria-label={`View ${student.name}`}
-            >
-              <Eye size={16} />
-            </Link>
+            {canViewStudents && (
+              <Link
+                href={`/students/${student.uuid}`}
+                className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors"
+                title="View Profile"
+                aria-label={`View ${student.name}`}
+              >
+                <Eye size={16} />
+              </Link>
+            )}
 
             {!isDeleted ? (
               <>
-                <Link
-                  href={`/students/${student.id}/edit`}
-                  className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors"
-                  title="Edit"
-                  aria-label={`Edit ${student.name}`}
-                >
-                  <Pencil size={16} />
-                </Link>
-                <button
-                  onClick={() => onDelete(student.id, student.name)}
-                  className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) shadow-sm transition-colors"
-                  style={{ color: 'var(--accent-error)' }}
-                  title="Delete"
-                  aria-label={`Delete ${student.name}`}
-                >
-                  <Trash2 size={16} />
-                </button>
+                {canUpdateStudents && (
+                  <Link
+                    href={`/students/${student.uuid}/edit`}
+                    className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors"
+                    title="Edit"
+                    aria-label={`Edit ${student.name}`}
+                  >
+                    <Pencil size={16} />
+                  </Link>
+                )}
+                {canDeleteStudents && (
+                  <button
+                    onClick={() => onDelete(student.uuid, student.name)}
+                    className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) shadow-sm transition-colors"
+                    style={{ color: 'var(--accent-error)' }}
+                    title="Delete"
+                    aria-label={`Delete ${student.name}`}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
               </>
             ) : (
-              <button
-                onClick={() => onRestore(student.id, student.name)}
-                className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) shadow-sm transition-colors"
-                style={{ color: 'var(--accent-success)' }}
-                title="Restore"
-                aria-label={`Restore ${student.name}`}
-              >
-                <CheckCircle size={16} />
-              </button>
+              canUpdateStudents && (
+                <button
+                  onClick={() => onRestore(student.uuid, student.name)}
+                  className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) shadow-sm transition-colors"
+                  style={{ color: 'var(--accent-success)' }}
+                  title="Restore"
+                  aria-label={`Restore ${student.name}`}
+                >
+                  <CheckCircle size={16} />
+                </button>
+              )
             )}
           </div>
         );
       },
     }),
-  ], [onDelete, onRestore]);
+  ], [canDeleteStudents, canUpdateStudents, canViewStudents, onDelete, onRestore]);
 
   return (
     <DataTable
@@ -199,7 +213,7 @@ export default function StudentsTable({
       noDataMessage="No students found"
       rowSelection={rowSelection}
       onRowSelectionChange={onRowSelectionChange}
-      getRowId={(row: StudentListItem) => row.id}
+      getRowId={(row: StudentListItem) => row.uuid}
     />
   );
 }

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Students\Application\DTOs;
 
+use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 
 /**
  * @OA\Schema(
@@ -22,6 +24,7 @@ use Spatie\LaravelData\Data;
  *     @OA\Property(property="active", type="boolean", default=true)
  * )
  */
+#[MapInputName(SnakeCaseMapper::class)]
 final class CreateStudentDTO extends Data
 {
     public function __construct(

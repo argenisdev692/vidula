@@ -50,7 +50,7 @@ final readonly class ListStudentHandler
         $mapped = $result['data']
             |> (fn($students) => array_map(
                 fn($student) => new StudentReadModel(
-                    id: $student->id->value,
+                    uuid: $student->id->value,
                     name: $student->name,
                     email: $student->email,
                     phone: $student->phone,

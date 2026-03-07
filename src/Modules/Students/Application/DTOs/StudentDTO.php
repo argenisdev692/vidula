@@ -10,7 +10,7 @@ use Spatie\LaravelData\Data;
 /**
  * @OA\Schema(
  *     schema="StudentDTO",
- *     @OA\Property(property="id", type="string", format="uuid"),
+ *     @OA\Property(property="uuid", type="string", format="uuid"),
  *     @OA\Property(property="name", type="string"),
  *     @OA\Property(property="email", type="string", nullable=true),
  *     @OA\Property(property="phone", type="string", nullable=true),
@@ -28,7 +28,7 @@ use Spatie\LaravelData\Data;
 final class StudentDTO extends Data
 {
     public function __construct(
-        public string $id,
+        public string $uuid,
         public string $name,
         public ?string $email,
         public ?string $phone,
@@ -48,7 +48,7 @@ final class StudentDTO extends Data
     public static function fromEntity(Student $entity): self
     {
         return new self(
-            id: $entity->id->value,
+            uuid: $entity->id->value,
             name: $entity->name,
             email: $entity->email,
             phone: $entity->phone,
