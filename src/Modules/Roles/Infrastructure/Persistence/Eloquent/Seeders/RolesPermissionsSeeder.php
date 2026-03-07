@@ -16,6 +16,7 @@ final class RolesPermissionsSeeder extends Seeder
         'CREATE_ROLES',
         'UPDATE_ROLES',
         'DELETE_ROLES',
+        'RESTORE_ROLES',
     ];
 
     private const GUARDS = ['web', 'sanctum'];

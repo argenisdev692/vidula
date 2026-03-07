@@ -16,6 +16,7 @@ final class StudentsPermissionsSeeder extends Seeder
         'CREATE_STUDENTS',
         'UPDATE_STUDENTS',
         'DELETE_STUDENTS',
+        'RESTORE_STUDENTS',
     ];
 
     private const GUARDS = ['web', 'sanctum'];

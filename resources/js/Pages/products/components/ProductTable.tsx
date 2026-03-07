@@ -1,14 +1,16 @@
 import * as React from 'react';
-import { createColumnHelper, type ColumnDef, type RowSelectionState, type OnChangeFn } from '@tanstack/react-table';
+import { createColumnHelper, type RowSelectionState, type OnChangeFn } from '@tanstack/react-table';
 import { Link } from '@inertiajs/react';
 import { DataTable } from '@/shadcn/data-table';
-import type { ProductListItem } from '@/types/api';
+import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
+import ProductStatusBadge from '@/modules/products/components/ProductStatusBadge';
+import type { ProductListItem } from '@/modules/products/types';
 import { formatDateShort } from '@/common/helpers/formatDate';
 import { Package, Eye, Pencil, Trash2, CheckCircle } from 'lucide-react';
 
 interface ProductTableProps {
   data: ProductListItem[];
-  isLoading: boolean;
+  isPending: boolean;
   isError: boolean;
   onDelete: (uuid: string, name: string) => void;
   onRestore?: (uuid: string, name: string) => void;
@@ -26,14 +28,14 @@ const IconRestore = () => <CheckCircle size={16} />;
 
 export default function ProductTable({
   data,
-  isLoading,
+  isPending,
   isError,
   onDelete,
   onRestore,
   rowSelection,
   onRowSelectionChange,
 }: ProductTableProps) {
-  const columns = React.useMemo<ColumnDef<ProductListItem, any>[]>(() => [
+  const columns = React.useMemo(() => [
     columnHelper.display({
       id: 'select',
       header: ({ table }) => (
@@ -42,8 +44,8 @@ export default function ProductTable({
           checked={table.getIsAllPageRowsSelected()}
           onChange={table.getToggleAllPageRowsSelectedHandler()}
           aria-label="Select all"
-          className="h-4 w-4 rounded border-gray-300 cursor-pointer"
-          style={{ accentColor: 'var(--accent-primary)' }}
+          className="h-4 w-4 cursor-pointer rounded"
+          style={{ accentColor: 'var(--accent-primary)', border: '1px solid var(--border-default)' }}
         />
       ),
       cell: ({ row }) => (
@@ -52,8 +54,8 @@ export default function ProductTable({
           checked={row.getIsSelected()}
           onChange={row.getToggleSelectedHandler()}
           aria-label="Select row"
-          className="h-4 w-4 rounded border-gray-300 cursor-pointer"
-          style={{ accentColor: 'var(--accent-primary)' }}
+          className="h-4 w-4 cursor-pointer rounded"
+          style={{ accentColor: 'var(--accent-primary)', border: '1px solid var(--border-default)' }}
         />
       ),
     }),
@@ -94,8 +96,8 @@ export default function ProductTable({
     columnHelper.accessor('status', {
       header: 'Status',
       cell: (info) => {
-        const status = info.getValue() ?? '—';
-        return <span className="badge badge-primary">{status}</span>;
+        const item = info.row.original;
+        return <ProductStatusBadge status={item.deleted_at ? 'deleted' : 'active'} />;
       },
     }),
     columnHelper.accessor('created_at', {
@@ -118,74 +120,68 @@ export default function ProductTable({
         return (
           <div className="flex items-center justify-end gap-2 pr-4">
             <Link 
-              href={`/products/${item.id}`} 
-              className="p-1.5 rounded-md border shadow-sm transition-colors hover:bg-(--bg-hover)" 
-              style={{ 
-                borderColor: 'var(--border-default)', 
-                background: 'var(--bg-card)', 
-                color: 'var(--text-secondary)' 
-              }}
+              href={`/products/${item.uuid}`} 
+              className="btn-action btn-action-view" 
+              style={{ fontFamily: 'var(--font-sans)' }}
+              aria-label={`View ${item.title}`}
               title="View"
             >
               <IconEye />
             </Link>
             {!isDeleted ? (
               <>
-                <Link 
-                  href={`/products/${item.id}/edit`} 
-                  className="p-1.5 rounded-md border shadow-sm transition-colors hover:bg-(--bg-hover)" 
-                  style={{ 
-                    borderColor: 'var(--border-default)', 
-                    background: 'var(--bg-card)', 
-                    color: 'var(--text-secondary)' 
-                  }}
-                  title="Edit"
-                >
-                  <IconPencil />
-                </Link>
-                <button
-                  onClick={() => onDelete(item.id, item.title)}
-                  className="p-1.5 rounded-md border shadow-sm transition-colors hover:bg-(--bg-hover)"
-                  style={{ 
-                    borderColor: 'var(--border-default)', 
-                    background: 'var(--bg-card)', 
-                    color: 'var(--accent-error)' 
-                  }}
-                  title="Delete"
-                >
-                  <IconTrash />
-                </button>
+                <PermissionGuard permissions={['UPDATE_PRODUCTS']}>
+                  <Link 
+                    href={`/products/${item.uuid}/edit`} 
+                    className="btn-action btn-action-edit" 
+                    style={{ fontFamily: 'var(--font-sans)' }}
+                    aria-label={`Edit ${item.title}`}
+                    title="Edit"
+                  >
+                    <IconPencil />
+                  </Link>
+                </PermissionGuard>
+                <PermissionGuard permissions={['DELETE_PRODUCTS']}>
+                  <button
+                    onClick={() => onDelete(item.uuid, item.title)}
+                    className="btn-action btn-action-delete"
+                    style={{ fontFamily: 'var(--font-sans)' }}
+                    aria-label={`Delete ${item.title}`}
+                    title="Delete"
+                  >
+                    <IconTrash />
+                  </button>
+                </PermissionGuard>
               </>
             ) : (
-              <button
-                onClick={() => onRestore?.(item.id, item.title)}
-                className="p-1.5 rounded-md border shadow-sm transition-colors hover:bg-(--bg-hover)"
-                style={{
-                  borderColor: 'var(--border-default)',
-                  background: 'var(--bg-card)',
-                  color: 'var(--accent-success)'
-                }}
-                title="Restore"
-              >
-                <IconRestore />
-              </button>
+              <PermissionGuard permissions={['RESTORE_PRODUCTS']}>
+                <button
+                  onClick={() => onRestore?.(item.uuid, item.title)}
+                  className="btn-action btn-action-restore"
+                  style={{ fontFamily: 'var(--font-sans)' }}
+                  aria-label={`Restore ${item.title}`}
+                  title="Restore"
+                >
+                  <IconRestore />
+                </button>
+              </PermissionGuard>
             )}
           </div>
         );
       },
     }),
-  ], [onDelete, onRestore]); // ✅ columnHelper NOT in deps
+  ], [onDelete, onRestore]);
 
   return (
     <DataTable
       columns={columns}
       data={data}
-      isLoading={isLoading}
+      isLoading={isPending}
       isError={isError}
       noDataMessage="No products found"
       rowSelection={rowSelection}
       onRowSelectionChange={onRowSelectionChange}
-      getRowId={(row) => row.id} // ✅ required for stable IDs
+      getRowId={(row) => row.uuid} 
     />
   );
 }

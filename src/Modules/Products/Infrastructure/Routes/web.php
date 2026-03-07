@@ -23,19 +23,29 @@ Route::get('/{uuid}/edit', [ProductPageController::class, 'edit'])->name('produc
 // ── JSON Endpoints for React Query (Internal Web API) ──
 // These endpoints are used by the frontend React components via React Query
 Route::prefix('data')->group(function () {
-    // Current user profile
-    Route::get('/me', [ProductController::class, 'show'])->name('product.data.me');
-    Route::put('/me', [ProductController::class, 'update'])->name('product.data.me.update');
-
     // Admin
     Route::prefix('admin')->group(function () {
-        Route::get('/export', [ProductExportController::class, '__invoke'])->name('product.data.export'); // MUST be before /{uuid}
-        Route::get('/', [ProductController::class, 'index'])->name('product.data.index');
-        Route::post('/', [ProductController::class, 'store'])->name('product.data.store');
-        Route::post('/bulk-delete', [ProductController::class, 'bulkDelete'])->name('product.data.bulk-delete');
-        Route::get('/{uuid}', [ProductController::class, 'show'])->name('product.data.show')->whereUuid('uuid');
-        Route::put('/{uuid}', [ProductController::class, 'update'])->name('product.data.update')->whereUuid('uuid');
-        Route::delete('/{uuid}', [ProductController::class, 'destroy'])->name('product.data.destroy')->whereUuid('uuid');
-        Route::patch('/{uuid}/restore', [ProductController::class, 'restore'])->name('product.data.restore')->whereUuid('uuid');
+        Route::middleware('permission:VIEW_PRODUCTS')->group(function (): void {
+            Route::get('/export', [ProductExportController::class, '__invoke'])->name('product.data.export');
+            Route::get('/', [ProductController::class, 'index'])->name('product.data.index');
+            Route::get('/{uuid}', [ProductController::class, 'show'])->name('product.data.show')->whereUuid('uuid');
+        });
+
+        Route::middleware('permission:CREATE_PRODUCTS')->group(function (): void {
+            Route::post('/', [ProductController::class, 'store'])->name('product.data.store');
+        });
+
+        Route::middleware('permission:UPDATE_PRODUCTS')->group(function (): void {
+            Route::put('/{uuid}', [ProductController::class, 'update'])->name('product.data.update')->whereUuid('uuid');
+        });
+
+        Route::middleware('permission:DELETE_PRODUCTS')->group(function (): void {
+            Route::post('/bulk-delete', [ProductController::class, 'bulkDelete'])->name('product.data.bulk-delete');
+            Route::delete('/{uuid}', [ProductController::class, 'destroy'])->name('product.data.destroy')->whereUuid('uuid');
+        });
+
+        Route::middleware('permission:RESTORE_PRODUCTS')->group(function (): void {
+            Route::patch('/{uuid}/restore', [ProductController::class, 'restore'])->name('product.data.restore')->whereUuid('uuid');
+        });
     });
 });

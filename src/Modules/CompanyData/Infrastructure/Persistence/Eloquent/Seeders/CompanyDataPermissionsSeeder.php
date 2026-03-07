@@ -20,6 +20,7 @@ final class CompanyDataPermissionsSeeder extends Seeder
             'CREATE_COMPANY_DATA',
             'UPDATE_COMPANY_DATA',
             'DELETE_COMPANY_DATA',
+            'RESTORE_COMPANY_DATA',
         ];
 
         foreach ($permissions as $permission) {

@@ -50,6 +50,8 @@ class DatabaseSeeder extends Seeder
 
         $this->call(\Modules\Roles\Infrastructure\Persistence\Eloquent\Seeders\RolesPermissionsSeeder::class);
 
+        $this->call(\Modules\Products\Infrastructure\Persistence\Eloquent\Seeders\ProductPermissionsSeeder::class);
+
         $this->call(\Modules\Students\Infrastructure\Persistence\Eloquent\Seeders\StudentsPermissionsSeeder::class);
 
         $this->call(\Modules\CompanyData\Infrastructure\Persistence\Eloquent\Seeders\CompanyDataPermissionsSeeder::class);

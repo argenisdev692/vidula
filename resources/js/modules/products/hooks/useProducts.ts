@@ -1,6 +1,11 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import axios from 'axios';
-import type { ProductListItem, ProductFilters, PaginatedResponse } from '@/types/api';
+import {
+  type ProductFilters,
+  type ProductsResponse,
+  type RawProductListItem,
+  toProductListItem,
+} from '@/modules/products/types';
 
 /**
  * useProducts — Fetches a paginated list of products.
@@ -13,10 +18,13 @@ export const useProducts = (filters: ProductFilters) => {
   return useQuery({
     queryKey: ['products', filters],
     queryFn: async () => {
-      const { data } = await axios.get<PaginatedResponse<ProductListItem>>('/products/data/admin', {
+      const { data } = await axios.get<{ data: RawProductListItem[]; meta: ProductsResponse['meta'] }>('/products/data/admin', {
         params: filters,
       });
-      return data;
+      return {
+        data: data.data.map(toProductListItem),
+        meta: data.meta,
+      } satisfies ProductsResponse;
     },
     placeholderData: keepPreviousData, // ✅ v5
     staleTime: 1000 * 60 * 2,

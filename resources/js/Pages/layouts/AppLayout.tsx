@@ -107,7 +107,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: 'Roles', href: '/roles', icon: <ShieldCheck size={icSize} />, description: 'Manage authorization roles', permission: 'VIEW_ROLES' },
       { label: 'Permissions', href: '/permissions', icon: <KeyRound size={icSize} />, description: 'Manage action permissions', permission: 'VIEW_PERMISSIONS' },
       { label: 'Company', href: '/company-data', icon: <Building2 size={icSize} />, description: 'Corporate entities', permission: 'VIEW_COMPANY_DATA' },
-      { label: 'Products', href: '/products', icon: <Package size={icSize} />, description: 'Manage products', permission: 'VIEW_ANY_PRODUCTS' },
+      { label: 'Products', href: '/products', icon: <Package size={icSize} />, description: 'Manage products', permission: 'VIEW_PRODUCTS' },
     ],
   },
   {

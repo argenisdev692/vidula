@@ -13,7 +13,7 @@ use Spatie\Permission\Models\Role;
  *
  * ── Naming Convention ──
  * Role:       Users
- * Permissions: VIEW_USERS, CREATE_USERS, UPDATE_USERS, DELETE_USERS
+ * Permissions: VIEW_USERS, CREATE_USERS, UPDATE_USERS, DELETE_USERS, RESTORE_USERS
  */
 final class UsersPermissionsSeeder extends Seeder
 {
@@ -27,6 +27,7 @@ final class UsersPermissionsSeeder extends Seeder
             'CREATE_USERS',
             'UPDATE_USERS',
             'DELETE_USERS',
+            'RESTORE_USERS',
         ];
 
         foreach ($permissions as $permission) {

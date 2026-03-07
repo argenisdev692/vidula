@@ -580,7 +580,7 @@ Route::middleware(['auth:sanctum', 'role:super-admin'])->prefix('/api/{module}/a
 
 ### Permissions
 
-- [ ] `VIEW_{MODULE}`, `CREATE_{MODULE}`, `UPDATE_{MODULE}`, `DELETE_{MODULE}`
+- [ ] `VIEW_{MODULE}`, `CREATE_{MODULE}`, `UPDATE_{MODULE}`, `DELETE_{MODULE}`, `RESTORE_{MODULE}`
 - [ ] `forgetCachedPermissions()` BEFORE creating permissions
 - [ ] Super Admin gets all
 

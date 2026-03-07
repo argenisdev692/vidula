@@ -10,8 +10,8 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Modules\Products\Application\DTOs\ProductFilterDTO;
+use Modules\Products\Application\Queries\ReadModels\ProductReadModel;
 use Modules\Products\Infrastructure\Persistence\Eloquent\Models\ProductEloquentModel;
-use Modules\Products\Infrastructure\Persistence\Mappers\ProductMapper;
 
 final class ProductExcelExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize
 {
@@ -57,18 +57,10 @@ final class ProductExcelExport implements FromQuery, WithHeadings, WithMapping, 
 
     public function map(mixed $row): array
     {
-        $readModel = is_array($row)
-            ? $row
-            : ProductMapper::toDomain($row);
-
-        $product = is_object($readModel) && method_exists($readModel, 'title')
-            ? $readModel
-            : ProductMapper::toDomain($row);
-
         $transformed = ProductExportTransformer::transformForExcel(
-            \Modules\Products\Application\Queries\ReadModels\ProductReadModel::from([
+            ProductReadModel::from([
                 'id' => $row->uuid,
-                'user_id' => (string) $row->user_id,
+                'userId' => $row->user?->uuid ?? '',
                 'type' => $row->type,
                 'title' => $row->title,
                 'slug' => $row->slug,
@@ -79,9 +71,9 @@ final class ProductExcelExport implements FromQuery, WithHeadings, WithMapping, 
                 'thumbnail' => $row->thumbnail,
                 'level' => $row->level,
                 'language' => $row->language,
-                'created_at' => $row->created_at?->toIso8601String(),
-                'updated_at' => $row->updated_at?->toIso8601String(),
-                'deleted_at' => $row->deleted_at?->toIso8601String(),
+                'createdAt' => $row->created_at?->toIso8601String(),
+                'updatedAt' => $row->updated_at?->toIso8601String(),
+                'deletedAt' => $row->deleted_at?->toIso8601String(),
             ])
         );
 

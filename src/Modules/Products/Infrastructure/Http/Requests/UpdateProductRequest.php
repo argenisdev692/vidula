@@ -16,14 +16,13 @@ final class UpdateProductRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'type' => ['sometimes', 'string', 'in:classroom,video'],
-            'title' => ['sometimes', 'string', 'max:255'],
-            'slug' => ['sometimes', 'string', 'max:255'],
+            'title' => ['required', 'string', 'max:255'],
+            'slug' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'price' => ['sometimes', 'numeric', 'min:0'],
-            'currency' => ['sometimes', 'string', 'size:3'],
-            'level' => ['sometimes', 'string', 'in:beginner,intermediate,advanced'],
-            'language' => ['sometimes', 'string', 'size:2'],
+            'price' => ['required', 'numeric', 'min:0'],
+            'currency' => ['required', 'string', 'size:3'],
+            'level' => ['required', 'string', 'in:beginner,intermediate,advanced'],
+            'language' => ['required', 'string', 'size:2'],
             'thumbnail' => ['nullable', 'string', 'max:255'],
         ];
     }

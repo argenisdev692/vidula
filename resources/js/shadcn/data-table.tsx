@@ -108,8 +108,8 @@ export function DataTable<TData extends SoftDeleteRow>({
                 style={{ color: 'var(--text-muted)' }}
               >
                 <div className="flex flex-col items-center justify-center gap-3">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-(--accent-primary)" />
-                  <span className="text-(--text-muted)">{loadingMessage}</span>
+                  <div className="h-8 w-8 animate-spin rounded-full border-b-2" style={{ borderColor: 'var(--accent-primary)' }} />
+                  <span style={{ color: 'var(--text-muted)' }}>{loadingMessage}</span>
                 </div>
               </TableCell>
             </TableRow>

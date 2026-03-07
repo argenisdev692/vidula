@@ -78,15 +78,9 @@ final class ProductController
      *     @OA\Response(response=404, description="Product not found")
      * )
      */
-    public function show(Request $request, ?string $uuid = null): JsonResponse
+    public function show(string $uuid): JsonResponse
     {
-        $targetUuid = $uuid ?? $request->user()?->uuid;
-
-        if (!$targetUuid) {
-            return response()->json(['message' => 'User context not found'], 401);
-        }
-
-        $result = $this->getHandler->handle(new GetProductQuery($targetUuid));
+        $result = $this->getHandler->handle(new GetProductQuery($uuid));
 
         return response()->json(['data' => $result]);
     }
@@ -125,16 +119,10 @@ final class ProductController
      *     @OA\Response(response=422, description="Validation error")
      * )
      */
-    public function update(UpdateProductRequest $request, ?string $uuid = null): JsonResponse
+    public function update(UpdateProductRequest $request, string $uuid): JsonResponse
     {
-        $targetUuid = $uuid ?? $request->user()?->uuid;
-
-        if (!$targetUuid) {
-            return response()->json(['message' => 'User context not found'], 401);
-        }
-
         $dto = UpdateProductDTO::from($request->validated());
-        $this->updateHandler->handle(new UpdateProductCommand($targetUuid, $dto));
+        $this->updateHandler->handle(new UpdateProductCommand($uuid, $dto));
 
         return response()->json([
             'message' => 'Product updated successfully',

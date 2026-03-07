@@ -1,21 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import { ProductDetail } from '@/types/api';
+import { type RawProductDetail, toProductDetail } from '@/modules/products/types';
 
 /**
  * useSingleProduct — Fetches a single company profile by UUID or for the current user.
  */
-export const useSingleProduct = (uuid?: string) => {
+export const useSingleProduct = (uuid: string) => {
   return useQuery({
-    queryKey: ['products', uuid || 'me'],
+    queryKey: ['products', uuid],
     queryFn: async () => {
-      // Backend controller: show(Request $request, ?string $uuid = null)
-      // If uuid is null, it uses $request->user()?->uuid
-      const url = uuid ? `/products/data/admin/${uuid}` : '/products/data/me';
-      const { data } = await axios.get<{ data: ProductDetail }>(url);
-      return data.data;
+      const { data } = await axios.get<{ data: RawProductDetail }>(`/products/data/admin/${uuid}`);
+      return toProductDetail(data.data);
     },
-    enabled: !!uuid || true, // Always fetch if no uuid (me), or if uuid exists
+    enabled: uuid.length > 0,
   });
 };
 

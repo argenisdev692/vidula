@@ -235,7 +235,7 @@ export interface UpdatePasswordDTO {
 // ── Products ────────────────────────────────────────────────
 export interface ProductListItem {
   id: string; // uuid
-  user_id: number;
+  user_id: string;
   type: string;
   title: string;
   slug: string;
@@ -243,6 +243,7 @@ export interface ProductListItem {
   price: number;
   currency: string;
   created_at: string;
+  updated_at?: string | null;
   deleted_at?: string | null;
 }
 
@@ -265,18 +266,27 @@ export interface ProductFilters {
 }
 
 export interface CreateProductDTO {
+  user_id: string;
   type: string;
   title: string;
+  slug: string;
   price: number;
   currency: string;
-  description?: string;
-  level?: string;
-  language?: string;
-  status?: string;
+  description?: string | null;
+  level: string;
+  language: string;
+  thumbnail?: string | null;
 }
 
-export interface UpdateProductDTO extends Partial<CreateProductDTO> {
-  slug?: string;
+export interface UpdateProductDTO {
+  title: string;
+  slug: string;
+  price: number;
+  currency: string;
+  description?: string | null;
+  level: string;
+  language: string;
+  thumbnail?: string | null;
 }
 
 // ── Clients ────────────────────────────────────────────────

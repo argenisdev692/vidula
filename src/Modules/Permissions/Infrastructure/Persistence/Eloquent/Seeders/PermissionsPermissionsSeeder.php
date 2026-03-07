@@ -16,6 +16,7 @@ final class PermissionsPermissionsSeeder extends Seeder
         'CREATE_PERMISSIONS',
         'UPDATE_PERMISSIONS',
         'DELETE_PERMISSIONS',
+        'RESTORE_PERMISSIONS',
     ];
 
     private const GUARDS = ['web', 'sanctum'];

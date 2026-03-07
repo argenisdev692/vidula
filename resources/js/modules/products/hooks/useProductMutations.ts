@@ -1,13 +1,14 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios, { type AxiosError } from 'axios';
 import { sileo } from 'sileo';
+import type { CreateProductDTO, UpdateProductDTO } from '@/modules/products/types';
 
 /**
  * MANDATORY: Helper to safely extract the best error message from Axios
  * This prevents showing generic "Request failed with status code 422" messages.
  */
-function getErrorMessage(err: AxiosError | any, defaultMsg: string): string {
-  if (err?.response?.data?.message) {
+function getErrorMessage(err: AxiosError<{ message?: string }> | Error, defaultMsg: string): string {
+  if (axios.isAxiosError<{ message?: string }>(err) && err.response?.data?.message) {
       return err.response.data.message;
   }
   return err?.message || defaultMsg;
@@ -21,7 +22,7 @@ export const useProductMutations = () => {
   const queryClient = useQueryClient();
 
   const createProduct = useMutation({
-    mutationFn: (payload: any) => axios.post('/products/data/admin', payload),
+    mutationFn: (payload: CreateProductDTO) => axios.post('/products/data/admin', payload),
     onSuccess: () => {
       sileo.success({ title: 'Product created successfully' });
       queryClient.invalidateQueries({ queryKey: ['products'] });
@@ -32,13 +33,12 @@ export const useProductMutations = () => {
   });
 
   const updateProduct = useMutation({
-    mutationFn: ({ productUuid, payload }: { productUuid?: string; payload: any }) => {
-      const url = productUuid ? `/products/data/admin/${productUuid}` : '/products/data/me';
-      return axios.put(url, payload);
+    mutationFn: ({ productUuid, payload }: { productUuid: string; payload: UpdateProductDTO }) => {
+      return axios.put(`/products/data/admin/${productUuid}`, payload);
     },
     onSuccess: (_, variables) => {
       sileo.success({ title: 'Product updated successfully' });
-      queryClient.invalidateQueries({ queryKey: ['products', variables.productUuid || 'me'] });
+      queryClient.invalidateQueries({ queryKey: ['products', variables.productUuid] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },
     onError: (err: AxiosError) => {

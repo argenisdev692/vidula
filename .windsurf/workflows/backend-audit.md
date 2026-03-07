@@ -51,7 +51,7 @@ For each item mark ✅ PASS, ❌ FAIL (with file:line and brief description) or 
 - [ ] No raw SQL with user input
 - [ ] No `unserialize()` on external input
 - [ ] `->whereUuid('uuid')` on UUID routes
-- [ ] Permissions defined: `VIEW_X`, `CREATE_X`, `UPDATE_X`, `DELETE_X`
+- [ ] Permissions defined: `VIEW_X`, `CREATE_X`, `UPDATE_X`, `DELETE_X`, `RESTORE_X`
 - [ ] `forgetCachedPermissions()` called BEFORE creating permissions
 
 **Exports (§8)**

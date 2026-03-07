@@ -16,7 +16,7 @@ final class CreateProductRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'userId' => ['required', 'integer', 'exists:users,id'],
+            'user_id' => ['required', 'string', 'uuid', 'exists:users,uuid'],
             'type' => ['required', 'string', 'in:classroom,video'],
             'title' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', 'unique:products,slug'],

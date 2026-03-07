@@ -5,21 +5,19 @@ import { useSingleProduct } from '@/modules/products/hooks/useProduct';
 import { useProductMutations } from '@/modules/products/hooks/useProductMutations';
 import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
 import { PremiumField } from '@/shadcn/PremiumField';
-import type { UpdateProductDTO } from '@/types/api';
+import type { UpdateProductDTO } from '@/modules/products/types';
 import type { PageProps } from '@inertiajs/core';
 import { ArrowLeft, Save, Package, DollarSign, Tag } from 'lucide-react';
 
 export default function ProductEditPage(): React.JSX.Element {
-  const { props } = usePage<PageProps & { productId?: string }>();
-  
-  const urlParts = typeof window !== 'undefined' ? window.location.pathname.split('/') : [];
-  const uuid = props.productId || (urlParts.length > 1 ? urlParts[urlParts.length - 2] : ''); 
+  const { props } = usePage<PageProps & { productId: string }>();
+
+  const uuid = props.productId;
 
   const { data: product, isPending, isError } = useSingleProduct(uuid);
   const { updateProduct } = useProductMutations();
 
   const [form, setForm] = React.useState<UpdateProductDTO>({
-    type: '',
     title: '',
     slug: '',
     price: 0,
@@ -27,13 +25,12 @@ export default function ProductEditPage(): React.JSX.Element {
     description: '',
     level: '',
     language: '',
-    status: '',
+    thumbnail: null,
   });
 
   React.useEffect(() => {
     if (product) {
       setForm({
-        type: product.type,
         title: product.title,
         slug: product.slug,
         price: product.price,
@@ -41,8 +38,8 @@ export default function ProductEditPage(): React.JSX.Element {
         description: product.description || '',
         level: product.level,
         language: product.language,
-        status: product.status,
-      } as any);
+        thumbnail: product.thumbnail,
+      });
     }
   }, [product]);
 
@@ -56,7 +53,7 @@ export default function ProductEditPage(): React.JSX.Element {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateProduct.mutate({ productUuid: uuid, payload: form as any }, {
+    updateProduct.mutate({ productUuid: uuid, payload: form }, {
       onSuccess: () => {
         router.visit('/products');
       }
@@ -87,7 +84,7 @@ export default function ProductEditPage(): React.JSX.Element {
   return (
     <AppLayout>
       <Head title={`Edit Product | ${product?.title}`} />
-      <PermissionGuard permissions={['UPDATE PRODUCTS']}>
+      <PermissionGuard permissions={['UPDATE_PRODUCTS']}>
         <div className="max-w-5xl mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-300 pb-12">
           
           {/* ── Header ── */}
@@ -101,6 +98,7 @@ export default function ProductEditPage(): React.JSX.Element {
                   border: '1px solid var(--border-default)', 
                   color: 'var(--text-muted)' 
                 }}
+                aria-label="Back to products"
               >
                 <ArrowLeft size={20} />
               </Link>
@@ -115,7 +113,8 @@ export default function ProductEditPage(): React.JSX.Element {
             </div>
 
             <button
-              onClick={handleSubmit}
+              type="submit"
+              form="edit-product-form"
               disabled={updateProduct.isPending}
               className="btn-modern btn-modern-primary flex items-center gap-2 px-8 py-3 shadow-xl transition-all font-bold"
             >
@@ -123,10 +122,10 @@ export default function ProductEditPage(): React.JSX.Element {
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <form id="edit-product-form" onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* ── Main Section ── */}
             <div className="lg:col-span-2 space-y-8">
-                <section className="card-modern p-8 space-y-8 shadow-2xl glass-morphism">
+                <section className="card p-8 space-y-8 shadow-2xl">
                     <div className="flex items-center gap-3">
                         <Package style={{ color: 'var(--accent-primary)' }} size={24} />
                         <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Basic Info</h2>
@@ -152,7 +151,7 @@ export default function ProductEditPage(): React.JSX.Element {
                     </div>
                 </section>
 
-                <section className="card-modern p-8 space-y-8 shadow-2xl glass-morphism">
+                <section className="card p-8 space-y-8 shadow-2xl">
                     <div className="flex items-center gap-3">
                         <DollarSign style={{ color: 'var(--accent-success)' }} size={24} />
                         <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Pricing Details</h2>
@@ -192,7 +191,7 @@ export default function ProductEditPage(): React.JSX.Element {
 
             {/* ── Sidebar ── */}
             <div className="space-y-8">
-                <section className="card-modern p-6 space-y-6" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+                <section className="card p-6 space-y-6" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
                     <div className="flex items-center gap-3 mb-2">
                         <Tag style={{ color: 'var(--accent-primary)' }} size={20} />
                         <h3 className="text-sm font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Classification</h3>
@@ -200,11 +199,11 @@ export default function ProductEditPage(): React.JSX.Element {
 
                     <div className="space-y-4">
                         <div className="flex flex-col gap-2">
-                             <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Product Type</label>
+                             <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>Product Type</label>
                              <select 
                                 name="type" 
-                                value={form.type} 
-                                onChange={(e) => setForm(p => ({ ...p, type: e.target.value }))}
+                                value={product.type}
+                                disabled
                                 className="w-full rounded-xl px-3 py-2 text-xs"
                                 style={{ 
                                   background: 'var(--bg-card)', 
@@ -212,15 +211,13 @@ export default function ProductEditPage(): React.JSX.Element {
                                   color: 'var(--text-primary)' 
                                 }}
                             >
-                                <option value="COURSE">Course</option>
-                                <option value="WORKSHOP">Workshop</option>
-                                <option value="EBOOK">E-Book</option>
-                                <option value="BAGGAGE">Baggage</option>
+                                <option value="classroom">Classroom</option>
+                                <option value="video">Video</option>
                             </select>
                         </div>
 
                         <div className="flex flex-col gap-2">
-                             <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Level</label>
+                             <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>Level</label>
                              <select 
                                 name="level" 
                                 value={form.level} 
@@ -232,15 +229,14 @@ export default function ProductEditPage(): React.JSX.Element {
                                   color: 'var(--text-primary)' 
                                 }}
                             >
-                                <option value="BEGINNER">Beginner</option>
-                                <option value="INTERMEDIATE">Intermediate</option>
-                                <option value="ADVANCED">Advanced</option>
-                                <option value="EXPERT">Expert</option>
+                                <option value="beginner">Beginner</option>
+                                <option value="intermediate">Intermediate</option>
+                                <option value="advanced">Advanced</option>
                             </select>
                         </div>
 
                         <div className="flex flex-col gap-2">
-                             <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Language</label>
+                             <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>Language</label>
                              <select 
                                 name="language" 
                                 value={form.language} 
@@ -252,10 +248,10 @@ export default function ProductEditPage(): React.JSX.Element {
                                   color: 'var(--text-primary)' 
                                 }}
                             >
-                                <option value="SPANISH">Spanish</option>
-                                <option value="ENGLISH">English</option>
-                                <option value="PORTUGUESE">Portuguese</option>
-                                <option value="FRENCH">French</option>
+                                <option value="es">Spanish</option>
+                                <option value="en">English</option>
+                                <option value="pt">Portuguese</option>
+                                <option value="fr">French</option>
                             </select>
                         </div>
                     </div>

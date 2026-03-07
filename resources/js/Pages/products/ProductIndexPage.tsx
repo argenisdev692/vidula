@@ -12,7 +12,7 @@ import { RestoreConfirmModal } from '@/shadcn/RestoreConfirmModal';
 import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
 import { DataTableDateRangeFilter } from '@/common/data-table/DataTableDateRangeFilter';
 import { ExportButton } from '@/common/export/ExportButton';
-import type { ProductFilters, ProductListItem } from '@/types/api';
+import type { ProductFilters, ProductListItem } from '@/modules/products/types';
 import { Plus, Search, ChevronLeft, ChevronRight, Package } from 'lucide-react';
 
 function buildPageWindow(current: number, last: number): number[] {
@@ -45,7 +45,7 @@ export default function ProductIndexPage(): React.JSX.Element {
   // ── Optimistic Updates ──
   const [optimisticItems, setOptimisticItems] = React.useOptimistic<ProductListItem[], string>(
     productList,
-    (state, deletedUuid) => state.filter(i => i.id !== deletedUuid)
+    (state, deletedUuid) => state.filter(i => i.uuid !== deletedUuid)
   );
 
   // ── Handlers ──
@@ -91,6 +91,7 @@ export default function ProductIndexPage(): React.JSX.Element {
       if (filters.search)   params.append('search', filters.search);
       if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
       if (filters.dateTo)   params.append('dateTo', filters.dateTo);
+      if (filters.status)  params.append('status', filters.status);
       window.open(`/products/data/admin/export?${params}`, '_blank');
     });
   }
@@ -112,7 +113,7 @@ export default function ProductIndexPage(): React.JSX.Element {
 
   function handleBulkRestore(): void {
     if (!selectedUuids.length) return;
-    restoreProduct.mutate(selectedUuids as any, {
+    restoreProduct.mutate(selectedUuids, {
       onSuccess: () => setRowSelection({}),
     });
   }
@@ -125,7 +126,7 @@ export default function ProductIndexPage(): React.JSX.Element {
     <>
       <Head title="Products" />
       <AppLayout>
-        <PermissionGuard permissions={['VIEW ANY PRODUCTS']}>
+        <PermissionGuard permissions={['VIEW_PRODUCTS']}>
           <div
             className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-300"
             style={{ fontFamily: 'var(--font-sans)' }}
@@ -150,14 +151,16 @@ export default function ProductIndexPage(): React.JSX.Element {
               </div>
             </div>
 
-            <Link
-              href="/products/create"
-              prefetch
-              className="btn-modern btn-modern-primary inline-flex items-center gap-2 px-5 py-2 font-bold shadow-sm"
-            >
-              <Plus size={16} />
-              New Product
-            </Link>
+            <PermissionGuard permissions={['CREATE_PRODUCTS']}>
+              <Link
+                href="/products/create"
+                prefetch
+                className="btn-modern btn-modern-primary inline-flex items-center gap-2 px-5 py-2 font-bold shadow-sm"
+              >
+                <Plus size={16} />
+                New Product
+              </Link>
+            </PermissionGuard>
           </div>
 
           {/* ── Toolbar ── */}
@@ -222,10 +225,10 @@ export default function ProductIndexPage(): React.JSX.Element {
           )}
 
           {/* ── Table card ── */}
-          <div className="card-modern shadow-xl overflow-hidden">
+          <div className="card shadow-xl overflow-hidden">
             <ProductTable
               data={optimisticItems}
-              isLoading={isPending}
+              isPending={isPending}
               isError={isError}
               onDelete={handleDeleteClick}
               onRestore={handleRestoreClick}
@@ -262,9 +265,10 @@ export default function ProductIndexPage(): React.JSX.Element {
                     <button
                       key={page}
                       onClick={() => goToPage(page)}
+                      aria-label={`Go to page ${page}`}
                       className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-semibold transition-all"
                       style={page === meta.currentPage
-                        ? { background: 'var(--accent-primary)', color: '#fff' }
+                        ? { background: 'var(--accent-primary)', color: 'var(--text-primary)' }
                         : { color: 'var(--text-muted)', border: '1px solid var(--border-default)' }
                       }
                     >

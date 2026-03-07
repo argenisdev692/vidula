@@ -2,16 +2,54 @@
 
 declare(strict_types=1);
 
-use Modules\Users\Infrastructure\Persistence\Eloquent\Models\UserEloquentModel as User;
-use Modules\Products\Infrastructure\Persistence\Eloquent\Models\ProductEloquentModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Modules\Permissions\Infrastructure\Persistence\Eloquent\Models\PermissionEloquentModel;
+use Modules\Products\Infrastructure\Persistence\Eloquent\Models\ProductEloquentModel;
+use Modules\Users\Infrastructure\Persistence\Eloquent\Models\UserEloquentModel as User;
+use Ramsey\Uuid\Uuid;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
 
-it('lists product data', function () {
+function createProductWebUser(): User
+{
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+    foreach (['VIEW_PRODUCTS', 'CREATE_PRODUCTS', 'UPDATE_PRODUCTS', 'DELETE_PRODUCTS', 'RESTORE_PRODUCTS'] as $permission) {
+        PermissionEloquentModel::firstOrCreate([
+            'name' => $permission,
+            'guard_name' => 'web',
+        ], [
+            'uuid' => Uuid::uuid4()->toString(),
+        ]);
+    }
+
+    $role = Role::firstOrCreate([
+        'name' => 'PRODUCTS_TEST_ADMIN',
+        'guard_name' => 'web',
+    ], [
+        'uuid' => Uuid::uuid4()->toString(),
+    ]);
+
+    $role->syncPermissions(PermissionEloquentModel::where('guard_name', 'web')->whereIn('name', [
+        'VIEW_PRODUCTS',
+        'CREATE_PRODUCTS',
+        'UPDATE_PRODUCTS',
+        'DELETE_PRODUCTS',
+        'RESTORE_PRODUCTS',
+    ])->get());
+
     $user = User::factory()->create();
+    $user->assignRole($role);
+
+    return $user;
+}
+
+it('lists product data', function () {
+    $user = createProductWebUser();
     ProductEloquentModel::factory()->count(3)->create(['user_id' => $user->id]);
 
     $this->actingAs($user)
@@ -26,7 +64,7 @@ it('lists product data', function () {
 });
 
 it('validates required fields on create', function () {
-    $user = User::factory()->create();
+    $user = createProductWebUser();
     $this->actingAs($user)
         ->postJson(route('product.data.store'), [])
         ->assertUnprocessable()
@@ -34,7 +72,7 @@ it('validates required fields on create', function () {
 });
 
 it('shows product data', function () {
-    $user = User::factory()->create();
+    $user = createProductWebUser();
     $uuid = (string) Str::uuid();
     $product = ProductEloquentModel::factory()->create([
         'uuid' => $uuid,
@@ -49,7 +87,7 @@ it('shows product data', function () {
 });
 
 it('soft deletes product data', function () {
-    $user = User::factory()->create();
+    $user = createProductWebUser();
     $uuid = (string) Str::uuid();
     $product = ProductEloquentModel::factory()->create([
         'uuid' => $uuid,
@@ -69,7 +107,7 @@ it('soft deletes product data', function () {
 });
 
 it('restores soft deleted product data', function () {
-    $user = User::factory()->create();
+    $user = createProductWebUser();
     $uuid = (string) Str::uuid();
     $product = ProductEloquentModel::factory()->create([
         'uuid' => $uuid,
