@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\Clients\Infrastructure\Http\Controllers\Api\ClientController;
+use Modules\Clients\Infrastructure\Http\Controllers\Api\ClientExportController;
 
 /**
  * Client Context — API routes.
  */
 Route::prefix('admin')->group(function () {
+    Route::get('/export', ClientExportController::class)->name('api.admin.client.export');
     Route::get('/', [ClientController::class, 'index'])->name('api.admin.client.index');
     Route::post('/', [ClientController::class, 'store'])->name('api.admin.client.store');
     Route::get('/{uuid}', [ClientController::class, 'show'])->name('api.admin.client.show')->whereUuid('uuid');

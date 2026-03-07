@@ -108,9 +108,12 @@ final readonly class ClientDataTransformer
 
         foreach ($urlFields as $field) {
             if (isset($data[$field]) && !empty($data[$field])) {
-                $data[$field] = filter_var($data[$field], FILTER_VALIDATE_URL)
-                    ? $data[$field]
-                    : null;
+                try {
+                    filter_var($data[$field], FILTER_VALIDATE_URL, FILTER_THROW_ON_FAILURE);
+                } catch (\ValueError) {
+                    $data[$field] = null;
+                    continue;
+                }
             }
         }
 

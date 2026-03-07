@@ -27,7 +27,7 @@ final class UpdatePostRequest extends FormRequest
             'category_uuid' => ['nullable', 'string', 'uuid'],
             'post_status' => ['nullable', 'string', 'in:draft,published,scheduled,archived'],
             'published_at' => ['nullable', 'date'],
-            'scheduled_at' => ['nullable', 'date'],
+            'scheduled_at' => ['nullable', 'date', 'required_if:post_status,scheduled'],
         ];
     }
 }

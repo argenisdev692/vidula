@@ -1,6 +1,7 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import axios from 'axios';
-import type { ClientListItem, ClientFilters, PaginatedResponse } from '@/types/api';
+import type { PaginatedResponse } from '@/types/api';
+import type { ClientListItem, ClientFilters } from '@/modules/clients/types';
 
 /**
  * useClients — Fetches a paginated list of clients.

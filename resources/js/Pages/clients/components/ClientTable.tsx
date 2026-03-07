@@ -1,14 +1,15 @@
 import * as React from 'react';
-import { createColumnHelper, type ColumnDef, type RowSelectionState, type OnChangeFn } from '@tanstack/react-table';
+import { createColumnHelper, type RowSelectionState, type OnChangeFn } from '@tanstack/react-table';
 import { Link } from '@inertiajs/react';
 import { DataTable } from '@/shadcn/data-table';
-import type { ClientListItem } from '@/types/api';
+import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
+import type { ClientListItem } from '@/modules/clients/types';
 import { formatDateShort } from '@/common/helpers/formatDate';
 import { UserSquare2, Eye, Pencil, Trash2, CheckCircle } from 'lucide-react';
 
 interface ClientTableProps {
   data: ClientListItem[];
-  isLoading: boolean;
+  isPending: boolean;
   isError: boolean;
   onDelete: (uuid: string, name: string) => void;
   onRestoreClick?: (uuid: string, name: string) => void;
@@ -21,14 +22,14 @@ const columnHelper = createColumnHelper<ClientListItem>();
 
 export default function ClientTable({
   data,
-  isLoading,
+  isPending,
   isError,
   onDelete,
   onRestoreClick,
   rowSelection,
   onRowSelectionChange,
 }: ClientTableProps): React.JSX.Element {
-  const columns = React.useMemo<ColumnDef<ClientListItem, unknown>[]>(() => [
+  const columns = React.useMemo(() => [
     columnHelper.display({
       id: 'select',
       header: ({ table }) => (
@@ -107,38 +108,50 @@ export default function ClientTable({
         const isDeleted = !!item.deleted_at;
         return (
           <div className="flex items-center justify-end gap-2 pr-4">
-            <Link
-              href={`/clients/${item.uuid}`}
-              className="btn-action btn-action-view"
-              title="View"
-            >
-              <Eye size={14} />
-            </Link>
+            <PermissionGuard permissions={['VIEW_CLIENTS']}>
+              <Link
+                href={`/clients/${item.uuid}`}
+                className="btn-action btn-action-view"
+                title="View"
+                aria-label={`View ${item.client_name}`}
+              >
+                <Eye size={14} />
+              </Link>
+            </PermissionGuard>
             {!isDeleted ? (
               <>
-                <Link
-                  href={`/clients/${item.uuid}/edit`}
-                  className="btn-action btn-action-edit"
-                  title="Edit"
-                >
-                  <Pencil size={14} />
-                </Link>
-                <button
-                  onClick={() => onDelete(item.uuid, item.client_name)}
-                  className="btn-action btn-action-delete"
-                  title="Delete"
-                >
-                  <Trash2 size={14} />
-                </button>
+                <PermissionGuard permissions={['UPDATE_CLIENTS']}>
+                  <Link
+                    href={`/clients/${item.uuid}/edit`}
+                    className="btn-action btn-action-edit"
+                    title="Edit"
+                    aria-label={`Edit ${item.client_name}`}
+                  >
+                    <Pencil size={14} />
+                  </Link>
+                </PermissionGuard>
+                <PermissionGuard permissions={['DELETE_CLIENTS']}>
+                  <button
+                    onClick={() => onDelete(item.uuid, item.client_name)}
+                    className="btn-action btn-action-delete"
+                    title="Delete"
+                    aria-label={`Delete ${item.client_name}`}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </PermissionGuard>
               </>
             ) : (
-              <button
-                onClick={() => onRestoreClick?.(item.uuid, item.client_name)}
-                className="btn-action btn-action-restore"
-                title="Restore"
-              >
-                <CheckCircle size={14} />
-              </button>
+              <PermissionGuard permissions={['UPDATE_CLIENTS']}>
+                <button
+                  onClick={() => onRestoreClick?.(item.uuid, item.client_name)}
+                  className="btn-action btn-action-restore"
+                  title="Restore"
+                  aria-label={`Restore ${item.client_name}`}
+                >
+                  <CheckCircle size={14} />
+                </button>
+              </PermissionGuard>
             )}
           </div>
         );
@@ -150,7 +163,7 @@ export default function ClientTable({
     <DataTable
       columns={columns}
       data={data}
-      isLoading={isLoading}
+      isPending={isPending}
       isError={isError}
       noDataMessage="No clients found"
       rowSelection={rowSelection}

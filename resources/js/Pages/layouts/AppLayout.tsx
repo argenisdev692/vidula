@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { AuthPageProps } from '@/types/auth';
+import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
 import { useAuthorization } from '@/modules/auth/hooks/useAuthorization';
 
 // ══════════════════════════════════════════════════════════════════
@@ -96,7 +97,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Users', href: '/users', icon: <Users size={icSize} />, description: 'Manage system users', permission: 'VIEW_USERS' },
       { label: 'Students', href: '/students', icon: <GraduationCap size={icSize} />, description: 'Manage students', permission: 'VIEW_ANY_STUDENTS' },
-      { label: 'Clients', href: '/clients', icon: <UserCheck size={icSize} />, description: 'Manage clients', permission: 'VIEW_ANY_CLIENTS' },
+      { label: 'Clients', href: '/clients', icon: <UserCheck size={icSize} />, description: 'Manage clients', permission: 'VIEW_CLIENTS' },
     ],
   },
   {
@@ -573,6 +574,14 @@ function SidebarContent({ onClose }: { onClose?: () => void }): React.JSX.Elemen
                         </div>
                       </Link>
                     );
+
+                    if (item.permission) {
+                      return (
+                        <PermissionGuard key={item.href} permissions={[item.permission]}>
+                          {linkElement}
+                        </PermissionGuard>
+                      );
+                    }
 
                     return linkElement;
                   })}

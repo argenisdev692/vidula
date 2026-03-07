@@ -49,7 +49,7 @@ final readonly class UpdatePostHandler
                 : $existing->categoryId,
             'post_status' => $status,
             'published_at' => $status === 'published'
-                ? ($dto->publishedAt ?? $existing->publishedAt ?? now()->toIso8601String())
+                ? ($existing->publishedAt ?? now()->toIso8601String())
                 : null,
             'scheduled_at' => $status === 'scheduled'
                 ? ($dto->scheduledAt ?? $existing->scheduledAt)

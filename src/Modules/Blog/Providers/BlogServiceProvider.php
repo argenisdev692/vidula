@@ -25,6 +25,12 @@ final class BlogServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                \Modules\Blog\Infrastructure\CLI\PublishScheduledPostsCommand::class,
+            ]);
+        }
+
         // ── Context-specific Route Loading ──
         $this->registerWebRoutes();
     }

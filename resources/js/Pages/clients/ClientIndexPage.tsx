@@ -3,15 +3,17 @@ import { Link, Head, useRemember, router } from '@inertiajs/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { type RowSelectionState } from '@tanstack/react-table';
 import AppLayout from '@/pages/layouts/AppLayout';
+import { useAuthorization } from '@/modules/auth/hooks/useAuthorization';
 import { useClients } from '@/modules/clients/hooks/useClients';
 import { useClientMutations } from '@/modules/clients/hooks/useClientMutations';
+import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
 import ClientTable from './components/ClientTable';
 import { DataTableBulkActions } from '@/shadcn/DataTableBulkActions';
 import { DeleteConfirmModal } from '@/shadcn/DeleteConfirmModal';
 import { RestoreConfirmModal } from '@/shadcn/RestoreConfirmModal';
 import { DataTableDateRangeFilter } from '@/common/data-table/DataTableDateRangeFilter';
 import { ExportButton } from '@/common/export/ExportButton';
-import type { ClientFilters } from '@/types/api';
+import type { ClientFilters } from '@/modules/clients/types';
 import { Plus, Search, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 
 // ── Sliding page window helper ──
@@ -33,6 +35,10 @@ export default function ClientIndexPage(): React.JSX.Element {
   const [, startSearchTransition] = React.useTransition();
 
   const queryClient = useQueryClient();
+
+  const { hasPermission } = useAuthorization();
+  const canDeleteClients = hasPermission('DELETE_CLIENTS');
+  const canUpdateClients = hasPermission('UPDATE_CLIENTS');
 
   // ── Data ──
   const { data, isPending, isError } = useClients(filters);
@@ -89,6 +95,7 @@ export default function ClientIndexPage(): React.JSX.Element {
     startExportTransition(() => {
       const params = new URLSearchParams({ format });
       if (filters.search)   params.append('search', filters.search);
+      if (filters.status)   params.append('status', filters.status);
       if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
       if (filters.dateTo)   params.append('dateTo', filters.dateTo);
       window.open(`/clients/data/admin/export?${params}`, '_blank');
@@ -128,7 +135,7 @@ export default function ClientIndexPage(): React.JSX.Element {
       <Head title="Clients" />
       <AppLayout>
         <div
-          className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500"
+          className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-300"
           style={{ fontFamily: 'var(--font-sans)' }}
         >
 
@@ -151,13 +158,15 @@ export default function ClientIndexPage(): React.JSX.Element {
               </div>
             </div>
 
-            <Link
-              href="/clients/create"
-              className="btn-modern btn-modern-primary inline-flex items-center gap-2 px-5 py-2 font-bold shadow-sm"
-            >
-              <Plus size={16} />
-              New Client
-            </Link>
+            <PermissionGuard permissions={['CREATE_CLIENTS']}>
+              <Link
+                href="/clients/create"
+                className="btn-modern btn-modern-primary inline-flex items-center gap-2 px-5 py-2 font-bold shadow-sm"
+              >
+                <Plus size={16} />
+                New Client
+              </Link>
+            </PermissionGuard>
           </div>
 
           {/* ── Toolbar ── */}
@@ -200,9 +209,11 @@ export default function ClientIndexPage(): React.JSX.Element {
               <DataTableDateRangeFilter
                 dateFrom={filters.dateFrom}
                 dateTo={filters.dateTo}
-                onChange={(range: { dateFrom?: string; dateTo?: string }) =>
-                  setFilters(p => ({ ...p, ...range, page: 1 }))
-                }
+                onChange={(range: { dateFrom?: string; dateTo?: string }) => {
+                  startSearchTransition(() => {
+                    setFilters(p => ({ ...p, ...range, page: 1 }));
+                  });
+                }}
               />
 
               <div className="h-6 w-px hidden sm:block" style={{ background: 'var(--border-subtle)' }} />
@@ -213,20 +224,24 @@ export default function ClientIndexPage(): React.JSX.Element {
 
           {/* ── Bulk Actions ── */}
           {selectedUuids.length > 0 && (
-            <DataTableBulkActions
-              count={selectedUuids.length}
-              onDelete={handleBulkDelete}
-              onRestore={handleBulkRestore}
-              isDeleting={isDeletingBulk}
-              isRestoring={restoreClient.isPending}
-            />
+            <PermissionGuard permissions={['DELETE_CLIENTS', 'UPDATE_CLIENTS']}>
+              <DataTableBulkActions
+                count={selectedUuids.length}
+                onDelete={handleBulkDelete}
+                onRestore={handleBulkRestore}
+                isDeleting={isDeletingBulk}
+                isRestoring={restoreClient.isPending}
+                canDelete={canDeleteClients}
+                canRestore={canUpdateClients}
+              />
+            </PermissionGuard>
           )}
 
           {/* ── Table card ── */}
-          <div className="card-modern shadow-xl overflow-hidden">
+          <div className="card shadow-xl overflow-hidden">
             <ClientTable
               data={optimisticItems}
-              isLoading={isPending}
+              isPending={isPending}
               isError={isError}
               onDelete={handleDeleteClick}
               onRestoreClick={handleRestoreClick}
@@ -268,6 +283,7 @@ export default function ClientIndexPage(): React.JSX.Element {
                         ? { background: 'var(--accent-primary)', color: 'var(--text-primary)' }
                         : { color: 'var(--text-muted)', border: '1px solid var(--border-default)' }
                       }
+                      aria-label={`Go to page ${page}`}
                     >
                       {page}
                     </button>

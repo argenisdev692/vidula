@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import AppLayout from '@/pages/layouts/AppLayout';
+import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
 import { useSingleClient } from '@/modules/clients/hooks/useClient';
 import ClientStatusBadge from '@/modules/clients/components/ClientStatusBadge';
 import type { PageProps } from '@inertiajs/core';
@@ -51,7 +52,7 @@ export default function ClientShowPage(): React.JSX.Element {
     <AppLayout>
       <Head title={`${client.client_name} — Profile`} />
       <div
-        className="max-w-5xl mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12"
+        className="max-w-5xl mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-300 pb-12"
         style={{ fontFamily: 'var(--font-sans)' }}
       >
 
@@ -61,6 +62,7 @@ export default function ClientShowPage(): React.JSX.Element {
             <Link
               href="/clients"
               className="flex h-10 w-10 items-center justify-center rounded-xl shadow-sm transition-all"
+              aria-label="Back to clients"
               style={{
                 background: 'var(--bg-elevated)',
                 border: '1px solid var(--border-default)',
@@ -87,12 +89,14 @@ export default function ClientShowPage(): React.JSX.Element {
               </div>
             </div>
           </div>
-          <Link
-            href={`/clients/${client.uuid}/edit`}
-            className="btn-modern btn-modern-primary flex items-center gap-2 px-6 py-2.5 font-bold shadow-lg"
-          >
-            <Pencil size={16} /> Edit Profile
-          </Link>
+          <PermissionGuard permissions={['UPDATE_CLIENTS']}>
+            <Link
+              href={`/clients/${client.uuid}/edit`}
+              className="btn-modern btn-modern-primary flex items-center gap-2 px-6 py-2.5 font-bold shadow-lg"
+            >
+              <Pencil size={16} /> Edit Profile
+            </Link>
+          </PermissionGuard>
         </div>
 
         {/* ── Grid Layout ── */}
@@ -102,7 +106,7 @@ export default function ClientShowPage(): React.JSX.Element {
           <div className="md:col-span-2 space-y-8">
 
             {/* Contact Details Card */}
-            <section className="card-modern p-8 shadow-2xl" style={{ border: '1px solid var(--border-default)' }}>
+            <section className="card p-8 shadow-2xl">
               <div className="flex items-center gap-3 mb-6">
                 <Building2 size={22} style={{ color: 'var(--accent-primary)' }} />
                 <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Contact Information</h2>
@@ -154,7 +158,7 @@ export default function ClientShowPage(): React.JSX.Element {
             </section>
 
             {/* Geographic Coordinates Card */}
-            <section className="card-modern p-8 shadow-2xl" style={{ border: '1px solid var(--border-default)' }}>
+            <section className="card p-8 shadow-2xl">
               <div className="flex items-center gap-3 mb-6">
                 <MapPin size={22} style={{ color: 'var(--accent-primary)' }} />
                 <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Geographic Data</h2>
@@ -178,7 +182,7 @@ export default function ClientShowPage(): React.JSX.Element {
 
           {/* Social Links & Metadata Column */}
           <div className="space-y-8">
-            <section className="card-modern p-6" style={{ border: '1px solid var(--border-default)' }}>
+            <section className="card p-6">
               <div className="flex items-center gap-3 mb-6">
                 <Share2 size={20} style={{ color: 'var(--accent-primary)' }} />
                 <h2 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>Social Profiles</h2>
@@ -206,7 +210,7 @@ export default function ClientShowPage(): React.JSX.Element {
               </div>
             </section>
 
-            <section className="card-modern p-6" style={{ border: '1px solid var(--border-default)' }}>
+            <section className="card p-6">
               <div className="flex items-center gap-3 mb-6">
                 <Calendar size={20} style={{ color: 'var(--accent-primary)' }} />
                 <h2 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>Metadata</h2>

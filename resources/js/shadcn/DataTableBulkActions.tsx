@@ -22,6 +22,8 @@ interface DataTableBulkActionsProps {
   onRestore?: () => void;
   isDeleting?: boolean;
   isRestoring?: boolean;
+  canDelete?: boolean;
+  canRestore?: boolean;
 }
 
 const IconTrash = () => (
@@ -44,10 +46,12 @@ export function DataTableBulkActions({
   onRestore,
   isDeleting = false,
   isRestoring = false,
+  canDelete = true,
+  canRestore = true,
 }: DataTableBulkActionsProps): React.JSX.Element | null {
   const [modalOpen, setModalOpen] = React.useState<boolean>(false);
 
-  if (count === 0) return null;
+  if (count === 0 || (!canDelete && !(onRestore && canRestore))) return null;
 
   function handleDeleteConfirm(): void {
     onDelete();
@@ -101,7 +105,7 @@ export function DataTableBulkActions({
         </span>
 
         {/* Restore button — optional */}
-        {onRestore && (
+        {onRestore && canRestore && (
           <button
             onClick={onRestore}
             disabled={isRestoring || isDeleting}
@@ -128,38 +132,42 @@ export function DataTableBulkActions({
         )}
 
         {/* Delete button */}
-        <button
-          onClick={() => setModalOpen(true)}
-          disabled={isDeleting || isRestoring}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.375rem',
-            padding: '0.375rem 0.875rem',
-            borderRadius: 8,
-            fontSize: '0.8125rem',
-            fontWeight: 600,
-            cursor: (isDeleting || isRestoring) ? 'not-allowed' : 'pointer',
-            border: '1px solid color-mix(in srgb, var(--accent-error) 30%, var(--border-default))',
-            background: 'color-mix(in srgb, var(--accent-error) 10%, transparent)',
-            color: 'var(--accent-error)',
-            fontFamily: 'var(--font-sans)',
-            transition: 'all 0.15s',
-            opacity: (isDeleting || isRestoring) ? 0.5 : 1,
-          }}
-        >
-          <IconTrash />
-          {isDeleting ? 'Deleting…' : 'Delete selected'}
-        </button>
+        {canDelete && (
+          <button
+            onClick={() => setModalOpen(true)}
+            disabled={isDeleting || isRestoring}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.375rem',
+              padding: '0.375rem 0.875rem',
+              borderRadius: 8,
+              fontSize: '0.8125rem',
+              fontWeight: 600,
+              cursor: (isDeleting || isRestoring) ? 'not-allowed' : 'pointer',
+              border: '1px solid color-mix(in srgb, var(--accent-error) 30%, var(--border-default))',
+              background: 'color-mix(in srgb, var(--accent-error) 10%, transparent)',
+              color: 'var(--accent-error)',
+              fontFamily: 'var(--font-sans)',
+              transition: 'all 0.15s',
+              opacity: (isDeleting || isRestoring) ? 0.5 : 1,
+            }}
+          >
+            <IconTrash />
+            {isDeleting ? 'Deleting…' : 'Delete selected'}
+          </button>
+        )}
       </div>
 
-      <DeleteConfirmModal
-        open={modalOpen}
-        entityLabel={`${count} selected ${count === 1 ? 'item' : 'items'}`}
-        onConfirm={handleDeleteConfirm}
-        onCancel={() => setModalOpen(false)}
-        isDeleting={isDeleting}
-      />
+      {canDelete && (
+        <DeleteConfirmModal
+          open={modalOpen}
+          entityLabel={`${count} selected ${count === 1 ? 'item' : 'items'}`}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setModalOpen(false)}
+          isDeleting={isDeleting}
+        />
+      )}
     </>
   );
 }

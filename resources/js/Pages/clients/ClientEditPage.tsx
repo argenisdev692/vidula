@@ -1,10 +1,11 @@
 import * as React from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AppLayout from '@/pages/layouts/AppLayout';
+import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
 import { useSingleClient } from '@/modules/clients/hooks/useClient';
 import { useClientMutations } from '@/modules/clients/hooks/useClientMutations';
 import { PremiumField } from '@/shadcn/PremiumField';
-import type { UpdateClientDTO } from '@/types/api';
+import type { UpdateClientDTO } from '@/modules/clients/types';
 import { ArrowLeft, Save, Building2, Share2, MapPin } from 'lucide-react';
 import type { AuthPageProps } from '@/types/auth';
 
@@ -83,7 +84,7 @@ export default function ClientEditPage(): React.JSX.Element {
   return (
     <AppLayout>
       <Head title={`Edit Client | ${client?.client_name ?? ''}`} />
-      <div className="max-w-5xl mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
+      <div className="max-w-5xl mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-300 pb-12" style={{ fontFamily: 'var(--font-sans)' }}>
 
         {/* ── Header ── */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -91,6 +92,7 @@ export default function ClientEditPage(): React.JSX.Element {
             <Link
               href="/clients"
               className="flex h-10 w-10 items-center justify-center rounded-xl shadow-sm transition-all"
+              aria-label="Back to clients"
               style={{
                 background: 'var(--bg-elevated)',
                 border: '1px solid var(--border-default)',
@@ -109,21 +111,22 @@ export default function ClientEditPage(): React.JSX.Element {
             </div>
           </div>
 
-          <button
-            onClick={handleSubmit}
-            disabled={updateClient.isPending}
-            className="btn-modern btn-modern-primary flex items-center gap-2 px-8 py-3 shadow-xl font-bold"
-          >
-            {updateClient.isPending ? 'Saving...' : <><Save size={18} /> Save Changes</>}
-          </button>
+          <PermissionGuard permissions={['UPDATE_CLIENTS']}>
+            <button
+              onClick={handleSubmit}
+              disabled={updateClient.isPending}
+              className="btn-modern btn-modern-primary flex items-center gap-2 px-8 py-3 shadow-xl font-bold"
+            >
+              {updateClient.isPending ? 'Saving...' : <><Save size={18} /> Save Changes</>}
+            </button>
+          </PermissionGuard>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* ── Left Column: Main Info ── */}
           <div className="lg:col-span-2 space-y-8">
             <section
-              className="card-modern p-8 space-y-8 shadow-2xl"
-              style={{ border: '1px solid var(--border-default)' }}
+              className="card p-8 space-y-8 shadow-2xl"
             >
               <div className="flex items-center gap-3">
                 <Building2 size={24} style={{ color: 'var(--accent-primary)' }} />
@@ -179,8 +182,7 @@ export default function ClientEditPage(): React.JSX.Element {
             </section>
 
             <section
-              className="card-modern p-8 space-y-8 shadow-2xl"
-              style={{ border: '1px solid var(--border-default)' }}
+              className="card p-8 space-y-8 shadow-2xl"
             >
               <div className="flex items-center gap-3">
                 <Share2 size={24} style={{ color: 'var(--accent-primary)' }} />
@@ -233,7 +235,7 @@ export default function ClientEditPage(): React.JSX.Element {
           {/* ── Right Column: Sidebar ── */}
           <div className="space-y-8">
             <section
-              className="card-modern p-6 space-y-6"
+              className="card p-6 space-y-6"
               style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}
             >
               <div className="flex items-center gap-3 mb-2">
@@ -276,7 +278,7 @@ export default function ClientEditPage(): React.JSX.Element {
             </section>
 
             <section
-              className="card-modern p-6 space-y-4"
+              className="card p-6 space-y-4"
               style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}
             >
               <h3 className="text-sm font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>

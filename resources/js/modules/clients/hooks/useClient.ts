@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import type { ClientDetail } from '@/types/api';
+import type { ClientDetail } from '@/modules/clients/types';
 
 /**
  * useSingleClient — Fetches a single client profile by UUID or for the current user.

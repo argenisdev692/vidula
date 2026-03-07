@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Modules\Clients\Infrastructure\Http\Controllers\Api\ClientController;
+use Modules\Clients\Infrastructure\Http\Controllers\Api\ClientExportController;
 
 /**
  * Client Context — Web routes (Inertia pages + JSON endpoints for React Query).
@@ -39,7 +40,7 @@ Route::prefix('data')->group(function () {
 
     // Admin
     Route::prefix('admin')->group(function () {
-        Route::get('/export', [ClientController::class, 'export'])->name('client.data.export'); // MUST be before /{uuid}
+        Route::get('/export', ClientExportController::class)->name('client.data.export'); // MUST be before /{uuid}
         Route::get('/', [ClientController::class, 'index'])->name('client.data.index');
         Route::post('/', [ClientController::class, 'store'])->name('client.data.store');
         Route::post('/bulk-delete', [ClientController::class, 'bulkDelete'])->name('client.data.bulk-delete');

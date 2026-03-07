@@ -27,7 +27,7 @@ final class ClientPdfExport
 
         $pdf = Pdf::loadView('exports.pdf.clients', [
             'title' => 'Client Directory Report',
-            'generatedAt' => now()->format('Y-m-d H:i:s'),
+            'generatedAt' => now()->format('F j, Y H:i'),
             'rows' => $rows,
         ]);
 

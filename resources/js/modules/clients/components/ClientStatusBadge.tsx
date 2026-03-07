@@ -24,9 +24,9 @@ const STATUS_CONFIG: Record<
   },
   deleted: {
     label: 'Deleted',
-    bg: 'color-mix(in srgb, var(--text-disabled) 15%, transparent)',
-    text: 'var(--text-disabled)',
-    dot: 'var(--text-disabled)',
+    bg: 'color-mix(in srgb, var(--accent-error) 15%, transparent)',
+    text: 'var(--accent-error)',
+    dot: 'var(--accent-error)',
   },
 };
 

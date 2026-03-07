@@ -10,7 +10,6 @@ use Maatwebsite\Excel\Facades\Excel;
 use Modules\Clients\Application\DTOs\ClientFilterDTO;
 use Modules\Clients\Application\Queries\ListClient\ListClientHandler;
 use Modules\Clients\Application\Queries\ListClient\ListClientQuery;
-use Modules\Clients\Domain\Ports\ClientRepositoryPort;
 use Modules\Clients\Infrastructure\Http\Export\ClientExcelExport;
 use Modules\Clients\Infrastructure\Http\Export\ClientPdfExport;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -23,7 +22,6 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 final class ClientExportController
 {
     public function __construct(
-        private readonly ClientRepositoryPort $repository,
         private readonly ListClientHandler $handler
     ) {
     }
@@ -45,10 +43,8 @@ final class ClientExportController
      */
     private function exportExcel(ClientFilterDTO $filters): BinaryFileResponse
     {
-        $export = new ClientExcelExport($filters, $this->repository);
-        
         return Excel::download(
-            $export,
+            new ClientExcelExport($filters),
             'clients-export-' . now()->format('Y-m-d') . '.xlsx'
         );
     }

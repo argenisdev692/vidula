@@ -1,8 +1,9 @@
 import * as React from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/pages/layouts/AppLayout';
+import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
 import { useClientMutations } from '@/modules/clients/hooks/useClientMutations';
-import type { CreateClientDTO } from '@/types/api';
+import type { CreateClientDTO } from '@/modules/clients/types';
 import { ArrowLeft, Save } from 'lucide-react';
 
 export default function ClientCreatePage(): React.JSX.Element {
@@ -39,7 +40,7 @@ export default function ClientCreatePage(): React.JSX.Element {
     <AppLayout>
       <Head title="New Client" />
       <div
-        className="max-w-4xl mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12"
+        className="max-w-4xl mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-300 pb-12"
         style={{ fontFamily: 'var(--font-sans)' }}
       >
 
@@ -49,6 +50,7 @@ export default function ClientCreatePage(): React.JSX.Element {
             <Link
               href="/clients"
               className="flex h-10 w-10 items-center justify-center rounded-xl transition-all shadow-sm"
+              aria-label="Back to clients"
               style={{
                 background: 'var(--bg-elevated)',
                 border: '1px solid var(--border-default)',
@@ -69,17 +71,19 @@ export default function ClientCreatePage(): React.JSX.Element {
               </p>
             </div>
           </div>
-          <button
-            onClick={handleSubmit}
-            disabled={createMutation.isPending}
-            className="btn-modern btn-modern-primary flex items-center gap-2 px-6 py-2.5 font-bold shadow-lg"
-          >
-            {createMutation.isPending ? 'Saving...' : <><Save size={16} /> Save Client</>}
-          </button>
+          <PermissionGuard permissions={['CREATE_CLIENTS']}>
+            <button
+              onClick={handleSubmit}
+              disabled={createMutation.isPending}
+              className="btn-modern btn-modern-primary flex items-center gap-2 px-6 py-2.5 font-bold shadow-lg"
+            >
+              {createMutation.isPending ? 'Saving...' : <><Save size={16} /> Save Client</>}
+            </button>
+          </PermissionGuard>
         </div>
 
         {/* ── Form Card ── */}
-        <div className="card-modern p-8 shadow-2xl" style={{ border: '1px solid var(--border-default)' }}>
+        <div className="card p-8 shadow-2xl">
           <form onSubmit={handleSubmit} className="space-y-8">
 
             {/* ── Section: Core Information ── */}

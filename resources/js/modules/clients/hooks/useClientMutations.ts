@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios, { type AxiosError } from 'axios';
 import { sileo } from 'sileo';
-import type { CreateClientDTO, UpdateClientDTO } from '@/types/api';
+import type { CreateClientDTO, UpdateClientDTO } from '@/modules/clients/types';
 
 /**
  * Safely extract the best error message from Axios responses.

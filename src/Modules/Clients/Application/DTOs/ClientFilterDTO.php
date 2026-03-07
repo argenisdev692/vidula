@@ -13,6 +13,7 @@ final class ClientFilterDTO extends Data
 {
     public function __construct(
         public ?string $search = null,
+        public ?string $status = null,
         public ?string $userUuid = null,
         public ?string $dateFrom = null,
         public ?string $dateTo = null,

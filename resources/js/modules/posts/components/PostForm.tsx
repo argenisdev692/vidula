@@ -39,6 +39,7 @@ export function PostForm({
   const { data: categoryData } = useBlogCategories({ per_page: 100, status: 'active' });
   const categories = categoryData?.data ?? [];
   const status = values.post_status ?? 'draft';
+  const showScheduledAt = status === 'scheduled';
 
   return (
     <form onSubmit={onSubmit} className="max-w-6xl mx-auto flex flex-col gap-8 animate-in fade-in duration-300">
@@ -210,23 +211,16 @@ export function PostForm({
                 {errors.category_uuid && <p className="text-xs text-(--accent-error) mt-1">{errors.category_uuid}</p>}
               </div>
 
-              <PremiumField
-                label="Published At"
-                type="datetime-local"
-                name="published_at"
-                value={values.published_at ? values.published_at.slice(0, 16) : ''}
-                onChange={(e) => onChange('published_at', e.target.value || null)}
-                error={errors.published_at}
-              />
-
-              <PremiumField
-                label="Scheduled At"
-                type="datetime-local"
-                name="scheduled_at"
-                value={values.scheduled_at ? values.scheduled_at.slice(0, 16) : ''}
-                onChange={(e) => onChange('scheduled_at', e.target.value || null)}
-                error={errors.scheduled_at}
-              />
+              {showScheduledAt ? (
+                <PremiumField
+                  label="Scheduled At"
+                  type="datetime-local"
+                  name="scheduled_at"
+                  value={values.scheduled_at ? values.scheduled_at.slice(0, 16) : ''}
+                  onChange={(e) => onChange('scheduled_at', e.target.value || null)}
+                  error={errors.scheduled_at}
+                />
+              ) : null}
             </div>
           </div>
 
