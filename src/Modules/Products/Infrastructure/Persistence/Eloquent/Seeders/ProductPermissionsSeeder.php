@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Modules\Products\Infrastructure\Persistence\Eloquent\Seeders;
 
 use Illuminate\Database\Seeder;
+use Modules\Permissions\Infrastructure\Persistence\Eloquent\Models\PermissionEloquentModel;
 use Ramsey\Uuid\Uuid;
-use Spatie\Permission\Models\Permission;
 
 /**
  * Idempotent seeder for Products module permissions.
@@ -35,7 +35,7 @@ final class ProductPermissionsSeeder extends Seeder
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         foreach (self::PERMISSIONS as $name) {
-            Permission::firstOrCreate(
+            PermissionEloquentModel::firstOrCreate(
                 ['name' => $name, 'guard_name' => 'web'],
                 ['uuid' => Uuid::uuid4()->toString()]
             );

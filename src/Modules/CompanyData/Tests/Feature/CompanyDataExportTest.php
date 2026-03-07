@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\Permissions\Infrastructure\Persistence\Eloquent\Models\PermissionEloquentModel;
 use Modules\Users\Infrastructure\Persistence\Eloquent\Models\UserEloquentModel as User;
-use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -13,7 +13,7 @@ uses(TestCase::class, RefreshDatabase::class);
 function createSuperAdminUser(): User
 {
     app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
-    Permission::firstOrCreate(['name' => 'VIEW_COMPANY_DATA', 'guard_name' => 'sanctum']);
+    PermissionEloquentModel::firstOrCreate(['name' => 'VIEW_COMPANY_DATA', 'guard_name' => 'sanctum']);
     $role = Role::firstOrCreate(['name' => 'SUPER_ADMIN', 'guard_name' => 'sanctum']);
     $role->givePermissionTo('VIEW_COMPANY_DATA');
 

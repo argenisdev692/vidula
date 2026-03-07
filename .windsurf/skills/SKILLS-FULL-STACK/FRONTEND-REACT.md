@@ -754,6 +754,7 @@ export interface {Entity}ListItem {
 | **A05 XSS**            | React `{ }` interpolation only. No `dangerouslySetInnerHTML`. No `eval()`.             |
 | **A07 Auth**           | `router.visit('/login')` + `queryClient.clear()` on logout. Session cookies only.      |
 | **Client Validation**  | Client-side = UX only. Backend DTO = authoritative.                                    |
+**Authorization rule:** Frontend UI visibility must be based on `permissions`, not `roles`. If a user has the required permission (for example `VIEW_USERS` or `CREATE_USERS`), the UI must allow the action regardless of the user's role label. Roles may exist for backend assignment or grouping, but React/Inertia conditional rendering must check `permissions`.
 
 ---
 
@@ -779,6 +780,7 @@ export interface {Entity}ListItem {
 - [ ] Sliding paginator (5 pages around current)
 - [ ] shadcn components via CLI, never hand-edited
 - [ ] Sidebar nav item with `PermissionGuard`
+- [ ] Frontend UI authorization uses `permissions` only, never `roles`
 
 ### File Naming
 

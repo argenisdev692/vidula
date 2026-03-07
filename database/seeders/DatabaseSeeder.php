@@ -35,29 +35,33 @@ class DatabaseSeeder extends Seeder
 
         foreach ($modules as $module) {
             foreach ($actions as $action) {
-                \Spatie\Permission\Models\Permission::firstOrCreate(
+                \Modules\Permissions\Infrastructure\Persistence\Eloquent\Models\PermissionEloquentModel::firstOrCreate(
                     ['name' => "{$action} {$module}", 'guard_name' => 'web'],
                     ['uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString()]
                 );
-                \Spatie\Permission\Models\Permission::firstOrCreate(
+                \Modules\Permissions\Infrastructure\Persistence\Eloquent\Models\PermissionEloquentModel::firstOrCreate(
                     ['name' => "{$action} {$module}", 'guard_name' => 'sanctum'],
                     ['uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString()]
                 );
             }
         }
 
+        $this->call(\Modules\Permissions\Infrastructure\Persistence\Eloquent\Seeders\PermissionsPermissionsSeeder::class);
+
+        $this->call(\Modules\Roles\Infrastructure\Persistence\Eloquent\Seeders\RolesPermissionsSeeder::class);
+
         $this->call(\Modules\CompanyData\Infrastructure\Persistence\Eloquent\Seeders\CompanyDataPermissionsSeeder::class);
 
         /** @var \Spatie\Permission\Models\Role|null $superAdmin */
         $superAdmin = \Spatie\Permission\Models\Role::where('name', 'SUPER_ADMIN')->where('guard_name', 'web')->first();
         if ($superAdmin) {
-            $superAdmin->givePermissionTo(\Spatie\Permission\Models\Permission::where('guard_name', 'web')->get());
+            $superAdmin->givePermissionTo(\Modules\Permissions\Infrastructure\Persistence\Eloquent\Models\PermissionEloquentModel::where('guard_name', 'web')->get());
         }
 
         /** @var \Spatie\Permission\Models\Role|null $superAdminSanctum */
         $superAdminSanctum = \Spatie\Permission\Models\Role::where('name', 'SUPER_ADMIN')->where('guard_name', 'sanctum')->first();
         if ($superAdminSanctum) {
-            $superAdminSanctum->givePermissionTo(\Spatie\Permission\Models\Permission::where('guard_name', 'sanctum')->get());
+            $superAdminSanctum->givePermissionTo(\Modules\Permissions\Infrastructure\Persistence\Eloquent\Models\PermissionEloquentModel::where('guard_name', 'sanctum')->get());
         }
 
         // NEW MODULES DATA

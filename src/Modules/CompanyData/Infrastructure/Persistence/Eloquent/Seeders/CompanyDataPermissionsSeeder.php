@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Modules\CompanyData\Infrastructure\Persistence\Eloquent\Seeders;
 
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Permission;
+use Modules\Permissions\Infrastructure\Persistence\Eloquent\Models\PermissionEloquentModel;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -23,11 +23,11 @@ final class CompanyDataPermissionsSeeder extends Seeder
         ];
 
         foreach ($permissions as $permission) {
-            Permission::firstOrCreate(
+            PermissionEloquentModel::firstOrCreate(
                 ['name' => $permission, 'guard_name' => 'web'],
                 ['uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString()]
             );
-            Permission::firstOrCreate(
+            PermissionEloquentModel::firstOrCreate(
                 ['name' => $permission, 'guard_name' => 'sanctum'],
                 ['uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString()]
             );

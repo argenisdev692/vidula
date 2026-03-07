@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { type RowSelectionState } from '@tanstack/react-table';
 import AppLayout from '@/pages/layouts/AppLayout';
 import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
+import { useAuthorization } from '@/modules/auth/hooks/useAuthorization';
 import { useUsers } from '@/modules/users/hooks/useUsers';
 import { useUserMutations } from '@/modules/users/hooks/useUserMutations';
 import UsersTable from './components/UsersTable';
@@ -20,11 +21,14 @@ import { Search, ChevronLeft, ChevronRight, UserPlus } from 'lucide-react';
  * - useOptimistic: feedback instantáneo en eliminaciones (dentro de startTransition ✅)
  */
 export default function UsersIndexPage(): React.JSX.Element {
+  const { hasPermission } = useAuthorization();
   const [filters, setFilters] = useRemember<UserFilters>({ page: 1, per_page: 15 }, 'users-filters');
   const [search, setSearch] = React.useState<string>(filters.search || '');
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [pendingDelete, setPendingDelete] = React.useState<{ uuid: string; name: string; email: string } | null>(null);
   const [isDeletingBulk, setIsDeletingBulk] = React.useState<boolean>(false);
+  const canCreateUsers = hasPermission('CREATE_USERS');
+  const canDeleteUsers = hasPermission('DELETE_USERS');
 
   // React 19: useTransition for non-blocking updates
   const [isPendingExport, startExportTransition] = React.useTransition();
@@ -92,7 +96,7 @@ export default function UsersIndexPage(): React.JSX.Element {
   );
 
   function handleBulkDelete(): void {
-    if (selectedUuids.length === 0) return;
+    if (!canDeleteUsers || selectedUuids.length === 0) return;
     setIsDeletingBulk(true);
     router.post('/users/data/admin/bulk-delete', { uuids: selectedUuids }, {
       onSuccess: () => {
@@ -141,7 +145,7 @@ export default function UsersIndexPage(): React.JSX.Element {
               Oversee and manage platform accounts — <span className="text-(--accent-primary)">{meta.total} {meta.total === 1 ? 'record' : 'records'} found</span>
             </p>
           </div>
-          <PermissionGuard permissions={['CREATE_USERS']}>
+          {canCreateUsers && (
             <Link
               href="/users/create"
               prefetch
@@ -150,7 +154,7 @@ export default function UsersIndexPage(): React.JSX.Element {
               <UserPlus size={16} />
               New User
             </Link>
-          </PermissionGuard>
+          )}
         </div>
 
         {/* ── Filters Bar ── */}
@@ -202,7 +206,7 @@ export default function UsersIndexPage(): React.JSX.Element {
         </div>
 
         {/* ── Bulk Actions ── */}
-        {selectedUuids.length > 0 && (
+        {canDeleteUsers && selectedUuids.length > 0 && (
           <DataTableBulkActions
             count={selectedUuids.length}
             onDelete={handleBulkDelete}
@@ -264,13 +268,15 @@ export default function UsersIndexPage(): React.JSX.Element {
         </div>
       </div>
       </PermissionGuard>
-      <DeleteConfirmModal
-        open={pendingDelete !== null}
-        entityLabel={pendingDelete ? `${pendingDelete.name} (${pendingDelete.email})` : ''}
-        onConfirm={handleConfirmSingleDelete}
-        onCancel={() => setPendingDelete(null)}
-        isDeleting={deleteUser.isPending}
-      />
+      {canDeleteUsers && (
+        <DeleteConfirmModal
+          open={pendingDelete !== null}
+          entityLabel={pendingDelete ? `${pendingDelete.name} (${pendingDelete.email})` : ''}
+          onConfirm={handleConfirmSingleDelete}
+          onCancel={() => setPendingDelete(null)}
+          isDeleting={deleteUser.isPending}
+        />
+      )}
       </AppLayout>
     </>
   );

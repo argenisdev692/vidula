@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Modules\Users\Infrastructure\Persistence\Eloquent\Seeders;
 
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Permission;
+use Modules\Permissions\Infrastructure\Persistence\Eloquent\Models\PermissionEloquentModel;
 use Spatie\Permission\Models\Role;
 
 /**
@@ -30,7 +30,7 @@ final class UsersPermissionsSeeder extends Seeder
         ];
 
         foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+            PermissionEloquentModel::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
 
         // ── Role ──

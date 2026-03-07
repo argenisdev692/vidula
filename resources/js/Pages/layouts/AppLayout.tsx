@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { AuthPageProps } from '@/types/auth';
-import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
+import { useAuthorization } from '@/modules/auth/hooks/useAuthorization';
 
 // ══════════════════════════════════════════════════════════════════
 // Theme Hook
@@ -49,6 +49,7 @@ import {
   BookOpen,
   FolderOpen,
   FileText,
+  KeyRound,
 } from 'lucide-react';
 
 const icSize = 18;
@@ -94,24 +95,26 @@ const NAV_GROUPS: NavGroup[] = [
     icon: <Users size={14} />,
     items: [
       { label: 'Users', href: '/users', icon: <Users size={icSize} />, description: 'Manage system users', permission: 'VIEW_USERS' },
-      { label: 'Students', href: '/students', icon: <GraduationCap size={icSize} />, description: 'Manage students', permission: 'VIEW ANY STUDENTS' },
-      { label: 'Clients', href: '/clients', icon: <UserCheck size={icSize} />, description: 'Manage clients', permission: 'VIEW ANY CLIENTS' },
+      { label: 'Students', href: '/students', icon: <GraduationCap size={icSize} />, description: 'Manage students', permission: 'VIEW_ANY_STUDENTS' },
+      { label: 'Clients', href: '/clients', icon: <UserCheck size={icSize} />, description: 'Manage clients', permission: 'VIEW_ANY_CLIENTS' },
     ],
   },
   {
     label: 'Management',
     icon: <Package size={14} />,
     items: [
+      { label: 'Roles', href: '/roles', icon: <ShieldCheck size={icSize} />, description: 'Manage authorization roles', permission: 'VIEW_ROLES' },
+      { label: 'Permissions', href: '/permissions', icon: <KeyRound size={icSize} />, description: 'Manage action permissions', permission: 'VIEW_PERMISSIONS' },
       { label: 'Company', href: '/company-data', icon: <Building2 size={icSize} />, description: 'Corporate entities', permission: 'VIEW_COMPANY_DATA' },
-      { label: 'Products', href: '/products', icon: <Package size={icSize} />, description: 'Manage products', permission: 'VIEW ANY PRODUCTS' },
+      { label: 'Products', href: '/products', icon: <Package size={icSize} />, description: 'Manage products', permission: 'VIEW_ANY_PRODUCTS' },
     ],
   },
   {
     label: 'Blog',
     icon: <BookOpen size={14} />,
     items: [
-      { label: 'Categories', href: '/blog-categories', icon: <FolderOpen size={icSize} />, description: 'Manage blog categories', permission: 'VIEW ANY BLOG_CATEGORIES' },
-      { label: 'Posts', href: '/posts', icon: <FileText size={icSize} />, description: 'Manage blog posts', permission: 'VIEW ANY POSTS' },
+      { label: 'Categories', href: '/blog-categories', icon: <FolderOpen size={icSize} />, description: 'Manage blog categories', permission: 'VIEW_ANY_BLOG_CATEGORIES' },
+      { label: 'Posts', href: '/posts', icon: <FileText size={icSize} />, description: 'Manage blog posts', permission: 'VIEW_ANY_POSTS' },
     ],
   },
 ];
@@ -403,7 +406,14 @@ function ThemeToggle({ theme, onToggle }: { theme: Theme; onToggle: () => void }
 // Per §9.1: collapsible groups + PermissionGuard
 // ══════════════════════════════════════════════════════════════════
 function SidebarContent({ onClose }: { onClose?: () => void }): React.JSX.Element {
+  const { hasPermission } = useAuthorization();
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+  const visibleGroups = NAV_GROUPS
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !item.permission || hasPermission(item.permission)),
+    }))
+    .filter((group) => group.items.length > 0);
 
   // Determine which groups are expanded: auto-expand if current route is inside
   const [expandedGroups, setExpandedGroups] = React.useState<Record<string, boolean>>(() => {
@@ -414,7 +424,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }): React.JSX.Elemen
     } catch { /* ignore */ }
 
     // Auto-expand the group containing the active route
-    for (const group of NAV_GROUPS) {
+    for (const group of visibleGroups) {
       const hasActiveItem = group.items.some(
         (item) => currentPath === item.href || currentPath.startsWith(item.href + '/')
       );
@@ -473,7 +483,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }): React.JSX.Elemen
 
       {/* ── Nav Groups ── */}
       <nav className="flex-1 overflow-y-auto px-3 pt-4 pb-2">
-        {NAV_GROUPS.map((group) => {
+        {visibleGroups.map((group) => {
           const isExpanded = expandedGroups[group.label] ?? (group.label === 'Overview');
           const hasActiveChild = group.items.some(
             (item) => currentPath === item.href || currentPath.startsWith(item.href + '/')
@@ -563,15 +573,6 @@ function SidebarContent({ onClose }: { onClose?: () => void }): React.JSX.Elemen
                         </div>
                       </Link>
                     );
-
-                    // Wrap with PermissionGuard if permission is required (§9.1 rule 1)
-                    if (item.permission) {
-                      return (
-                        <PermissionGuard key={item.href} permissions={[item.permission]}>
-                          {linkElement}
-                        </PermissionGuard>
-                      );
-                    }
 
                     return linkElement;
                   })}

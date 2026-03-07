@@ -7,7 +7,7 @@ import {
 import { DataTable } from '@/common/data-table/DataTable';
 import { Link } from '@inertiajs/react';
 import { RestoreConfirmModal } from '@/common/data-table/RestoreConfirmModal';
-import { PermissionGuard } from '@/modules/auth/components/PermissionGuard';
+import { useAuthorization } from '@/modules/auth/hooks/useAuthorization';
 import UserStatusBadge from '@/modules/users/components/UserStatusBadge';
 import type { UserListItem } from '@/types/users';
 import { useUserMutations } from '@/modules/users/hooks/useUserMutations';
@@ -37,30 +37,36 @@ export default function UsersTable({
   onRowSelectionChange,
 }: UsersTableProps): React.JSX.Element {
   const { restoreUser } = useUserMutations();
+  const { hasPermission } = useAuthorization();
   const [pendingRestore, setPendingRestore] = React.useState<{ uuid: string; name: string } | null>(null);
+  const canViewUsers = hasPermission('VIEW_USERS');
+  const canUpdateUsers = hasPermission('UPDATE_USERS');
+  const canDeleteUsers = hasPermission('DELETE_USERS');
 
   const columns = React.useMemo(() => [
-    columnHelper.display({
-      id: 'select',
-      header: ({ table }) => (
-        <input
-          type="checkbox"
-          checked={table.getIsAllPageRowsSelected()}
-          onChange={table.getToggleAllPageRowsSelectedHandler()}
-          aria-label="Select all"
-          className="h-4 w-4 rounded border border-(--border-default) accent-(--accent-primary) cursor-pointer"
-        />
-      ),
-      cell: ({ row }) => (
-        <input
-          type="checkbox"
-          checked={row.getIsSelected()}
-          onChange={row.getToggleSelectedHandler()}
-          aria-label="Select row"
-          className="h-4 w-4 rounded border border-(--border-default) accent-(--accent-primary) cursor-pointer"
-        />
-      ),
-    }),
+    ...(canDeleteUsers ? [
+      columnHelper.display({
+        id: 'select',
+        header: ({ table }) => (
+          <input
+            type="checkbox"
+            checked={table.getIsAllPageRowsSelected()}
+            onChange={table.getToggleAllPageRowsSelectedHandler()}
+            aria-label="Select all"
+            className="h-4 w-4 rounded border border-(--border-default) accent-(--accent-primary) cursor-pointer"
+          />
+        ),
+        cell: ({ row }) => (
+          <input
+            type="checkbox"
+            checked={row.getIsSelected()}
+            onChange={row.getToggleSelectedHandler()}
+            aria-label="Select row"
+            className="h-4 w-4 rounded border border-(--border-default) accent-(--accent-primary) cursor-pointer"
+          />
+        ),
+      }),
+    ] : []),
     columnHelper.accessor('full_name', {
       header: 'User',
       cell: (info) => {
@@ -101,13 +107,13 @@ export default function UsersTable({
     columnHelper.accessor('email', {
       header: 'Email / Phone',
       cell: (info) => {
-          const user = info.row.original;
-          return (
-              <div className="flex flex-col">
-                  <span className="text-sm text-(--text-secondary)">{user.email || '—'}</span>
-                  <span className="text-[11px] text-(--text-muted)">{user.phone || ''}</span>
-              </div>
-          );
+        const user = info.row.original;
+        return (
+          <div className="flex flex-col">
+            <span className="text-sm text-(--text-secondary)">{user.email || '—'}</span>
+            <span className="text-[11px] text-(--text-muted)">{user.phone || ''}</span>
+          </div>
+        );
       }
     }),
     columnHelper.accessor('status', {
@@ -125,69 +131,69 @@ export default function UsersTable({
         );
       },
     }),
-    columnHelper.display({
-      id: 'actions',
-      header: 'Actions',
-      cell: (info) => {
-        const user = info.row.original;
-        const isDeleted = !!user.deleted_at;
+    ...((canViewUsers || canUpdateUsers || canDeleteUsers) ? [
+      columnHelper.display({
+        id: 'actions',
+        header: 'Actions',
+        cell: (info) => {
+          const user = info.row.original;
+          const isDeleted = !!user.deleted_at;
 
-        return (
-          <div className="flex items-center justify-end gap-2 pr-4">
-            <PermissionGuard permissions={['VIEW_USERS']}>
-              <Link
-                 href={`/users/${user.uuid}`}
-                 prefetch
-                 className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors"
-                 title="View Profile"
-                 aria-label="View user details"
-              >
-                 <Eye size={16} />
-              </Link>
-            </PermissionGuard>
-
-            {!isDeleted && (
-              <PermissionGuard permissions={['UPDATE_USERS']}>
+          return (
+            <div className="flex items-center justify-end gap-2 pr-4">
+              {canViewUsers && (
                 <Link
-                   href={`/users/${user.uuid}/edit`}
-                   prefetch
-                   className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors"
-                   title="Edit User"
-                   aria-label="Edit user"
+                  href={`/users/${user.uuid}`}
+                  prefetch
+                  className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors"
+                  title="View Profile"
+                  aria-label="View user details"
                 >
-                   <Pencil size={16} />
+                  <Eye size={16} />
                 </Link>
-              </PermissionGuard>
-            )}
+              )}
 
-            {isDeleted ? (
-              <PermissionGuard permissions={['UPDATE_USERS']}>
-                <button
+              {!isDeleted && canUpdateUsers && (
+                <Link
+                  href={`/users/${user.uuid}/edit`}
+                  prefetch
+                  className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--text-secondary) shadow-sm transition-colors"
+                  title="Edit User"
+                  aria-label="Edit user"
+                >
+                  <Pencil size={16} />
+                </Link>
+              )}
+
+              {isDeleted ? (
+                canUpdateUsers && (
+                  <button
                     onClick={() => setPendingRestore({ uuid: user.uuid, name: user.full_name })}
                     className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--accent-success) shadow-sm transition-colors"
                     title="Restore User"
                     aria-label="Restore user"
-                >
+                  >
                     <CheckCircle size={16} />
-                </button>
-              </PermissionGuard>
-            ) : (
-              <PermissionGuard permissions={['DELETE_USERS']}>
-                <button
-                   onClick={() => onDelete(user.uuid, user.full_name, user.email)}
-                   className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--accent-error) shadow-sm transition-colors"
-                   title="Delete User"
-                   aria-label="Delete user"
-                >
-                   <Trash2 size={16} />
-                </button>
-              </PermissionGuard>
-            )}
-          </div>
-        );
-      },
-    }),
-  ], [onDelete, initials]);
+                  </button>
+                )
+              ) : (
+                canDeleteUsers && (
+                  <button
+                    onClick={() => onDelete(user.uuid, user.full_name, user.email)}
+                    className="p-1.5 rounded-md border border-(--border-default) bg-(--bg-card) hover:bg-(--bg-hover) text-(--accent-error) shadow-sm transition-colors"
+                    title="Delete User"
+                    aria-label="Delete user"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )
+              )}
+            </div>
+          );
+        },
+      }),
+    ] : []),
+  ], [canDeleteUsers, canUpdateUsers, canViewUsers, onDelete, initials]);
 
   return (
     <>
