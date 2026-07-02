@@ -1,0 +1,94 @@
+/* ═══════════════════════════════════════════════
+   AURORA BACKGROUND — Navy + Purple (minimal-login-hero)
+   Stack: ink/navy base → aurora drift → technical grid → grain → stars
+   Token-driven · 2026
+   ═══════════════════════════════════════════════ */
+
+/* ── Layer 0: Base — solid ink/navy with top radial glow ── */
+.gradient-background {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background-color: var(--bg-void);
+  background-image:
+    radial-gradient(ellipse 70% 45% at 50% -8%, color-mix(in srgb, var(--indigo) 16%, transparent) 0%, transparent 60%),
+    linear-gradient(180deg, var(--bg-base) 0%, var(--bg-void) 46%);
+  background-repeat: no-repeat;
+}
+
+/* ── Layer 1: Aurora — single slow GPU-only accent ── */
+.glow-orbs {
+  position: absolute;
+  inset: -25% -14% -10% -14%;
+  pointer-events: none;
+  background:
+    radial-gradient(44% 58% at 28% 26%, color-mix(in srgb, var(--purple-500) 24%, transparent) 0%, transparent 70%),
+    radial-gradient(48% 52% at 72% 20%, color-mix(in srgb, var(--blue) 17%, transparent) 0%, transparent 70%),
+    radial-gradient(46% 52% at 52% 64%, color-mix(in srgb, var(--indigo) 21%, transparent) 0%, transparent 72%),
+    radial-gradient(38% 44% at 88% 78%, color-mix(in srgb, var(--cyan) 11%, transparent) 0%, transparent 70%);
+  filter: blur(70px) saturate(1.1);
+  opacity: 0.92;
+  animation: aurora-drift 22s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+  will-change: transform, opacity;
+}
+
+@keyframes aurora-drift {
+  0%   { transform: translate3d(-4%, -3%, 0) scale(1.00); opacity: 0.85; }
+  50%  { transform: translate3d( 3%,  2%, 0) scale(1.14); opacity: 1.00; }
+  100% { transform: translate3d( 4%, -2%, 0) scale(1.05); opacity: 0.90; }
+}
+
+/* ── Layer 2: Faint technical grid (masked to fade at center) ── */
+.gradient-background::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--purple-light) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--purple-light) 5%, transparent) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(ellipse 105% 95% at 50% 44%, transparent 36%, #000 94%);
+          mask-image: radial-gradient(ellipse 105% 95% at 50% 44%, transparent 36%, #000 94%);
+}
+
+/* ── Layer 3: Cinematic grain ── */
+.grain-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+}
+
+/* ── Layer 4: Dynamic stars (Angular-generated, subtle) ── */
+.stars {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.star {
+  position: absolute;
+  background: var(--text-primary);
+  border-radius: 50%;
+  opacity: var(--op);
+  animation: twinkle var(--d) infinite;
+  animation-delay: var(--delay);
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.5); }
+  50%      { opacity: var(--op); transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glow-orbs { animation: none; }
+}

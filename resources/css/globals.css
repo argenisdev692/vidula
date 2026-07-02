@@ -1,0 +1,61 @@
+/*
+ * Project design tokens (rules.md §CSS). shadcn/ui semantic tokens
+ * (--background, --foreground, --primary, …) live in app.css; the
+ * project-level aliases below derive from them so both palettes stay
+ * in sync in light and dark mode.
+ */
+:root {
+    /* backgrounds (darkest → lightest) */
+    --bg-app: var(--background);
+    --bg-surface: var(--card);
+    --bg-card: var(--muted);
+    --bg-hover: var(--accent);
+
+    /* borders */
+    --border-subtle: color-mix(in oklch, var(--border) 60%, transparent);
+    --border-default: var(--border);
+    --border-hover: color-mix(in oklch, var(--border) 100%, var(--foreground) 10%);
+
+    /* text */
+    --text-primary: var(--foreground);
+    --text-secondary: color-mix(in oklch, var(--foreground) 75%, var(--muted-foreground));
+    --text-muted: var(--muted-foreground);
+    --text-disabled: color-mix(in oklch, var(--muted-foreground) 60%, transparent);
+
+    /* accents */
+    --accent-primary: var(--primary);
+    --accent-secondary: #a78bfa;
+    --accent-success: #16a34a;
+    --accent-warning: #d97706;
+    --accent-error: var(--destructive);
+    --accent-info: #0284c7;
+
+    /* typography */
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+    /* transition */
+    --transition: 0.2s ease;
+
+    /* form tokens */
+    --input-bg: var(--bg-card);
+    --input-border: var(--border-default);
+    --input-border-focus: var(--accent-primary);
+    --input-border-error: var(--accent-error);
+    --input-text: var(--text-primary);
+    --input-placeholder: var(--text-muted);
+    --input-height: 40px;
+    --input-padding-x: 12px;
+    --input-font-size: 14px;
+    --input-radius: var(--radius-md);
+
+    /* soft-delete row tokens */
+    --deleted-row-bg: color-mix(in srgb, var(--accent-error) 8%, var(--bg-card));
+    --deleted-row-border: color-mix(in srgb, var(--accent-error) 25%, transparent);
+    --deleted-row-opacity: 0.65;
+}
+
+.dark {
+    --accent-success: #22c55e;
+    --accent-warning: #f59e0b;
+    --accent-info: #38bdf8;
+}

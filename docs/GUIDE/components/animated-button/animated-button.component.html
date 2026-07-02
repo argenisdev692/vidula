@@ -1,0 +1,12 @@
+<button 
+  [class]="getButtonClasses()" 
+  (click)="onClick.emit()"
+  class="animated-button">
+  <span class="button-shine"></span>
+  <span class="button-content">
+    @if (icon()) {
+      <i class="button-icon pi {{ icon() }}"></i>
+    }
+    <span class="button-text">{{ text() }}</span>
+  </span>
+</button>
