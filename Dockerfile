@@ -2,6 +2,10 @@
 
 FROM node:24-alpine AS frontend
 WORKDIR /app
+ARG VITE_REVERB_APP_KEY
+ARG VITE_REVERB_HOST
+ARG VITE_REVERB_PORT
+ARG VITE_REVERB_SCHEME
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
