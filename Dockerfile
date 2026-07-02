@@ -22,7 +22,7 @@ RUN mkdir -p /etc/apt/keyrings \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
         php${PHP_VERSION}-cli \
-        php${PHP_VERSION}-mysql \
+        php${PHP_VERSION}-pgsql \
         php${PHP_VERSION}-redis \
         php${PHP_VERSION}-gd \
         php${PHP_VERSION}-curl \
