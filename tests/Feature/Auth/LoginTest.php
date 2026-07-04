@@ -15,7 +15,7 @@ class LoginTest extends TestCase
         $response = $this->get('/login');
 
         $response->assertOk();
-        $response->assertInertia(fn ($page) => $page->component('auth/LoginPage'));
+        $response->assertInertia(fn ($page) => $page->component('Auth/Login'));
     }
 
     public function test_user_can_authenticate_with_valid_credentials(): void
@@ -55,11 +55,19 @@ class LoginTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_welcome_page_renders_for_guests(): void
+    public function test_guest_is_redirected_from_root_to_login(): void
     {
         $response = $this->get('/');
 
-        $response->assertOk();
-        $response->assertInertia(fn ($page) => $page->component('WelcomePage'));
+        $response->assertRedirect('/login');
+    }
+
+    public function test_authenticated_user_is_redirected_from_root_to_dashboard(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/');
+
+        $response->assertRedirect('/dashboard');
     }
 }

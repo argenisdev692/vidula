@@ -1,8 +1,8 @@
 ---
-description: Audits React 19 + Inertia.js 3.0 modules against design tokens, TanStack Query/Table, Zustand, accessibility, security and architecture rules. Auto-fixes violations and re-verifies until 100% score.
+description: Audits Vue 3 + Inertia.js v3 modules against design tokens, Pinia Colada, Pinia, PrimeVue DataTable, accessibility, security and architecture rules. Auto-fixes violations and re-verifies until 100% score.
 ---
 
-# FRONTEND AUDIT AGENT — React 19 + Inertia.js 3.0 + TanStack Query/Table + Zustand + shadcn/ui + Tailwind v4
+# FRONTEND AUDIT AGENT — Vue 3 + Inertia.js v3 + Pinia + Pinia Colada + PrimeVue v4 unstyled + Volt + Tailwind v4
 
 ## PHASE 1 — AUDIT (produce checklist)
 
@@ -10,8 +10,8 @@ Before starting the audit, you MUST:
 
 1. Read `.claude/FRONTEND/SKILL.md` — single source of truth for frontend rules
 2. Read `.claude/OWASP/SKILL.md` — the always-on security baseline (15+1 items mapped to OWASP Top 10:**2025** + API Top 10:2023 + LLM Top 10:2025 when AI is in scope)
-3. Call context7 to resolve current docs for: React 19 (function components + new hooks: `use`, `useActionState`, `useFormStatus`, `useOptimistic`, `useTransition`), React Compiler (`babel-plugin-react-compiler`, stable v1), Inertia.js 3.0 (`@inertiajs/react` — built-in XHR client, `useHttp`, `@inertiajs/vite`), TanStack Query v5 (`/tanstack/query`), TanStack Table v8 (`/tanstack/table`), Zustand v5 (`/pmndrs/zustand`), shadcn/ui (`/shadcn-ui/ui`), `react-hook-form` + `@hookform/resolvers`, Zod v4, Tailwind CSS v4, Framer Motion, Sileo
-4. Call tavily to verify latest stable versions of all frontend packages, prioritizing recent/current sources (`time_range: day`, `week`, or `month`); search `site:ui.shadcn.com` for any primitive being audited
+3. Call context7 to resolve current docs for: Vue 3 (Composition API + `<script setup>`), Inertia.js v3 (`@inertiajs/vue3`), Pinia v3 (`/vuejs/pinia`), Pinia Colada (`/posva/pinia-colada`), PrimeVue v4 + Volt (`/websites/primevue` or `/primefaces/primevue`), `@primevue/forms`, `tailwindcss-primeui`, Zod v4, Tailwind CSS v4
+4. Call tavily to verify latest stable versions of all frontend packages, prioritizing recent/current sources (`time_range: day`, `week`, or `month`); search `site:primevue.org` / `site:volt.primevue.org` for any primitive being audited
 
 Then analyze the indicated module against these rules.
 For each item mark ✅ PASS, ❌ FAIL (with file:line and brief description) or ⚠️ WARN.
@@ -20,177 +20,167 @@ For each item mark ✅ PASS, ❌ FAIL (with file:line and brief description) or 
 
 **Styles & Tokens (§0, §1)**
 
-- [ ] Zero hex values or Tailwind palette names in components — only `var(--token)` project tokens or token-mapped Tailwind utilities
+- [ ] Zero hex values or Tailwind palette names in components — only `tailwindcss-primeui` semantic utilities (`bg-surface-100`, `text-color`, `text-muted-color`, `bg-primary`, …) or `var(--token)` for non-semantic project tokens
 - [ ] No `bg-red-600`, `text-gray-500`, or `bg-[#hex]` anywhere
-- [ ] All new core tokens added to `globals.css` FIRST, with the `.dark`/light override added in the same commit when contrast flips
-- [ ] Soft-deleted rows use `--deleted-row-bg`, `--deleted-row-border`, `--deleted-row-opacity` via the table row `style`
-- [ ] Badge/severity tones resolve through `color-mix(in srgb, var(--accent-*) …)` — never inline hex
-- [ ] Cards use the `.card` token-based class (or shadcn `Card`) — no hardcoded colors
-- [ ] Buttons use `.btn-primary` / `.btn-ghost` token classes (or shadcn `Button` variants) — no inline bg styles
-- [ ] Toast colors sourced from tokens in the `[data-sileo-container]` block (no hardcoded hex)
-- [ ] `app.css` imports `tailwindcss` + `globals.css`; declares `@custom-variant dark (&:is(.dark *));`
-- [ ] `.dark` override block present in `globals.css` (NOT `[data-theme]` besides the documented light override, NEVER `.light`)
+- [ ] All new core tokens added to `globals.css` FIRST, with the `tailwindcss-primeui` bridge updated and the `.dark` override added in the same commit when contrast flips
+- [ ] Soft-deleted rows use `--deleted-row-bg`, `--deleted-row-border`, `--deleted-row-opacity` via DataTable `rowClass`
+- [ ] Tag/severity tones resolve through the PrimeUI bridge (`--p-green-500`, `--p-red-500`, …) — never inline at the call site
+- [ ] Cards use the Volt `<Card>` from `@/volt/Card.vue` — no custom `.card` class
+- [ ] Buttons use the Volt `<Button>` with `severity`/`outlined`/`text`/`link` props — no `.btn-*` classes, no inline bg styles
+- [ ] Toast severity colors sourced from the PrimeUI bridge (no hardcoded hex in `volt/Toast.vue` pass-through)
+- [ ] `tailwindcss-primeui` semantic bridge present in `globals.css` (`--p-surface-*`, `--p-primary-*`, `--p-text-*`, `--p-content-*`, `--p-highlight-*`, severity `--p-*-500`, `--p-border-radius`)
+- [ ] `app.css` imports `tailwindcss` + `tailwindcss-primeui` + `globals.css`; declares `@custom-variant dark (&:is(.dark *));` and the `@theme inline` block
+- [ ] `.dark` override block present in `globals.css` (NOT `[data-theme="dark"]`, NOT `.light`)
 
 **Accessibility (§2)**
 
 - [ ] `@media (prefers-reduced-motion: reduce)` present in `globals.css`
 - [ ] `:focus-visible` ring uses `var(--accent-primary)`, not `:focus`
-- [ ] Icon-only buttons have `aria-label` or `title`
-- [ ] Modals close on `Escape`, confirm button receives auto-focus
+- [ ] Icon-only Volt `<Button>`s have `aria-label` or `:title`
+- [ ] Modals (Volt `Dialog`) close on `Escape`, confirm button receives `autofocus`
 - [ ] No element flashes > 3×/sec — all animation `duration ≤ 0.4s`
 - [ ] Labels use `--text-secondary`, never `--text-disabled`
-- [ ] Minimum 24×24px tap targets; text contrast ≥ 4.5:1
 
 **Architecture / Layer Rules (§3)**
 
-- [ ] `common/` imports nothing from `modules/` or `pages/`
-- [ ] `modules/` imports nothing from `pages/` (may import `common/` and other modules' `types.ts`)
-- [ ] `pages/` is the layer that composes `modules/`, `common/`, `shadcn/`
-- [ ] `shadcn/` files are CLI-generated only — never hand-edited (except the documented custom compositions: `data-table.tsx`, `DeleteConfirmModal.tsx`, `RestoreConfirmModal.tsx`, `DataTableBulkActions.tsx`)
-- [ ] `@` Vite alias points at `resources/js/`; `cn()` exported from `resources/js/common/helpers/cn.ts`
-- [ ] File naming: components `PascalCase.tsx`, hooks/helpers `camelCase.ts`, dirs `kebab-case/`
-- [ ] Inertia pages live in `pages/{module}/{Entity}{Index|Show|Create|Edit}Page.tsx`
-- [ ] Every page `export default`, wraps its layout (`<AppLayout>`), and renders `<Head title="..." />`
-- [ ] State ownership is clear: server state in TanStack Query, client UI state in Zustand, page props from `usePage<Props>()`
-- [ ] KISS / DRY / Clean Code / SRP applied to components, hooks, helpers
+- [ ] `common/` imports nothing from `modules/` or `Pages/`
+- [ ] `modules/` imports nothing from `Pages/`
+- [ ] `Pages/` is the ONLY layer using `usePage()` and `useForm()`
+- [ ] `volt/` imports nothing from `modules/`, `Pages/`, or `common/`
+- [ ] All UI imports go through `@/volt/*` — no other UI library is installed or imported
+- [ ] No `components.json` (shadcn artifact); `@` Vite alias points at `resources/js/`; `cn()` exported from `resources/js/lib/utils.ts`
+- [ ] File naming: components `PascalCase.vue`, composables `camelCase.ts`, dirs `kebab-case/` or `lowercase/`
+- [ ] Inertia pages live in `Pages/{Module}/{Index|Show|Create|Edit}.vue`
+- [ ] Pages use `defineOptions({ layout })` — no manual layout wrapping per page
+- [ ] State ownership is clear: server state in Pinia Colada, client UI state in Pinia, page props from `usePage()`
+- [ ] KISS / DRY / Clean Code / SRP applied to components, composables, helpers
 
-**State Management (Zustand + TanStack Query)**
+**State Management (Pinia + Pinia Colada)**
 
-- [ ] Audit whether Zustand is installed and whether the module truly needs shared client state
-- [ ] Zustand stores live in `modules/{context}/stores/` (or `modules/app/stores/` for app-shell) and are created with `create<T>()`
-- [ ] Stores are explicitly typed and consumed through selectors, not the whole store
-- [ ] No duplication between Zustand stores and TanStack Query server state
-- [ ] `persist` middleware stores only non-sensitive UI preferences (never tokens/PII/permission snapshots)
+- [ ] Audit whether Pinia is installed and whether the module truly needs shared client state
+- [ ] Pinia stores live in `modules/{context}/stores/` (or `modules/app/stores/` for app-shell) and use `defineStore('id', setupFn)`
+- [ ] Stores are explicitly typed and consumed through `storeToRefs` for state
+- [ ] No duplication between Pinia stores and Pinia Colada server state
+- [ ] `persist` (or `pinia-plugin-persistedstate`) stores only non-sensitive UI preferences
 - [ ] No oversized global store introduced without a concrete DX/complexity justification
 
-**Inertia.js 3.0 (§5)**
+**Inertia.js v3 (§5)**
 
-- [ ] `Link` + `router` imported from `@inertiajs/react` (never `Inertia.visit()`)
+- [ ] `Link` + `router` imported from `@inertiajs/vue3` (never `Inertia.visit()`)
 - [ ] `Link` uses `prefetch` on primary nav items
 - [ ] Never calling `/api/*` routes from Inertia pages
 - [ ] `useRemember` used for filter state persistence
-- [ ] All pages have `<Head title="..." />` and explicit `React.JSX.Element` return
-- [ ] Deferred props consumed via `<Suspense>` / `Inertia::defer()` where heavy data applies
-- [ ] Inertia 3.0's built-in XHR client auto-includes `X-XSRF-TOKEN` — no manual CSRF logic
-- [ ] Axios NOT assumed bundled (Inertia v3 dropped it): data hooks install `axios` as an explicit peer dependency OR use `useHttp` from `@inertiajs/react`
-- [ ] Layout assigned via the `layout` option in `createInertiaApp()` (or `Page.layout = [Layout]` array form — never the bare arrow-component shorthand)
-- [ ] `onException` / `onHttpException` / `onNetworkError` (+ `onError` for validation) wired globally in `app.tsx`
-- [ ] `app.tsx` sets up `createInertiaApp` (with `@inertiajs/vite`), `QueryClientProvider`, Sileo container, and a global error boundary
+- [ ] All pages have `<Head title="..." />` + `defineOptions({ layout })`
+- [ ] No Axios installed — relies on Inertia v3's built-in XHR client
+- [ ] `Inertia::optional()` used (never deprecated `Inertia::lazy()`)
+- [ ] `router.cancelAll()` used (never deprecated `router.cancel()`)
+- [ ] If a non-navigation HTTP call is needed → `useHttp` from `@inertiajs/vue3`
+- [ ] `app.ts` registers Pinia + Pinia Colada + PrimeVue (`{ unstyled: true }`) + ToastService + ConfirmationService + tooltip directive — no styled PrimeVue theme preset
+- [ ] **Inertia v3 March 2026**: layout chrome (page title, breadcrumbs, action toolbar) flows via `defineOptions({ layout: [Layout, props] })` tuple + `setLayoutProps()` for dynamic overrides — NEVER via Pinia, NEVER via an event bus, NEVER via the removed `useLayoutProps` hook (deleted before v3 stable)
+- [ ] **Inertia v3 March 2026**: paginated lists with frequent partial reloads use `Inertia::deepMerge($data)->matchOn('data.uuid')` on the backend
+- [ ] `onHttpException` and `onNetworkError` callbacks wired in `app.ts` for global error handling
 
-**React 19 Hooks (§5.1)**
+**Theme Controller (§1.5)**
 
-- [ ] `useOptimistic` used for optimistic delete/update feedback, always inside `React.startTransition(async () => {...})`
-- [ ] `useTransition` wraps slow search/filter/export updates
-- [ ] `useActionState` imported from `react` (not `react-dom`); `useFormStatus` used only inside the nearest enclosing `<form>` when action-based forms apply
-- [ ] `use()` used for reading promises/context where deferred data / conditional context applies (paired with `<Suspense>`)
+- [ ] `modules/app/stores/useThemeStore.ts` exists and uses `useColorMode({ attribute: 'class', modes: { light: '', dark: 'dark' } })` from `@vueuse/core`
+- [ ] ONLY the `.dark` class is applied to `<html>` — light mode = absence of class. NEVER `<body>`, NEVER `data-theme`, NEVER `.light`
+- [ ] FOUC-killer inline script present in `app.blade.php` `<head>` with `nonce="{{ csp_nonce() }}"`, defaulting to `'dark'` (dark-first project policy) and adding `.dark` only when the resolved theme is dark
+- [ ] `:root` in `globals.css` defines core tokens AND the `tailwindcss-primeui` bridge in LIGHT values; `.dark` redefines core tokens to dark values plus contrast-flipping bridge overrides (e.g. `--p-primary-contrast-color`)
+- [ ] `@media (prefers-color-scheme: dark)` defensive fallback present (matches `html:not(.dark)`) for non-JS contexts
+- [ ] No PrimeVue theme preset / `darkModeSelector` configured — PrimeVue runs `{ unstyled: true }`; dark mode is purely the `.dark` class + the `@custom-variant dark` + token overrides
+- [ ] `<Toast>` mounted once in `AppLayout`; severity colors resolve from the bridge (no per-instance hardcoded theme)
+- [ ] `<ThemeToggle>` component reachable in both authenticated and guest layouts
+- [ ] `useThemeStore` is NOT wrapped with `pinia-plugin-persistedstate` — `useColorMode`'s `storageKey: 'app:theme'` is the SINGLE source of persistence (matches the FOUC-killer's read key); no auth tokens or PII persisted alongside
 
-**React Compiler (§5.2)**
+**Pinia Colada (§6) — Server State**
 
-- [ ] React Compiler enabled (`babel-plugin-react-compiler` in Vite config) when React is scaffolded
-- [ ] No NEW manual `useMemo`/`useCallback`/`React.memo` added purely for render performance — manual memoization only where referential stability is semantically required (e.g. TanStack Table `columns`)
-- [ ] No `"use no memo"` directive without an explanatory comment
-- [ ] `eslint-plugin-react-hooks` v6+ (`recommended-latest`) active — components flagged as skipped by the compiler are FAIL
-
-**Theme Controller**
-
-- [ ] Theme uses ONLY the `.dark` class on `<html>` — light mode = absence of class. NEVER `<body>`, NEVER `.light`
-- [ ] `@custom-variant dark (&:is(.dark *));` present in `app.css`
-- [ ] FOUC-killer inline script present in the root Blade view `<head>` with `nonce="{{ csp_nonce() }}"`, defaulting to `'dark'` (dark-first) and adding `.dark` only when the resolved theme is dark
-- [ ] Theme persistence has a SINGLE source (Zustand `persist` for the theme preference only — no duplicated persistence layer); no auth tokens or PII persisted alongside
-
-**TanStack Query v5 (§6) — Server State**
-
-- [ ] All network hooks under `modules/{context}/hooks/` use `useQuery` / `useMutation` from `@tanstack/react-query`
-- [ ] `queryKey` first element = entity name string, followed by filters (`["{entities}", filters]`)
-- [ ] `placeholderData: keepPreviousData` on paginated queries (imported function, not the removed option)
-- [ ] `queryClient.invalidateQueries({ queryKey: ["{entities}"] })` after every successful write
-- [ ] `isPending` used everywhere (never `isLoading`); `gcTime` (never `cacheTime`)
-- [ ] `getErrorMessage()` helper extracts the best Axios error message; Sileo `toast.success/error` on mutation outcomes
+- [ ] All network composables under `modules/{context}/composables/` use `@pinia/colada`
+- [ ] `key` is a function returning `[entityName, ...filters]`, with `toValue(...)` for reactive params
+- [ ] `queryCache.invalidateQueries({ key: ['{entities}'] })` after every successful write
+- [ ] Optimistic delete uses `onMutate` + `setQueryData` + rollback in `onError`
+- [ ] PrimeVue `useToast()` `.add({ severity, ... })` on mutation outcomes
 - [ ] `staleTime` configured per query (lists default to 2 minutes)
-- [ ] No raw `fetch()` inside components — data access only inside hooks
-- [ ] No competing server-state library present unless a documented JSDoc reason exists
+- [ ] No raw `fetch()` calls inside Vue components — only inside composables
+- [ ] `@tanstack/vue-query` only present if a documented JSDoc reason exists
 
-**TanStack Table v8 (§7)**
+**PrimeVue DataTable (§7)**
 
-- [ ] Table uses `useReactTable` from `@tanstack/react-table` — NEVER shadcn's `data-table`; shadcn `Table` primitives used ONLY for HTML rendering
-- [ ] `columnHelper` defined OUTSIDE the component (module-level) and NOT in any `useMemo` deps
-- [ ] `getRowId: (row) => row.uuid` provided on every table
-- [ ] Server-side pagination/sort/filter — `data`/`meta.total` from the TanStack Query hook, `isPending` drives the loading state (no client-side sort/filter)
-- [ ] Selection via `rowSelection` state (`RowSelectionState`) + a `select` display column
-- [ ] Soft-deleted rows styled inline with `--deleted-row-*` tokens
-- [ ] `DeleteConfirmModal.tsx` + `BulkDeleteConfirmModal` used — never `window.confirm()` / `alert()`
-- [ ] `RestoreConfirmModal.tsx` + `BulkRestoreConfirmModal` used — never `window.confirm()` / `alert()`
-- [ ] 3 action icons per active row: `Eye` (View) / `Pencil` (Edit) / `Trash2` (Delete) — each with `aria-label` + tooltip + `<PermissionGuard>` (VIEW/UPDATE/DELETE)
-- [ ] 2 action icons per deleted row: `Eye` (View) / `CheckCircle` (Restore) — each with `aria-label` + tooltip + `<PermissionGuard>` (VIEW/RESTORE). Edit on a soft-deleted row is FAIL.
-- [ ] All cells centered by default (`text-align: center` on `TableHead`/`TableCell`) — consistent with PDF exports
-
-**Index Page (§8)**
-
-- [ ] Record counter: `{meta.total} {meta.total === 1 ? 'record' : 'records'} found`
+- [ ] DataTable runs in server-side `:lazy="true"` mode — `:value` from Pinia Colada, `:total-records` = `meta.total`, `:loading` = query `isPending`
+- [ ] `dataKey="uuid"` on every DataTable instance
+- [ ] `@page` / `@sort` / `@filter` handlers map `DataTableStateEvent` into the reactive `filters` object (no client-side sort/filter)
+- [ ] Selection via `v-model:selection` + `<Column selectionMode="multiple">`
+- [ ] Soft-deleted rows styled via `rowClass` bound to `--deleted-row-*` tokens
+- [ ] `DeleteConfirmModal.vue` + `BulkDeleteConfirmModal.vue` used (Volt `Dialog`) — never `window.confirm()` / `alert()`
+- [ ] `RestoreConfirmModal.vue` + `BulkRestoreConfirmModal.vue` used (Volt `Dialog`) — never `window.confirm()` / `alert()`
+- [ ] 3 action icons per active row: `pi pi-eye` (View, default) / `pi pi-pencil` (Edit, default) / `pi pi-trash` (Delete, `severity="danger"`) — each with `aria-label` + `v-tooltip` + `<PermissionGuard>` (VIEW/UPDATE/DELETE)
+- [ ] 2 action icons per deleted row: `pi pi-eye` (View) / `pi pi-check-circle` (Restore, `severity="success"`) — each with `aria-label` + `v-tooltip` + `<PermissionGuard>` (VIEW/RESTORE). Edit on a soft-deleted row is FAIL.
+- [ ] Advanced filter (§7.1): search debounced 300ms, status select (All/Active/Deleted), `DataTableDateRangeFilter.vue` with presets (Today, Yesterday, Last 7/30 days, This/Last month, This year, Custom) + Clear + inline `date_to >= date_from` validation + max-date=today
+- [ ] `build{Entity}QueryParams()` helper shared by list query AND export URL — drift between the two is FAIL
+- [ ] Date columns use `formatDateShort()`
+- [ ] Record counter: `{count} {count === 1 ? 'record' : 'records'} found`
 - [ ] Status filter supports: All / Active / Deleted
-- [ ] Search debounced 300ms + `DataTableDateRangeFilter` with presets (Today, Yesterday, Last 7/30 days, This/Last month, This year, Custom) + Clear + inline `date_to >= date_from` validation + max-date=today
-- [ ] `useRemember` (Inertia) for filter persistence; sliding paginator (5 pages around current)
-- [ ] **Bulk delete AND bulk restore both wired** via `rowSelection` + `router.post` / `useMutation` against `POST /bulk-delete` / `POST /bulk-restore` (paired — shipping one without the other is FAIL)
-- [ ] `DataTableBulkActions` disables bulk-delete when any selected row has `deleted_at !== null`, disables bulk-restore when any selected row has `deleted_at === null`, disables both with tooltip on mixed selection
+- [ ] **Bulk delete AND bulk restore both wired** via `v-model:selection` + Pinia Colada `useMutation` against `POST /bulk-delete` / `POST /bulk-restore` (paired — shipping one without the other is FAIL)
+- [ ] `DataTableBulkActions.vue` disables bulk-delete when any selected row has `deleted_at !== null`, disables bulk-restore when any selected row has `deleted_at === null`, disables both with tooltip on mixed selection
+- [ ] DataTable paginator uses a sliding template (5 page links around current)
+- [ ] All cells centered by default (DataTable `:pt` → `text-center`)
 
-**Export (§12.1)**
+**PrimeVue/Volt Primitives (§10)**
 
-- [ ] `ExportButton` imported from `@/common/export/ExportButton`, wrapped by `useTransition`
-- [ ] All active filters passed as query params via a shared param builder (no drift with the list query)
-- [ ] Export opens in a new tab (`window.open(..., '_blank')`) with a loading state
-- [ ] Export button placed after the date range filter in the toolbar
-
-**shadcn/ui Primitives (§10)**
-
-- [ ] Every UI primitive consumed via `@/shadcn/{component}` — shadcn/ui is the sole UI library
-- [ ] shadcn files never hand-edited (except documented custom compositions)
-- [ ] Confirmation dialogs (Delete/Restore) use the shadcn `Dialog`/`AlertDialog`-based modal — never `window.confirm()` and never a hand-rolled modal
-- [ ] Side drawer / mobile sidebar uses shadcn `Sheet`
-- [ ] Date range filter uses shadcn `Calendar` (`mode="range"`) inside `Popover`
-- [ ] Searchable selects use shadcn `Command` / `Combobox`
-- [ ] Binary toggles use shadcn `Switch`
-- [ ] App-level class composition uses `cn()` from `@/common/helpers/cn` (clsx + tailwind-merge)
+- [ ] Every UI primitive consumed via `@/volt/{Component}.vue` — PrimeVue/Volt is the sole UI library
+- [ ] `app.ts` registers PrimeVue `{ unstyled: true }` + ToastService + ConfirmationService — no styled theme preset
+- [ ] Tones requested via `severity` / `outlined` / `text` / `link` / `size` props — never bespoke utility classes
+- [ ] Confirmation dialogs (Delete/Restore) use the Volt `<Dialog>` — never `window.confirm()` and never a hand-rolled modal
+- [ ] Side drawer / mobile sidebar uses the Volt `<Drawer>`
+- [ ] Date range filter uses Volt `<DatePicker selectionMode="range">` inside Volt `<Popover>`
+- [ ] Searchable selects use Volt `<Select filter>` or `<AutoComplete>`
+- [ ] Binary toggles use Volt `<ToggleSwitch>`
+- [ ] Local edits inside `volt/{Component}.vue` are documented in a top-of-file JSDoc explaining why upstream couldn't be used as-is
+- [ ] Customisation done via the component's `pt` (Pass-Through) config — never inline `class` overrides at the call site
+- [ ] App-level class composition uses `cn()` from `@/lib/utils` (clsx + tailwind-merge)
 
 **Animation (§11)**
 
-- [ ] Variants/transitions imported from `lib/motion.ts` — never inline
+- [ ] Default: Vue's built-in `<Transition>` / `<TransitionGroup>` + CSS transitions on tokens (PrimeVue overlays keep their built-in transitions)
+- [ ] If `motion-v` is used: variants/transitions imported from `lib/motion.ts` — never inline
 - [ ] No `duration > 0.4s`
 - [ ] No `whileHover` scale `> 1.04`
-- [ ] Never animate bg colors or font sizes via Framer Motion
-- [ ] Unmounting elements wrapped with `<AnimatePresence>`
+- [ ] No `motion-v` animating bg colors or font sizes
+- [ ] Unmounting elements wrapped with `<Presence>` (motion-v) or native `<Transition>`
 
 **Security (§14)**
 
-- [ ] No `dangerouslySetInnerHTML` on untrusted input
+- [ ] No `v-html` on untrusted input (PrimeVue tooltip/HTML options keep `escape` ON for user-controlled strings)
 - [ ] No `eval()` or dynamic code execution
 - [ ] No tokens/PII stored in `localStorage`
-- [ ] No `console.log()` of sensitive props in production
-- [ ] All restricted UI wrapped in `<PermissionGuard permission="VIEW_{MODULE}">`
-- [ ] `router.visit('/login')` + `queryClient.clear()` on logout
-- [ ] Authorization checks remain permission-based (`permissions`, never `roles`) even if a Zustand store exists
+- [ ] No `console.log()` of sensitive props
+- [ ] All restricted UI wrapped in `<PermissionGuard :permission="'VIEW_{MODULE}'">`
+- [ ] `router.visit('/login')` + `queryCache.clear()` on logout
+- [ ] Authorization checks remain permission-based even if a Pinia store exists
 
 **TypeScript (§13)**
 
 - [ ] `PaginatedResponse<T>` interface used for all list responses
 - [ ] Entity list items use `snake_case` keys: `uuid`, `created_at`, `updated_at`, `deleted_at: string | null`
-- [ ] No `any` types — strict TypeScript 6 throughout
+- [ ] No `any` types — strict TypeScript 5 throughout
 - [ ] Module `types.ts` defines all domain-specific interfaces
-- [ ] Props typed via explicit interfaces; Inertia `PageProps` augmented in `types/inertia.d.ts`
+- [ ] `defineProps<T>()` and `defineEmits<T>()` use generic syntax — no runtime declarations
+- [ ] Inertia `PageProps` augmented in `types/inertia.d.ts`
 
 **Forms (§13.1)**
 
-- [ ] Every mutating form uses shadcn `Form` (`react-hook-form`) with `zodResolver` from `@hookform/resolvers/zod`
+- [ ] Every mutating form uses `@primevue/forms` `<Form>` + `<FormField>` with `zodResolver` from `@primevue/forms/resolvers/zod`
 - [ ] Zod v4 schema in `modules/{context}/schemas/`; form type is `z.infer<typeof schema>` (never duplicated as a separate interface)
-- [ ] Field errors rendered via shadcn `FormMessage` — not toasts
-- [ ] No competing validators installed (`yup`, `joi`, `valibot`, `class-validator`)
+- [ ] Field errors rendered via Volt `<Message severity="error">` — not toasts
+- [ ] No competing validators installed (`yup`, `joi`, `valibot`, `vee-validate`, `class-validator`)
 
 **Sidebar (§9.1)**
 
-- [ ] Every nav item with a permission wrapped in `<PermissionGuard permissions={[...]}>`
-- [ ] Related modules grouped in collapsible dropdown sections
-- [ ] Group open/closed state persisted (`useState` + `localStorage`); active route auto-expands its parent group
+- [ ] Every nav item with permission wrapped in `<PermissionGuard>`
+- [ ] Related modules grouped in collapsible sections
+- [ ] Group open/closed state persisted via Pinia store (with persist) or `localStorage`
+- [ ] Active route auto-expands its parent group
 - [ ] Section labels use `text-[10px] font-semibold uppercase tracking-[1.8px]`
-- [ ] Nav icons are `lucide-react` components
+- [ ] Nav icons are primeicons string class names (`'pi pi-users'`) — no component refs, no `markRaw()`
 
 ---
 
@@ -198,11 +188,11 @@ For each item mark ✅ PASS, ❌ FAIL (with file:line and brief description) or 
 
 For each ❌ FAIL, you MUST before writing the fix:
 
-1. Call context7 to confirm the exact API for the affected library (React 19, Inertia 3.0, TanStack Query v5, TanStack Table v8, Zustand v5, shadcn/ui, `react-hook-form`, Zod v4)
-2. Call tavily to search `site:ui.shadcn.com` IF the failure involves a shadcn primitive, OR to verify current React 19 / TanStack best practices if uncertain (prioritize `time_range: day | week | month`)
+1. Call context7 to confirm the exact API for the affected library (Vue 3, Inertia v3, Pinia, Pinia Colada, PrimeVue v4 DataTable/Forms, `tailwindcss-primeui`, Zod v4)
+2. Call tavily to search `site:primevue.org` / `site:volt.primevue.org` IF the failure involves a Volt/PrimeVue primitive, OR to verify current Vue 3 / Pinia Colada best practices if uncertain (prioritize `time_range: day | week | month`)
 
 Then apply the minimal fix following the exact rules in `.claude/FRONTEND/SKILL.md` and the security baseline in `.claude/OWASP/SKILL.md`.
-If the audit reveals missing or unnecessary global state management, prefer the simplest valid approach: local `useState` first, a Zustand store only when state must be shared beyond component boundaries, and TanStack Query for all server state.
+If the audit reveals missing or unnecessary global state management, prefer the simplest valid approach: component `ref` first, Pinia setup store only when state must be shared beyond component boundaries, and Pinia Colada for all server state.
 
 ---
 

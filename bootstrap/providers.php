@@ -1,8 +1,19 @@
 <?php
 
+use App\Providers\AppServiceProvider;
+use App\Providers\FortifyServiceProvider;
+use App\Providers\HorizonServiceProvider;
+use App\Providers\TelescopeServiceProvider;
+use Modules\Auth\Providers\AuthServiceProvider;
+use Modules\Users\Providers\UsersServiceProvider;
+use Shared\Providers\SharedServiceProvider;
+
 return [
-    App\Providers\AppServiceProvider::class,
-    App\Providers\FortifyServiceProvider::class,
-    App\Providers\HorizonServiceProvider::class,
-    App\Providers\TelescopeServiceProvider::class,
+    AppServiceProvider::class,
+    FortifyServiceProvider::class,
+    HorizonServiceProvider::class,
+    TelescopeServiceProvider::class,
+    SharedServiceProvider::class,
+    AuthServiceProvider::class,
+    UsersServiceProvider::class,
 ];

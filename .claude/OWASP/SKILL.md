@@ -1,10 +1,8 @@
 ---
-name: owasp-security-baseline
-description: Always-on security baseline for Laravel 13 + React 19 + Inertia 3.0 covering OWASP Top 10:2025, API Security Top 10:2023, and LLM Top 10:2025 with 15 mandatory checklist items for every backend and frontend change.
 trigger: always_on
 ---
 
-# OWASP Security Baseline — Laravel 13 + React 19 + Inertia 3.0
+# OWASP Security Baseline — Laravel 13 + Vue 3 + Inertia v3
 
 > **Sources of truth (current as of 2026)**:
 > - **Web apps** → [OWASP Top 10:2025](https://owasp.org/Top10/) — released November 2025. Two new categories (A03 Software Supply Chain Failures and A10 Mishandling of Exceptional Conditions); SSRF folded into A01 Broken Access Control.
@@ -12,7 +10,7 @@ trigger: always_on
 > - **LLM apps** → [OWASP Top 10 for LLM Applications:2025](https://genai.owasp.org/llm-top-10/) — applies WHEN the project integrates LLM/embeddings (see §16 below).
 > - **AI Agents** → [OWASP Top 10 for Agentic Applications 2026](https://genai.owasp.org/) (released Dec 10, 2025) — applies ONLY if the project exposes autonomous agents.
 >
-> No official "OWASP Top 15" exists. This document **merges** Top 10:2025 + API Top 10:2023 + LLM Top 10:2025 into a practical 15+1-point baseline tuned to the project's stack: PHP 8.5 · Laravel 13 · React 19 · Inertia 3.0 · Spatie (Permission, Data, Activitylog) · Cloudflare R2.
+> No official "OWASP Top 15" exists. This document **merges** Top 10:2025 + API Top 10:2023 + LLM Top 10:2025 into a practical 15+1-point baseline tuned to the project's stack: PHP 8.5 · Laravel 13 · Vue 3 · Inertia v3 · Spatie (Permission, Data, Activitylog) · Cloudflare R2.
 
 ---
 
@@ -24,7 +22,7 @@ trigger: always_on
   - Backend → `.claude/BACKEND-PHP/SKILL.md`
   - Frontend → `.claude/FRONTEND/SKILL.md`
   - Architecture → `.claude/skills/ARCHITECTURE-PHP/SKILL.md` and `SKILL-SIMPLE-CRUD.md`
-  - React/Inertia tree → `.claude/skills/ARCHITECTURE-REACT/SKILL.md`
+  - Vue/Inertia tree → `.claude/skills/ARCHITECTURE-VUE/SKILL.md`
 - Use Tavily for fresh CVEs / advisories; use Context7 for current API behavior of any package referenced here.
 
 ---
@@ -41,8 +39,8 @@ trigger: always_on
 - Property-level checks: filter response shapes via Spatie `Data` DTOs (allowlist). Never `->toArray()` directly on a model.
 - **SSRF mitigation (now part of A01)**: outbound HTTP allowlist; block `127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16` (cloud metadata), `::1`, `fc00::/7`. See §15.
 
-**Frontend (React 19 + Inertia 3.0)**:
-- Wrap restricted UI in `<PermissionGuard permission="VIEW_X">` (see `FRONTEND/SKILL.md` §14).
+**Frontend (Vue 3 + Inertia v3)**:
+- Wrap restricted UI in `<PermissionGuard :permission="'VIEW_X'">` (see `FRONTEND/SKILL.md` §14).
 - Authorization is by **`permissions`**, never by `roles`. Roles exist only as backend grouping.
 - UI hiding is **defense in depth, not the boundary** — backend MUST re-check.
 
@@ -79,8 +77,8 @@ trigger: always_on
 - File path traversal: `Storage` API only — never `file_get_contents($userInput)`.
 
 **Frontend**:
-- React auto-escapes `{ }`. **`dangerouslySetInnerHTML` is forbidden on user input.** If rich text is required, sanitize on the server (Laravel `Purifier` or HTMLPurifier).
-- Form validation (UX layer): shadcn `Form` (`react-hook-form`) + Zod v4 schemas (via `zodResolver`) — but the backend `Data` DTO remains **authoritative**.
+- Vue auto-escapes `{{ }}`. **`v-html` is forbidden on user input.** If rich text is required, sanitize on the server (Laravel `Purifier` or HTMLPurifier).
+- Form validation (UX layer): `@primevue/forms` + Zod v4 schemas (via `@primevue/forms/resolvers/zod`) — but the backend `Data` DTO remains **authoritative**.
 - Never `eval()`, never `new Function(string)`, never `innerHTML = userInput`.
 
 ---
@@ -103,8 +101,8 @@ trigger: always_on
 - Headers via **`bepsvpt/secure-headers`** package: HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`.
 - **Middleware order matters with Inertia v3 SSR**: register `secure-headers` and `laravel-csp` **BEFORE** `\Inertia\Middleware` in `bootstrap/app.php` so headers survive SSR responses.
 - CSP via **Spatie `laravel-csp` v3**: explicit allowlist for `script-src`, `style-src`, `img-src`, `connect-src`. No `'unsafe-eval'` in production.
-- **CSP carve-out for Tailwind v4 + shadcn/ui (Radix) + Framer Motion styles**: Radix-based shadcn overlays inject their overlay/animation styles (Dialog, Drawer, Popover, Menu) at runtime, Framer Motion writes inline transforms, and design tokens resolve as CSS custom properties at runtime. Together these force one of:
-  - **Preferred**: nonce-per-request via `Spatie\Csp\Nonce` — inject `<style nonce="{{ csp_nonce() }}">` and `<script nonce="{{ csp_nonce() }}">` in the root Blade view (`app.blade.php`).
+- **CSP carve-out for Tailwind v4 + PrimeVue unstyled/Volt + Vue SFC styles**: PrimeVue runs in unstyled mode and Volt components inject their overlay/animation styles (Dialog, Drawer, Popover, Menu, Toast) at runtime, `tailwindcss-primeui` resolves CSS custom properties at runtime, and Vue SFC `<style>` blocks compile to inline `<style>` tags during SSR. Together these force one of:
+  - **Preferred**: nonce-per-request via `Spatie\Csp\Nonce` — inject `<style nonce="{{ csp_nonce() }}">` and `<script nonce="{{ csp_nonce() }}">` in `app.blade.php`.
   - **Acceptable for SPAs without runtime-generated styles**: `style-src 'self' 'sha256-...'` with build-time hash extraction from Vite manifest.
   - **Forbidden**: `style-src 'self' 'unsafe-inline'` in production unless documented as a temporary deviation with mitigation deadline.
 - CORS via `config/cors.php`: `allowed_origins` is an **explicit list**, never `['*']` for authenticated endpoints. For wildcard subdomains use `allowed_origins_patterns` with explicit regex (e.g., `'/^https:\/\/[a-z0-9-]+\.example\.com$/'`), never `'*'`.
@@ -186,7 +184,7 @@ trigger: always_on
 - Retries on idempotent ops only. Use `Bus::retryUntil()` or queue worker tries.
 - Timeouts: every external HTTP call uses `Http::timeout(5)->retry(2, 200)`. Never unbounded.
 - Concurrency: writes to shared resources use `DB::transaction()` + row-level locks (`->lockForUpdate()`) or optimistic versioning.
-- Frontend: Inertia 3.0 `onException` / `onHttpException` / `onNetworkError` per-visit callbacks (and `onError` for validation) must be wired in `app.tsx` (plus a React error boundary). TanStack Query `onError` for query/mutation failures. Sileo `toast.error(...)` for action-level failures.
+- Frontend: Inertia v3 `onHttpException` and `onNetworkError` per-visit callbacks must be wired in `app.ts`. `HttpError` base class for typed handling. PrimeVue `useToast()` `.add({ severity: 'error', ... })` for action-level failures.
 
 ---
 
@@ -232,9 +230,9 @@ trigger: always_on
 - HTTP timeouts: `Http::timeout(5)`. R2 upload `->timeout(30)`.
 
 **Frontend**:
-- Forms show a submit-disabled/pending state (`isPending`) to prevent double-submit.
-- TanStack Query `staleTime: 1000 * 60 * 2` default for list queries to avoid request storms.
-- Debounce search filters at 300 ms via a `useDebounce` hook.
+- Inertia `useForm` shows submit-disabled state to prevent double-submit.
+- Pinia Colada `staleTime: 1000 * 60 * 2` default for list queries to avoid request storms.
+- Debounce search filters at 300 ms via VueUse `useDebounceFn`.
 
 ---
 
@@ -381,10 +379,12 @@ public function show(Order $order): Response
 
 **1. CSRF (Inertia auto-handles XSRF token):**
 
-```tsx
-import { useForm } from '@inertiajs/react'   // ✅ sends X-XSRF-TOKEN automatically
+```vue
+<script setup lang="ts">
+import { useForm } from '@inertiajs/vue3'   // ✅ sends X-XSRF-TOKEN automatically
 const form = useForm({ name: '', email: '' })
 form.post('/users')
+</script>
 ```
 
 For traditional Blade forms: `<form method="POST">@csrf …</form>` (mandatory).
@@ -397,13 +397,15 @@ Route::post('/contact', ContactController::class)
     ->middleware(\Spatie\Honeypot\ProtectAgainstSpam::class);
 ```
 
-```tsx
-<form onSubmit={form.handleSubmit(onSubmit)}>
-  <Input {...form.register('name')} />
-  {/* ↓ honeypot — invisible field; real users leave it empty */}
-  <input type="text" name="my_name" tabIndex={-1} autoComplete="off" style={{ position: 'absolute', left: '-9999px' }} />
-  <Button type="submit">Send</Button>
-</form>
+```vue
+<template>
+  <Form :resolver="resolver" @submit="onSubmit">
+    <FormField name="name" v-slot="$field"><InputText v-bind="$field.props" /></FormField>
+    <!-- ↓ honeypot — invisible field; real users leave it empty -->
+    <input type="text" name="my_name" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" />
+    <Button type="submit">Send</Button>
+  </Form>
+</template>
 ```
 
 **3. Double validation (client Zod v4 + server Spatie Data — server is authoritative):**
@@ -418,11 +420,13 @@ export const userSchema = z.object({
 export type UserSchema = z.infer<typeof userSchema>
 ```
 
-```tsx
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { userSchema, type UserSchema } from '@/modules/users/schemas/user.schema'
-const form = useForm<UserSchema>({ resolver: zodResolver(userSchema) })
+```vue
+<script setup lang="ts">
+import { Form, FormField } from '@primevue/forms'
+import { zodResolver } from '@primevue/forms/resolvers/zod'
+import { userSchema } from '@/modules/users/schemas/user.schema'
+const resolver = zodResolver(userSchema)
+</script>
 ```
 
 ```php
@@ -478,7 +482,7 @@ $ok = $user->attemptLoginUsingOneTimePassword($code);  // validates + invalidate
 | **LLM02 Sensitive Information Disclosure** | Strip PII before sending to upstream models (e.g., `Spatie\Pii\Redactor` or custom regex). Sign data-processing agreements with model providers. Never send R2 signed URLs or session tokens to LLMs. |
 | **LLM03 Supply Chain** | Pin model versions (`gpt-4o-2024-08-06`, not `gpt-4o`). Audit fine-tuning datasets. Verify model provider's compliance posture quarterly. |
 | **LLM04 Data and Model Poisoning** | Allowlist sources for RAG ingestion. Quarantine user-uploaded content used for embeddings until reviewed. |
-| **LLM05 Improper Output Handling** | Treat LLM output as **untrusted user input**: never `eval()`, never `dangerouslySetInnerHTML`, never auto-execute SQL, never write to filesystem without validation. Render in React via `{ }` only. |
+| **LLM05 Improper Output Handling** | Treat LLM output as **untrusted user input**: never `eval()`, never `v-html`, never auto-execute SQL, never write to filesystem without validation. Render in Vue via `{{ }}` only. |
 | **LLM06 Excessive Agency** | If using tool/function calling: explicit allowlist of tools per role. Human-in-the-loop required for any mutation outside read-only queries. |
 | **LLM07 System Prompt Leakage** | Never include secrets in system prompts. Treat system prompt as public information. |
 | **LLM08 Vector and Embedding Weaknesses** | Authorize at the row level on RAG queries (per-tenant index or filter). Sanitize embedded content. |
@@ -495,7 +499,7 @@ Every pull request MUST satisfy **all** of the following or document a justified
 
 - [ ] **1. Access Control + SSRF (§1)** — every route guarded by `auth` + `permission:*` or Policy; UUID-bound via `->whereUuid('uuid')`; outbound HTTP allowlists private IP ranges.
 - [ ] **2. Authentication (§2, §15.5)** — Argon2id, throttle `login` 5/min, `regenerate()` on login, `invalidate()`+`regenerateToken()` on logout, secure cookies, no tokens in `localStorage`.
-- [ ] **3. Injection (§3)** — Eloquent + `FormRequest`/Spatie `Data` everywhere; `$fillable` allowlist; no `dangerouslySetInnerHTML` on user input; no shell exec with concat.
+- [ ] **3. Injection (§3)** — Eloquent + `FormRequest`/Spatie `Data` everywhere; `$fillable` allowlist; no `v-html` on user input; no shell exec with concat.
 - [ ] **4. Cryptography (§4)** — TLS+HSTS forced; secrets via `.env` only; encrypted at-rest PII; cookies `secure`+`httpOnly`+`sameSite`.
 - [ ] **5. Misconfiguration (§5)** — `APP_DEBUG=false`; `secure-headers` + `laravel-csp` with nonces; explicit CORS allowlist; no source maps in prod.
 - [ ] **6. Supply Chain (§6)** — `composer.lock` + `package-lock.json` committed; `composer audit` + `npm audit` in CI; pinned majors.
@@ -534,8 +538,8 @@ Every pull request MUST satisfy **all** of the following or document a justified
 - Frontend implementation rules: `.claude/FRONTEND/SKILL.md` §14 (Frontend Security)
 - Architecture (Hexagonal + DDD): `.claude/skills/ARCHITECTURE-PHP/SKILL.md`
 - Simple CRUD baseline: `.claude/skills/ARCHITECTURE-PHP/SKILL-SIMPLE-CRUD.md`
-- React/Inertia tree: `.claude/skills/ARCHITECTURE-REACT/SKILL.md`
-- Workflows: `.claude/commands/{backend|frontend}-{new|audit}.md`
+- Vue/Inertia tree: `.claude/skills/ARCHITECTURE-VUE/SKILL.md`
+- Workflows: `.claude/workflows/{backend|frontend}-{new|audit}.md`
 
 ---
 

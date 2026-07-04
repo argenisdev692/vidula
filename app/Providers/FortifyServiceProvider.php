@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
-use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -33,10 +32,14 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::createUsersUsing(CreateNewUser::class);
         Fortify::updateUserProfileInformationUsing(UpdateUserProfileInformation::class);
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
-        Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
+        // Password reset uses the Auth module's OTP flow (PasswordResetController),
+        // which reuses App\Actions\Fortify\ResetUserPassword directly.
         Fortify::redirectUserForTwoFactorAuthenticationUsing(RedirectIfTwoFactorAuthenticatable::class);
 
-        Fortify::loginView(fn () => Inertia::render('auth/LoginPage'));
+        // The canonical login view is bound in Modules\Auth\AuthServiceProvider
+        // (renders Auth/Login). Kept here as a safe fallback if that provider's
+        // boot order ever changes.
+        Fortify::loginView(fn () => Inertia::render('Auth/Login', ['canResetPassword' => true]));
 
         RateLimiter::for('login', function (Request $request) {
             $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());

@@ -5,9 +5,9 @@ description: Directory tree and file placement rules for the React and Inertia f
 
 # ARCHITECTURE-REACT-INERTIA.md
 
-# React 19 + Inertia.js 3.0 · Frontend Architecture (2026)
+# React 19 + Inertia.js 2.0 · Frontend Architecture (2026)
 
-> Stack: React 19 · Inertia.js 3.0 · TypeScript 6 · TanStack Query v5 · TanStack Table v8 · Zustand v5 · Tailwind CSS v4 · shadcn/ui (latest)
+> Stack: React 19 · Inertia.js 2.0 · TypeScript 5 · TanStack Query v5 · TanStack Table v8 · Zustand v5 · Tailwind CSS v4 · shadcn/ui (latest)
 
 ---
 

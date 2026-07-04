@@ -35,4 +35,28 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Socialite OAuth Providers
+    |--------------------------------------------------------------------------
+    |
+    | Consumed by the Auth module's social login (SocialAuthController).
+    | Request only the minimum scopes needed to resolve a verified email.
+    |
+    */
+
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URL'),
+        'scopes' => ['openid', 'profile', 'email'],
+    ],
+
+    'github' => [
+        'client_id' => env('GITHUB_CLIENT_ID'),
+        'client_secret' => env('GITHUB_CLIENT_SECRET'),
+        'redirect' => env('GITHUB_REDIRECT_URL'),
+        'scopes' => ['user:email', 'read:user'],
+    ],
+
 ];

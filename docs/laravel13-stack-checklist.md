@@ -7,11 +7,11 @@ Marca cada caja al verificar/instalar. Todos los comandos asumen Sail.
 ## 0. Crear proyecto
 
 ```bash
-laravel new myapp --react
+laravel new myapp --vue
 cd myapp && ./vendor/bin/sail up -d
 ```
 
-> Stack objetivo 2026: **Laravel 13.16+** (PHP 8.3–8.5) · **PHP 8.5.0** (GA 20-nov-2025) · **React 19.2** · **TypeScript 6** · **Inertia v3** · **shadcn/ui** · **TanStack Query v5 + TanStack Table v8** · **Zustand v5** · **Tailwind v4**. NO Vue, NO PrimeVue.
+> Stack objetivo 2026: **Laravel 13.16+** (PHP 8.3–8.5) · **PHP 8.5.0** (GA 20-nov-2025) · **Vue 3.5.38** · **Inertia v3** · **PrimeVue v4.5 unstyled + Volt** · **Pinia + Pinia Colada** · **Tailwind v4**. NO React, NO shadcn/ui.
 
 ---
 
@@ -32,14 +32,14 @@ Encadena con `&&` los tres bloques. Ejecutar sobre el proyecto ya creado (paso 0
 ./vendor/bin/sail composer require --dev \
   barryvdh/laravel-debugbar barryvdh/laravel-ide-helper driftingly/rector-laravel \
   larastan/larastan laravel/pint rector/rector && \
-./vendor/bin/sail npm install @inertiajs/react@^3.0 @inertiajs/vite@^3.0 react@^19 react-dom@^19 \
-  @tanstack/react-query @tanstack/react-table zustand axios react-hook-form @hookform/resolvers zod \
-  sileo framer-motion lucide-react tailwind-merge clsx class-variance-authority laravel-echo pusher-js && \
-./vendor/bin/sail npm install -D typescript @types/react @types/react-dom @vitejs/plugin-react @types/node \
-  tailwindcss @tailwindcss/vite laravel-vite-plugin
+./vendor/bin/sail npm install @inertiajs/vue3@^3.0 @inertiajs/vite@^3.0 vue@^3.5 \
+  pinia @pinia/colada primevue@^4 @primevue/forms @primevue/themes primeicons zod \
+  tailwind-merge clsx laravel-echo pusher-js && \
+./vendor/bin/sail npm install -D typescript vue-tsc @vitejs/plugin-vue @types/node \
+  tailwindcss @tailwindcss/vite laravel-vite-plugin @pinia/colada-devtools
 ```
 
-> Server-state → **TanStack Query v5** (`useQuery`/`useMutation`). Client-state → **Zustand v5** setup stores. UI primitives → **shadcn/ui** (`npx shadcn@latest add ...`). Data table → **TanStack Table v8** (`useReactTable`). Forms → `react-hook-form` + **Zod v4** (`@hookform/resolvers`). Toasts → **Sileo**. Iconos → `lucide-react`. `tailwind-merge` + `clsx` alimentan el helper `cn()`.
+> Server-state → **Pinia Colada** (`useQuery`/`useMutation`). Client-state → **Pinia** setup stores. UI primitives → **PrimeVue v4 unstyled + Volt** (`npx volt-vue add ...`). Forms → `@primevue/forms` + **Zod v4**. Iconos → `primeicons` (`pi pi-*`). `tailwind-merge` + `clsx` alimentan el helper `cn()`.
 
 > ⚠️ Pest **no** se incluye: aún no soporta Laravel 13 (ver §2). Usa PHPUnit 12 (incluido).
 
@@ -219,14 +219,13 @@ Encadena con `&&` los tres bloques. Ejecutar sobre el proyecto ya creado (paso 0
 
 ---
 
-## 6. Frontend (npm) — opcional si no usaste `--react`
+## 6. Frontend (npm) — opcional si no usaste `--vue`
 
 ```bash
-./vendor/bin/sail npm install @inertiajs/react@^3.0 @inertiajs/vite@^3.0 react@^19 react-dom@^19
-./vendor/bin/sail npm install @tanstack/react-query @tanstack/react-table zustand axios react-hook-form @hookform/resolvers zod sileo framer-motion lucide-react tailwind-merge clsx class-variance-authority laravel-echo pusher-js
-./vendor/bin/sail npm install -D tailwindcss @tailwindcss/vite @vitejs/plugin-react @types/react @types/react-dom
-./vendor/bin/sail npx shadcn@latest init
-./vendor/bin/sail npx shadcn@latest add button card dialog input table
+./vendor/bin/sail npm install @inertiajs/vue3@^3.0 @inertiajs/vite@^3.0 vue@^3.5
+./vendor/bin/sail npm install pinia @pinia/colada primevue@^4 @primevue/forms @primevue/themes primeicons zod tailwind-merge clsx laravel-echo pusher-js
+./vendor/bin/sail npm install -D tailwindcss @tailwindcss/vite @vitejs/plugin-vue vue-tsc @pinia/colada-devtools
+./vendor/bin/sail npx volt-vue add button card dialog inputtext datatable toast
 ```
 
-> **shadcn/ui** copia los componentes a `resources/js/shadcn/` (code-ownership, CLI-generated — NUNCA editar a mano). Construidos sobre Radix + Tailwind v4, WCAG AA, responsive y TypeScript. Añade más con `npx shadcn@latest add <componente>`. DataTable = TanStack Table v8 con las primitivas `Table` de shadcn (NUNCA el `data-table` de shadcn).
+> **Volt** (volt.primevue.org) copia los componentes a `resources/js/volt/` (code-ownership). Construidos sobre el core **unstyled** de PrimeVue + Tailwind v4, WCAG AA, responsive y TypeScript. Añade más con `npx volt-vue add <componente>`.

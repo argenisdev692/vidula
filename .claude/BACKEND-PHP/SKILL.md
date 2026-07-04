@@ -433,7 +433,7 @@ final class {Module}EloquentModel extends Model
 
 ### §4.1 — Eloquent Performance & N+1 Prevention (Senior-Level Mandatory)
 
-> **N+1 is the #1 root cause of slow Laravel apps**. Every rule below exists to make N+1 either impossible (`shouldBeStrict()` crashes dev) or trivial to spot (`withCount` instead of iterating collections). Reviewers MUST reject any PR that loads a relation inside a Blade/React loop without eager-loading or aggregate subquery.
+> **N+1 is the #1 root cause of slow Laravel apps**. Every rule below exists to make N+1 either impossible (`shouldBeStrict()` crashes dev) or trivial to spot (`withCount` instead of iterating collections). Reviewers MUST reject any PR that loads a relation inside a Blade/Vue loop without eager-loading or aggregate subquery.
 
 #### 1. `Model::shouldBeStrict()` — MANDATORY in `AppServiceProvider`
 
@@ -904,7 +904,7 @@ final class {Entity}FilterData extends Data
         public readonly ?string $dateTo = null,                  // 'YYYY-MM-DD'
         public readonly string $sortField = 'created_at',
         #[In([1, -1])]
-        public readonly int $sortOrder = -1,                     // 1 = asc, -1 = desc (mirrors TanStack Table sort convention)
+        public readonly int $sortOrder = -1,                     // 1 = asc, -1 = desc (mirrors PrimeVue DataTable)
         #[Min(1)]
         public readonly int $page = 1,
         #[Min(1), Max(100)]

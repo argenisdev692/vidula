@@ -29,13 +29,13 @@ laravel.test:
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
+import vue from '@vitejs/plugin-vue';
 
 export default defineConfig({
   plugins: [
-    laravel({ input: ['resources/css/app.css', 'resources/js/app.tsx'], refresh: true }),
+    laravel({ input: ['resources/css/app.css', 'resources/js/app.ts'], refresh: true }),
     tailwindcss(),
-    react(),
+    vue(),
   ],
   resolve: { alias: { '@': '/resources/js' } },
 });
@@ -46,18 +46,18 @@ export default defineConfig({
 @import "tailwindcss";
 @import "./globals.css";              /* design tokens: var(--token) — NUNCA hex hardcodeado */
 
-/* Tema = solo la clase .dark en <html> (light = ausencia de clase). El dark: variant se enlaza a .dark */
+/* unstyled mode no tiene darkModeSelector de PrimeVue: el dark var se enlaza a la clase .dark */
 @custom-variant dark (&:is(.dark *));
 
 @source "../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php";
 @source "../**/*.blade.php";
-@source "../**/*.tsx";
+@source "../**/*.vue";
 ```
 > Tailwind v4 NO usa `tailwind.config.js` ni `postcss.config.js`. Tema = solo la clase `.dark` en `<html>` (light = ausencia de clase). Nunca `data-theme`, nunca `.light`.
 
 ---
 
-## 3. TypeScript 6
+## 3. TypeScript
 
 `tsconfig.json`
 ```json
@@ -67,7 +67,7 @@ export default defineConfig({
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "jsx": "react-jsx",
+    "jsx": "preserve",
     "strict": true,
     "noEmit": true,
     "isolatedModules": true,
@@ -76,14 +76,14 @@ export default defineConfig({
     "types": ["vite/client"],
     "paths": { "@/*": ["./resources/js/*"] }
   },
-  "include": ["resources/js/**/*.ts", "resources/js/**/*.tsx", "resources/js/**/*.d.ts"]
+  "include": ["resources/js/**/*.ts", "resources/js/**/*.vue", "resources/js/**/*.d.ts"]
 }
 ```
-> **TypeScript 6.0** (GA 23-mar-2026) — última release del compilador JS antes del port nativo en Go (TS 7). Enciende `strict`/ESM/`es2025` por defecto. Type-check con **`tsc --noEmit`** (o `tsc -b`). `strict: true` obligatorio en TODO `.tsx`/`.ts`. Prohibido `any` y `@ts-ignore`.
+> Type-check con **`vue-tsc --noEmit`** (no `tsc` a secas: necesita entender SFCs `.vue`). `strict: true` obligatorio en TODO `.vue`/`.ts`. Prohibido `any` y `@ts-ignore`.
 
 ---
 
-## 4. Inertia 3 + React 19
+## 4. Inertia 3 + Vue 3.5
 
 `bootstrap/app.php`
 ```php
@@ -94,70 +94,63 @@ export default defineConfig({
 })
 ```
 
-`resources/js/app.tsx`
-```tsx
-import { createInertiaApp } from '@inertiajs/react';
-import { createRoot } from 'react-dom/client';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { StrictMode } from 'react';
+`resources/js/app.ts`
+```ts
+import { createInertiaApp } from '@inertiajs/vue3';
+import { createApp, h } from 'vue';
+import { createPinia } from 'pinia';
+import { PiniaColada } from '@pinia/colada';
+import PrimeVue from 'primevue/config';
+import ToastService from 'primevue/toastservice';
 import '../css/app.css';
 import './echo';
-
-const queryClient = new QueryClient({
-  defaultOptions: { queries: { staleTime: 1000 * 60 * 2 } },
-});
 
 createInertiaApp({
   // 'pages' shorthand del plugin @inertiajs/vite (v3) evita el glob manual:
   resolve: name => {
-    const pages = import.meta.glob<{ default: unknown }>('./pages/**/*.tsx', { eager: true });
-    return pages[`./pages/${name}.tsx`];
+    const pages = import.meta.glob<{ default: unknown }>('./Pages/**/*.vue', { eager: true });
+    return pages[`./Pages/${name}.vue`];
   },
-  setup({ el, App, props }) {
-    createRoot(el).render(
-      <StrictMode>
-        <QueryClientProvider client={queryClient}>
-          <App {...props} />
-        </QueryClientProvider>
-      </StrictMode>,
-    );
+  setup({ el, App, props, plugin }) {
+    createApp({ render: () => h(App, props) })
+      .use(plugin)
+      .use(createPinia())
+      .use(PiniaColada)
+      .use(PrimeVue, { unstyled: true }) // sin theme preset: estilos vía Volt + Tailwind v4
+      .use(ToastService)
+      .mount(el);
   },
 });
 ```
 
-Página tipada (`.tsx`) + layout + TanStack Query
-```tsx
-import { Head, usePage } from '@inertiajs/react';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
-import AppLayout from '@/pages/layouts/AppLayout';
+Página tipada (`<script setup lang="ts">`) + layout + Pinia Colada
+```vue
+<script setup lang="ts">
+import { useQuery } from '@pinia/colada';
+import AppLayout from '@/common/layouts/AppLayout.vue';
+
+defineOptions({ layout: AppLayout });
 
 interface Props {
   user: { id: number; name: string; email: string };
   flash: { message?: string };
 }
+const props = defineProps<Props>();
 
-export default function Dashboard(): React.JSX.Element {
-  const { user } = usePage<Props>().props;
+// Server-state SIEMPRE vía Pinia Colada (nunca un ref() manual para datos del backend):
+const { data: stats, isPending } = useQuery({
+  key: () => ['dashboard', 'stats', props.user.id],
+  query: () => fetch('/api/dashboard/stats').then(r => r.json()),
+});
+</script>
 
-  // Server-state SIEMPRE vía TanStack Query (nunca un useState manual para datos del backend):
-  const { data: stats, isPending } = useQuery({
-    queryKey: ['dashboard', 'stats', user.id],
-    queryFn: async () => (await axios.get('/dashboard/data/stats')).data,
-  });
-
-  return (
-    <>
-      <Head title="Dashboard" />
-      <AppLayout>
-        <h1>Hola, {user.name}</h1>
-        {isPending ? <p>Cargando…</p> : <pre>{JSON.stringify(stats, null, 2)}</pre>}
-      </AppLayout>
-    </>
-  );
-}
+<template>
+  <h1>Hola, {{ user.name }}</h1>
+  <p v-if="isPending">Cargando…</p>
+  <pre v-else>{{ stats }}</pre>
+</template>
 ```
-> Breaking v3: sin Axios incluido (instálalo como peer dep para TanStack Query, o usa `useHttp`) · `Inertia::lazy()` → `Inertia::optional()` · `router.cancel()` → `router.cancelAll()` · SSR automático en modo dev de Vite (sin servidor Node aparte) · el bloque `future` de v2 se elimina del `createInertiaApp`. Novedades v3.1–3.3: `usePoll`/`router.poll`, `<InfiniteScroll>`, evento `httpException`.
+> Breaking v3: sin Axios incluido · `Inertia::lazy()` → `Inertia::optional()` · `router.cancel()` → `router.cancelAll()` · SSR automático en modo dev de Vite (sin servidor Node aparte) · el bloque `future` de v2 se elimina del `createInertiaApp`.
 
 ---
 
@@ -216,23 +209,23 @@ Broadcast::channel('orders.{orderId}', function (User $user, int $orderId) {
 });
 ```
 
-Escuchar en React (`.tsx`)
-```tsx
-import { useEffect, useState } from 'react';
+Escuchar en Vue (`<script setup lang="ts">`)
+```vue
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue';
 
-export function useOrderStatus(orderId: number): string {
-  const [status, setStatus] = useState('pending');
+const props = defineProps<{ orderId: number }>();
+const status = ref('pending');
+let channel: ReturnType<typeof window.Echo.private> | undefined;
 
-  useEffect(() => {
-    const channel = window.Echo.private(`orders.${orderId}`)
-      .listen('.order.updated', (e: { order: { status: string } }) => {
-        setStatus(e.order.status);
-      });
-    return () => channel.stopListening('.order.updated');
-  }, [orderId]);
-
-  return status;
-}
+onMounted(() => {
+  channel = window.Echo.private(`orders.${props.orderId}`)
+    .listen('.order.updated', (e: { order: { status: string } }) => {
+      status.value = e.order.status;
+    });
+});
+onUnmounted(() => channel?.stopListening('.order.updated'));
+</script>
 ```
 
 Producción — `/etc/supervisor/conf.d/reverb.conf` + Nginx
@@ -628,46 +621,33 @@ parameters:
 
 ---
 
-## 24. shadcn/ui + TanStack Table + Zustand (UI)
+## 24. PrimeVue v4 unstyled + Volt (UI)
 
-UI primitives vía **shadcn/ui** (CLI-generated, code-ownership en `resources/js/shadcn/` — NUNCA se editan a mano, se regeneran). Es la ÚNICA librería UI del stack (no PrimeVue, no MUI).
+PrimeVue se registra `{ unstyled: true }` (sin theme preset). Los componentes se traen con **Volt** (code-ownership: el código vive en tu repo bajo `resources/js/volt/`).
 
 ```bash
-./vendor/bin/sail npx shadcn@latest init
-./vendor/bin/sail npx shadcn@latest add button card dialog input table
+./vendor/bin/sail npx volt-vue add button card dialog inputtext datatable toast
 ```
-```tsx
-import { Button } from '@/shadcn/button';
-import { Card, CardContent } from '@/shadcn/card';
-import { toast } from 'sileo';
+```vue
+<script setup lang="ts">
+import Button from '@/volt/Button.vue';
+import Card from '@/volt/Card.vue';
+import { useToast } from 'primevue/usetoast';
 
-export default function SaveCard(): React.JSX.Element {
-  return (
-    <Card>
-      <CardContent>
-        <Button onClick={() => toast.success('Guardado')}>Guardar</Button>
-      </CardContent>
-    </Card>
-  );
-}
+const toast = useToast();
+const notify = () =>
+  toast.add({ severity: 'success', summary: 'Listo', detail: 'Guardado', life: 3000 });
+</script>
+
+<template>
+  <Card>
+    <template #content>
+      <Button label="Guardar" icon="pi pi-check" @click="notify" />
+    </template>
+  </Card>
+</template>
 ```
-> **DataTable = TanStack Table v8** (`@tanstack/react-table` con `useReactTable`), renderizada con las primitivas `Table` de shadcn — NUNCA el `data-table` de shadcn. Listados server-side vía TanStack Query (`:lazy`-equivalente = filtros en el `queryKey`). Toasts = **Sileo** (`toast.success/error`). Formularios = `react-hook-form` + **Zod v4** (`@hookform/resolvers`). Iconos = `lucide-react`. Animaciones = Framer Motion. Helper de clases: `cn()` con `tailwind-merge` + `clsx` en `resources/js/common/helpers/`.
-
-**Estado de servidor vs cliente**
-```tsx
-// Server-state → TanStack Query v5
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-
-// Client-state → Zustand v5 (stores en resources/js/modules/{context}/stores/)
-import { create } from 'zustand';
-
-type UiStore = { isFiltersOpen: boolean; setFiltersOpen: (v: boolean) => void };
-export const useUiStore = create<UiStore>((set) => ({
-  isFiltersOpen: false,
-  setFiltersOpen: (v) => set({ isFiltersOpen: v }),
-}));
-```
-> Nunca mezclar las dos capas: datos del backend SIEMPRE en TanStack Query; estado de UI compartido en Zustand. `persist` de Zustand solo para preferencias no sensibles (tema, sidebar).
+> DataTable = PrimeVue `DataTable` server-side (`:lazy`). Toasts = `Toast` + `useToast()`. Formularios = `@primevue/forms` + **Zod v4**. Iconos = `primeicons` (`pi pi-*`). Helper de clases: `cn()` con `tailwind-merge` + `clsx` en `resources/js/lib/`.
 
 ---
 
@@ -701,12 +681,12 @@ class SupportAgent extends Agent {
 ### ✅ Completadas (2026-05-30)
 
 **Core Stack:**
-- ✅ `tsconfig.json` - TypeScript 6 strict + `tsc --noEmit`
-- ✅ `vite.config.ts` - Plugin React + input `app.tsx`
+- ✅ `tsconfig.json` - TypeScript strict + vue-tsc
+- ✅ `vite.config.ts` - Plugin Vue + input `app.ts`
 - ✅ `resources/css/app.css` - Tailwind v4 CSS-based + `.dark` variant + tokens
-- ✅ `resources/js/app.tsx` - Inertia v3 + React 19 + TanStack Query + Zustand + shadcn/ui
+- ✅ `resources/js/app.ts` - Inertia v3 + Vue 3.5 + Pinia + Pinia Colada + PrimeVue unstyled
 - ✅ `resources/js/echo.ts` - Reverb/Echo configurado
-- ✅ `resources/js/pages/Welcome.tsx` - Página de ejemplo (`export default` + `<Head />`)
+- ✅ `resources/js/Pages/Welcome.vue` - Página de ejemplo (`<script setup lang="ts">`)
 - ✅ `bootstrap/app.php` - HandleInertiaRequests middleware
 
 **Backend Configs:**
@@ -739,7 +719,7 @@ class SupportAgent extends Agent {
 - ❌ `routes/channels.php` - Configurar canales broadcast
 - ✅ `app/Providers/TelescopeServiceProvider.php` - Gate existe pero email vacío (línea 60-62)
 - ✅ `routes/console.php` - Scheduler configurado (backup, clean, monitor, prune OTP)
-- ❌ `resources/js/shadcn/` - Componentes shadcn/ui por añadir vía `npx shadcn@latest add`
+- ❌ `resources/js/volt/` - Componentes Volt (PrimeVue unstyled) por añadir vía `npx volt-vue add`
 - ❌ `app/Agents/` - Crear agentes AI SDK
 - ❌ `app/Data/` - DTOs con Spatie Data
 - ❌ Migración `google2fa_secret` en users

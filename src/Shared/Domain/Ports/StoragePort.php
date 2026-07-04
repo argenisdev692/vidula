@@ -1,0 +1,34 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Shared\Domain\Ports;
+
+/**
+ * Cloud storage contract (Cloudflare R2 by default).
+ *
+ * Domain-pure: only native types. The R2StorageAdapter implements it over the
+ * S3-compatible `r2` disk. Public access to private objects is ALWAYS via a
+ * signed temporary URL — never a permanent public URL (OWASP / BACKEND-PHP §5).
+ */
+interface StoragePort
+{
+    /**
+     * Persist raw contents and return the stored path.
+     */
+    public function put(string $path, string $contents, string $visibility = 'private'): string;
+
+    /**
+     * Persist an uploaded/local file into $directory and return the stored path.
+     */
+    public function putFile(string $directory, \SplFileInfo $file, string $visibility = 'private'): string;
+
+    /**
+     * Time-limited signed URL for a private object.
+     */
+    public function temporaryUrl(string $path, \DateTimeInterface $expiresAt): string;
+
+    public function delete(string $path): bool;
+
+    public function exists(string $path): bool;
+}

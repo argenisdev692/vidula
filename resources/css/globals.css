@@ -1,40 +1,56 @@
 /*
- * Project design tokens (rules.md §CSS). shadcn/ui semantic tokens
- * (--background, --foreground, --primary, …) live in app.css; the
- * project-level aliases below derive from them so both palettes stay
- * in sync in light and dark mode.
+ * VIDULA design tokens — SINGLE SOURCE OF TRUTH (FRONTEND/SKILL.md §0–§2).
+ *
+ * Core design tokens (--bg-*, --text-*, --accent-*) are authoritative.
+ * The `tailwindcss-primeui` semantic bridge (--p-*) is DERIVED from them so
+ * Volt primitives (PrimeVue v4 unstyled) stay untouched after `npx volt-vue add`.
+ * Never hardcode a --p-* value outside the bridge; never edit a Volt component
+ * to reference a core token directly — always go through the bridge.
+ *
+ * Dark-first project: the FOUC-killer in app.blade.php applies `.dark` on first
+ * paint when no preference is stored. Light mode = absence of the `.dark` class.
  */
+
 :root {
-    /* backgrounds (darkest → lightest) */
-    --bg-app: var(--background);
-    --bg-surface: var(--card);
-    --bg-card: var(--muted);
-    --bg-hover: var(--accent);
+    /* backgrounds (lightest → darkest — :root = LIGHT) */
+    --bg-app: #f8f8fc;
+    --bg-surface: #ffffff;
+    --bg-card: #f1f1f6;
+    --bg-hover: #e8e8f0;
 
     /* borders */
-    --border-subtle: color-mix(in oklch, var(--border) 60%, transparent);
-    --border-default: var(--border);
-    --border-hover: color-mix(in oklch, var(--border) 100%, var(--foreground) 10%);
+    --border-subtle: rgba(0, 0, 0, 0.05);
+    --border-default: rgba(0, 0, 0, 0.1);
+    --border-hover: rgba(0, 0, 0, 0.18);
 
     /* text */
-    --text-primary: var(--foreground);
-    --text-secondary: color-mix(in oklch, var(--foreground) 75%, var(--muted-foreground));
-    --text-muted: var(--muted-foreground);
-    --text-disabled: color-mix(in oklch, var(--muted-foreground) 60%, transparent);
+    --text-primary: #1a1a2e;
+    --text-secondary: #3a3a52;
+    --text-muted: #6a6a82;
+    --text-disabled: #a0a0b0;
 
     /* accents */
-    --accent-primary: var(--primary);
-    --accent-secondary: #a78bfa;
+    --accent-primary: #4f46e5;
+    --accent-secondary: #7c3aed;
     --accent-success: #16a34a;
     --accent-warning: #d97706;
-    --accent-error: var(--destructive);
+    --accent-error: #dc2626;
     --accent-info: #0284c7;
 
     /* typography */
-    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
 
-    /* transition */
+    /* radii & transition */
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
     --transition: 0.2s ease;
+
+    /* brand gradient + on-accent text (app-shell chrome: avatars, indicators) */
+    --grad-primary: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    --on-accent: #ffffff;
 
     /* form tokens */
     --input-bg: var(--bg-card);
@@ -48,14 +64,107 @@
     --input-font-size: 14px;
     --input-radius: var(--radius-md);
 
-    /* soft-delete row tokens */
-    --deleted-row-bg: color-mix(in srgb, var(--accent-error) 8%, var(--bg-card));
+    /* soft-delete row tokens (light) */
+    --deleted-row-bg: color-mix(in srgb, var(--accent-error) 6%, var(--bg-card));
     --deleted-row-border: color-mix(in srgb, var(--accent-error) 25%, transparent);
     --deleted-row-opacity: 0.65;
+
+    /* ---- tailwindcss-primeui semantic bridge (LIGHT theme — default) ---- */
+
+    /* surface scale → drives `bg-surface-*`, panels, inputs, borders */
+    --p-surface-0: var(--bg-surface);
+    --p-surface-50: var(--bg-app);
+    --p-surface-100: var(--bg-card);
+    --p-surface-200: var(--bg-hover);
+    --p-surface-700: var(--text-secondary);
+    --p-surface-900: var(--text-primary);
+
+    /* primary scale → drives `bg-primary`, `text-primary`, focus rings */
+    --p-primary-color: var(--accent-primary);
+    --p-primary-contrast-color: #ffffff; /* light: white text on indigo */
+    --p-primary-50: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+    --p-primary-400: var(--accent-secondary);
+    --p-primary-500: var(--accent-primary);
+    --p-primary-600: var(--accent-primary);
+
+    /* semantic content vars consumed by tailwindcss-primeui utilities */
+    --p-content-background: var(--bg-card);
+    --p-content-border-color: var(--border-default);
+    --p-text-color: var(--text-primary);
+    --p-text-muted-color: var(--text-muted);
+    --p-overlay-background: var(--bg-surface);
+    --p-highlight-background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    --p-highlight-color: var(--accent-primary);
+
+    /* semantic accents for Tag/Message/Toast severities */
+    --p-green-500: var(--accent-success);
+    --p-amber-500: var(--accent-warning);
+    --p-red-500: var(--accent-error);
+    --p-sky-500: var(--accent-info);
+
+    /* border radius PrimeUI scale derived from core radii */
+    --p-border-radius: var(--radius-md);
+
+    color-scheme: light;
 }
 
 .dark {
+    /* core design tokens — dark palette */
+    --bg-app: #0a0a1a;
+    --bg-surface: #12122a;
+    --bg-card: #1a1a3e;
+    --bg-hover: #252550;
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-default: rgba(255, 255, 255, 0.1);
+    --border-hover: rgba(255, 255, 255, 0.18);
+    --text-primary: #e8e8ed;
+    --text-secondary: #b0b0c0;
+    --text-muted: #7a7a90;
+    --text-disabled: #4a4a5e;
+    --accent-primary: #6366f1;
+    --accent-secondary: #a78bfa;
     --accent-success: #22c55e;
     --accent-warning: #f59e0b;
+    --accent-error: #ef4444;
     --accent-info: #38bdf8;
+
+    /* PrimeUI bridge — explicit overrides only when contrast flips vs :root
+       (everything else inherits via var(--core-token)). */
+    --p-primary-contrast-color: var(--text-primary);
+
+    /* soft-delete row tokens recomputed for dark contrast */
+    --deleted-row-bg: color-mix(in srgb, var(--accent-error) 8%, var(--bg-card));
+    --deleted-row-border: color-mix(in srgb, var(--accent-error) 25%, transparent);
+
+    color-scheme: dark;
+}
+
+/* OS preference fallback when no explicit theme class is present.
+   The FOUC-killer in app.blade.php always sets the class before first paint,
+   so this is a defensive net for non-JS contexts (RSS readers, tests). */
+@media (prefers-color-scheme: dark) {
+    html:not(.dark) {
+        color-scheme: dark;
+    }
+}
+
+/* ---- §2 Accessibility (WCAG 2.2 AA) ---- */
+:focus {
+    outline: none;
+}
+
+:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }

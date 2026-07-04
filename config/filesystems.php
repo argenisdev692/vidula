@@ -17,6 +17,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Cloud Filesystem Disk
+    |--------------------------------------------------------------------------
+    |
+    | The disk used for user/business uploads. Resolved by R2StorageAdapter
+    | (Shared\Infrastructure\Storage) — local/public disks are forbidden as the
+    | final destination for uploads (BACKEND-PHP §5). Defaults to Cloudflare R2.
+    |
+    */
+
+    'cloud' => env('FILESYSTEM_CLOUD', 'r2'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |
@@ -57,6 +70,23 @@ return [
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
             'throw' => false,
+            'report' => false,
+        ],
+
+        // Cloudflare R2 (S3-compatible). Region is always "auto"; presigned
+        // temporaryUrl() works over the S3 driver. Objects are private by
+        // default — public access is ALWAYS via a signed URL.
+        'r2' => [
+            'driver' => 's3',
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => env('R2_DEFAULT_REGION', 'auto'),
+            'bucket' => env('R2_BUCKET'),
+            'url' => env('R2_URL'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => env('R2_USE_PATH_STYLE_ENDPOINT', false),
+            'visibility' => 'private',
+            'throw' => true,
             'report' => false,
         ],
 

@@ -6,9 +6,10 @@ trigger: always_on
 
 - **Language:** Respond in English at all times.
 - **CLI:** Use `./vendor/bin/sail artisan` — NEVER bare `php`.
+- **Sail runs in WSL, not PowerShell:** The developer runs Sail from inside WSL. NEVER execute `./vendor/bin/sail` commands yourself (pint, tests, artisan, composer, npm) via the Windows/PowerShell shell. Instead, OUTPUT the exact `./vendor/bin/sail ...` command(s) for the developer to run in their WSL terminal, then wait for the pasted output. This applies especially to `./vendor/bin/sail bin pint --dirty --format agent` and `./vendor/bin/sail artisan test`.
 - **PHP 8.5:** Follow `.claude/BACKEND-PHP/SKILL.md` §0–§3 — SINGLE SOURCE OF TRUTH for PHP 8.5 syntax.
-- **TypeScript:** Strict mode enforced on ALL `.tsx` / `.ts` files.
-- **Security baseline:** `.claude/OWASP/SKILL.md` is **always-on**. Every backend and frontend change MUST satisfy its 15 baseline items (OWASP Top 10:**2025** + API Top 10:2023 + LLM Top 10:2025 when AI is in scope, adapted to Laravel 13 + React 19 + Inertia 3.0).
+- **TypeScript:** Strict mode enforced on ALL `.vue` / `.ts` files.
+- **Security baseline:** `.claude/OWASP/SKILL.md` is **always-on**. Every backend and frontend change MUST satisfy its 15 baseline items (OWASP Top 10:**2025** + API Top 10:2023 + LLM Top 10:2025 when AI is in scope, adapted to Laravel 13 + Vue 3 + Inertia v3).
 - **Context7 (MCP):** Always resolve live docs — never rely on cached training knowledge.
 - **Sequential Thinking (MCP):** Use `mcp3_sequentialthinking` for ALL non-trivial tasks — architecture decisions, debugging, multi-step implementations, and any task with unclear scope. No exceptions.
 - **Investigate:** Run Tavily search immediately before responding, prioritizing recent/current sources (`time_range: day`, `week`, or `month`) and official docs; avoid historical years unless the task explicitly asks for them.
@@ -20,10 +21,10 @@ trigger: always_on
 | Security baseline (any backend or frontend change)   | `.claude/OWASP/SKILL.md`                                      |
 | PHP / Laravel / Backend / Business                   | `.claude/BACKEND-PHP/SKILL.md`                                |
 | PHP simple CRUD / 3–8 fields                         | `.claude/skills/ARCHITECTURE-PHP/SKILL-SIMPLE-CRUD.md`        |
-| React 19 / Inertia 3.0 / TanStack / Zustand / Frontend | `.claude/FRONTEND/SKILL.md`                                 |
+| Vue 3 / Inertia v3 / Pinia / Pinia Colada / Frontend | `.claude/FRONTEND/SKILL.md`                                   |
 | CSS / Styles / UI design tokens                      | `.claude/FRONTEND/SKILL.md` §0–§2, §9                         |
 | PHP project structure / directory tree               | `.claude/skills/ARCHITECTURE-PHP/SKILL.md`                    |
-| React / Inertia directory tree / file placement      | `.claude/skills/ARCHITECTURE-REACT/SKILL.md`                 |
+| Vue / Inertia directory tree / file placement        | `.claude/skills/ARCHITECTURE-VUE/SKILL.md`                    |
 
 > **Rule:** If a skill file covers the task, read it FIRST — no exceptions.
 >
@@ -36,7 +37,7 @@ trigger: always_on
 >
 > If none of the above is true, use SIMPLE-CRUD. Adding `Domain/Entities/`, `ReadRepositories/`, `AggregateRoot`, `CommandBus`, `UnitOfWork`, or the full Resilience layer to a 5-field CRUD is **overengineering** — auditors must flag it.
 >
-> **Total skill files:** 6 (OWASP + BACKEND-PHP + FRONTEND + 2× ARCHITECTURE-PHP + ARCHITECTURE-REACT) + this router. No redundancy.
+> **Total skill files:** 6 (OWASP + BACKEND-PHP + FRONTEND + 2× ARCHITECTURE-PHP + ARCHITECTURE-VUE) + this router. No redundancy.
 
 # [MUST] CSS / Styles
 
@@ -46,17 +47,15 @@ trigger: always_on
 
 ---
 
-# [MUST] React 19 / TypeScript
+# [MUST] Vue 3 / TypeScript
 
 - Follow `FRONTEND/SKILL.md` strictly.
-- Use function components with `export default` + explicit `React.JSX.Element` return on every `.tsx` file. No class components in new code.
+- Use `<script setup lang="ts">` on every `.vue` file. No Options API in new code.
 - No `any`. No `@ts-ignore`. No hardcoded colors in components.
-- Every page uses `<Head title="..." />` and is wrapped by its layout (e.g. `<AppLayout>`). State always explicitly typed via `React.useState<T>()`, typed props interfaces, and `usePage<Props>()`.
-- Prefer React 19 hooks where they fit: `useOptimistic` (optimistic UI, inside `React.startTransition`), `useTransition` (search/filter/export), `useActionState`/`useFormStatus` (forms/actions), `use()` (promises/context).
-- **React Compiler (stable v1)** enabled via `babel-plugin-react-compiler` — see `FRONTEND/SKILL.md` §5.2. No new manual `useMemo`/`useCallback`/`React.memo` for pure render performance; manual memoization only where referential stability is semantically required. Lint via `eslint-plugin-react-hooks` v6+ (`recommended-latest`).
-- Server state → TanStack Query v5 (`useQuery` / `useMutation`). Client state → Zustand v5 setup stores. Never mix the two.
-- All UI primitives consumed through **shadcn/ui** components under `resources/js/shadcn/` (CLI-generated via `npx shadcn@latest add`, never hand-edited) — no other UI library is used. Data table = **TanStack Table v8** (`useReactTable`) with shadcn `Table` primitives for HTML rendering (NEVER shadcn's `data-table`). Toasts = **Sileo** (`toast`/`sileo`). Forms = `react-hook-form` + Zod v4. Icons = `lucide-react`. Animations = Framer Motion (variants in `lib/motion.ts`).
-- Theme toggling uses ONLY the `.dark` class on `<html>` (light mode = absence of class). Never `.light`. The `dark:` variant is bound to `&:is(.dark *)` via `@custom-variant` in `app.css`. Theme persistence is a single source (Zustand `persist` for the non-sensitive theme preference only).
+- Every page declares its layout via `defineOptions({ layout })`. State always explicitly typed via `ref<T>()`, `defineProps<T>()`, `defineEmits<T>()`.
+- Server state → Pinia Colada (`useQuery` / `useMutation`). Client state → Pinia setup stores. Never mix the two.
+- All UI primitives consumed through **PrimeVue v4 unstyled + Volt** components under `resources/js/volt/` (50+ pre-styled UI primitives, code-ownership via `npx volt-vue add`, Tailwind v4 pass-through, WCAG AA compliant, responsive out-of-the-box, TypeScript) — no other UI library is used. PrimeVue is registered with `{ unstyled: true }` (no theme preset). Data table = PrimeVue `DataTable` server-side `:lazy`. Toasts = PrimeVue `Toast` + `useToast()`. Forms = `@primevue/forms` + Zod v4. Icons = `primeicons` (`pi pi-*`).
+- Theme toggling uses ONLY the `.dark` class on `<html>` (light mode = absence of class). Never `data-theme`, never `.light`. The `dark:` variant is bound to `&:is(.dark *)` via `@custom-variant` in `app.css` (unstyled mode has no PrimeVue `darkModeSelector`). `useThemeStore` uses `useColorMode({ modes: { light: '', dark: 'dark' } })` and is the single source of persistence (no `pinia-plugin-persistedstate` on top).
 
 ---
 

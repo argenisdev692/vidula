@@ -222,8 +222,8 @@
 <div class="hero">
   <div class="hero-inner">
     <h1>🚀 Laravel 13 Packages & Stack <span>2026</span></h1>
-    <p>Guía completa: Laravel Sail · PHP 8.5 · Inertia 3 + React 19 · TypeScript 6 · Tailwind v4 · shadcn/ui · TanStack Query v5 + TanStack Table v8 · Zustand v5 · Laravel AI SDK · Scribe · Pint + Rector · WebSockets · Auth headless</p>
-    <span class="badge">Laravel 13.16 · PHP 8.3–8.5 · Inertia 3 · React 19 · Junio 2026</span>
+    <p>Guía completa: Laravel Sail · PHP 8.5 · Inertia 3 + Vue 3.5 · TypeScript · Tailwind v4 · PrimeVue v4 unstyled + Volt · Pinia + Pinia Colada · Laravel AI SDK · Scribe · Pint + Rector · WebSockets · Auth headless</p>
+    <span class="badge">Laravel 13.16 · PHP 8.3–8.5 · Inertia 3 · Vue 3.5 · Junio 2026</span>
   </div>
 </div>
 
@@ -262,10 +262,10 @@
           <div class="code-block"><span class="cmd">curl</span> -s <span class="str">"https://laravel.build/myapp?with=mysql,redis"</span> | bash
 <span class="cmd">cd</span> myapp && ./vendor/bin/sail up -d</div>
 
-          <div class="code-label">Crear con starter kit React 19 + Inertia 3 + TypeScript</div>
-          <div class="code-block"><span class="comment"># El instalador oficial scaffolda React 19 + Inertia 3 + Tailwind v4 + TypeScript</span>
-laravel new myapp <span class="flag">--react</span>
-<span class="comment"># o de forma interactiva (este stack usa siempre React):</span>
+          <div class="code-label">Crear con starter kit Vue 3.5 + Inertia 3 + TypeScript</div>
+          <div class="code-block"><span class="comment"># El instalador oficial scaffolda Vue 3.5 + Inertia 3 + Tailwind v4 + TypeScript</span>
+laravel new myapp <span class="flag">--vue</span>
+<span class="comment"># o de forma interactiva (este stack usa siempre Vue):</span>
 laravel new myapp
 <span class="cmd">cd</span> myapp && ./vendor/bin/sail up -d</div>
 
@@ -350,9 +350,9 @@ $pdf = Pdf::loadView(<span class="str">'pdf.invoice'</span>, $data);
           <div><span class="tag tag-backend">Imagen</span><div class="pkg-name">intervention/image</div></div>
           <span class="pkg-version">v3.x · PHP 8.1+</span>
         </div>
-        <div class="pkg-desc">Manipulación de imágenes: resize, crop, filtros, conversión. v3 usa drivers GD o Imagick. Para Laravel se requiere también el adaptador <code>intervention/image-laravel</code> (provider + facade + <code>config/image.php</code>).</div>
-        <div class="code-label">Instalar (core + adaptador Laravel)</div>
-        <div class="code-block"><span class="cmd">./vendor/bin/sail composer require</span> intervention/image intervention/image-laravel</div>
+        <div class="pkg-desc">Manipulación de imágenes: resize, crop, filtros, conversión. v3 usa drivers GD o Imagick.</div>
+        <div class="code-label">Instalar</div>
+        <div class="code-block"><span class="cmd">./vendor/bin/sail composer require</span> intervention/image</div>
         <div class="code-label">Publish config</div>
         <div class="code-block"><span class="cmd">./vendor/bin/sail artisan vendor:publish</span> <span class="flag">--provider=</span><span class="str">"Intervention\Image\Laravel\ServiceProvider"</span></div>
         <div class="code-label">Uso</div>
@@ -526,7 +526,7 @@ Sitemap::create()
         <div class="code-block"><span class="kw">use</span> Spatie\Honeypot\ProtectAgainstSpam;
 Route::post(<span class="str">'/register'</span>, RegisterController::class)
   ->middleware(ProtectAgainstSpam::class);</div>
-        <div class="note">⚡ Con Inertia/SPA: pasar tokens desde <code>HandleInertiaRequests</code> y renderizar campos ocultos en el formulario React (<code>&lt;input type="hidden"&gt;</code> dentro del componente <code>.tsx</code>).</div>
+        <div class="note">⚡ Con Inertia/SPA: pasar tokens desde <code>HandleInertiaRequests</code> y renderizar campos ocultos en el formulario Vue (<code>&lt;input type="hidden"&gt;</code> dentro del SFC).</div>
       </div>
 
       <!-- Sanctum -->
@@ -756,7 +756,7 @@ $qrUrl = Google2FA::getQRCodeUrl(
   $user->email,
   $secret
 );
-<span class="comment">// Renderiza $qrUrl como QR (BaconQrCode) en el componente React (.tsx)</span></div>
+<span class="comment">// Renderiza $qrUrl como QR (BaconQrCode) en el SFC Vue</span></div>
         </div>
         <div>
           <div class="code-label">4. Verificar el código del Authenticator</div>
@@ -868,16 +868,17 @@ broadcast(<span class="kw">new</span> OrderStatusUpdated($order))->toOthers();</
 
       <div class="two-col" style="margin-top:12px;">
         <div>
-          <div class="code-label">Escuchar en React (useEffect)</div>
-          <div class="code-block"><span class="kw">const</span> [status, setStatus] = useState(<span class="str">'pending'</span>);
-useEffect(() => {
-  <span class="kw">const</span> ch = window.Echo
-    .private(<span class="str">`orders.${orderId}`</span>)
+          <div class="code-label">Escuchar en Vue (&lt;script setup lang="ts"&gt;)</div>
+          <div class="code-block"><span class="kw">const</span> status = ref(<span class="str">'pending'</span>);
+<span class="kw">let</span> ch;
+onMounted(() => {
+  ch = window.Echo
+    .private(<span class="str">`orders.${props.orderId}`</span>)
     .listen(<span class="str">'.order.updated'</span>, (e) => {
-      setStatus(e.order.status);
+      status.value = e.order.status;
     });
-  <span class="kw">return</span> () => ch.stopListening(<span class="str">'.order.updated'</span>);
-}, [orderId]);</div>
+});
+onUnmounted(() => ch?.stopListening(<span class="str">'.order.updated'</span>));</div>
 
           <div class="code-label">Correr en desarrollo</div>
           <div class="code-block"><span class="cmd">./vendor/bin/sail artisan reverb:start</span>
@@ -1092,13 +1093,13 @@ APP_DEBUG=false <span class="comment">← desactiva en producción (automático)
   <div class="tab-panel" id="tab-frontend">
 
     <!-- INERTIA -->
-    <div class="section-title">💚 Inertia.js 3 + React 19</div>
+    <div class="section-title">💚 Inertia.js 3 + Vue 3.5</div>
     <div class="full-pkg">
       <div class="pkg-header">
-        <div><span class="tag tag-frontend">SPA</span><span class="tag tag-new">v3</span><div class="pkg-name">inertiajs/inertia-laravel + @inertiajs/react</div></div>
-        <span class="pkg-version">Inertia v3 · React 19.2 · PHP 8.3+</span>
+        <div><span class="tag tag-frontend">SPA</span><span class="tag tag-new">v3</span><div class="pkg-name">inertiajs/inertia-laravel + @inertiajs/vue3</div></div>
+        <span class="pkg-version">Inertia v3 · Vue 3.5.38 · PHP 8.3+</span>
       </div>
-      <div class="pkg-desc">Inertia v3 (26 mar 2026) trae cliente XHR propio (Axios deja de ser dependencia), optimistic updates de primera clase, layout props y SSR en modo dev sin proceso aparte. Usa React 19 con componentes de función (<code>export default</code> + <code>&lt;Head /&gt;</code>) y el plugin <code>@inertiajs/vite</code> (atajo <code>pages</code>).</div>
+      <div class="pkg-desc">Inertia v3 (26 mar 2026) trae cliente XHR propio (Axios deja de ser dependencia), optimistic updates de primera clase, layout props y SSR en modo dev sin proceso aparte. Usa Vue 3.5 con <code>&lt;script setup lang="ts"&gt;</code> y el plugin <code>@inertiajs/vite</code> (atajo <code>pages</code>).</div>
       <div class="steps">
         <div class="step"><div class="step-num">1</div><div class="step-content"><strong>Instalar server-side (PHP)</strong><div class="code-block"><span class="cmd">./vendor/bin/sail composer require</span> inertiajs/inertia-laravel:^3.0</div></div></div>
         <div class="step"><div class="step-num">2</div><div class="step-content"><strong>Publish middleware + config (estructura nueva en v3)</strong>
@@ -1112,101 +1113,97 @@ APP_DEBUG=false <span class="comment">← desactiva en producción (automático)
   ]);
 })</div>
         </div></div>
-        <div class="step"><div class="step-num">3</div><div class="step-content"><strong>Instalar client-side (JS) — React 19 + adaptador v3</strong>
-          <div class="code-block"><span class="cmd">./vendor/bin/sail npm install</span> @inertiajs/react@^3.0 @inertiajs/vite@^3.0 react@^19 react-dom@^19
-<span class="cmd">./vendor/bin/sail npm install -D</span> @vitejs/plugin-react @types/react @types/react-dom</div>
+        <div class="step"><div class="step-num">3</div><div class="step-content"><strong>Instalar client-side (JS) — Vue 3.5 + adaptador v3</strong>
+          <div class="code-block"><span class="cmd">./vendor/bin/sail npm install</span> @inertiajs/vue3@^3.0 @inertiajs/vite@^3.0 vue@^3.5
+<span class="cmd">./vendor/bin/sail npm install -D</span> @vitejs/plugin-vue vue-tsc</div>
         </div></div>
-        <div class="step"><div class="step-num">4</div><div class="step-content"><strong>resources/js/app.tsx</strong>
-          <div class="code-block"><span class="kw">import</span> { createInertiaApp } <span class="kw">from</span> <span class="str">'@inertiajs/react'</span>;
-<span class="kw">import</span> { createRoot } <span class="kw">from</span> <span class="str">'react-dom/client'</span>;
-<span class="kw">import</span> { QueryClient, QueryClientProvider } <span class="kw">from</span> <span class="str">'@tanstack/react-query'</span>;
-<span class="kw">const</span> queryClient = <span class="kw">new</span> QueryClient();
+        <div class="step"><div class="step-num">4</div><div class="step-content"><strong>resources/js/app.ts</strong>
+          <div class="code-block"><span class="kw">import</span> { createInertiaApp } <span class="kw">from</span> <span class="str">'@inertiajs/vue3'</span>;
+<span class="kw">import</span> { createApp, h } <span class="kw">from</span> <span class="str">'vue'</span>;
+<span class="kw">import</span> { createPinia } <span class="kw">from</span> <span class="str">'pinia'</span>;
+<span class="kw">import</span> { PiniaColada } <span class="kw">from</span> <span class="str">'@pinia/colada'</span>;
+<span class="kw">import</span> PrimeVue <span class="kw">from</span> <span class="str">'primevue/config'</span>;
 createInertiaApp({
   resolve: name => {
-    <span class="kw">const</span> pages = import.meta.glob(<span class="str">'./pages/**/*.tsx'</span>, { eager: true });
-    <span class="kw">return</span> pages[<span class="str">`./pages/${name}.tsx`</span>];
+    <span class="kw">const</span> pages = import.meta.glob(<span class="str">'./Pages/**/*.vue'</span>, { eager: true });
+    <span class="kw">return</span> pages[<span class="str">`./Pages/${name}.vue`</span>];
   },
-  setup({ el, App, props }) {
-    createRoot(el).render(
-      &lt;QueryClientProvider client={queryClient}&gt;
-        &lt;App {...props} /&gt;
-      &lt;/QueryClientProvider&gt;,
-    );
+  setup({ el, App, props, plugin }) {
+    createApp({ render: () => h(App, props) })
+      .use(plugin).use(createPinia()).use(PiniaColada)
+      .use(PrimeVue, { unstyled: true }).mount(el);
   },
 });</div>
         </div></div>
-        <div class="step"><div class="step-num">5</div><div class="step-content"><strong>Página tipada — <code>.tsx</code> (<code>export default</code>)</strong>
-          <div class="code-block"><span class="kw">import</span> { useQuery } <span class="kw">from</span> <span class="str">'@tanstack/react-query'</span>;
-<span class="kw">import</span> axios <span class="kw">from</span> <span class="str">'axios'</span>;
-<span class="comment">// Server-state SIEMPRE vía TanStack Query (no un useState manual):</span>
+        <div class="step"><div class="step-num">5</div><div class="step-content"><strong>Página tipada — <code>&lt;script setup lang="ts"&gt;</code></strong>
+          <div class="code-block"><span class="kw">import</span> { useQuery } <span class="kw">from</span> <span class="str">'@pinia/colada'</span>;
+<span class="comment">// Server-state SIEMPRE vía Pinia Colada (no un ref() manual):</span>
 <span class="kw">const</span> { data, isPending } = useQuery({
-  queryKey: [<span class="str">'search'</span>, q],
-  queryFn: <span class="kw">async</span> () => (<span class="kw">await</span> axios.get(<span class="str">`/search/data?q=${q}`</span>)).data,
+  key: () => [<span class="str">'search'</span>, q.value],
+  query: () => fetch(<span class="str">`/api/search?q=${q.value}`</span>).then(r => r.json()),
 });
 
 <span class="comment">// Optimistic update en un visit:</span>
-router.post(<span class="str">'/posts/1/like'</span>, {}, {
-  optimistic: (page) => ({ liked: !page.props.liked }),
-});</div>
+router.optimistic((page) => ({ liked: !page.props.liked }))
+  .post(<span class="str">'/posts/1/like'</span>);</div>
         </div></div>
       </div>
-      <div class="warn">⚠️ Breaking changes v3: <code>Axios</code> ya no se incluye (instálalo como peer dep para TanStack Query, o usa <code>useHttp</code>) · <code>qs</code> y <code>lodash-es</code> removidos · <code>Inertia::lazy()</code> → <code>Inertia::optional()</code> · <code>router.cancel()</code> → <code>router.cancelAll()</code> · el bloque <code>future</code> de v2 se elimina del <code>createInertiaApp</code>. Novedades v3.1–3.3: <code>usePoll</code>/<code>router.poll</code>, <code>&lt;InfiniteScroll&gt;</code>, evento <code>httpException</code>.</div>
+      <div class="warn">⚠️ Breaking changes v3: <code>Axios</code> ya no se incluye (instálalo manual si usas interceptores) · <code>qs</code> y <code>lodash-es</code> removidos · <code>Inertia::lazy()</code> → <code>Inertia::optional()</code> · <code>router.cancel()</code> → <code>router.cancelAll()</code> · el bloque <code>future</code> de v2 se elimina del <code>createInertiaApp</code>.</div>
     </div>
 
     <!-- TYPESCRIPT -->
-    <div class="section-title">🔷 TypeScript 6</div>
+    <div class="section-title">🔷 TypeScript</div>
     <div class="full-pkg">
       <div class="pkg-header">
-        <div><span class="tag tag-frontend">TypeScript</span><div class="pkg-name">typescript + @types/react + @types/node</div></div>
-        <span class="pkg-version">TS 6.0 (GA 23-mar-2026) · strict</span>
+        <div><span class="tag tag-frontend">TypeScript</span><div class="pkg-name">typescript + vue-tsc + @types/node</div></div>
+        <span class="pkg-version">TS 5.x · vue-tsc · strict</span>
       </div>
       <div class="two-col">
         <div>
           <div class="code-label">Opción A — Starter kit oficial (recomendado)</div>
-          <div class="code-block"><span class="comment"># El starter kit React ya incluye TS + Inertia 3 + Tailwind v4</span>
-laravel new myapp <span class="flag">--react</span></div>
+          <div class="code-block"><span class="comment"># El starter kit Vue ya incluye TS + Inertia 3 + Tailwind v4</span>
+laravel new myapp <span class="flag">--vue</span></div>
 
           <div class="code-label">Opción B — Agregar a proyecto existente</div>
-          <div class="code-block"><span class="cmd">./vendor/bin/sail npm install -D</span> typescript @types/react @types/react-dom @vitejs/plugin-react @types/node</div>
+          <div class="code-block"><span class="cmd">./vendor/bin/sail npm install -D</span> typescript vue-tsc @vitejs/plugin-vue @types/node</div>
 
-          <div class="code-label">Estructura — <code>.tsx</code></div>
-          <div class="code-block"><span class="cmd">mv</span> resources/js/app.js resources/js/app.tsx
-<span class="comment"># Páginas como Welcome.tsx con export default + &lt;Head /&gt;</span>
-<span class="comment"># vite.config.ts: input → resources/js/app.tsx</span></div>
+          <div class="code-label">Estructura SFC — <code>.vue</code></div>
+          <div class="code-block"><span class="cmd">mv</span> resources/js/app.js resources/js/app.ts
+<span class="comment"># Páginas como Welcome.vue con &lt;script setup lang="ts"&gt;</span>
+<span class="comment"># vite.config.ts: input → resources/js/app.ts</span></div>
 
-          <div class="code-label">Verificar sin errores</div>
-          <div class="code-block"><span class="cmd">./vendor/bin/sail npx tsc</span> <span class="flag">--noEmit</span></div>
+          <div class="code-label">Verificar sin errores (entiende SFCs)</div>
+          <div class="code-block"><span class="cmd">./vendor/bin/sail npx vue-tsc</span> <span class="flag">--noEmit</span></div>
         </div>
         <div>
-          <div class="code-label">tsconfig.json para Laravel + Inertia (React)</div>
+          <div class="code-label">tsconfig.json para Laravel + Inertia (Vue)</div>
           <div class="code-block">{
   <span class="str">"compilerOptions"</span>: {
     <span class="str">"target"</span>: <span class="str">"ES2022"</span>,
     <span class="str">"lib"</span>: [<span class="str">"ES2022"</span>, <span class="str">"DOM"</span>, <span class="str">"DOM.Iterable"</span>],
     <span class="str">"module"</span>: <span class="str">"ESNext"</span>,
     <span class="str">"moduleResolution"</span>: <span class="str">"bundler"</span>,
-    <span class="str">"jsx"</span>: <span class="str">"react-jsx"</span>,
+    <span class="str">"jsx"</span>: <span class="str">"preserve"</span>,
     <span class="str">"strict"</span>: true,
     <span class="str">"noEmit"</span>: true,
     <span class="str">"types"</span>: [<span class="str">"vite/client"</span>],
     <span class="str">"paths"</span>: { <span class="str">"@/*"</span>: [<span class="str">"./resources/js/*"</span>] }
   },
-  <span class="str">"include"</span>: [<span class="str">"resources/js/**/*.ts"</span>, <span class="str">"resources/js/**/*.tsx"</span>]
+  <span class="str">"include"</span>: [<span class="str">"resources/js/**/*.ts"</span>, <span class="str">"resources/js/**/*.vue"</span>]
 }</div>
 
-          <div class="code-label">Tipado para props Inertia (usePage)</div>
-          <div class="code-block"><span class="kw">import</span> { usePage } <span class="kw">from</span> <span class="str">'@inertiajs/react'</span>;
+          <div class="code-label">Tipado para props Inertia (defineProps)</div>
+          <div class="code-block"><span class="comment">&lt;script setup lang="ts"&gt;</span>
 <span class="kw">interface</span> Props {
   user: { id: number; name: string; email: string };
   flash: { message?: string };
 }
-<span class="kw">export default function</span> Page(): React.JSX.Element {
-  <span class="kw">const</span> { user } = usePage&lt;Props&gt;().props;
-  <span class="kw">return</span> &lt;h1&gt;Hola, {user.name}&lt;/h1&gt;;
-}</div>
+<span class="kw">const</span> props = defineProps&lt;Props&gt;();
+<span class="comment">&lt;/script&gt;</span>
+<span class="comment">&lt;template&gt;&lt;h1&gt;Hola, {{ user.name }}&lt;/h1&gt;&lt;/template&gt;</span></div>
         </div>
       </div>
-      <div class="note">✅ Type-check con <code>tsc --noEmit</code>. TS 6.0 enciende <code>strict</code>/ESM/<code>es2025</code> por defecto (última release JS antes del port nativo en Go, TS 7). <code>strict: true</code> obligatorio · prohibido <code>any</code> y <code>@ts-ignore</code>.</div>
+      <div class="note">✅ Type-check con <code>vue-tsc --noEmit</code> (no <code>tsc</code> a secas: necesita parsear <code>.vue</code>). <code>strict: true</code> obligatorio · prohibido <code>any</code> y <code>@ts-ignore</code>.</div>
     </div>
 
     <!-- TAILWIND -->
@@ -1223,9 +1220,9 @@ laravel new myapp <span class="flag">--react</span></div>
           <div class="code-block"><span class="kw">import</span> { defineConfig } <span class="kw">from</span> <span class="str">'vite'</span>;
 <span class="kw">import</span> laravel <span class="kw">from</span> <span class="str">'laravel-vite-plugin'</span>;
 <span class="kw">import</span> tailwindcss <span class="kw">from</span> <span class="str">'@tailwindcss/vite'</span>;
-<span class="kw">import</span> react <span class="kw">from</span> <span class="str">'@vitejs/plugin-react'</span>;
+<span class="kw">import</span> vue <span class="kw">from</span> <span class="str">'@vitejs/plugin-vue'</span>;
 <span class="kw">export default</span> defineConfig({
-  plugins: [laravel({ input: [<span class="str">'resources/css/app.css'</span>, <span class="str">'resources/js/app.tsx'</span>], refresh: true }), tailwindcss(), react()],
+  plugins: [laravel({ input: [<span class="str">'resources/css/app.css'</span>, <span class="str">'resources/js/app.ts'</span>], refresh: true }), tailwindcss(), vue()],
 });</div>
         </div></div>
         <div class="step"><div class="step-num">3</div><div class="step-content"><strong>resources/css/app.css</strong>
@@ -1234,82 +1231,82 @@ laravel new myapp <span class="flag">--react</span></div>
 @custom-variant dark (&:is(.dark *));
 @source "../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php";
 @source "../**/*.blade.php";
-@source "../**/*.tsx";</div>
+@source "../**/*.vue";</div>
         </div></div>
       </div>
       <div class="warn">⚠️ Tailwind v4 NO usa <code>tailwind.config.js</code> ni <code>postcss.config.js</code>. Si ves tutoriales con esos archivos, son para v3.</div>
     </div>
 
-    <!-- SHADCN/UI -->
-    <div class="section-title">🎯 shadcn/ui + Tailwind v4</div>
+    <!-- PRIMEVUE + VOLT -->
+    <div class="section-title">🎯 PrimeVue v4 unstyled + Volt</div>
     <div class="full-pkg">
       <div class="pkg-header">
         <span class="tag tag-frontend">UI Components</span>
-        <span class="pkg-version">shadcn/ui · Radix · Tailwind v4</span>
+        <span class="pkg-version">PrimeVue v4.5 · Volt · Tailwind v4</span>
       </div>
-      <div class="pkg-desc">shadcn/ui provee primitivas accesibles (WCAG AA) construidas sobre Radix. El CLI copia los componentes a tu repo (<code>resources/js/shadcn/</code>) — code-ownership total, pero NUNCA se editan a mano: se regeneran. Es la ÚNICA librería UI del stack (no PrimeVue, no MUI).</div>
+      <div class="pkg-desc">PrimeVue v4 en modo <code>unstyled</code> (sin theme preset) provee 50+ primitivas accesibles (WCAG AA). <strong>Volt</strong> copia los componentes pre-estilizados con Tailwind v4 a tu repo (<code>resources/js/volt/</code>) — code-ownership total, los modificas libremente. Es la ÚNICA librería UI del stack (no shadcn, no PrimeVue styled).</div>
       <div class="steps">
-        <div class="step"><div class="step-num">1</div><div class="step-content"><strong>Instalar deps + iconos + toasts + forms</strong>
-          <div class="code-block"><span class="cmd">./vendor/bin/sail npm install</span> zod react-hook-form @hookform/resolvers sileo lucide-react framer-motion tailwind-merge clsx class-variance-authority</div></div></div>
-        <div class="step"><div class="step-num">2</div><div class="step-content"><strong>Inicializar el CLI</strong>
-          <div class="code-block"><span class="cmd">./vendor/bin/sail npx shadcn@latest init</span></div>
+        <div class="step"><div class="step-num">1</div><div class="step-content"><strong>Instalar core + forms + themes + iconos</strong>
+          <div class="code-block"><span class="cmd">./vendor/bin/sail npm install</span> primevue@^4 @primevue/forms @primevue/themes primeicons zod tailwind-merge clsx</div></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-content"><strong>Registrar unstyled en app.ts</strong>
+          <div class="code-block"><span class="kw">import</span> PrimeVue <span class="kw">from</span> <span class="str">'primevue/config'</span>;
+<span class="kw">import</span> ToastService <span class="kw">from</span> <span class="str">'primevue/toastservice'</span>;
+app.use(PrimeVue, { unstyled: true }).use(ToastService);</div>
         </div></div>
-        <div class="step"><div class="step-num">3</div><div class="step-content"><strong>Añadir componentes (code-ownership, CLI-generated)</strong>
-          <div class="code-block"><span class="cmd">./vendor/bin/sail npx shadcn@latest add</span> button card dialog input table</div>
+        <div class="step"><div class="step-num">3</div><div class="step-content"><strong>Añadir componentes Volt (code-ownership)</strong>
+          <div class="code-block"><span class="cmd">./vendor/bin/sail npx volt-vue add</span> button card dialog inputtext datatable toast</div>
         </div></div>
-        <div class="step"><div class="step-num">4</div><div class="step-content"><strong>Usar — <code>.tsx</code></strong>
-          <div class="code-block"><span class="kw">import</span> { Button } <span class="kw">from</span> <span class="str">'@/shadcn/button'</span>;
-<span class="kw">import</span> { Card, CardContent } <span class="kw">from</span> <span class="str">'@/shadcn/card'</span>;
-<span class="kw">import</span> { toast } <span class="kw">from</span> <span class="str">'sileo'</span>;
-&lt;Card&gt;&lt;CardContent&gt;
-  &lt;Button onClick={() => toast.success(<span class="str">'Guardado'</span>)}&gt;Click&lt;/Button&gt;
-&lt;/CardContent&gt;&lt;/Card&gt;</div>
+        <div class="step"><div class="step-num">4</div><div class="step-content"><strong>Usar — <code>&lt;script setup lang="ts"&gt;</code></strong>
+          <div class="code-block"><span class="kw">import</span> Button <span class="kw">from</span> <span class="str">'@/volt/Button.vue'</span>;
+<span class="kw">import</span> Card <span class="kw">from</span> <span class="str">'@/volt/Card.vue'</span>;
+&lt;Card&gt;&lt;template #content&gt;
+  &lt;Button label=<span class="str">"Click"</span> icon=<span class="str">"pi pi-check"</span> /&gt;
+&lt;/template&gt;&lt;/Card&gt;</div>
         </div></div>
       </div>
-      <div class="note">✅ Componentes en <code>resources/js/shadcn/</code> — CLI-generated, NUNCA editar a mano. DataTable = <strong>TanStack Table v8</strong> con las primitivas <code>Table</code> de shadcn (NUNCA el <code>data-table</code> de shadcn). Toasts = <strong>Sileo</strong> (<code>toast.success/error</code>). Formularios = <code>react-hook-form</code> + <strong>Zod v4</strong>. Iconos = <code>lucide-react</code>. Animaciones = Framer Motion.</div>
+      <div class="note">✅ Componentes en <code>resources/js/volt/</code> — responsive y tipados de fábrica. DataTable server-side con <code>:lazy</code>. Toasts vía <code>Toast</code> + <code>useToast()</code>. Formularios con <code>@primevue/forms</code> + <strong>Zod v4</strong>. Iconos <code>primeicons</code> (<code>pi pi-*</code>).</div>
     </div>
 
-    <!-- TANSTACK QUERY + TABLE + ZUSTAND -->
-    <div class="section-title">🔄 TanStack Query v5 + TanStack Table v8 + Zustand</div>
+    <!-- PINIA COLADA + DATATABLE -->
+    <div class="section-title">🔄 Pinia Colada + PrimeVue DataTable</div>
     <div class="pkg-grid">
       <div class="pkg">
         <div class="pkg-header">
-          <div><span class="tag tag-frontend">Data Fetching</span><div class="pkg-name">@tanstack/react-query</div></div>
-          <span class="pkg-version">v5 · server-state</span>
+          <div><span class="tag tag-frontend">Data Fetching</span><div class="pkg-name">@pinia/colada</div></div>
+          <span class="pkg-version">Built on Pinia · ~2kb</span>
         </div>
-        <div class="pkg-desc">La capa de server-state de React: caching, dedupe de requests, estados loading/error, optimistic updates e invalidación jerárquica. Server-state SIEMPRE aquí; client-state en <strong>Zustand</strong> setup stores (nunca mezclar).</div>
+        <div class="pkg-desc">La capa de data-fetching de Vue construida sobre Pinia: caching, dedupe de requests, estados loading/error, optimistic updates e invalidación jerárquica. Server-state SIEMPRE aquí; client-state en stores setup de Pinia (nunca mezclar).</div>
         <div class="code-label">Instalar</div>
-        <div class="code-block"><span class="cmd">./vendor/bin/sail npm install</span> @tanstack/react-query zustand axios</div>
-        <div class="code-label">Registrar en app.tsx</div>
-        <div class="code-block"><span class="kw">import</span> { QueryClient, QueryClientProvider } <span class="kw">from</span> <span class="str">'@tanstack/react-query'</span>;
-<span class="kw">const</span> queryClient = <span class="kw">new</span> QueryClient();
-<span class="comment">// envuelve &lt;App/&gt; con &lt;QueryClientProvider client={queryClient}&gt;</span></div>
-        <div class="code-label">Uso — useQuery / useMutation (v5)</div>
+        <div class="code-block"><span class="cmd">./vendor/bin/sail npm install</span> pinia @pinia/colada
+<span class="cmd">./vendor/bin/sail npm install -D</span> @pinia/colada-devtools</div>
+        <div class="code-label">Registrar en app.ts</div>
+        <div class="code-block"><span class="kw">import</span> { createPinia } <span class="kw">from</span> <span class="str">'pinia'</span>;
+<span class="kw">import</span> { PiniaColada } <span class="kw">from</span> <span class="str">'@pinia/colada'</span>;
+app.use(createPinia()).use(PiniaColada);</div>
+        <div class="code-label">Uso — useQuery / useMutation</div>
         <div class="code-block"><span class="kw">const</span> { data: user, isPending } = useQuery({
-  queryKey: [<span class="str">'user'</span>],
-  queryFn: <span class="kw">async</span> () => (<span class="kw">await</span> axios.get(<span class="str">'/user/data'</span>)).data,
-  placeholderData: keepPreviousData,
+  key: () => [<span class="str">'user'</span>],
+  query: () => fetch(<span class="str">'/api/user'</span>).then(r => r.json()),
 });
-<span class="kw">const</span> { mutate } = useMutation({ mutationFn: patchUser });</div>
+<span class="kw">const</span> { mutate } = useMutation({ mutation: patchUser });</div>
       </div>
 
       <div class="pkg">
         <div class="pkg-header">
-          <div><span class="tag tag-frontend">Data Tables</span><div class="pkg-name">@tanstack/react-table</div></div>
-          <span class="pkg-version">v8 · useReactTable</span>
+          <div><span class="tag tag-frontend">Data Tables</span><div class="pkg-name">PrimeVue DataTable</div></div>
+          <span class="pkg-version">v4 · server-side :lazy</span>
         </div>
-        <div class="pkg-desc">Tablas headless con ordenamiento, filtrado y paginación server-side delegados al backend (filtros en el <code>queryKey</code> de TanStack Query). Se renderiza con las primitivas <code>Table</code> de shadcn — NUNCA el <code>data-table</code> de shadcn. Estándar del stack para listados.</div>
-        <div class="code-label">Instalar</div>
-        <div class="code-block"><span class="cmd">./vendor/bin/sail npm install</span> @tanstack/react-table</div>
-        <div class="code-label">Ejemplo básico (headless)</div>
-        <div class="code-block"><span class="kw">import</span> { useReactTable, getCoreRowModel, flexRender } <span class="kw">from</span> <span class="str">'@tanstack/react-table'</span>;
-<span class="comment">// columnHelper SIEMPRE fuera del componente:</span>
-<span class="kw">const</span> table = useReactTable({
-  data, columns,
-  getRowId: (row) => row.uuid,
-  getCoreRowModel: getCoreRowModel(),
-});</div>
-        <div class="info">💡 Combina con <strong>TanStack Query</strong> (useQuery con queryKey paginada) + primitivas <code>Table</code> de shadcn + <strong>Tailwind v4</strong> para listados reactivos y accesibles.</div>
+        <div class="pkg-desc">Tablas server-side con ordenamiento, filtrado y paginación delegados al backend vía <code>:lazy</code>. Accesible (WCAG AA) y estilizada con Volt/Tailwind v4. Estándar del stack para listados.</div>
+        <div class="code-label">Añadir vía Volt</div>
+        <div class="code-block"><span class="cmd">./vendor/bin/sail npx volt-vue add</span> datatable column</div>
+        <div class="code-label">Ejemplo básico (server-side)</div>
+        <div class="code-block"><span class="kw">import</span> DataTable <span class="kw">from</span> <span class="str">'@/volt/DataTable.vue'</span>;
+<span class="kw">import</span> Column <span class="kw">from</span> <span class="str">'@/volt/Column.vue'</span>;
+&lt;DataTable :value=<span class="str">"rows"</span> lazy paginator :rows=<span class="str">"15"</span>
+  :totalRecords=<span class="str">"total"</span> @page=<span class="str">"onPage"</span>&gt;
+  &lt;Column field=<span class="str">"name"</span> header=<span class="str">"Nombre"</span> sortable /&gt;
+&lt;/DataTable&gt;</div>
+        <div class="info">💡 Combina con <strong>Pinia Colada</strong> (useQuery con key paginada) + <strong>Tailwind v4</strong> para listados reactivos y accesibles.</div>
       </div>
     </div>
   </div>
@@ -1611,7 +1608,7 @@ parameters:
       <div class="code-block" id="copy-allinone"><span class="comment"># Encadena backend (prod) + --dev + frontend npm. Ejecuta sobre un proyecto ya creado (paso 1).</span>
 <span class="cmd">./vendor/bin/sail composer require</span> \
   bacon/bacon-qr-code barryvdh/laravel-dompdf inertiajs/inertia-laravel:^3.0 \
-  intervention/image intervention/image-laravel knuckleswtf/scribe laravel/ai laravel/fortify laravel/horizon \
+  intervention/image knuckleswtf/scribe laravel/ai laravel/fortify laravel/horizon \
   laravel/reverb laravel/sanctum laravel/socialite laravel/telescope \
   <span class="str">"league/flysystem-aws-s3-v3:^3.0"</span> pragmarx/google2fa-laravel ramsey/uuid \
   resend/resend-laravel spatie/laravel-activitylog spatie/laravel-backup \
@@ -1621,16 +1618,16 @@ parameters:
 <span class="cmd">./vendor/bin/sail composer require</span> <span class="flag">--dev</span> \
   barryvdh/laravel-debugbar barryvdh/laravel-ide-helper driftingly/rector-laravel \
   larastan/larastan laravel/pint rector/rector && \
-<span class="cmd">./vendor/bin/sail npm install</span> @inertiajs/react@^3.0 @inertiajs/vite@^3.0 react@^19 react-dom@^19 \
-  @tanstack/react-query @tanstack/react-table zustand axios react-hook-form @hookform/resolvers zod sileo framer-motion lucide-react tailwind-merge clsx class-variance-authority laravel-echo pusher-js && \
-<span class="cmd">./vendor/bin/sail npm install -D</span> typescript @types/react @types/react-dom @vitejs/plugin-react @types/node \
-  tailwindcss @tailwindcss/vite laravel-vite-plugin
+<span class="cmd">./vendor/bin/sail npm install</span> @inertiajs/vue3@^3.0 @inertiajs/vite@^3.0 vue@^3.5 \
+  pinia @pinia/colada primevue@^4 @primevue/forms @primevue/themes primeicons zod tailwind-merge clsx laravel-echo pusher-js && \
+<span class="cmd">./vendor/bin/sail npm install -D</span> typescript vue-tsc @vitejs/plugin-vue @types/node \
+  tailwindcss @tailwindcss/vite laravel-vite-plugin @pinia/colada-devtools
 
 <span class="comment"># ⚠️ Pest NO se incluye: pest-plugin-laravel aún no soporta Laravel 13 (máx. L12). Usa PHPUnit 12 (ya incluido).</span></div>
 
-      <div class="code-label">1. Crear proyecto Laravel 13 con React 19 + Inertia 3 + TypeScript</div>
-      <div class="code-block"><span class="comment"># Starter kit oficial: React 19 + Inertia 3 + Tailwind v4 + TypeScript</span>
-laravel new myapp <span class="flag">--react</span>
+      <div class="code-label">1. Crear proyecto Laravel 13 con Vue 3.5 + Inertia 3 + TypeScript</div>
+      <div class="code-block"><span class="comment"># Starter kit oficial: Vue 3.5 + Inertia 3 + Tailwind v4 + TypeScript</span>
+laravel new myapp <span class="flag">--vue</span>
 <span class="cmd">cd</span> myapp && ./vendor/bin/sail up -d</div>
 
       <div class="code-label">2. Instalar TODOS los packages backend de una vez</div>
@@ -1640,7 +1637,6 @@ laravel new myapp <span class="flag">--react</span>
   barryvdh/laravel-dompdf \
   inertiajs/inertia-laravel:^3.0 \
   intervention/image \
-  intervention/image-laravel \
   knuckleswtf/scribe \
   laravel/ai \
   laravel/fortify \
@@ -1684,11 +1680,11 @@ laravel new myapp <span class="flag">--react</span>
       <div class="code-label">3. Tests — PHPUnit 12 (Pest pendiente de soporte L13)</div>
       <div class="code-block"><span class="cmd">./vendor/bin/sail artisan test</span></div>
 
-      <div class="code-label">4. Frontend — Inertia 3 + React 19 + Tailwind v4 (si NO usaste el starter kit)</div>
-      <div class="code-block"><span class="cmd">./vendor/bin/sail npm install</span> @inertiajs/react@^3.0 @inertiajs/vite@^3.0 react@^19 react-dom@^19
-<span class="cmd">./vendor/bin/sail npm install</span> @tanstack/react-query @tanstack/react-table zustand axios react-hook-form @hookform/resolvers zod sileo framer-motion lucide-react tailwind-merge clsx class-variance-authority laravel-echo pusher-js
-<span class="cmd">./vendor/bin/sail npm install -D</span> typescript @types/react @types/react-dom @vitejs/plugin-react @types/node tailwindcss @tailwindcss/vite laravel-vite-plugin
-<span class="cmd">./vendor/bin/sail npx shadcn@latest init</span> && ./vendor/bin/sail npx shadcn@latest add button card dialog input table</div>
+      <div class="code-label">4. Frontend — Inertia 3 + Vue 3.5 + Tailwind v4 (si NO usaste el starter kit)</div>
+      <div class="code-block"><span class="cmd">./vendor/bin/sail npm install</span> @inertiajs/vue3@^3.0 @inertiajs/vite@^3.0 vue@^3.5
+<span class="cmd">./vendor/bin/sail npm install</span> pinia @pinia/colada primevue@^4 @primevue/forms @primevue/themes primeicons zod tailwind-merge clsx laravel-echo pusher-js
+<span class="cmd">./vendor/bin/sail npm install -D</span> tailwindcss @tailwindcss/vite @vitejs/plugin-vue vue-tsc
+<span class="cmd">./vendor/bin/sail npx volt-vue add</span> button card dialog inputtext datatable toast</div>
 
       <div class="code-label">5. TODOS los publish / install commands de una vez</div>
       <div class="copy-all-btn" data-copy-target="copy-publish"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar TODOS los publish vendor</div>
@@ -1707,7 +1703,6 @@ laravel new myapp <span class="flag">--react</span>
 <span class="cmd">./vendor/bin/sail artisan vendor:publish</span> <span class="flag">--provider=</span><span class="str">'Spatie\Honeypot\HoneypotServiceProvider'</span> <span class="flag">--tag=</span>honeypot-config && \
 <span class="cmd">./vendor/bin/sail artisan vendor:publish</span> <span class="flag">--provider=</span><span class="str">'Spatie\LaravelData\LaravelDataServiceProvider'</span> <span class="flag">--tag=</span>data-config && \
 <span class="cmd">./vendor/bin/sail artisan vendor:publish</span> <span class="flag">--provider=</span><span class="str">'Spatie\MediaLibrary\MediaLibraryServiceProvider'</span> <span class="flag">--tag=</span>medialibrary-migrations && \
-<span class="cmd">./vendor/bin/sail artisan vendor:publish</span> <span class="flag">--provider=</span><span class="str">'Spatie\MediaLibrary\MediaLibraryServiceProvider'</span> <span class="flag">--tag=</span>medialibrary-config && \
 <span class="cmd">./vendor/bin/sail artisan vendor:publish</span> <span class="flag">--provider=</span><span class="str">'Spatie\Permission\PermissionServiceProvider'</span> && \
 <span class="cmd">./vendor/bin/sail artisan vendor:publish</span> <span class="flag">--provider=</span><span class="str">'Spatie\Sitemap\SitemapServiceProvider'</span> <span class="flag">--tag=</span>sitemap-config && \
 <span class="cmd">./vendor/bin/sail artisan vendor:publish</span> <span class="flag">--tag=</span><span class="str">'one-time-passwords-config'</span> && \
@@ -1726,11 +1721,11 @@ laravel new myapp <span class="flag">--react</span>
 # Pint / Rector / Larastan → ver tab "Testing & Calidad"
 # IDE Helper → ./vendor/bin/sail artisan ide-helper:generate</span></div>
 
-      <div class="note">✅ Con esto tienes un stack enterprise completo en Laravel 13: PDF, imágenes+media, OAuth, S3, Excel (OpenSpout), UUID, GDPR, roles/permisos, sitemap, DTOs, auth headless OTP + passkeys, emails Resend, WebSockets en tiempo real, testing moderno (PHPUnit 12), calidad de código (Pint + Rector + Larastan), React 19 SPA con Inertia 3, Tailwind v4, shadcn/ui, TanStack Query v5 + TanStack Table v8, Zustand v5, AI nativo (Laravel AI SDK), docs API automáticas (Scribe, gratis), debugging, backups automáticos y monitoreo de queues.</div>
+      <div class="note">✅ Con esto tienes un stack enterprise completo en Laravel 13: PDF, imágenes+media, OAuth, S3, Excel (OpenSpout), UUID, GDPR, roles/permisos, sitemap, DTOs, auth headless OTP + passkeys, emails Resend, WebSockets en tiempo real, testing moderno (PHPUnit 12), calidad de código (Pint + Rector + Larastan), Vue 3.5 SPA con Inertia 3, Tailwind v4, PrimeVue v4 unstyled + Volt, Pinia + Pinia Colada, AI nativo (Laravel AI SDK), docs API automáticas (Scribe, gratis), debugging, backups automáticos y monitoreo de queues.</div>
     </div>
   </div>
 
-  <div class="footer">Generado — Junio 2026 · Laravel 13.16.x (13.0 GA 17 mar 2026) · Inertia 3 (26 mar 2026) · React 19.2 · TypeScript 6 (GA 23 mar 2026) · shadcn/ui · TanStack Query v5 + Table v8 · Zustand v5 · Basado en versiones actuales de Packagist/npm y documentación oficial</div>
+  <div class="footer">Generado — Junio 2026 · Laravel 13.16.x (13.0 GA 17 mar 2026) · Inertia 3 (26 mar 2026) · Vue 3.5.38 (11 jun 2026) · PrimeVue v4.5 unstyled + Volt · Basado en versiones actuales de Packagist y documentación oficial</div>
 </div>
 
 <script>

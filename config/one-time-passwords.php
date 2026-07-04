@@ -1,17 +1,19 @@
 <?php
 
+use Modules\Auth\Infrastructure\Notifications\QueuedOneTimePasswordNotification;
 use Spatie\OneTimePasswords\Actions\ConsumeOneTimePasswordAction;
 use Spatie\OneTimePasswords\Actions\CreateOneTimePasswordAction;
 use Spatie\OneTimePasswords\Models\OneTimePassword;
-use Spatie\OneTimePasswords\Notifications\OneTimePasswordNotification;
 use Spatie\OneTimePasswords\Support\OriginInspector\DefaultOriginEnforcer;
 use Spatie\OneTimePasswords\Support\PasswordGenerators\NumericOneTimePasswordGenerator;
 
 return [
     /*
-     * one-time passwords should be consumed within this number of minutes
+     * Default validity (minutes) for a one-time password. This is the SHORT
+     * window used by passwordless LOGIN codes. Activation and password-reset
+     * codes override it per-call with the longer security.otp.email_minutes.
      */
-    'default_expires_in_minutes' => 2,
+    'default_expires_in_minutes' => (int) env('AUTH_OTP_EXPIRES_MINUTES', 2),
 
     /*
      * When this setting is active, we'll delete all previous one-time passwords for
@@ -41,9 +43,9 @@ return [
 
     /*
      * By default, the password generator will create a password with
-     * this number of digits
+     * this number of digits (numeric 0-9, per AUTH_OTP_VALID_CHARS).
      */
-    'password_length' => 6,
+    'password_length' => (int) env('AUTH_OTP_LENGTH', 6),
 
     /*
      * The Livewire component will redirect successfully authenticated users
@@ -56,8 +58,8 @@ return [
      * that may be made to consume a one-time password.
      */
     'rate_limit_attempts' => [
-        'max_attempts_per_user' => 5,
-        'time_window_in_seconds' => 60,
+        'max_attempts_per_user' => (int) env('AUTH_OTP_MAX_ATTEMPTS', 3),
+        'time_window_in_seconds' => (int) env('AUTH_OTP_RESEND_INTERVAL_SECONDS', 60),
     ],
 
     /*
@@ -66,9 +68,11 @@ return [
     'model' => OneTimePassword::class,
 
     /*
-     * The notification used to send a one-time password to a user
+     * The notification used to send a one-time password to a user. Uses the
+     * queued subclass so OTP mail (login / activation / reset) is dispatched to
+     * the Redis queue instead of blocking the request.
      */
-    'notification' => OneTimePasswordNotification::class,
+    'notification' => QueuedOneTimePasswordNotification::class,
 
     /*
      * These class are responsible for performing core tasks regarding one-time passwords.

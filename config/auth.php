@@ -96,7 +96,9 @@ return [
         'users' => [
             'provider' => 'users',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
-            'expire' => 60,
+            // Reset is handled by the Auth module's 6-digit OTP flow (30 min),
+            // not this broker. Kept aligned at 30 min for any residual use.
+            'expire' => 30,
             'throttle' => 60,
         ],
     ],

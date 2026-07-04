@@ -1,0 +1,33 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Users\Application\Commands;
+
+use App\Models\User;
+use Modules\Users\Application\DTOs\UpdateUserData;
+use Modules\Users\Domain\Events\UserForcedPasswordChange;
+use Modules\Users\Domain\Ports\UserRepositoryPort;
+
+final readonly class UpdateUserHandler
+{
+    public function __construct(private UserRepositoryPort $users) {}
+
+    public function handle(User $user, UpdateUserData $data): User
+    {
+        $updated = $this->users->update($user, [
+            'first_name' => $data->firstName,
+            'last_name' => $data->lastName,
+            'email' => $data->email,
+            'username' => $data->username,
+            'phone' => $data->phone,
+            'must_change_password' => $data->forcePasswordChange,
+        ]);
+
+        if ($data->forcePasswordChange) {
+            event(new UserForcedPasswordChange($updated->uuid));
+        }
+
+        return $updated;
+    }
+}

@@ -29,11 +29,11 @@
       "Bash(npm run type-check*)",
       "Bash(npm run format*)",
       "Bash(npm audit*)",
-      "Bash(npx shadcn*)",
+      "Bash(npx volt-vue *)",
       "Bash(npx tsc*)",
       "Bash(npx eslint*)",
       "Bash(npx prettier*)",
-      "Bash(npx vite*)",
+      "Bash(npx vue-tsc*)",
       "Bash(composer audit)",
       "Bash(composer show*)",
       "Bash(composer outdated*)",
@@ -82,7 +82,7 @@
       "args": [
         "-y",
         "@modelcontextprotocol/server-filesystem",
-        "c:\\Users\\Lenovo\\Documents\\PROYECTOS\\VIDULA"
+        "c:\\Users\\Lenovo\\Documents\\PROYECTOS\\CLAUDE-CODE-LARAVEL-VUE"
       ]
     },
     "context7": {

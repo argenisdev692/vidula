@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'WelcomePage')->name('home');
+Route::get('/', HomeController::class)->name('home');

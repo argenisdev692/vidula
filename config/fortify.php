@@ -145,8 +145,10 @@ return [
 
     'features' => [
         Features::registration(),
-        Features::resetPasswords(),
-        // Features::emailVerification(),
+        // Password reset is NOT Fortify's link+token flow. It is handled by the
+        // Auth module's OTP reset (6-digit code, 30 min) — see
+        // Modules\Auth\Infrastructure\Http\Controllers\{Web,Api}\PasswordResetController.
+        Features::emailVerification(),
         Features::updateProfileInformation(),
         Features::updatePasswords(),
         Features::twoFactorAuthentication([
