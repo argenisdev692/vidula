@@ -54,7 +54,11 @@ defineEmits<{ click: [] }>();
 }
 
 .animated-button.accent {
-    background: linear-gradient(135deg, var(--accent-error) 0%, #fb7185 100%);
+    background: linear-gradient(
+        135deg,
+        var(--accent-error) 0%,
+        color-mix(in srgb, var(--accent-error) 60%, var(--on-accent)) 100%
+    );
     box-shadow: 0 4px 15px color-mix(in srgb, var(--accent-error) 40%, transparent);
 }
 

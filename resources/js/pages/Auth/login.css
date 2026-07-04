@@ -784,7 +784,44 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-3);
+  position: relative;
+  overflow: hidden;
   box-shadow: 0 4px 20px color-mix(in srgb, var(--accent-primary) 35%, transparent);
+}
+
+/* Periodic diagonal "destello" sweep across the button face — a thin translucent
+   band that skews across, pauses, then repeats. Ported from
+   docs/noise-grain-login.html .btn-submit::before (white sheen expressed through
+   the --on-accent token). Passes over the label like the prototype. */
+.submit-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    color-mix(in srgb, var(--on-accent) 20%, transparent) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%) skewX(-15deg);
+  animation: login-btn-shine 3.5s ease infinite;
+}
+
+@keyframes login-btn-shine {
+  0%,
+  60% {
+    transform: translateX(-100%) skewX(-15deg);
+  }
+  100% {
+    transform: translateX(200%) skewX(-15deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .submit-button::before {
+    animation: none;
+  }
 }
 
 .submit-button:hover:not(:disabled) {

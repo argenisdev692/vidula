@@ -11,9 +11,9 @@ import GradientBackground from '@/modules/app/components/GradientBackground.vue'
 import FloatingMenuButton from '@/modules/app/components/FloatingMenuButton.vue';
 import { useThemeStore } from '@/modules/app/stores/useThemeStore';
 import type { SharedProps } from '@/types/inertia';
-import { usePage } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import { useToast } from 'primevue/usetoast';
-import { watch } from 'vue';
+import { onUnmounted, watch } from 'vue';
 
 // Instantiate the theme controller app-wide (activates useColorMode's .dark sync).
 useThemeStore();
@@ -34,6 +34,33 @@ watch(
     },
     { immediate: true, deep: true },
 );
+
+// Global Inertia v3 error handling (FRONTEND/SKILL.md §5). `httpException` covers
+// non-validation 4xx/5xx (422 validation still flows through form `error`);
+// `networkError` covers offline/connection failures. Messages stay generic — no
+// status codes, bodies or stack traces leaked to the UI (OWASP baseline).
+const stopHttpException = router.on('httpException', (): void => {
+    toast.add({
+        severity: 'error',
+        summary: 'Request failed',
+        detail: 'Something went wrong. Please try again.',
+        life: 6000,
+    });
+});
+
+const stopNetworkError = router.on('networkError', (): void => {
+    toast.add({
+        severity: 'error',
+        summary: 'Network error',
+        detail: 'Check your connection and try again.',
+        life: 6000,
+    });
+});
+
+onUnmounted((): void => {
+    stopHttpException();
+    stopNetworkError();
+});
 </script>
 
 <template>

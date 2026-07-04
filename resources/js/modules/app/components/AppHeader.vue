@@ -455,7 +455,7 @@ onClickOutside(userMenuRef, () => {
     padding: 0 5px;
     border-radius: 9px;
     background: var(--accent-error);
-    color: #ffffff;
+    color: var(--on-accent);
     font-size: 10px;
     font-weight: var(--font-bold);
     display: flex;
@@ -469,7 +469,7 @@ onClickOutside(userMenuRef, () => {
     top: calc(100% + 8px);
     right: 0;
     width: 320px;
-    background: color-mix(in srgb, var(--bg-surface) 92%, transparent);
+    background: color-mix(in srgb, var(--bg-surface) 98%, transparent);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     border: 1px solid var(--border-default);
@@ -749,7 +749,7 @@ onClickOutside(userMenuRef, () => {
     right: 0;
     width: 200px;
     padding: var(--space-2);
-    background: color-mix(in srgb, var(--bg-surface) 92%, transparent);
+    background: color-mix(in srgb, var(--bg-surface) 98%, transparent);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     border: 1px solid var(--border-default);

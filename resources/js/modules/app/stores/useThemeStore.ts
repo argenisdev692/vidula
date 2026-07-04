@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { useColorMode } from '@vueuse/core';
 
 /**
@@ -23,6 +23,20 @@ export const useThemeStore = defineStore('theme', () => {
     });
 
     const isDark = computed<boolean>(() => mode.value === 'dark');
+
+    // Keep the inline `color-scheme` in sync with the resolved mode. The FOUC
+    // killer sets it once inline (which outranks the CSS `.dark { color-scheme }`
+    // rule), so without this watcher native controls and the themed scrollbar
+    // keep the pre-toggle scheme until a reload (FRONTEND/SKILL.md §1.5 #3).
+    watch(
+        () => mode.value,
+        (next): void => {
+            if (typeof document !== 'undefined') {
+                document.documentElement.style.colorScheme = next === 'dark' ? 'dark' : 'light';
+            }
+        },
+        { immediate: true },
+    );
 
     function toggle(): void {
         mode.value = isDark.value ? 'light' : 'dark';
