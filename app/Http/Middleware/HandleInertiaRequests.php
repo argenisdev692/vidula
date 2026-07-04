@@ -13,6 +13,8 @@ use Throwable;
 
 class HandleInertiaRequests extends Middleware
 {
+    public function __construct(private StoragePort $storage) {}
+
     /**
      * The root template that is loaded on the first page visit.
      *
@@ -38,6 +40,10 @@ class HandleInertiaRequests extends Middleware
                 'permissions' => $user ? $user->getAllPermissions()->pluck('name')->all() : [],
                 'roles' => $user ? $user->getRoleNames()->all() : [],
             ],
+            'flash' => [
+                'success' => fn (): ?string => $request->session()->get('success'),
+                'error' => fn (): ?string => $request->session()->get('error'),
+            ],
         ];
     }
 
@@ -53,7 +59,7 @@ class HandleInertiaRequests extends Middleware
         }
 
         try {
-            return app(StoragePort::class)->temporaryUrl(
+            return $this->storage->temporaryUrl(
                 $user->profile_photo_path,
                 CarbonImmutable::now()->addMinutes(15),
             );

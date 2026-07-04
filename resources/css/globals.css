@@ -17,11 +17,28 @@
     --bg-surface: #ffffff;
     --bg-card: #f1f1f6;
     --bg-hover: #e8e8f0;
+    /* deep-scene backgrounds consumed by the aurora GradientBackground */
+    --bg-void: #edeef1;
+    --bg-base: #f6f7f9;
+    --bg-elevated: var(--bg-surface);
+    --bg-overlay: var(--bg-hover);
 
     /* borders */
     --border-subtle: rgba(0, 0, 0, 0.05);
     --border-default: rgba(0, 0, 0, 0.1);
+    --border-strong: rgba(0, 0, 0, 0.16);
     --border-hover: rgba(0, 0, 0, 0.18);
+
+    /* brand palette — hue constants shared by both themes (mesh + gradients + cards) */
+    --blue-500: #4f46e5;
+    --blue: #3b82f6;
+    --blue-400: #3b82f6;
+    --purple-500: #7c3aed;
+    --purple-600: #4f46e5;
+    --purple-light: #a78bfa;
+    --indigo: #4f46e5;
+    --cyan: #22d3ee;
+    --cyan-light: #9debff;
 
     /* text */
     --text-primary: #1a1a2e;
@@ -37,20 +54,54 @@
     --accent-error: #dc2626;
     --accent-info: #0284c7;
 
-    /* typography */
-    --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif,
-        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    /* typography — project font is JetBrains Mono across the whole app */
+    --font-sans: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
     --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
+
+    /* font-size scale */
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --text-3xl: 1.875rem;
+    --text-4xl: 2.25rem;
+
+    /* font-weight scale */
+    --font-normal: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+
+    /* spacing scale */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.25rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-10: 2.5rem;
+    --space-12: 3rem;
+    --space-16: 4rem;
+    --space-20: 5rem;
+    --space-24: 6rem;
 
     /* radii & transition */
     --radius-sm: 6px;
     --radius-md: 8px;
     --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 24px;
     --transition: 0.2s ease;
+    --transition-fast: 0.1s ease;
+    --transition-slow: 0.3s ease;
 
     /* brand gradient + on-accent text (app-shell chrome: avatars, indicators) */
     --grad-primary: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
     --on-accent: #ffffff;
+    --text-on-accent: #ffffff;
 
     /* form tokens */
     --input-bg: var(--bg-card);
@@ -114,8 +165,14 @@
     --bg-surface: #12122a;
     --bg-card: #1a1a3e;
     --bg-hover: #252550;
+    /* deep ink/navy scene backgrounds for the aurora GradientBackground */
+    --bg-void: #05060f;
+    --bg-base: #0a0e1f;
+    --bg-elevated: var(--bg-surface);
+    --bg-overlay: var(--bg-hover);
     --border-subtle: rgba(255, 255, 255, 0.06);
     --border-default: rgba(255, 255, 255, 0.1);
+    --border-strong: rgba(255, 255, 255, 0.16);
     --border-hover: rgba(255, 255, 255, 0.18);
     --text-primary: #e8e8ed;
     --text-secondary: #b0b0c0;

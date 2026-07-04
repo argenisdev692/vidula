@@ -19,7 +19,13 @@ export interface AuthProps {
     roles: string[];
 }
 
+export interface FlashProps {
+    success: string | null;
+    error: string | null;
+}
+
 export interface SharedProps {
     auth: AuthProps;
+    flash: FlashProps;
     [key: string]: unknown;
 }

@@ -24,6 +24,23 @@ export default defineConfig({
         }),
         tailwindcss(),
     ],
+    build: {
+        rollupOptions: {
+            // Silence Rolldown's INVALID_ANNOTATION noise from third-party deps
+            // (e.g. @vueuse/core ships misplaced `/* #__PURE__ */` comments).
+            // Harmless — only affects dead-code hints — and not fixable in our
+            // code. All other warnings still surface via the default handler.
+            onwarn(warning, defaultHandler) {
+                if (
+                    warning.code === 'INVALID_ANNOTATION' &&
+                    /node_modules/.test(warning.message ?? '')
+                ) {
+                    return;
+                }
+                defaultHandler(warning);
+            },
+        },
+    },
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./resources/js', import.meta.url)),

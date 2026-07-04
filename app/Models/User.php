@@ -7,12 +7,12 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Modules\Auth\Infrastructure\Persistence\Eloquent\Models\LinkedSocialAccountEloquentModel;
@@ -27,7 +27,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements MustVerifyEmailContract
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, HasOneTimePasswords, HasRoles, LogsActivity, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
+    use HasApiTokens, HasFactory, HasOneTimePasswords, HasRoles, HasUuids, LogsActivity, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
 
     /**
      * The attributes that are mass assignable.
@@ -70,14 +70,19 @@ class User extends Authenticatable implements MustVerifyEmailContract
         'remember_token',
     ];
 
+    /**
+     * Generate a UUID for the `uuid` column (NOT the integer `id` primary key)
+     * on create. Overriding uniqueIds() keeps the auto-increment PK intact.
+     *
+     * @return list<string>
+     */
+    public function uniqueIds(): array
+    {
+        return ['uuid'];
+    }
+
     protected static function booted(): void
     {
-        static::creating(function (User $user): void {
-            if (empty($user->uuid)) {
-                $user->uuid = (string) Str::uuid();
-            }
-        });
-
         // ANY password write (admin invite, Fortify update, reset) clears the
         // admin-forced "must change password" flag and stamps the change time.
         // Kept here so it is independent of which flow performed the update.

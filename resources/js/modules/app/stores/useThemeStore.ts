@@ -15,6 +15,10 @@ export const useThemeStore = defineStore('theme', () => {
         selector: 'html',
         attribute: 'class',
         storageKey: 'vidula-theme',
+        // Dark-first: first visit (no stored value) resolves to dark, matching the
+        // FOUC killer in app.blade.php — otherwise useColorMode would default to
+        // 'auto' (system) and flash against the pre-paint dark class.
+        initialValue: 'dark',
         modes: { light: '', dark: 'dark' },
     });
 
