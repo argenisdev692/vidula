@@ -45,6 +45,7 @@ final readonly class UserExportTransformer
             'Email' => $user->email,
             'Username' => $user->username ?? '—',
             'Phone' => $user->phone ?? '—',
+            'Address 2' => $user->address_2 ?? '—',
             'Status' => self::status($user),
             'Created At' => (string) $user->created_at?->toDateTimeString(),
         ];

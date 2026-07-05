@@ -34,6 +34,7 @@ final readonly class InviteUserHandler
             'email' => $data->email,
             'username' => $data->username,
             'phone' => $data->phone,
+            'address_2' => $data->address2,
             'invited_at' => now(),
             'invited_by' => $invitedByUuid,
         ]));

@@ -5,6 +5,7 @@ use App\Providers\FortifyServiceProvider;
 use App\Providers\HorizonServiceProvider;
 use App\Providers\TelescopeServiceProvider;
 use Modules\Auth\Providers\AuthServiceProvider;
+use Modules\Company\Providers\CompanyServiceProvider;
 use Modules\Users\Providers\UsersServiceProvider;
 use Shared\Providers\SharedServiceProvider;
 
@@ -16,4 +17,5 @@ return [
     SharedServiceProvider::class,
     AuthServiceProvider::class,
     UsersServiceProvider::class,
+    CompanyServiceProvider::class,
 ];

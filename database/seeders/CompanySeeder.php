@@ -40,6 +40,7 @@ class CompanySeeder extends Seeder
             'instagram_link' => null,
             'linkedin_link' => null,
             'twitter_link' => null,
+            'tiktok_link' => 'https://www.tiktok.com/@vidula',
             'latitude' => null,
             'longitude' => null,
         ]);

@@ -26,6 +26,8 @@ final class AuthUserData extends Data
         public ?string $lastName,
         public ?string $username,
         public string $email,
+        #[MapOutputName('address_2')]
+        public ?string $address2,
         public bool $emailVerified,
         public bool $twoFactorEnabled,
         /** @var array<int, string> */
@@ -42,6 +44,7 @@ final class AuthUserData extends Data
             lastName: $user->last_name,
             username: $user->username,
             email: (string) $user->email,
+            address2: $user->address_2,
             emailVerified: $user->hasVerifiedEmail(),
             twoFactorEnabled: $user->two_factor_confirmed_at !== null,
             roles: $user->getRoleNames()->all(),

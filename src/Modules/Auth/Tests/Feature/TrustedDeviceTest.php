@@ -73,6 +73,18 @@ final class TrustedDeviceTest extends TestCase
         $this->assertFalse($this->manager->isTrusted($request, $user));
     }
 
+    public function test_challenge_page_trusts_the_device_over_json(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->postJson('/two-factor/trust-device')
+            ->assertOk()
+            ->assertJson(['status' => 'trusted-device-added']);
+
+        $this->assertDatabaseHas('trusted_devices', ['user_id' => $user->getKey()]);
+    }
+
     public function test_revoke_soft_deletes_the_device(): void
     {
         $user = User::factory()->create();

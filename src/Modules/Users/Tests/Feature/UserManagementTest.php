@@ -50,6 +50,46 @@ final class UserManagementTest extends TestCase
         Notification::assertSentTo($user, UserInvitationNotification::class);
     }
 
+    public function test_invite_and_update_persist_the_secondary_address(): void
+    {
+        Notification::fake();
+        $admin = $this->superAdmin();
+
+        $this->actingAs($admin)
+            ->post('/users', [
+                'first_name' => 'Apt',
+                'email' => 'apt.dweller@example.com',
+                'address_2' => 'Suite 4B',
+            ])
+            ->assertRedirect();
+
+        $user = User::query()->where('email', 'apt.dweller@example.com')->firstOrFail();
+        $this->assertSame('Suite 4B', $user->address_2);
+
+        $this->actingAs($admin)
+            ->put("/users/{$user->uuid}", [
+                'first_name' => 'Apt',
+                'email' => 'apt.dweller@example.com',
+                'address_2' => 'Suite 9C',
+            ])
+            ->assertRedirect();
+
+        $this->assertSame('Suite 9C', $user->refresh()->address_2);
+    }
+
+    public function test_invitation_email_uses_the_branded_template(): void
+    {
+        $html = view('emails.invitation', [
+            'activationUrl' => 'https://vidula.test/users/activate/abc',
+            'expiresInHours' => 72,
+        ])->render();
+
+        $this->assertStringContainsString('https://vidula.test/users/activate/abc', $html);
+        $this->assertStringContainsString(__('Activate account'), $html);
+        // Proves it extends emails.layout (brand gradient header), not the stock Laravel theme.
+        $this->assertStringContainsString('linear-gradient', $html);
+    }
+
     public function test_a_user_without_permission_cannot_manage_users(): void
     {
         $plain = User::factory()->create();

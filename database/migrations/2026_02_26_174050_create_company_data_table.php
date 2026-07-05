@@ -26,6 +26,10 @@ return new class extends Migration
             $table->string('instagram_link')->nullable();
             $table->string('linkedin_link')->nullable();
             $table->string('twitter_link')->nullable();
+            $table->string('tiktok_link')->nullable();
+            $table->string('logo_path')->nullable();
+            $table->string('logo_white_path')->nullable();
+            $table->string('mark_path')->nullable();
             $table->foreignId('user_id')->constrained();
             $table->double('latitude')->nullable();
             $table->double('longitude')->nullable();

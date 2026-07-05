@@ -9,6 +9,7 @@ import Toast from '@/volt/Toast.vue';
 import AppSidebar from '@/modules/app/components/AppSidebar.vue';
 import GradientBackground from '@/modules/app/components/GradientBackground.vue';
 import FloatingMenuButton from '@/modules/app/components/FloatingMenuButton.vue';
+import SessionTimeoutModal from '@/modules/app/components/SessionTimeoutModal.vue';
 import { useThemeStore } from '@/modules/app/stores/useThemeStore';
 import type { SharedProps } from '@/types/inertia';
 import { router, usePage } from '@inertiajs/vue3';
@@ -75,6 +76,7 @@ onUnmounted((): void => {
         </main>
 
         <FloatingMenuButton />
+        <SessionTimeoutModal />
         <Toast />
     </div>
 </template>

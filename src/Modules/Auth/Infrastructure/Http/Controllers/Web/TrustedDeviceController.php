@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Auth\Infrastructure\Http\Controllers\Web;
 
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Modules\Auth\Domain\Events\TrustedDeviceAdded;
@@ -25,7 +26,7 @@ final readonly class TrustedDeviceController
         private AuditPort $audit,
     ) {}
 
-    public function trust(Request $request): RedirectResponse
+    public function trust(Request $request): RedirectResponse|JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
@@ -42,7 +43,11 @@ final readonly class TrustedDeviceController
 
         event(new TrustedDeviceAdded((string) $user->uuid, (string) $device->uuid));
 
-        return back()->with('status', 'trusted-device-added');
+        // The two-factor challenge page trusts the device with a JSON XHR right
+        // after sign-in (no navigation); the settings page uses the Inertia flow.
+        return $request->expectsJson()
+            ? response()->json(['status' => 'trusted-device-added'])
+            : back()->with('status', 'trusted-device-added');
     }
 
     public function revoke(Request $request, string $uuid): RedirectResponse

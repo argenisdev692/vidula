@@ -47,6 +47,11 @@ final readonly class R2StorageAdapter implements StoragePort
         return $this->disk->temporaryUrl($path, CarbonImmutable::instance($expiresAt));
     }
 
+    public function publicUrl(string $path): string
+    {
+        return $this->disk->url($path);
+    }
+
     public function delete(string $path): bool
     {
         return $this->disk->delete($path);

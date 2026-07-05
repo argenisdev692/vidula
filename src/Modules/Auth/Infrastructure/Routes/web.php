@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\Auth\Infrastructure\Http\Controllers\Web\AuthPageController;
 use Modules\Auth\Infrastructure\Http\Controllers\Web\OtpAuthController;
 use Modules\Auth\Infrastructure\Http\Controllers\Web\PasswordResetController;
+use Modules\Auth\Infrastructure\Http\Controllers\Web\ProfileController;
 use Modules\Auth\Infrastructure\Http\Controllers\Web\ProfilePhotoController;
 use Modules\Auth\Infrastructure\Http\Controllers\Web\SessionController;
 use Modules\Auth\Infrastructure\Http\Controllers\Web\SocialAuthController;
@@ -70,14 +71,25 @@ Route::middleware(['web', 'auth'])->group(function (): void {
     // Forced password-update screen when the current password has expired.
     Route::get('/password/expired', [AuthPageController::class, 'passwordExpired'])->name('password.expired');
 
+    // Self-service profile page. Rendering only — the profile fields are saved by
+    // Fortify's PUT /user/profile-information (UpdateUserProfileInformation) and
+    // the password by PUT /user/password.
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+
     // Self-service profile photo (stored on Cloudflare R2, private + signed URL).
     Route::post('/profile/photo', [ProfilePhotoController::class, 'update'])
         ->middleware('throttle:10,1')->name('profile.photo.update');
     Route::delete('/profile/photo', [ProfilePhotoController::class, 'destroy'])
         ->name('profile.photo.destroy');
 
-    // Active browser sessions (prompt §6). "others" BEFORE "{session}".
+    // Client-driven idle logout that stores the intended return path and flags the
+    // login screen's "session expired" banner. ("Stay signed in" simply issues a
+    // partial Inertia reload, which refreshes the rolling session lifetime.)
+    Route::post('/session/idle-logout', [SessionController::class, 'idleLogout'])->name('session.idle-logout');
+
+    // Active browser sessions (prompt §6). Static "others"/"all" BEFORE "{session}".
     Route::get('/sessions', [SessionController::class, 'index'])->name('sessions.index');
     Route::delete('/sessions/others', [SessionController::class, 'destroyOthers'])->name('sessions.others');
+    Route::delete('/sessions/all', [SessionController::class, 'destroyAll'])->name('sessions.all');
     Route::delete('/sessions/{session}', [SessionController::class, 'destroy'])->name('sessions.destroy');
 });

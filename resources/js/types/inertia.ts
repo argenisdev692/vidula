@@ -24,8 +24,20 @@ export interface FlashProps {
     error: string | null;
 }
 
+/** DB-driven company branding shared on every page (HandleInertiaRequests). */
+export interface CompanyBranding {
+    name: string;
+    /** Light logo (dark text) — for light backgrounds. */
+    logo_url: string;
+    /** White logo — for dark backgrounds (hero, email header). */
+    logo_white_url: string;
+    /** Compact mark/icon. */
+    mark_url: string;
+}
+
 export interface SharedProps {
     auth: AuthProps;
     flash: FlashProps;
+    company: CompanyBranding;
     [key: string]: unknown;
 }

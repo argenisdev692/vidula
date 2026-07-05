@@ -22,6 +22,9 @@ final readonly class AuthPageController
         return Inertia::render('Auth/Login', [
             'canResetPassword' => true,
             'status' => $request->session()->get('status'),
+            // Set by SessionController::idleLogout so the login screen shows the
+            // "session expired" banner above the email field.
+            'sessionExpired' => (bool) $request->session()->get('expired', false),
         ]);
     }
 

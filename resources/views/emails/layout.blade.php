@@ -15,7 +15,8 @@
     // DB-first company branding (App\Models\CompanyData), config/env fallback.
     $profile = \Shared\Infrastructure\Company\CompanyProfile::data();
     $company = $profile['name'];
-    $logo = $profile['logo_url'];
+    // White logo renders on the dark gradient header.
+    $logo = $profile['logo_white_url'];
     $companyUrl = $profile['url'];
     $address = $profile['address'];
     $support = $profile['support_email'];

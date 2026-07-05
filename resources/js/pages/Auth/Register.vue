@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, onMounted, ref, useTemplateRef } from 'vue';
+import { useCompany } from '@/modules/app/composables/useCompany';
 
 /**
  * Register — same dark-hero shell as Login, wired to Fortify registration:
@@ -10,14 +11,7 @@ import { computed, onMounted, ref, useTemplateRef } from 'vue';
  * 6-digit activation code by email (see App\Actions\Fortify\CreateNewUser).
  */
 
-withDefaults(
-  defineProps<{
-    companyName?: string;
-  }>(),
-  {
-    companyName: 'Vidula',
-  },
-);
+const company = useCompany();
 
 const firstName = ref('');
 const lastName = ref('');
@@ -117,15 +111,15 @@ onMounted(() => {
     <div class="hero-wrap">
       <nav class="hero-nav">
         <div class="brand">
-          <img src="/img/Logo-white.png" :alt="companyName" class="brand-logo" />
+          <img :src="company.logo_white_url" :alt="company.name" class="brand-logo" />
         </div>
       </nav>
 
       <div class="auth-solo">
         <section class="auth-card">
           <div class="login-header">
-            <img class="card-mark" src="/img/Mark.png" alt="" aria-hidden="true" />
-            <div class="card-eyebrow">Register · {{ companyName }}</div>
+            <img class="card-mark" :src="company.mark_url" alt="" aria-hidden="true" />
+            <div class="card-eyebrow">Register · {{ company.name }}</div>
             <h1 class="login-title">Create your account</h1>
             <p class="login-subtitle">Start building with the Vidula workspace.</p>
           </div>

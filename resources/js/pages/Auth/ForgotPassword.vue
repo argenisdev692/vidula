@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, onMounted, ref, useTemplateRef } from 'vue';
+import { useCompany } from '@/modules/app/composables/useCompany';
 
 /**
  * Forgot password — step 1 of the passwordless (OTP) reset:
@@ -11,14 +12,14 @@ import { computed, onMounted, ref, useTemplateRef } from 'vue';
 
 withDefaults(
   defineProps<{
-    companyName?: string;
     status?: string | null;
   }>(),
   {
-    companyName: 'Vidula',
     status: null,
   },
 );
+
+const company = useCompany();
 
 const email = ref('');
 const isLoading = ref(false);
@@ -83,15 +84,15 @@ onMounted(() => {
     <div class="hero-wrap">
       <nav class="hero-nav">
         <div class="brand">
-          <img src="/img/Logo-white.png" :alt="companyName" class="brand-logo" />
+          <img :src="company.logo_white_url" :alt="company.name" class="brand-logo" />
         </div>
       </nav>
 
       <div class="auth-solo">
         <section class="auth-card">
           <div class="login-header">
-            <img class="card-mark" src="/img/Mark.png" alt="" aria-hidden="true" />
-            <div class="card-eyebrow">Recover · {{ companyName }}</div>
+            <img class="card-mark" :src="company.mark_url" alt="" aria-hidden="true" />
+            <div class="card-eyebrow">Recover · {{ company.name }}</div>
             <h1 class="login-title">Forgot your password?</h1>
             <p class="login-subtitle">Enter your email and we will send you a reset code.</p>
           </div>

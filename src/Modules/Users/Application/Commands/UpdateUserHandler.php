@@ -21,6 +21,7 @@ final readonly class UpdateUserHandler
             'email' => $data->email,
             'username' => $data->username,
             'phone' => $data->phone,
+            'address_2' => $data->address2,
             'must_change_password' => $data->forcePasswordChange,
         ]);
 

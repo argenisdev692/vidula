@@ -16,11 +16,11 @@ import { useAppShellStore } from '@/modules/app/stores/useAppShellStore';
 import { useThemeStore } from '@/modules/app/stores/useThemeStore';
 import { useCurrentUser } from '@/modules/auth/composables/useCurrentUser';
 import { useAuthorization } from '@/modules/auth/composables/useAuthorization';
-
-withDefaults(defineProps<{ companyName?: string }>(), { companyName: 'Vidula' });
+import { useCompany } from '@/modules/app/composables/useCompany';
 
 const shell = useAppShellStore();
 const theme = useThemeStore();
+const company = useCompany();
 const { navItems } = useNavGroups();
 const { user, fullName, initials, profilePhotoUrl } = useCurrentUser();
 const { primaryRole } = useAuthorization();
@@ -54,11 +54,17 @@ function toggleGroup(label: string): void {
 </script>
 
 <template>
-    <Drawer v-model:visible="shell.sidebarOpen" position="left" :modal="true" :dismissable="true">
+    <Drawer
+        v-model:visible="shell.sidebarOpen"
+        position="left"
+        :modal="true"
+        :dismissable="true"
+        class="app-sidebar-drawer"
+    >
         <template #header>
             <div class="sidebar-logo">
-                <img src="/img/Mark.png" alt="" aria-hidden="true" class="sidebar-logo-img" />
-                <span class="sidebar-logo-name">{{ companyName }}</span>
+                <img :src="company.mark_url" alt="" aria-hidden="true" class="sidebar-logo-img" />
+                <span class="sidebar-logo-name">{{ company.name }}</span>
             </div>
         </template>
 
@@ -179,6 +185,20 @@ function toggleGroup(label: string): void {
 </template>
 
 <style scoped>
+/**
+ * Panel override for the Volt Drawer instance. The Drawer teleports to <body>,
+ * so scoped selectors can't reach it — `:global` emits an unlayered rule that
+ * beats Tailwind's `@layer utilities` (w-80 / bg-surface-*) without !important.
+ * Narrower 18rem panel + deep-navy glass, matching the GUIDE sidebar.
+ */
+:global(.app-sidebar-drawer) {
+    width: 18rem;
+    background: color-mix(in srgb, var(--bg-void) 90%, transparent);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-right-color: var(--border-default);
+}
+
 .sidebar-logo {
     display: flex;
     flex-direction: column;

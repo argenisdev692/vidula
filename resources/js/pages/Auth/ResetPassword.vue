@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, onMounted, ref, useTemplateRef } from 'vue';
+import { useCompany } from '@/modules/app/composables/useCompany';
 
 /**
  * Reset password — step 2 of the passwordless (OTP) reset:
@@ -13,16 +14,16 @@ import { computed, onMounted, ref, useTemplateRef } from 'vue';
 
 const props = withDefaults(
   defineProps<{
-    companyName?: string;
     email?: string | null;
     status?: string | null;
   }>(),
   {
-    companyName: 'Vidula',
     email: null,
     status: null,
   },
 );
+
+const company = useCompany();
 
 const email = ref(props.email ?? '');
 const oneTimePassword = ref('');
@@ -114,15 +115,15 @@ onMounted(() => {
     <div class="hero-wrap">
       <nav class="hero-nav">
         <div class="brand">
-          <img src="/img/Logo-white.png" :alt="companyName" class="brand-logo" />
+          <img :src="company.logo_white_url" :alt="company.name" class="brand-logo" />
         </div>
       </nav>
 
       <div class="auth-solo">
         <section class="auth-card">
           <div class="login-header">
-            <img class="card-mark" src="/img/Mark.png" alt="" aria-hidden="true" />
-            <div class="card-eyebrow">Reset · {{ companyName }}</div>
+            <img class="card-mark" :src="company.mark_url" alt="" aria-hidden="true" />
+            <div class="card-eyebrow">Reset · {{ company.name }}</div>
             <h1 class="login-title">Set a new password</h1>
             <p class="login-subtitle">Enter the code we emailed you and choose a new password.</p>
           </div>

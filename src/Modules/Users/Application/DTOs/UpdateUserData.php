@@ -25,6 +25,8 @@ final class UpdateUserData extends Data
         public string $email,
         public ?string $username = null,
         public ?string $phone = null,
+        #[MapInputName('address_2')]
+        public ?string $address2 = null,
         public bool $forcePasswordChange = false,
     ) {}
 
@@ -41,6 +43,7 @@ final class UpdateUserData extends Data
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($uuid, 'uuid')],
             'username' => ['nullable', 'string', 'max:255', Rule::unique('users', 'username')->ignore($uuid, 'uuid')],
             'phone' => ['nullable', 'string', 'max:50'],
+            'address_2' => ['nullable', 'string', 'max:255'],
             'force_password_change' => ['boolean'],
         ];
     }

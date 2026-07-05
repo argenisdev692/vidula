@@ -9,6 +9,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use Shared\Domain\Ports\StoragePort;
+use Shared\Infrastructure\Company\CompanyProfile;
 use Throwable;
 
 class HandleInertiaRequests extends Middleware
@@ -44,6 +45,25 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn (): ?string => $request->session()->get('success'),
                 'error' => fn (): ?string => $request->session()->get('error'),
             ],
+            'company' => $this->companyBranding(),
+        ];
+    }
+
+    /**
+     * DB-driven company branding (name + logo URLs) for the hero and navbar.
+     * Cached inside CompanyProfile, so this adds no per-request query.
+     *
+     * @return array{name: string, logo_url: string, logo_white_url: string, mark_url: string}
+     */
+    private function companyBranding(): array
+    {
+        $company = CompanyProfile::data();
+
+        return [
+            'name' => $company['name'],
+            'logo_url' => $company['logo_url'],
+            'logo_white_url' => $company['logo_white_url'],
+            'mark_url' => $company['mark_url'],
         ];
     }
 

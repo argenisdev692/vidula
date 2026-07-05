@@ -17,6 +17,7 @@ import { useThemeStore } from '@/modules/app/stores/useThemeStore';
 import { useCurrentUser } from '@/modules/auth/composables/useCurrentUser';
 import { useAuthorization } from '@/modules/auth/composables/useAuthorization';
 import { useHeaderNotifications } from '@/modules/app/composables/useHeaderNotifications';
+import { useCompany } from '@/modules/app/composables/useCompany';
 
 withDefaults(
     defineProps<{
@@ -37,6 +38,7 @@ const queryCache = useQueryCache();
 const { fullName, initials, profilePhotoUrl } = useCurrentUser();
 const { primaryRole } = useAuthorization();
 const { feeds } = useHeaderNotifications();
+const company = useCompany();
 
 /* ── Notification dropdowns ── */
 const openFeedKey = ref<string | null>(null);
@@ -118,8 +120,8 @@ onClickOutside(userMenuRef, () => {
             />
 
             <img
-                :src="theme.isDark ? '/img/Logo-white.png' : '/img/Logo.png'"
-                alt="Logo"
+                :src="theme.isDark ? company.logo_white_url : company.logo_url"
+                :alt="company.name"
                 class="header-logo"
             />
 
@@ -259,6 +261,24 @@ onClickOutside(userMenuRef, () => {
                             >
                                 <i class="pi pi-user" aria-hidden="true" />
                                 <span>Profile</span>
+                            </Link>
+                            <Link
+                                href="/two-factor/setup"
+                                class="user-dropdown__item"
+                                role="menuitem"
+                                @click="userMenuOpen = false"
+                            >
+                                <i class="pi pi-shield" aria-hidden="true" />
+                                <span>Two-factor auth</span>
+                            </Link>
+                            <Link
+                                href="/sessions"
+                                class="user-dropdown__item"
+                                role="menuitem"
+                                @click="userMenuOpen = false"
+                            >
+                                <i class="pi pi-desktop" aria-hidden="true" />
+                                <span>Active sessions</span>
                             </Link>
                             <div class="user-dropdown__separator" />
                             <button

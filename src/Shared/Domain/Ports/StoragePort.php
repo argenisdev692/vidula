@@ -28,6 +28,13 @@ interface StoragePort
      */
     public function temporaryUrl(string $path, \DateTimeInterface $expiresAt): string;
 
+    /**
+     * Permanent public URL for a PUBLIC object (e.g. brand logos rendered in
+     * emails, which cannot use expiring signed URLs). Only valid for objects
+     * stored with `public` visibility — never for private user uploads.
+     */
+    public function publicUrl(string $path): string;
+
     public function delete(string $path): bool;
 
     public function exists(string $path): bool;

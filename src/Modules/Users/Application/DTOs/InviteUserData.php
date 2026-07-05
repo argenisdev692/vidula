@@ -35,5 +35,8 @@ final class InviteUserData extends Data
 
         #[Nullable, Max(50)]
         public ?string $phone = null,
+
+        #[MapInputName('address_2'), Nullable, Max(255)]
+        public ?string $address2 = null,
     ) {}
 }

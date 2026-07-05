@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue';
+import { useCompany } from '@/modules/app/composables/useCompany';
+import { apiFetch } from '@/lib/http';
 
 /**
  * Login — minimal-login-hero template (ported from the GUIDE Angular component)
@@ -24,18 +26,17 @@ const props = withDefaults(
   defineProps<{
     canResetPassword?: boolean;
     status?: string | null;
-    companyName?: string;
     sessionExpired?: boolean;
   }>(),
   {
     canResetPassword: true,
     status: null,
-    companyName: 'Vidula',
     sessionExpired: false,
   },
 );
 
 const page = usePage();
+const company = useCompany();
 
 // ── Tab state ──
 const authMethod = ref<AuthMethod>('password');
@@ -213,10 +214,18 @@ function onVerifyTotp(): void {
   }
   isLoading.value = true;
   errorMessage.value = '';
+  const shouldTrust = trustDevice.value;
   router.post(
     '/two-factor-challenge',
     { code: totpCode.value },
     {
+      onSuccess: () => {
+        // Now authenticated — persist the 30-day trusted-device cookie via a JSON
+        // XHR so the redirect to the app isn't interrupted. Best-effort.
+        if (shouldTrust) {
+          apiFetch('POST', '/two-factor/trust-device').catch(() => {});
+        }
+      },
       onError: (errors) => {
         surfaceErrors(errors);
         totpDigits.value = ['', '', '', '', '', ''];
@@ -376,6 +385,8 @@ watch(
   (value) => {
     if (value === 'password-reset') {
       successMessage.value = 'Password reset successful! You can now sign in.';
+    } else if (value) {
+      successMessage.value = value;
     }
   },
   { immediate: true },
@@ -393,7 +404,7 @@ watch(
       <!-- NAV -->
       <nav class="hero-nav">
         <div class="brand">
-          <img src="/img/Logo-white.png" :alt="companyName" class="brand-logo" />
+          <img :src="company.logo_white_url" :alt="company.name" class="brand-logo" />
         </div>
       </nav>
 
@@ -523,8 +534,8 @@ watch(
         <div class="hero-right">
           <section class="auth-card">
             <div class="login-header">
-              <img class="card-mark" src="/img/Mark.png" alt="" aria-hidden="true" />
-              <div class="card-eyebrow">Access · {{ companyName }}</div>
+              <img class="card-mark" :src="company.mark_url" alt="" aria-hidden="true" />
+              <div class="card-eyebrow">Access · {{ company.name }}</div>
               <h1 class="login-title">Welcome Back</h1>
               <p class="login-subtitle">Sign in to pick up where you left off.</p>
             </div>
@@ -996,7 +1007,7 @@ watch(
       <footer class="hero-foot">
         <div class="hero-foot-row">
           <span class="foot-copy"
-            >© {{ currentYear }} {{ companyName }} · Private access · internal use only</span
+            >© {{ currentYear }} {{ company.name }} · Private access · internal use only</span
           >
 
           <div v-if="socials.length" class="social-links">
