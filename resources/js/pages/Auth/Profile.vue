@@ -766,7 +766,7 @@ function revokeTrustedDevice(uuid: string): void {
                 <div class="security__head">
                     <div>
                         <h3 class="security__subtitle">Active Sessions</h3>
-                        <p class="security__desc">Devices and browsers currently signed in.</p>
+                        <p class="security__desc">Devices and browsers currently signed in to your account.</p>
                     </div>
                     <button
                         type="button"
@@ -775,7 +775,7 @@ function revokeTrustedDevice(uuid: string): void {
                         @click="logoutOtherDevices"
                     >
                         <i class="pi pi-sign-out" aria-hidden="true" />
-                        Log out others
+                        Logout All
                     </button>
                 </div>
 
@@ -1127,7 +1127,7 @@ function revokeTrustedDevice(uuid: string): void {
 
 .security__head {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: var(--space-4);
     margin-bottom: var(--space-4);
@@ -1231,8 +1231,12 @@ function revokeTrustedDevice(uuid: string): void {
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
-    max-height: 340px;
+    /* Cap the list at ~5 rows and scroll the rest so a long session history
+       never blows out the card. Extra right padding keeps the scrollbar off
+       the trash buttons. */
+    max-height: 320px;
     overflow-y: auto;
+    padding-right: var(--space-1);
 }
 
 .device-item {
@@ -1324,6 +1328,8 @@ function revokeTrustedDevice(uuid: string): void {
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
+    flex-shrink: 0;
+    white-space: nowrap;
     background: transparent;
     border: none;
     padding: 0;

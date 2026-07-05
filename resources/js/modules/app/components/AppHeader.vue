@@ -276,15 +276,6 @@ onClickOutside(userMenuRef, () => {
                                 <i class="pi pi-user" aria-hidden="true" />
                                 <span>My Profile</span>
                             </Link>
-                            <Link
-                                href="/profile#security"
-                                class="user-dropdown__item"
-                                role="menuitem"
-                                @click="userMenuOpen = false"
-                            >
-                                <i class="pi pi-shield" aria-hidden="true" />
-                                <span>Security &amp; sessions</span>
-                            </Link>
                             <div class="user-dropdown__separator" />
                             <button
                                 type="button"
