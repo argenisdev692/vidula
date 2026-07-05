@@ -26,6 +26,40 @@ export interface ProfileData {
 }
 
 /**
+ * One active browser session (mirrors SessionRegistry::listForUser). `is_current`
+ * flags the device the page is being viewed from — it can never be revoked
+ * individually, only via "sign out everywhere".
+ */
+export interface ActiveSession {
+    id: string;
+    ip_address: string | null;
+    user_agent: string | null;
+    last_active_at: string;
+    is_current: boolean;
+}
+
+/**
+ * A device that skips the two-factor step for 30 days (mirrors the
+ * `trusted_devices` rows selected in ProfileController::edit).
+ */
+export interface TrustedDevice {
+    uuid: string;
+    user_agent: string | null;
+    ip_address: string | null;
+    last_used_at: string | null;
+    expires_at: string;
+}
+
+/**
+ * Two-factor state. `enabled` = a secret exists (enrollment may be pending);
+ * `confirmed` = the user completed the challenge and 2FA is fully active.
+ */
+export interface TwoFactorState {
+    enabled: boolean;
+    confirmed: boolean;
+}
+
+/**
  * Editable subset submitted to Fortify's PUT /user/profile-information. All
  * fields are strings (empty string = cleared) so the form binds cleanly; the
  * page transforms empties to `null` before submit.

@@ -253,6 +253,20 @@ onClickOutside(userMenuRef, () => {
 
                     <Transition name="dropdown">
                         <div v-if="userMenuOpen" class="user-dropdown" role="menu" @click.stop>
+                            <div class="user-dropdown__identity">
+                                <img
+                                    v-if="profilePhotoUrl"
+                                    :src="profilePhotoUrl"
+                                    alt="Profile"
+                                    class="user-dropdown__photo"
+                                />
+                                <span v-else class="user-dropdown__avatar" aria-hidden="true">{{ initials }}</span>
+                                <span class="user-dropdown__identity-info">
+                                    <span class="user-dropdown__name">{{ fullName }}</span>
+                                    <span class="user-dropdown__role">{{ primaryRole }}</span>
+                                </span>
+                            </div>
+                            <div class="user-dropdown__separator" />
                             <Link
                                 href="/profile"
                                 class="user-dropdown__item"
@@ -260,25 +274,16 @@ onClickOutside(userMenuRef, () => {
                                 @click="userMenuOpen = false"
                             >
                                 <i class="pi pi-user" aria-hidden="true" />
-                                <span>Profile</span>
+                                <span>My Profile</span>
                             </Link>
                             <Link
-                                href="/two-factor/setup"
+                                href="/profile#security"
                                 class="user-dropdown__item"
                                 role="menuitem"
                                 @click="userMenuOpen = false"
                             >
                                 <i class="pi pi-shield" aria-hidden="true" />
-                                <span>Two-factor auth</span>
-                            </Link>
-                            <Link
-                                href="/sessions"
-                                class="user-dropdown__item"
-                                role="menuitem"
-                                @click="userMenuOpen = false"
-                            >
-                                <i class="pi pi-desktop" aria-hidden="true" />
-                                <span>Active sessions</span>
+                                <span>Security &amp; sessions</span>
                             </Link>
                             <div class="user-dropdown__separator" />
                             <button
@@ -767,7 +772,7 @@ onClickOutside(userMenuRef, () => {
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
-    width: 200px;
+    width: 240px;
     padding: var(--space-2);
     background: color-mix(in srgb, var(--bg-surface) 98%, transparent);
     backdrop-filter: blur(24px);
@@ -778,6 +783,58 @@ onClickOutside(userMenuRef, () => {
         0 16px 48px color-mix(in srgb, var(--bg-void) 50%, transparent),
         0 0 0 1px color-mix(in srgb, var(--accent-primary) 8%, transparent);
     z-index: 1000;
+}
+
+.user-dropdown__identity {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+}
+
+.user-dropdown__photo,
+.user-dropdown__avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.user-dropdown__photo {
+    object-fit: cover;
+    border: 2px solid var(--border-default);
+}
+
+.user-dropdown__avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--grad-primary);
+    color: var(--on-accent);
+    font-size: var(--text-sm);
+    font-weight: var(--font-bold);
+}
+
+.user-dropdown__identity-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.user-dropdown__name {
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.user-dropdown__role {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    line-height: 1.2;
 }
 
 .user-dropdown__item {

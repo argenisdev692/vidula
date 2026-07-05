@@ -28,10 +28,11 @@ return new class extends Migration
             $table->string('city')->nullable();
             $table->string('state')->nullable();
             $table->string('country')->nullable();
-            $table->string('gender')->nullable();
-            $table->string('profile_photo_path', 2048)->nullable();
             $table->double('latitude')->nullable();
             $table->double('longitude')->nullable();
+            $table->string('gender')->nullable();
+            $table->string('profile_photo_path', 2048)->nullable();
+
             $table->boolean('terms_and_conditions')->default(false);
             $table->rememberToken();
             $table->timestamps();
