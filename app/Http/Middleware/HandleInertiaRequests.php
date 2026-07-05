@@ -46,6 +46,9 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn (): ?string => $request->session()->get('error'),
             ],
             'company' => $this->companyBranding(),
+            'config' => [
+                'google_maps_api_key' => (string) config('services.googlemaps.key'),
+            ],
         ];
     }
 

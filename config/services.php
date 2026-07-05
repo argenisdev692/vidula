@@ -35,6 +35,12 @@ return [
         ],
     ],
 
+    'googlemaps' => [
+        // Public JS API key (HTTP-referrer restricted); exposed to the SPA via
+        // HandleInertiaRequests and consumed by common/address autocomplete.
+        'key' => env('GOOGLE_MAPS_API_KEY'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Socialite OAuth Providers

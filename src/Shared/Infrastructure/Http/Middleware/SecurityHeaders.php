@@ -89,7 +89,7 @@ final class SecurityHeaders
     {
         $isLocal = app()->environment('local');
 
-        $scriptSrc = ["'self'", "'nonce-{$nonce}'"];
+        $scriptSrc = ["'self'", "'nonce-{$nonce}'", ...(array) config('security.headers.csp.script_src', [])];
         $styleSrc = ["'self'", "'nonce-{$nonce}'"];
         $connectSrc = ["'self'", ...(array) config('security.headers.csp.connect_src', [])];
         $imgSrc = ["'self'", ...(array) config('security.headers.csp.img_src', [])];

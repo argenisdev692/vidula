@@ -45,7 +45,9 @@ final class UpdateUserProfileInformation implements UpdatesUserProfileInformatio
                 'max:255',
                 Rule::unique('users')->ignore($user->id),
             ],
-            'phone' => ['nullable', 'string', 'max:50'],
+            // E.164 from the PhoneField (common/form). `INTERNATIONAL` accepts any
+            // valid international number regardless of country (libphonenumber).
+            'phone' => ['nullable', 'string', 'max:20', 'phone:INTERNATIONAL'],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'gender' => ['nullable', Rule::in(self::GENDERS)],
             'address' => ['nullable', 'string', 'max:255'],
@@ -54,6 +56,8 @@ final class UpdateUserProfileInformation implements UpdatesUserProfileInformatio
             'state' => ['nullable', 'string', 'max:120'],
             'zip_code' => ['nullable', 'string', 'max:20'],
             'country' => ['nullable', 'string', 'max:120'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
         ])->validateWithBag('updateProfileInformation');
 
         $profileFields = [
@@ -69,6 +73,8 @@ final class UpdateUserProfileInformation implements UpdatesUserProfileInformatio
             'state' => $validated['state'] ?? null,
             'zip_code' => $validated['zip_code'] ?? null,
             'country' => $validated['country'] ?? null,
+            'latitude' => $validated['latitude'] ?? null,
+            'longitude' => $validated['longitude'] ?? null,
         ];
 
         if ($validated['email'] !== $user->email && $user instanceof MustVerifyEmail) {

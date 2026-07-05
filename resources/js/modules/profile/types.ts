@@ -17,6 +17,8 @@ export interface ProfileData {
     state: string | null;
     zip_code: string | null;
     country: string | null;
+    latitude: number | null;
+    longitude: number | null;
     email_verified: boolean;
     two_factor_enabled: boolean;
     created_at: string | null;
@@ -78,4 +80,6 @@ export interface ProfileFormValues {
     state: string;
     zip_code: string;
     country: string;
+    latitude: number | null;
+    longitude: number | null;
 }

@@ -43,7 +43,8 @@ final class UpdateCompanyData extends Data
             'company_name' => ['required', 'string', 'max:255'],
             'name' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:50'],
+            // E.164 from the shared PhoneField; accepts any valid international number.
+            'phone' => ['nullable', 'string', 'max:20', 'phone:INTERNATIONAL'],
             'address' => ['nullable', 'string', 'max:1000'],
             'address_2' => ['nullable', 'string', 'max:1000'],
             'website' => ['nullable', 'url', 'max:255'],

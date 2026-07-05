@@ -28,7 +28,7 @@ final class ProfileUpdateTest extends TestCase
             'last_name' => 'Lovelace',
             'username' => 'ada',
             'email' => 'ada@example.com',
-            'phone' => '555 000 0000',
+            'phone' => '+14155552671',
             'date_of_birth' => '1990-05-10',
             'gender' => 'female',
             'address' => '10 Analytical St',
@@ -37,6 +37,8 @@ final class ProfileUpdateTest extends TestCase
             'state' => 'England',
             'zip_code' => 'EC1A',
             'country' => 'UK',
+            'latitude' => 51.5074,
+            'longitude' => -0.1278,
         ], $overrides);
     }
 
@@ -66,6 +68,18 @@ final class ProfileUpdateTest extends TestCase
         $this->assertSame('ada', $user->username);
         $this->assertSame('female', $user->gender);
         $this->assertSame('London', $user->city);
+        $this->assertSame('+14155552671', $user->phone);
+        $this->assertSame(51.5074, $user->latitude);
+        $this->assertSame(-0.1278, $user->longitude);
+    }
+
+    public function test_phone_must_be_a_valid_international_number(): void
+    {
+        $user = User::factory()->create(['email' => 'ada@example.com']);
+
+        $this->actingAs($user)
+            ->put('/user/profile-information', $this->payload(['phone' => '555 000 0000']))
+            ->assertSessionHasErrors(['phone'], null, 'updateProfileInformation');
     }
 
     public function test_email_must_be_unique_across_users(): void

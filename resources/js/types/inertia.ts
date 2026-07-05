@@ -35,9 +35,16 @@ export interface CompanyBranding {
     mark_url: string;
 }
 
+/** Non-secret runtime config exposed to the SPA (HandleInertiaRequests). */
+export interface ConfigProps {
+    /** Public, referrer-restricted Google Maps JS key for address autocomplete. */
+    google_maps_api_key: string;
+}
+
 export interface SharedProps {
     auth: AuthProps;
     flash: FlashProps;
     company: CompanyBranding;
+    config: ConfigProps;
     [key: string]: unknown;
 }

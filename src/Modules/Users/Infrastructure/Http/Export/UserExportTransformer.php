@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Users\Infrastructure\Http\Export;
 
 use App\Models\User;
+use Shared\Infrastructure\Support\PhoneFormatter;
 
 /**
  * Maps a {@see User} row to export columns. The pipe chain (PHP 8.5 `|>`) keeps
@@ -44,7 +45,7 @@ final readonly class UserExportTransformer
             'Name' => trim("{$user->first_name} {$user->last_name}"),
             'Email' => $user->email,
             'Username' => $user->username ?? '—',
-            'Phone' => $user->phone ?? '—',
+            'Phone' => PhoneFormatter::international($user->phone),
             'Address 2' => $user->address_2 ?? '—',
             'Status' => self::status($user),
             'Created At' => (string) $user->created_at?->toDateTimeString(),

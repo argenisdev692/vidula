@@ -16,7 +16,7 @@
  * destructive 2FA action is gated by POST /user/confirm-password. Built entirely
  * from the reusable common/form kit + common/media/ImageCropper.
  */
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
@@ -24,6 +24,11 @@ import AppHeader from '@/modules/app/components/AppHeader.vue';
 import TextField from '@/common/form/TextField.vue';
 import SelectField from '@/common/form/SelectField.vue';
 import DateField from '@/common/form/DateField.vue';
+import PhoneField from '@/common/form/PhoneField.vue';
+import AddressAutocomplete from '@/common/address/AddressAutocomplete.vue';
+import type { AddressValue } from '@/common/address/types';
+import type { SharedProps } from '@/types/inertia';
+import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import SubmitButton from '@/common/form/SubmitButton.vue';
 import ImageCropper from '@/common/media/ImageCropper.vue';
 import Button from '@/volt/Button.vue';
@@ -128,9 +133,62 @@ const form = useForm<ProfileFormValues>({
     state: props.profile.state ?? '',
     zip_code: props.profile.zip_code ?? '',
     country: props.profile.country ?? '',
+    latitude: props.profile.latitude,
+    longitude: props.profile.longitude,
 });
 
 const canSubmitProfile = computed<boolean>(() => profileFormSchema.safeParse(form.data()).success);
+
+/* Bridges between the flat Fortify form and the reusable field components. */
+const page = usePage<SharedProps>();
+
+const phoneModel = computed<string | null>({
+    get: () => form.phone || null,
+    set: (value) => {
+        form.phone = value ?? '';
+    },
+});
+
+const addressModel = computed<AddressValue>({
+    get: () => ({
+        address: form.address || null,
+        address_2: form.address_2 || null,
+        zip_code: form.zip_code || null,
+        city: form.city || null,
+        state: form.state || null,
+        country: form.country || null,
+        latitude: form.latitude,
+        longitude: form.longitude,
+    }),
+    set: (value) => {
+        form.address = value.address ?? '';
+        form.address_2 = value.address_2 ?? '';
+        form.zip_code = value.zip_code ?? '';
+        form.city = value.city ?? '';
+        form.state = value.state ?? '';
+        form.country = value.country ?? '';
+        form.latitude = value.latitude;
+        form.longitude = value.longitude;
+    },
+});
+
+/** E.164 stored → international display (matches CSV/PDF export formatting). */
+const phoneDisplay = computed<string>(() => {
+    if (!props.profile.phone) {
+        return 'Not set';
+    }
+    const parsed = parsePhoneNumberFromString(props.profile.phone);
+    return parsed ? parsed.formatInternational() : props.profile.phone;
+});
+
+const addressErrors = computed(() => ({
+    address: form.errors.address,
+    address_2: form.errors.address_2,
+    zip_code: form.errors.zip_code,
+    city: form.errors.city,
+    state: form.errors.state,
+    country: form.errors.country,
+}));
 
 function toggleEdit(): void {
     if (editing.value) {
@@ -159,7 +217,7 @@ function saveProfile(): void {
 
     form
         .transform((data) => {
-            const payload: Record<string, string | null> = { ...data };
+            const payload: Record<string, string | number | null> = { ...data };
             for (const key of Object.keys(payload)) {
                 if (payload[key] === '') {
                     payload[key] = null;
@@ -511,13 +569,11 @@ function revokeTrustedDevice(uuid: string): void {
                         autocomplete="email"
                         :error="form.errors.email"
                     />
-                    <TextField
-                        v-model="form.phone"
+                    <PhoneField
+                        v-model="phoneModel"
                         name="phone"
-                        type="tel"
                         label="Phone"
-                        placeholder="555 000 0000"
-                        autocomplete="tel"
+                        default-country="US"
                         :error="form.errors.phone"
                     />
                     <DateField
@@ -537,50 +593,13 @@ function revokeTrustedDevice(uuid: string): void {
                         :options="genderOptions"
                         :error="form.errors.gender"
                     />
-                    <TextField
-                        v-model="form.country"
-                        name="country"
-                        label="Country"
-                        autocomplete="country-name"
-                        :error="form.errors.country"
-                    />
-                    <TextField
-                        v-model="form.address"
-                        name="address"
-                        label="Address"
-                        class="form-grid__full"
-                        autocomplete="street-address"
-                        :error="form.errors.address"
-                    />
-                    <TextField
-                        v-model="form.address_2"
-                        name="address_2"
-                        label="Address 2"
-                        placeholder="Apartment, suite, etc."
-                        class="form-grid__full"
-                        :error="form.errors.address_2"
-                    />
-                    <TextField
-                        v-model="form.city"
-                        name="city"
-                        label="City"
-                        autocomplete="address-level2"
-                        :error="form.errors.city"
-                    />
-                    <TextField
-                        v-model="form.state"
-                        name="state"
-                        label="State"
-                        autocomplete="address-level1"
-                        :error="form.errors.state"
-                    />
-                    <TextField
-                        v-model="form.zip_code"
-                        name="zip_code"
-                        label="ZIP Code"
-                        autocomplete="postal-code"
-                        :error="form.errors.zip_code"
-                    />
+                    <div class="form-grid__full">
+                        <AddressAutocomplete
+                            v-model="addressModel"
+                            :api-key="page.props.config.google_maps_api_key"
+                            :errors="addressErrors"
+                        />
+                    </div>
                 </div>
                 <div class="form-actions">
                     <SubmitButton
@@ -613,7 +632,7 @@ function revokeTrustedDevice(uuid: string): void {
                 </div>
                 <div class="details__row">
                     <dt>Phone</dt>
-                    <dd>{{ profile.phone || 'Not set' }}</dd>
+                    <dd>{{ phoneDisplay }}</dd>
                 </div>
                 <div class="details__row">
                     <dt>Date of Birth</dt>

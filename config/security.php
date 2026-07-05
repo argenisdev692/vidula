@@ -88,10 +88,18 @@ return [
 
         'csp' => [
             // Extra origins appended to the base `'self'` allowlist.
-            'img_src' => ['data:', 'blob:'],
+            // Google Maps: bootstrap + JS API script host.
+            'script_src' => ['https://maps.googleapis.com'],
+            // Google Maps: attribution + tile/pin imagery.
+            'img_src' => ['data:', 'blob:', 'https://maps.gstatic.com', 'https://maps.googleapis.com'],
             'font_src' => ['data:'],
-            // e.g. the Reverb websocket endpoint: ['wss://ws.example.com'].
-            'connect_src' => array_filter(explode(',', (string) env('SECURITY_CSP_CONNECT_SRC', ''))),
+            // Google Maps: Places (New) Data API XHR targets, plus any extra
+            // origins (e.g. the Reverb websocket endpoint) from env.
+            'connect_src' => array_filter([
+                'https://maps.googleapis.com',
+                'https://places.googleapis.com',
+                ...explode(',', (string) env('SECURITY_CSP_CONNECT_SRC', '')),
+            ]),
         ],
     ],
 
