@@ -2,12 +2,13 @@
 /**
  * Form submit button with a built-in loading state. Composes the Volt Button
  * primitive; while `loading` is true it shows a spinner and is disabled so a
- * form cannot be submitted twice. Ports the GUIDE `form-submit-button`.
+ * form cannot be submitted twice. When `disabled` it stays VISIBLE but greyed
+ * out (never hidden) — callers control submittability via `:disabled`. Ports
+ * the GUIDE `form-submit-button`.
  */
 import Button from '@/volt/Button.vue';
-import { computed } from 'vue';
 
-const props = withDefaults(
+withDefaults(
     defineProps<{
         label: string;
         /** primeicons class, e.g. `pi pi-check`. */
@@ -20,29 +21,21 @@ const props = withDefaults(
     }>(),
     { type: 'submit', iconPos: 'left', disabled: false },
 );
-
-/** Hidden until the form is submittable; stays visible while loading. */
-const visible = computed<boolean>(() => props.loading || !props.disabled);
 </script>
 
 <template>
-    <div v-show="visible" class="form-submit-wrap">
-        <Button
-            class="form-submit-btn"
-            :type="type"
-            :label="label"
-            :icon="loading ? undefined : icon"
-            :icon-pos="iconPos"
-            :loading="loading"
-            :disabled="disabled || loading"
-        />
-    </div>
+    <Button
+        class="form-submit-btn"
+        :type="type"
+        :label="label"
+        :icon="loading ? undefined : icon"
+        :icon-pos="iconPos"
+        :loading="loading"
+        :disabled="disabled || loading"
+    />
 </template>
 
 <style scoped>
-.form-submit-wrap {
-    display: contents;
-}
 /* Login submit gradient (cyan → blue) + hover lift — no shine sweep (::before). */
 .form-submit-btn {
     padding: var(--space-4) var(--space-8);

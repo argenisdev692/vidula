@@ -5,23 +5,22 @@ declare(strict_types=1);
 namespace Modules\Company\Application\Commands;
 
 use App\Models\CompanyData;
-use Modules\Company\Application\DTOs\UpdateCompanyLogoData;
 use Modules\Company\Domain\Ports\CompanyRepositoryPort;
 use Shared\Domain\Ports\StoragePort;
 
 /**
- * Replaces one brand logo variant on the single company record. The PNG is
- * stored on R2 with public visibility and the previous object is deleted so the
- * bucket never accumulates orphaned logos. Persisting the column triggers the
- * CompanyData `saved` hook, which busts the CompanyProfile branding cache.
+ * Removes a single brand/signature asset from the company record: deletes the
+ * R2 object and nulls the column. The record itself is never deleted — only its
+ * assets. Persisting triggers the CompanyData `saved` hook (cache bust).
  */
-final readonly class UpdateCompanyLogoHandler
+final readonly class DeleteCompanyAssetHandler
 {
     /** @var array<string, string> */
     private const array COLUMN_MAP = [
         'logo' => 'logo_path',
         'logo_white' => 'logo_white_path',
         'mark' => 'mark_path',
+        'signature' => 'signature_path',
     ];
 
     public function __construct(
@@ -29,20 +28,20 @@ final readonly class UpdateCompanyLogoHandler
         private CompanyRepositoryPort $companies,
     ) {}
 
-    public function handle(UpdateCompanyLogoData $data): CompanyData
+    public function handle(string $asset): CompanyData
     {
+        $column = self::COLUMN_MAP[$asset]
+            ?? throw new \InvalidArgumentException("Unknown company asset [{$asset}].");
+
         $company = $this->companies->getSingleton();
-        $column = self::COLUMN_MAP[$data->type];
 
         /** @var string|null $previous */
         $previous = $company->{$column};
 
-        $path = $this->storage->putFile('branding', $data->logo, 'public');
-
-        if ($previous !== null && $previous !== $path) {
+        if (is_string($previous) && $previous !== '') {
             $this->storage->delete($previous);
         }
 
-        return $this->companies->update($company, [$column => $path]);
+        return $this->companies->update($company, [$column => null]);
     }
 }

@@ -9,10 +9,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use Shared\Infrastructure\Company\CompanyProfile;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 class CompanyData extends Model
 {
-    use SoftDeletes;
+    use LogsActivity, SoftDeletes;
 
     protected $table = 'company_data';
 
@@ -80,5 +82,35 @@ class CompanyData extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Audit trail (spatie/laravel-activitylog). Allowlist only — logs contact,
+     * fiscal and asset-path changes on the single company record.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'name',
+                'company_name',
+                'email',
+                'phone',
+                'address',
+                'address_2',
+                'website',
+                'facebook_link',
+                'instagram_link',
+                'linkedin_link',
+                'twitter_link',
+                'tiktok_link',
+                'logo_path',
+                'logo_white_path',
+                'mark_path',
+                'signature_path',
+            ])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges()
+            ->useLogName('company.data');
     }
 }

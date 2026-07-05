@@ -345,7 +345,7 @@ function onCropped(blob: Blob): void {
                         :error="form.errors.zip_code"
                     />
                 </div>
-                <div v-if="canSubmitProfile || form.processing" class="form-actions">
+                <div class="form-actions">
                     <SubmitButton
                         label="Save Changes"
                         icon="pi pi-check"
@@ -427,7 +427,7 @@ function onCropped(blob: Blob): void {
                     autocomplete="new-password"
                     :error="passwordForm.errors.password_confirmation"
                 />
-                <div v-if="canSubmitPassword || passwordForm.processing" class="form-actions">
+                <div class="form-actions">
                     <SubmitButton
                         label="Update Password"
                         icon="pi pi-key"
