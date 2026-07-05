@@ -23,6 +23,7 @@ import SubmitButton from '@/common/form/SubmitButton.vue';
 import ImageCropper from '@/common/media/ImageCropper.vue';
 import { genderOptions } from '@/modules/profile/helpers/genderOptions';
 import { profileFormSchema } from '@/modules/profile/schemas/profileFormSchema';
+import { passwordFormSchema } from '@/modules/profile/schemas/passwordFormSchema';
 import type { ProfileData, ProfileFormValues } from '@/modules/profile/types';
 
 defineOptions({ layout: AppLayout });
@@ -71,6 +72,8 @@ const form = useForm<ProfileFormValues>({
     country: props.profile.country ?? '',
 });
 
+const canSubmitProfile = computed<boolean>(() => profileFormSchema.safeParse(form.data()).success);
+
 function toggleEdit(): void {
     if (editing.value) {
         form.reset();
@@ -80,6 +83,10 @@ function toggleEdit(): void {
 }
 
 function saveProfile(): void {
+    if (!canSubmitProfile.value) {
+        return;
+    }
+
     const parsed = profileFormSchema.safeParse(form.data());
     if (!parsed.success) {
         form.clearErrors();
@@ -122,7 +129,13 @@ const passwordForm = useForm({
     password_confirmation: '',
 });
 
+const canSubmitPassword = computed<boolean>(() => passwordFormSchema.safeParse(passwordForm.data()).success);
+
 function changePassword(): void {
+    if (!canSubmitPassword.value) {
+        return;
+    }
+
     passwordForm.put('/user/password', {
         errorBag: 'updatePassword',
         preserveScroll: true,
@@ -332,8 +345,13 @@ function onCropped(blob: Blob): void {
                         :error="form.errors.zip_code"
                     />
                 </div>
-                <div class="form-actions">
-                    <SubmitButton label="Save Changes" icon="pi pi-check" :loading="form.processing" />
+                <div v-if="canSubmitProfile || form.processing" class="form-actions">
+                    <SubmitButton
+                        label="Save Changes"
+                        icon="pi pi-check"
+                        :loading="form.processing"
+                        :disabled="!canSubmitProfile"
+                    />
                 </div>
             </form>
 
@@ -409,8 +427,13 @@ function onCropped(blob: Blob): void {
                     autocomplete="new-password"
                     :error="passwordForm.errors.password_confirmation"
                 />
-                <div class="form-actions">
-                    <SubmitButton label="Update Password" icon="pi pi-key" :loading="passwordForm.processing" />
+                <div v-if="canSubmitPassword || passwordForm.processing" class="form-actions">
+                    <SubmitButton
+                        label="Update Password"
+                        icon="pi pi-key"
+                        :loading="passwordForm.processing"
+                        :disabled="!canSubmitPassword"
+                    />
                 </div>
             </form>
 
@@ -521,12 +544,14 @@ function onCropped(blob: Blob): void {
 }
 
 .edit-toggle--cancel {
-    color: var(--text-muted);
+    color: var(--accent-error);
+    border-color: var(--accent-error);
 }
 
 .edit-toggle--cancel:hover {
-    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
-    color: var(--text-primary);
+    background: color-mix(in srgb, var(--accent-error) 10%, transparent);
+    border-color: var(--accent-error);
+    color: var(--accent-error);
 }
 
 /* ── Avatar ── */

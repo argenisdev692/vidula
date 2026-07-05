@@ -5,8 +5,9 @@
  * form cannot be submitted twice. Ports the GUIDE `form-submit-button`.
  */
 import Button from '@/volt/Button.vue';
+import { computed } from 'vue';
 
-withDefaults(
+const props = withDefaults(
     defineProps<{
         label: string;
         /** primeicons class, e.g. `pi pi-check`. */
@@ -17,23 +18,31 @@ withDefaults(
         type?: 'submit' | 'button';
         iconPos?: 'left' | 'right';
     }>(),
-    { type: 'submit', iconPos: 'left' },
+    { type: 'submit', iconPos: 'left', disabled: false },
 );
+
+/** Hidden until the form is submittable; stays visible while loading. */
+const visible = computed<boolean>(() => props.loading || !props.disabled);
 </script>
 
 <template>
-    <Button
-        class="form-submit-btn"
-        :type="type"
-        :label="label"
-        :icon="loading ? undefined : icon"
-        :icon-pos="iconPos"
-        :loading="loading"
-        :disabled="disabled || loading"
-    />
+    <div v-show="visible" class="form-submit-wrap">
+        <Button
+            class="form-submit-btn"
+            :type="type"
+            :label="label"
+            :icon="loading ? undefined : icon"
+            :icon-pos="iconPos"
+            :loading="loading"
+            :disabled="disabled || loading"
+        />
+    </div>
 </template>
 
 <style scoped>
+.form-submit-wrap {
+    display: contents;
+}
 /* Login submit gradient (cyan → blue) + hover lift — no shine sweep (::before). */
 .form-submit-btn {
     padding: var(--space-4) var(--space-8);
