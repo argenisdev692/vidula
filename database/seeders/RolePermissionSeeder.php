@@ -47,6 +47,20 @@ class RolePermissionSeeder extends Seeder
             }
         }
 
+        // Read-only modules (immutable audit trail): only browse / view / export.
+        // No create/update/delete — the activity log is trimmed by cron, not the UI.
+        $readOnlyModules = ['ACTIVITY_LOGS'];
+        $readOnlyActions = ['VIEW_ANY', 'VIEW', 'EXPORT'];
+
+        foreach ($readOnlyModules as $module) {
+            foreach ($readOnlyActions as $action) {
+                Permission::firstOrCreate([
+                    'name' => "{$action}_{$module}",
+                    'guard_name' => 'web',
+                ]);
+            }
+        }
+
         // SUPER_ADMIN holds every permission.
         $superAdmin = Role::query()
             ->where('name', 'SUPER_ADMIN')

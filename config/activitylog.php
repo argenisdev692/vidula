@@ -12,10 +12,12 @@ return [
     'enabled' => env('ACTIVITYLOG_ENABLED', true),
 
     /*
-     * When the clean command is executed, all recording activities older than
-     * the number of days specified here will be deleted.
+     * Hot-window retention (days). This project does NOT schedule Spatie's
+     * `activitylog:clean`; retention is handled by `activity-log:archive`, which
+     * archives rows past this window to R2 (cold storage) BEFORE purging them.
+     * Kept in sync with that command's default --days so both agree on 90 days.
      */
-    'clean_after_days' => 365,
+    'clean_after_days' => 90,
 
     /*
      * If no log name is passed to the activity() helper

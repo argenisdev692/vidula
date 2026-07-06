@@ -4,6 +4,7 @@ use App\Providers\AppServiceProvider;
 use App\Providers\FortifyServiceProvider;
 use App\Providers\HorizonServiceProvider;
 use App\Providers\TelescopeServiceProvider;
+use Modules\ActivityLog\Providers\ActivityLogServiceProvider;
 use Modules\Auth\Providers\AuthServiceProvider;
 use Modules\Company\Providers\CompanyServiceProvider;
 use Modules\Users\Providers\UsersServiceProvider;
@@ -18,4 +19,5 @@ return [
     AuthServiceProvider::class,
     UsersServiceProvider::class,
     CompanyServiceProvider::class,
+    ActivityLogServiceProvider::class,
 ];

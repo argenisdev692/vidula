@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Database\Factories\UserFactory;
+use Illuminate\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -24,10 +25,113 @@ use Spatie\Activitylog\Support\LogOptions;
 use Spatie\OneTimePasswords\Models\Concerns\HasOneTimePasswords;
 use Spatie\Permission\Traits\HasRoles;
 
+/**
+ * @property int $id
+ * @property string $uuid
+ * @property string $first_name
+ * @property string|null $last_name
+ * @property string|null $username
+ * @property string $email
+ * @property \Illuminate\Support\Carbon|null $email_verified_at
+ * @property string|null $password
+ * @property string|null $phone
+ * @property string|null $date_of_birth
+ * @property string|null $address
+ * @property string|null $address_2
+ * @property string|null $zip_code
+ * @property string|null $city
+ * @property string|null $state
+ * @property string|null $country
+ * @property float|null $latitude
+ * @property float|null $longitude
+ * @property string|null $gender
+ * @property string|null $profile_photo_path
+ * @property bool $terms_and_conditions
+ * @property string|null $remember_token
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property \Illuminate\Support\Carbon|null $password_changed_at
+ * @property bool $must_change_password
+ * @property \Illuminate\Support\Carbon|null $invited_at
+ * @property string|null $invited_by
+ * @property string|null $two_factor_secret
+ * @property string|null $two_factor_recovery_codes
+ * @property string|null $two_factor_confirmed_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \Spatie\Activitylog\Models\Activity> $activitiesAsSubject
+ * @property-read int|null $activities_as_subject_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\CompanyData> $companyData
+ * @property-read int|null $company_data_count
+ * @property-read \Illuminate\Notifications\DatabaseNotificationCollection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
+ * @property-read int|null $notifications_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \Spatie\OneTimePasswords\Models\OneTimePassword> $oneTimePasswords
+ * @property-read int|null $one_time_passwords_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, PasswordHistoryEloquentModel> $passwordHistories
+ * @property-read int|null $password_histories_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \Spatie\Permission\Models\Permission> $permissions
+ * @property-read int|null $permissions_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \Spatie\Permission\Models\Role> $roles
+ * @property-read int|null $roles_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, LinkedSocialAccountEloquentModel> $socialAccounts
+ * @property-read int|null $social_accounts_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \Spatie\Permission\Models\Permission> $teams
+ * @property-read int|null $teams_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \Laravel\Sanctum\PersonalAccessToken> $tokens
+ * @property-read int|null $tokens_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, TrustedDeviceEloquentModel> $trustedDevices
+ * @property-read int|null $trusted_devices_count
+ * @method static Builder<static>|User applyFilters(\Modules\Users\Application\DTOs\UserFilterData $filters)
+ * @method static \Database\Factories\UserFactory factory($count = null, $state = [])
+ * @method static Builder<static>|User newModelQuery()
+ * @method static Builder<static>|User newQuery()
+ * @method static Builder<static>|User onlyTrashed()
+ * @method static Builder<static>|User permission($permissions, bool $without = false)
+ * @method static Builder<static>|User query()
+ * @method static Builder<static>|User role($roles, ?string $guard = null, bool $without = false)
+ * @method static Builder<static>|User team($teams, bool $without = false)
+ * @method static Builder<static>|User whereAddress($value)
+ * @method static Builder<static>|User whereAddress2($value)
+ * @method static Builder<static>|User whereCity($value)
+ * @method static Builder<static>|User whereCountry($value)
+ * @method static Builder<static>|User whereCreatedAt($value)
+ * @method static Builder<static>|User whereDateOfBirth($value)
+ * @method static Builder<static>|User whereDeletedAt($value)
+ * @method static Builder<static>|User whereEmail($value)
+ * @method static Builder<static>|User whereEmailVerifiedAt($value)
+ * @method static Builder<static>|User whereFirstName($value)
+ * @method static Builder<static>|User whereGender($value)
+ * @method static Builder<static>|User whereId($value)
+ * @method static Builder<static>|User whereInvitedAt($value)
+ * @method static Builder<static>|User whereInvitedBy($value)
+ * @method static Builder<static>|User whereLastName($value)
+ * @method static Builder<static>|User whereLatitude($value)
+ * @method static Builder<static>|User whereLongitude($value)
+ * @method static Builder<static>|User whereMustChangePassword($value)
+ * @method static Builder<static>|User wherePassword($value)
+ * @method static Builder<static>|User wherePasswordChangedAt($value)
+ * @method static Builder<static>|User wherePhone($value)
+ * @method static Builder<static>|User whereProfilePhotoPath($value)
+ * @method static Builder<static>|User whereRememberToken($value)
+ * @method static Builder<static>|User whereState($value)
+ * @method static Builder<static>|User whereTermsAndConditions($value)
+ * @method static Builder<static>|User whereTwoFactorConfirmedAt($value)
+ * @method static Builder<static>|User whereTwoFactorRecoveryCodes($value)
+ * @method static Builder<static>|User whereTwoFactorSecret($value)
+ * @method static Builder<static>|User whereUpdatedAt($value)
+ * @method static Builder<static>|User whereUsername($value)
+ * @method static Builder<static>|User whereUuid($value)
+ * @method static Builder<static>|User whereZipCode($value)
+ * @method static Builder<static>|User withTrashed(bool $withTrashed = true)
+ * @method static Builder<static>|User withoutPermission($permissions)
+ * @method static Builder<static>|User withoutRole($roles, ?string $guard = null)
+ * @method static Builder<static>|User withoutTeam($teams)
+ * @method static Builder<static>|User withoutTrashed()
+ * @mixin \Eloquent
+ */
 class User extends Authenticatable implements MustVerifyEmailContract
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, HasOneTimePasswords, HasRoles, HasUuids, LogsActivity, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
+    use HasApiTokens, HasFactory, HasOneTimePasswords, HasRoles, HasUuids, LogsActivity, MustVerifyEmail, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
 
     /**
      * The attributes that are mass assignable.

@@ -12,6 +12,66 @@ use Shared\Infrastructure\Company\CompanyProfile;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
+/**
+ * @property int $id
+ * @property string $uuid
+ * @property string|null $name
+ * @property string $company_name
+ * @property string|null $signature_path
+ * @property string|null $email
+ * @property string|null $phone
+ * @property string|null $address
+ * @property string|null $address_2
+ * @property string|null $website
+ * @property string|null $facebook_link
+ * @property string|null $instagram_link
+ * @property string|null $linkedin_link
+ * @property string|null $twitter_link
+ * @property string|null $tiktok_link
+ * @property string|null $logo_path
+ * @property string|null $logo_white_path
+ * @property string|null $mark_path
+ * @property int $user_id
+ * @property float|null $latitude
+ * @property float|null $longitude
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \Spatie\Activitylog\Models\Activity> $activitiesAsSubject
+ * @property-read int|null $activities_as_subject_count
+ * @property-read \App\Models\User|null $user
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData onlyTrashed()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereAddress($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereAddress2($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereCompanyName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereDeletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereEmail($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereFacebookLink($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereInstagramLink($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereLatitude($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereLinkedinLink($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereLogoPath($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereLogoWhitePath($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereLongitude($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereMarkPath($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData wherePhone($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereSignaturePath($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereTiktokLink($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereTwitterLink($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereUserId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereUuid($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereWebsite($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData withTrashed(bool $withTrashed = true)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData withoutTrashed()
+ * @mixin \Eloquent
+ */
 class CompanyData extends Model
 {
     use LogsActivity, SoftDeletes;
