@@ -150,6 +150,7 @@ function subjectLabel(row: ActivityLog): string {
 
             <p class="counter">{{ recordLabel }}</p>
 
+            <div class="crud-table-wrap">
             <DataTable
                 :value="props.logs.data"
                 data-key="id"
@@ -210,20 +211,23 @@ function subjectLabel(row: ActivityLog): string {
 
                 <Column header="Actions" :pt="{ bodyCell: 'w-24' }">
                     <template #body="{ data }">
-                        <PermissionGuard permission="VIEW_ACTIVITY_LOGS">
-                            <Link
-                                :href="`/activity-logs/${(data as ActivityLog).id}`"
-                                class="action-btn"
-                                aria-label="View activity detail"
-                                title="View detail"
-                                v-tooltip.top="'View detail'"
-                            >
-                                <i class="pi pi-eye" aria-hidden="true" />
-                            </Link>
-                        </PermissionGuard>
+                        <div class="actions-cell">
+                            <PermissionGuard permission="VIEW_ACTIVITY_LOGS">
+                                <Link
+                                    :href="`/activity-logs/${(data as ActivityLog).id}`"
+                                    class="btn-crud-action btn-crud-action-view"
+                                    aria-label="View activity detail"
+                                    title="View detail"
+                                    v-tooltip.top="'View detail'"
+                                >
+                                    <i class="pi pi-eye" aria-hidden="true" />
+                                </Link>
+                            </PermissionGuard>
+                        </div>
                     </template>
                 </Column>
             </DataTable>
+            </div>
         </div>
     </PermissionGuard>
 </template>
@@ -263,25 +267,119 @@ function subjectLabel(row: ActivityLog): string {
     font-size: var(--text-sm);
 }
 
-.action-btn {
+/* ── Minimalist transparent CRUD table (matches the GUIDE crud-table) ────────
+ * The Volt DataTable paints header/rows/cells with `bg-surface-*`. These scoped
+ * deep overrides strip that background down to a borderless, transparent grid:
+ * small uppercase centred headers, subtle row separators, gentle hover. Scoped
+ * to this page — other tables keep the default Volt surface look.
+ */
+.crud-table-wrap :deep(table) {
+    background: transparent;
+}
+
+.crud-table-wrap :deep(thead th) {
+    background: transparent;
+    border-bottom: 1px solid var(--border-default);
+    color: var(--text-secondary);
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: center;
+}
+
+.crud-table-wrap :deep(thead th > div) {
+    justify-content: center;
+}
+
+.crud-table-wrap :deep(tbody tr) {
+    background: transparent;
+    transition: background var(--transition);
+}
+
+.crud-table-wrap :deep(tbody tr:hover) {
+    background: color-mix(in srgb, var(--bg-overlay) 40%, transparent);
+}
+
+.crud-table-wrap :deep(tbody td) {
+    background: transparent;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Neutralise the paginator surface strip so it blends into the page. */
+.crud-table-wrap :deep([data-pc-name='paginator']),
+.crud-table-wrap :deep([data-pc-name='pcpaginator']) {
+    background: transparent;
+}
+
+/* ── Action icons (GUIDE btn-crud-action: bordered colour pill + glow) ─────── */
+.actions-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    white-space: nowrap;
+}
+
+.btn-crud-action {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: var(--radius-md);
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+    background: color-mix(in srgb, var(--bg-elevated) 50%, transparent);
     color: var(--text-secondary);
-    transition: background var(--transition), color var(--transition);
+    cursor: pointer;
+    transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+    overflow: hidden;
 }
 
-.action-btn:hover {
-    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
-    color: var(--accent-primary);
+.btn-crud-action::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: currentColor;
+    opacity: 0;
+    border-radius: inherit;
+    transition: opacity var(--transition);
 }
 
-.action-btn:focus-visible {
-    outline: 2px solid var(--accent-primary);
+.btn-crud-action:hover {
+    transform: scale(1.15);
+    border-color: currentColor;
+}
+
+.btn-crud-action:hover::after {
+    opacity: 0.1;
+}
+
+.btn-crud-action:active {
+    transform: scale(0.95);
+}
+
+.btn-crud-action:focus-visible {
+    outline: 2px solid currentColor;
     outline-offset: 2px;
+}
+
+.btn-crud-action .pi {
+    position: relative;
+    z-index: 1;
+    font-size: 0.8rem;
+}
+
+.btn-crud-action-view {
+    color: var(--accent-info);
+}
+
+.btn-crud-action-view:hover {
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-info) 30%, transparent);
 }
 
 .table-empty,
