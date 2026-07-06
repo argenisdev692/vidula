@@ -48,6 +48,7 @@ class HandleInertiaRequests extends Middleware
             'company' => $this->companyBranding(),
             'config' => [
                 'google_maps_api_key' => (string) config('services.googlemaps.key'),
+                'app_title_description' => (string) config('app.title_description'),
             ],
         ];
     }

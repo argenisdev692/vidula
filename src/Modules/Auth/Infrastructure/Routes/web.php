@@ -76,6 +76,10 @@ Route::middleware(['web', 'auth'])->group(function (): void {
     // the password by PUT /user/password.
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
 
+    // Realtime username/email availability check for the profile form.
+    Route::get('/profile/availability', [ProfileController::class, 'availability'])
+        ->middleware('throttle:60,1')->name('profile.availability');
+
     // Self-service profile photo (stored on Cloudflare R2, private + signed URL).
     Route::post('/profile/photo', [ProfilePhotoController::class, 'update'])
         ->middleware('throttle:10,1')->name('profile.photo.update');

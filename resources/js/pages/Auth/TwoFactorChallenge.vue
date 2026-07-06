@@ -6,11 +6,15 @@
  * shell), mirroring the Login page.
  */
 import { Head, router } from '@inertiajs/vue3';
+import CursorOrb from '@/modules/app/components/CursorOrb.vue';
 import { computed, ref } from 'vue';
 import { useCompany } from '@/modules/app/composables/useCompany';
 import { apiFetch } from '@/lib/http';
 
 const company = useCompany();
+
+// Guest <title> = page name + DB company name.
+const documentTitle = computed<string>(() => `Two-factor authentication — ${company.value.name}`);
 
 const useRecovery = ref<boolean>(false);
 const code = ref<string>('');
@@ -64,7 +68,9 @@ function submit(): void {
 </script>
 
 <template>
-  <Head title="Two-factor authentication" />
+  <Head :title="documentTitle" />
+
+  <CursorOrb />
 
   <div class="tfc">
     <section class="tfc__card">

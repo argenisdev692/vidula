@@ -17,7 +17,9 @@
  * from the reusable common/form kit + common/media/ImageCropper.
  */
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { useDebounceFn } from '@vueuse/core';
+import { useQueryCache } from '@pinia/colada';
 import { useToast } from 'primevue/usetoast';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import AppHeader from '@/modules/app/components/AppHeader.vue';
@@ -57,6 +59,7 @@ const props = defineProps<{
 }>();
 
 const toast = useToast();
+const queryCache = useQueryCache();
 
 const editing = ref<boolean>(false);
 const today = new Date().toISOString().slice(0, 10);
@@ -137,7 +140,97 @@ const form = useForm<ProfileFormValues>({
     longitude: props.profile.longitude,
 });
 
-const canSubmitProfile = computed<boolean>(() => profileFormSchema.safeParse(form.data()).success);
+/* ── Realtime username / email availability ───────────────────────────── */
+type AvailabilityStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid';
+
+const usernameStatus = ref<AvailabilityStatus>('idle');
+const emailStatus = ref<AvailabilityStatus>('idle');
+
+async function checkAvailability(field: 'username' | 'email', value: string): Promise<AvailabilityStatus> {
+    const params = new URLSearchParams({ field, value });
+    try {
+        const result = await apiFetch<{ available: boolean }>('GET', `/profile/availability?${params.toString()}`);
+        return result.available ? 'available' : 'taken';
+    } catch {
+        // Network/rate-limit hiccup — don't block the form on a failed check.
+        return 'idle';
+    }
+}
+
+const runUsernameCheck = useDebounceFn(async () => {
+    const value = form.username.trim();
+    // Empty or unchanged from the stored value → nothing to validate.
+    if (!value || value === (props.profile.username ?? '')) {
+        usernameStatus.value = 'idle';
+        return;
+    }
+    if (value.length > 15) {
+        usernameStatus.value = 'invalid';
+        return;
+    }
+    usernameStatus.value = 'checking';
+    usernameStatus.value = await checkAvailability('username', value);
+}, 400);
+
+const runEmailCheck = useDebounceFn(async () => {
+    const value = form.email.trim();
+    if (!value || value === props.profile.email) {
+        emailStatus.value = 'idle';
+        return;
+    }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) {
+        emailStatus.value = 'invalid';
+        return;
+    }
+    emailStatus.value = 'checking';
+    emailStatus.value = await checkAvailability('email', value);
+}, 400);
+
+watch(() => form.username, () => runUsernameCheck());
+watch(() => form.email, () => runEmailCheck());
+
+const usernameHint = computed<string | undefined>(() => {
+    if (usernameStatus.value === 'checking') {
+        return 'Checking availability…';
+    }
+    return usernameStatus.value === 'available' ? '✓ Username is available' : undefined;
+});
+
+const usernameError = computed<string | undefined>(() => {
+    if (form.errors.username) {
+        return form.errors.username;
+    }
+    if (usernameStatus.value === 'taken') {
+        return 'This username is already taken';
+    }
+    return usernameStatus.value === 'invalid' ? 'Username must be 15 characters or fewer' : undefined;
+});
+
+const emailHint = computed<string | undefined>(() => {
+    if (emailStatus.value === 'checking') {
+        return 'Checking availability…';
+    }
+    return emailStatus.value === 'available' ? '✓ Email is available' : undefined;
+});
+
+const emailError = computed<string | undefined>(() => {
+    if (form.errors.email) {
+        return form.errors.email;
+    }
+    if (emailStatus.value === 'taken') {
+        return 'This email is already registered';
+    }
+    return emailStatus.value === 'invalid' ? 'Enter a valid email address' : undefined;
+});
+
+const canSubmitProfile = computed<boolean>(
+    () =>
+        profileFormSchema.safeParse(form.data()).success &&
+        usernameStatus.value !== 'taken' &&
+        usernameStatus.value !== 'invalid' &&
+        emailStatus.value !== 'taken' &&
+        emailStatus.value !== 'invalid',
+);
 
 /* Bridges between the flat Fortify form and the reusable field components. */
 const page = usePage<SharedProps>();
@@ -464,17 +557,18 @@ function closeSetup(): void {
 }
 
 /* ── Active sessions ──────────────────────────────────────────────────── */
-const hasOtherSessions = computed<boolean>(() => props.sessions.some((session) => !session.is_current));
-
 function revokeSession(id: string): void {
     router.delete(`/sessions/${id}`, { preserveScroll: true });
 }
 
-function logoutOtherDevices(): void {
-    router.delete('/sessions/others', {
-        preserveScroll: true,
-        onSuccess: () => toast.add({ severity: 'success', summary: 'Signed out of other devices', life: 4000 }),
-    });
+/** Sign out the current device — revoking its own session logs the user out. */
+function signOutCurrent(): void {
+    router.post('/logout', {}, { onFinish: () => void queryCache.invalidateQueries() });
+}
+
+/** Sign out of every device, including this one, then land on the sign-in page. */
+function logoutAllDevices(): void {
+    router.delete('/sessions/all', { onFinish: () => void queryCache.invalidateQueries() });
 }
 
 /* ── Trusted devices ──────────────────────────────────────────────────── */
@@ -558,7 +652,9 @@ function revokeTrustedDevice(uuid: string): void {
                         name="username"
                         label="Username"
                         autocomplete="username"
-                        :error="form.errors.username"
+                        :maxlength="15"
+                        :error="usernameError"
+                        :hint="usernameHint"
                     />
                     <TextField
                         v-model="form.email"
@@ -567,15 +663,18 @@ function revokeTrustedDevice(uuid: string): void {
                         label="Email"
                         required
                         autocomplete="email"
-                        :error="form.errors.email"
+                        :error="emailError"
+                        :hint="emailHint"
                     />
-                    <PhoneField
-                        v-model="phoneModel"
-                        name="phone"
-                        label="Phone"
-                        default-country="US"
-                        :error="form.errors.phone"
-                    />
+                    <div class="form-grid__full">
+                        <PhoneField
+                            v-model="phoneModel"
+                            name="phone"
+                            label="Phone"
+                            default-country="US"
+                            :error="form.errors.phone"
+                        />
+                    </div>
                     <DateField
                         v-model="form.date_of_birth"
                         name="date_of_birth"
@@ -790,8 +889,8 @@ function revokeTrustedDevice(uuid: string): void {
                     <button
                         type="button"
                         class="link-danger"
-                        :disabled="!hasOtherSessions"
-                        @click="logoutOtherDevices"
+                        :disabled="!sessions.length"
+                        @click="logoutAllDevices"
                     >
                         <i class="pi pi-sign-out" aria-hidden="true" />
                         Logout All
@@ -814,12 +913,11 @@ function revokeTrustedDevice(uuid: string): void {
                             </span>
                         </div>
                         <button
-                            v-if="!session.is_current"
                             type="button"
                             class="icon-btn"
                             title="Sign out this device"
                             aria-label="Sign out this device"
-                            @click="revokeSession(session.id)"
+                            @click="session.is_current ? signOutCurrent() : revokeSession(session.id)"
                         >
                             <i class="pi pi-trash" aria-hidden="true" />
                         </button>
@@ -878,6 +976,13 @@ function revokeTrustedDevice(uuid: string): void {
             <div class="perm-count">
                 <i class="pi pi-check-circle" aria-hidden="true" />
                 <span>{{ profile.permissions.length }} effective permissions</span>
+            </div>
+            <div class="perms">
+                <span v-for="permission in profile.permissions" :key="permission" class="perm-chip">
+                    <i class="pi pi-check" aria-hidden="true" />
+                    {{ permission }}
+                </span>
+                <p v-if="!profile.permissions.length" class="muted">No permissions assigned.</p>
             </div>
         </section>
     </div>
@@ -1447,6 +1552,32 @@ function revokeTrustedDevice(uuid: string): void {
     gap: var(--space-2);
     color: var(--accent-success);
     font-size: var(--text-sm);
+}
+
+.perms {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.perm-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--accent-success) 12%, transparent);
+    color: var(--accent-success);
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+    font-family: var(--font-mono);
+}
+
+.perm-chip .pi {
+    font-size: var(--text-xs);
 }
 
 .muted {

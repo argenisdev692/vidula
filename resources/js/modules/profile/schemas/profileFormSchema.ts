@@ -12,7 +12,7 @@ import { z } from 'zod';
 export const profileFormSchema = z.object({
     first_name: z.string().trim().min(1, 'First name is required').max(255),
     last_name: z.string().trim().max(255),
-    username: z.string().trim().max(255),
+    username: z.string().trim().max(15, 'Username must be 15 characters or fewer'),
     email: z.string().trim().min(1, 'Email is required').email('Enter a valid email address').max(255),
     // Stored as E.164 by PhoneField; validate the value is a real phone number
     // (empty is allowed — the page maps blank to null before submitting).

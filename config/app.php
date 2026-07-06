@@ -17,6 +17,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Brand Tagline
+    |--------------------------------------------------------------------------
+    |
+    | Descriptive suffix used in the guest (hero) document <title>, composed as
+    | "{company_name} — {title_description}". The brand name itself comes from
+    | the DB (company_data via CompanyProfile); only this tagline is env-driven.
+    |
+    */
+
+    'title_description' => env('APP_NAME_DESCRIPTION_TITLE', 'AI-Powered Workspace for Creators and Educators'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |

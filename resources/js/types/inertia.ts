@@ -39,6 +39,8 @@ export interface CompanyBranding {
 export interface ConfigProps {
     /** Public, referrer-restricted Google Maps JS key for address autocomplete. */
     google_maps_api_key: string;
+    /** Brand tagline (env APP_NAME_DESCRIPTION_TITLE) for the guest hero <title>. */
+    app_title_description: string;
 }
 
 export interface SharedProps {

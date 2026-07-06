@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { Head, router, usePage } from '@inertiajs/vue3';
+import CursorOrb from '@/modules/app/components/CursorOrb.vue';
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue';
 import { useCompany } from '@/modules/app/composables/useCompany';
 import { apiFetch } from '@/lib/http';
+import type { SharedProps } from '@/types/inertia';
 
 /**
  * Login — minimal-login-hero template (ported from the GUIDE Angular component)
@@ -35,8 +37,13 @@ const props = withDefaults(
   },
 );
 
-const page = usePage();
+const page = usePage<SharedProps>();
 const company = useCompany();
+
+// Guest hero <title> = DB brand name + env tagline (config.app_title_description).
+const documentTitle = computed<string>(
+    () => `${company.value.name} — ${page.props.config.app_title_description}`,
+);
 
 // ── Tab state ──
 const authMethod = ref<AuthMethod>('password');
@@ -394,7 +401,9 @@ watch(
 </script>
 
 <template>
-  <Head title="Sign In" />
+  <Head :title="documentTitle" />
+
+  <CursorOrb />
 
   <div class="auth-hero">
     <div class="hero-bg" aria-hidden="true"></div>

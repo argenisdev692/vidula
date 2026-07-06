@@ -28,6 +28,11 @@
             })();
         </script>
 
+        {{-- Default document title (DB brand + env tagline), supplied by the
+             `app` view composer in AppServiceProvider. The `inertia` attribute
+             lets Inertia's Head manager replace it per page after hydration. --}}
+        <title inertia>{{ $documentTitle }}</title>
+
         @vite(['resources/css/app.css', 'resources/js/app.ts'])
         @inertiaHead
     </head>

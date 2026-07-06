@@ -72,6 +72,15 @@ final class CompanyProfile
     }
 
     /**
+     * Default document `<title>` for the guest/hero pages: the DB brand name
+     * joined with the env-driven tagline (`config('app.title_description')`).
+     */
+    public static function documentTitle(): string
+    {
+        return self::data()['name'].' — '.(string) config('app.title_description');
+    }
+
+    /**
      * Resolve a stored logo reference to an absolute URL: an R2 object key →
      * permanent public URL; otherwise the bundled asset served from APP_URL.
      */

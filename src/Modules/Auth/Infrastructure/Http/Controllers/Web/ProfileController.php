@@ -6,6 +6,7 @@ namespace Modules\Auth\Infrastructure\Http\Controllers\Web;
 
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -48,6 +49,40 @@ final readonly class ProfileController
                 ->orderByDesc('last_used_at')
                 ->get(['uuid', 'user_agent', 'ip_address', 'last_used_at', 'expires_at']),
         ]);
+    }
+
+    /**
+     * Realtime uniqueness check for the profile form's `username` / `email`
+     * fields. Only these two allowlisted columns can be queried, the current
+     * user is always excluded (so an unchanged value reads as available), and
+     * malformed values short-circuit to unavailable. Rate-limited at the route.
+     */
+    public function availability(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'field' => ['required', 'string', 'in:username,email'],
+            'value' => ['required', 'string', 'max:255'],
+        ]);
+
+        /** @var User $user */
+        $user = $request->user();
+        $field = $validated['field'];
+        $value = $validated['value'];
+
+        if ($field === 'email' && filter_var($value, FILTER_VALIDATE_EMAIL) === false) {
+            return response()->json(['available' => false]);
+        }
+
+        if ($field === 'username' && mb_strlen($value) > 15) {
+            return response()->json(['available' => false]);
+        }
+
+        $taken = User::query()
+            ->where($field, $value)
+            ->whereKeyNot($user->getKey())
+            ->exists();
+
+        return response()->json(['available' => ! $taken]);
     }
 
     /**

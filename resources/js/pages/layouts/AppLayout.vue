@@ -8,6 +8,7 @@
 import Toast from '@/volt/Toast.vue';
 import AppSidebar from '@/modules/app/components/AppSidebar.vue';
 import GradientBackground from '@/modules/app/components/GradientBackground.vue';
+import CursorOrb from '@/modules/app/components/CursorOrb.vue';
 import FloatingMenuButton from '@/modules/app/components/FloatingMenuButton.vue';
 import SessionTimeoutModal from '@/modules/app/components/SessionTimeoutModal.vue';
 import { useThemeStore } from '@/modules/app/stores/useThemeStore';
@@ -67,6 +68,7 @@ onUnmounted((): void => {
 <template>
     <div class="app-shell">
         <GradientBackground />
+        <CursorOrb />
         <AppSidebar />
 
         <main class="app-main">

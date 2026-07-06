@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
+import CursorOrb from '@/modules/app/components/CursorOrb.vue';
 import { computed, onMounted, ref, useTemplateRef } from 'vue';
 import { useCompany } from '@/modules/app/composables/useCompany';
 
@@ -20,6 +21,9 @@ withDefaults(
 );
 
 const company = useCompany();
+
+// Guest <title> = page name + DB company name.
+const documentTitle = computed<string>(() => `Forgot password — ${company.value.name}`);
 
 const email = ref('');
 const isLoading = ref(false);
@@ -75,7 +79,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <Head title="Forgot password" />
+  <Head :title="documentTitle" />
+
+  <CursorOrb />
 
   <div class="auth-hero">
     <div class="hero-bg" aria-hidden="true"></div>

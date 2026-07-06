@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
+import CursorOrb from '@/modules/app/components/CursorOrb.vue';
 import { computed, onMounted, ref, useTemplateRef } from 'vue';
 import { useCompany } from '@/modules/app/composables/useCompany';
 
@@ -12,6 +13,9 @@ import { useCompany } from '@/modules/app/composables/useCompany';
  */
 
 const company = useCompany();
+
+// Guest <title> = page name + DB company name.
+const documentTitle = computed<string>(() => `Create account — ${company.value.name}`);
 
 const firstName = ref('');
 const lastName = ref('');
@@ -102,7 +106,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <Head title="Create account" />
+  <Head :title="documentTitle" />
+
+  <CursorOrb />
 
   <div class="auth-hero">
     <div class="hero-bg" aria-hidden="true"></div>

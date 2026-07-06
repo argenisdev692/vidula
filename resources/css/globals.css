@@ -103,6 +103,12 @@
     --on-accent: #ffffff;
     --text-on-accent: #ffffff;
 
+    /* signature capture — theme-INDEPENDENT on purpose: the pad is always a
+       light "paper" with dark ink so the exported PNG stays legible on white
+       documents/emails in both light and dark mode (NOT overridden under .dark). */
+    --signature-surface: #ffffff;
+    --signature-ink: #1a1a2e;
+
     /* form tokens */
     --input-bg: var(--bg-card);
     --input-border: var(--border-default);
@@ -266,4 +272,39 @@ html {
 
 ::-webkit-scrollbar-thumb:hover {
     background-color: color-mix(in srgb, var(--accent-secondary) 70%, var(--accent-primary));
+}
+
+/* ── Cursor orb — soft accent glow trailing the pointer (ported from the GUIDE
+   app root). CursorOrb.vue positions it on pointermove and adds `--active`
+   after the first move; it starts hidden (and is skipped on coarse/touch
+   pointers + reduced motion) so it never flashes at the 0,0 corner. ── */
+.cursor-orb {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle,
+        color-mix(in srgb, var(--accent-primary) 18%, transparent) 0%,
+        transparent 70%
+    );
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    z-index: 3;
+    filter: blur(2px);
+    opacity: 0;
+    transition: left 0.12s ease-out, top 0.12s ease-out, opacity 0.3s ease;
+    will-change: left, top;
+}
+
+.cursor-orb--active {
+    opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cursor-orb {
+        display: none;
+    }
 }
