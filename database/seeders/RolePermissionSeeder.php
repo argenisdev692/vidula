@@ -61,6 +61,15 @@ class RolePermissionSeeder extends Seeder
             }
         }
 
+        // Backups panel (spatie/laravel-backup): list, download an archive, run a
+        // backup on demand, delete an archive. No update — a backup is immutable.
+        foreach (['VIEW_ANY', 'DOWNLOAD', 'CREATE', 'DELETE'] as $action) {
+            Permission::firstOrCreate([
+                'name' => "{$action}_BACKUPS",
+                'guard_name' => 'web',
+            ]);
+        }
+
         // SUPER_ADMIN holds every permission.
         $superAdmin = Role::query()
             ->where('name', 'SUPER_ADMIN')

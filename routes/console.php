@@ -16,3 +16,9 @@ Schedule::command('model:prune', ['--model' => [OneTimePassword::class]])->daily
 // then purge them from the database. Runs off-peak so large trims don't compete
 // with request traffic.
 Schedule::command('activity-log:archive')->dailyAt('02:30')->onOneServer();
+
+// Database/app backups (spatie/laravel-backup). Clean first (prune old archives),
+// then create the fresh backup, then verify destination health.
+Schedule::command('backup:clean')->daily()->at('01:00')->onOneServer();
+Schedule::command('backup:run')->daily()->at('02:00')->onOneServer();
+Schedule::command('backup:monitor')->daily()->at('03:00')->onOneServer();

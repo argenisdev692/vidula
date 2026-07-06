@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 use Modules\Auth\Infrastructure\Http\Middleware\EnsurePasswordNotExpired;
 use Modules\Auth\Infrastructure\Http\Middleware\EnsureTwoFactorEnabled;
 use Shared\Infrastructure\Http\Middleware\SecurityHeaders;
+use Spatie\Permission\Middleware\PermissionMiddleware;
+use Spatie\Permission\Middleware\RoleMiddleware;
+use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -25,6 +28,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'two-factor.enforce' => EnsureTwoFactorEnabled::class,
             'password.not-expired' => EnsurePasswordNotExpired::class,
+            // spatie/laravel-permission aliases are NOT auto-registered in
+            // Laravel 11+ (no Http/Kernel). Every `permission:*` / `role:*`
+            // route guard depends on these.
+            'role' => RoleMiddleware::class,
+            'permission' => PermissionMiddleware::class,
+            'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
 
         // SecurityHeaders runs BEFORE Inertia so its headers + CSP nonce

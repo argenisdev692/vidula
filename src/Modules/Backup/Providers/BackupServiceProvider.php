@@ -2,21 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Modules\ActivityLog\Providers;
+namespace Modules\Backup\Providers;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
-use Modules\ActivityLog\Infrastructure\Console\Commands\ArchiveActivityLogsCommand;
 
-final class ActivityLogServiceProvider extends ServiceProvider
+final class BackupServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
         Route::middleware('web')->group(__DIR__.'/../Infrastructure/Routes/web.php');
         Route::middleware('api')->prefix('api')->group(__DIR__.'/../Infrastructure/Routes/api.php');
-
-        if ($this->app->runningInConsole()) {
-            $this->commands([ArchiveActivityLogsCommand::class]);
-        }
     }
 }
