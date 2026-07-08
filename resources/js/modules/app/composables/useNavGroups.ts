@@ -20,7 +20,7 @@ export interface NavItem {
 export function useNavGroups(): { navItems: ComputedRef<NavItem[]> } {
     const navItems = computed<NavItem[]>(() => [
         { icon: 'pi pi-home', label: 'Dashboard', href: '/dashboard' },
-        { icon: 'pi pi-users', label: 'Users', href: '/users', permission: 'VIEW_USER' },
+        { icon: 'pi pi-users', label: 'Users', href: '/users', permission: 'VIEW_ANY_USERS' },
         {
             icon: 'pi pi-inbox',
             label: 'Leads & Support',

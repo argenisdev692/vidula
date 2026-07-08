@@ -32,7 +32,7 @@ final class EloquentUserRepository implements UserRepositoryPort
         return User::query()
             ->when($filters->status === 'suspended', fn ($q) => $q->onlyTrashed())
             ->applyFilters($filters)
-            ->select(['id', 'uuid', 'first_name', 'last_name', 'username', 'email', 'phone', 'email_verified_at', 'password', 'must_change_password', 'created_at', 'deleted_at'])
+            ->select(['id', 'uuid', 'first_name', 'last_name', 'username', 'email', 'phone', 'address_2', 'email_verified_at', 'password', 'must_change_password', 'created_at', 'deleted_at'])
             ->orderByDesc('created_at')
             ->paginate($perPage)
             ->withQueryString();
