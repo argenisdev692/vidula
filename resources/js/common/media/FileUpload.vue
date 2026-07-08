@@ -21,13 +21,15 @@ const props = withDefaults(
         hint?: string;
         /** Server-side error passed down from the page. */
         error?: string;
+        /** Renders the required marker on the field label. */
+        required?: boolean;
         disabled?: boolean;
         /** URL of an already-stored file to preview when nothing is selected. */
         currentUrl?: string | null;
         /** Icon shown in the empty dropzone. */
         icon?: string;
     }>(),
-    { accept: '', maxSizeMb: 2, disabled: false, currentUrl: null, icon: 'pi pi-cloud-upload' },
+    { accept: '', maxSizeMb: 2, required: false, disabled: false, currentUrl: null, icon: 'pi pi-cloud-upload' },
 );
 
 const emit = defineEmits<{ select: [file: File]; clear: [] }>();
@@ -153,7 +155,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <FormField :label="label" :error="displayError" :hint="hint">
+    <FormField :label="label" :required="required" :error="displayError" :hint="hint">
         <div
             class="fileup"
             :class="{

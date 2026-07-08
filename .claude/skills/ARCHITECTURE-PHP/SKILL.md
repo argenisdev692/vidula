@@ -621,6 +621,45 @@ These cross-cutting rules are defined ONCE in `BACKEND-PHP/SKILL.md` to avoid du
 
 ---
 
+## Identifiers & Relations — Project Conventions
+
+### UUIDv7 (time-ordered) — MANDATORY for every `uuid`
+
+- Every public identifier uses **UUID version 7**, never v4. v7 is time-ordered, so sequential inserts stay index-local on the `uuid` column (far less B-tree fragmentation than random v4) — better read/write locality at scale.
+- Generate with `Str::uuid7()` (Laravel) or `Ramsey\Uuid\Uuid::uuid7()->toString()` (when the module already uses the ramsey facade). NEVER `Str::uuid()`, `Str::orderedUuid()`, or `Uuid::uuid4()`.
+- Applies EVERYWHERE a uuid is minted — keep seeded, factory, and app-created rows uniform:
+  - Eloquent model `creating` hook: `$model->uuid = (string) Str::uuid7();`
+  - Factories: `'uuid' => (string) Str::uuid7()`
+  - Seeders: `'uuid' => Uuid::uuid7()->toString()`
+- **Trait-based models:** the framework `HasUuids` trait already returns `Str::uuid7()` in Laravel 13 (`newUniqueId()`), so plain `use HasUuids;` is correct and needs no override. NEVER use `HasVersion4Uuids` — it is the legacy v4 opt-in. A manual `creating` hook (as above) is only for models that do NOT use `HasUuids` (e.g. the `uuid` column is a plain string, not the model key).
+- Routes still bind with `->whereUuid('uuid')` — the constraint accepts any RFC-4122 UUID, v7 included.
+- Requires `ramsey/uuid ^4.7` (project ships 4.9+) and Laravel 11+ (`Str::uuid7()`). Both present in this stack.
+
+### Bidirectional Eloquent relations — MANDATORY when an FK exists
+
+When a model carries a foreign key (e.g. `user_id`), BOTH sides of the relationship MUST be declared — never only the `belongsTo`:
+
+- Child (owns the FK) → `belongsTo`, with generic PHPDoc:
+  ```php
+  /** @return BelongsTo<User, $this> */
+  public function user(): BelongsTo
+  {
+      return $this->belongsTo(User::class);
+  }
+  ```
+- Parent (`User` / owning aggregate) → inverse `hasMany` (or `hasOne`), with generic PHPDoc + the FK import placed in alphabetical order (Pint):
+  ```php
+  /** @return HasMany<BlogCategoryEloquentModel, $this> */
+  public function blogCategories(): HasMany
+  {
+      return $this->hasMany(BlogCategoryEloquentModel::class);
+  }
+  ```
+- Every Eloquent model documents itself with the standard generated block ending in `@mixin \Eloquent` (regenerate via `./vendor/bin/sail artisan ide-helper:models`) so `\Eloquent` and the dynamic query methods resolve — otherwise linters report **"undefined type 'Eloquent'"**. `\Eloquent` itself is declared in the git-ignored `_ide_helper.php` (`ide-helper:generate`).
+- **Auditors:** a one-directional FK relation (child `belongsTo` present, parent inverse missing — or vice-versa) is a **FAIL**.
+
+---
+
 ## Principles Compliance — Audit Reference
 
 This skill is designed to satisfy the following principles by construction. Auditors verifying a new module must be able to point to the concrete mechanism for each row.

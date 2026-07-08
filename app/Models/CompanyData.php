@@ -110,7 +110,7 @@ class CompanyData extends Model
     {
         static::creating(function (CompanyData $company): void {
             if (empty($company->uuid)) {
-                $company->uuid = (string) Str::uuid();
+                $company->uuid = (string) Str::uuid7();
             }
         });
 

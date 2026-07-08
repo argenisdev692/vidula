@@ -7,6 +7,7 @@ use App\Providers\TelescopeServiceProvider;
 use Modules\ActivityLog\Providers\ActivityLogServiceProvider;
 use Modules\Auth\Providers\AuthServiceProvider;
 use Modules\Backup\Providers\BackupServiceProvider;
+use Modules\Blog\Providers\BlogServiceProvider;
 use Modules\Company\Providers\CompanyServiceProvider;
 use Modules\Users\Providers\UsersServiceProvider;
 use Shared\Providers\SharedServiceProvider;
@@ -22,4 +23,5 @@ return [
     CompanyServiceProvider::class,
     ActivityLogServiceProvider::class,
     BackupServiceProvider::class,
+    BlogServiceProvider::class,
 ];

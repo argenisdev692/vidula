@@ -1,0 +1,23 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Blog\Application\Commands;
+
+use Modules\Blog\Domain\Ports\BlogCategoryRepositoryPort;
+use Shared\Application\DTOs\BulkUuidsData;
+
+/**
+ * Soft-deletes a set of blog categories by UUID. Authorization
+ * (permission:BULK_DELETE_BLOG_CATEGORIES) is enforced at the route — never
+ * inside this handler (no god-handler).
+ */
+final readonly class BulkDeleteBlogCategoriesHandler
+{
+    public function __construct(private BlogCategoryRepositoryPort $blogCategories) {}
+
+    public function handle(BulkUuidsData $data): int
+    {
+        return $this->blogCategories->bulkSoftDeleteByUuid($data->uuids);
+    }
+}

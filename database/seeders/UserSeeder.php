@@ -22,7 +22,7 @@ class UserSeeder extends Seeder
         $superAdmin = User::firstOrCreate(
             ['email' => 'argenis692@gmail.com'],
             [
-                'uuid' => (string) Str::uuid(),
+                'uuid' => (string) Str::uuid7(),
                 'first_name' => 'Argenis',
                 'last_name' => 'Gonzalez',
                 'username' => 'argenis692',
@@ -36,7 +36,7 @@ class UserSeeder extends Seeder
         $admin = User::firstOrCreate(
             ['email' => 'admin@vidula.com'],
             [
-                'uuid' => (string) Str::uuid(),
+                'uuid' => (string) Str::uuid7(),
                 'first_name' => 'Admin',
                 'last_name' => 'User',
                 'username' => 'admin_user',
@@ -50,7 +50,7 @@ class UserSeeder extends Seeder
         $standard = User::firstOrCreate(
             ['email' => 'user@vidula.com'],
             [
-                'uuid' => (string) Str::uuid(),
+                'uuid' => (string) Str::uuid7(),
                 'first_name' => 'Standard',
                 'last_name' => 'User',
                 'username' => 'standard_user',
@@ -64,7 +64,7 @@ class UserSeeder extends Seeder
         $guest = User::firstOrCreate(
             ['email' => 'guest@vidula.com'],
             [
-                'uuid' => (string) Str::uuid(),
+                'uuid' => (string) Str::uuid7(),
                 'first_name' => 'Guest',
                 'last_name' => 'User',
                 'username' => 'guest_user',

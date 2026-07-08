@@ -28,7 +28,7 @@ Route::middleware(['web', 'auth'])->prefix('users')->name('users.')->group(funct
         ->middleware('permission:VIEW_ANY_USERS')->name('index');
 
     Route::get('/export', UserExportController::class)
-        ->middleware('permission:VIEW_ANY_USERS')->name('export');
+        ->middleware('permission:EXPORT_USERS')->name('export');
 
     Route::post('/', [UserController::class, 'store'])
         ->middleware('permission:CREATE_USERS')->name('store');

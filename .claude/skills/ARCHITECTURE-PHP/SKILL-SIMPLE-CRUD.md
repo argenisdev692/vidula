@@ -357,6 +357,43 @@ Canonical responsibility set:
 
 ---
 
+## Identifiers & Relations — Project Conventions
+
+### UUIDv7 (time-ordered) — MANDATORY for every `uuid`
+
+- Every public identifier uses **UUID version 7**, never v4 — v7 is time-ordered, so sequential inserts stay index-local on the `uuid` column (much less B-tree fragmentation than random v4).
+- Generate with `Str::uuid7()` (Laravel) or `Ramsey\Uuid\Uuid::uuid7()->toString()`. NEVER `Str::uuid()`, `Str::orderedUuid()`, or `Uuid::uuid4()`. Keep seeded, factory, and app-created rows uniform:
+  - Model `creating` hook: `$model->uuid = (string) Str::uuid7();`
+  - Factory: `'uuid' => (string) Str::uuid7()`
+  - Seeder: `'uuid' => Uuid::uuid7()->toString()`
+- **Trait-based models:** the framework `HasUuids` trait already returns `Str::uuid7()` in Laravel 13, so plain `use HasUuids;` is correct. NEVER use `HasVersion4Uuids` (legacy v4). Use a manual `creating` hook only when the `uuid` is a plain string column, not the model key.
+- Routes still bind with `->whereUuid('uuid')` — it accepts any RFC-4122 UUID, v7 included.
+
+### Bidirectional Eloquent relations — MANDATORY when an FK exists
+
+When a model carries a foreign key (e.g. `user_id`), declare BOTH sides — never only the `belongsTo`:
+
+- Child (owns the FK) → `belongsTo`, generic PHPDoc:
+  ```php
+  /** @return BelongsTo<User, $this> */
+  public function user(): BelongsTo
+  {
+      return $this->belongsTo(User::class);
+  }
+  ```
+- Parent (`User` / owning aggregate) → inverse `hasMany` / `hasOne`, generic PHPDoc:
+  ```php
+  /** @return HasMany<{YourEntity}EloquentModel, $this> */
+  public function {yourEntities}(): HasMany
+  {
+      return $this->hasMany({YourEntity}EloquentModel::class);
+  }
+  ```
+- Each model documents itself with the standard generated block ending in `@mixin \Eloquent` (regenerate via `./vendor/bin/sail artisan ide-helper:models`), otherwise linters report **"undefined type 'Eloquent'"** (`\Eloquent` lives in the git-ignored `_ide_helper.php`).
+- **Auditors:** a one-directional FK relation (child `belongsTo` present, parent inverse missing) is a **FAIL**.
+
+---
+
 ## Audit, Security, and Tests
 
 - Use `LogsActivity` on the Eloquent model with explicit `logOnly([...])`, `logOnlyDirty()`, and `dontSubmitEmptyLogs()`.

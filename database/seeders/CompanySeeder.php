@@ -27,7 +27,7 @@ class CompanySeeder extends Seeder
 
         $company = CompanyData::query()->firstOrNew(['email' => 'argenis692@gmail.com']);
         $company->fill([
-            'uuid' => (string) Str::uuid(), // Se añade el UUID aquí
+            'uuid' => (string) Str::uuid7(), // Se añade el UUID aquí
             'name' => 'Argenis Carrillo Gonzalez',
             'company_name' => 'Vidula',
             'signature_path' => null,
