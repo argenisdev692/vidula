@@ -1,25 +1,29 @@
-name: 'Blog Categories'
+name: 'Activity Log'
 description: |-
 
-  API endpoints for blog category lookup. Secondary documentation surface
-  for Sanctum-authenticated clients. The primary UI remains Inertia/web.
+  Read-only audit trail for Sanctum-authenticated (mobile) clients. Reuses the
+  exact same query handlers as the web/Inertia controller. Authorization is
+  checked on the model (`hasPermissionTo`) rather than the `permission:`
+  middleware, which is guard-safe under the `sanctum` guard.
 endpoints:
   -
     custom: []
     httpMethods:
       - GET
-    uri: api/blog-categories
+    uri: api/activity-logs
     metadata:
       custom: []
-      groupName: 'Blog Categories'
+      groupName: 'Activity Log'
       groupDescription: |-
 
-        API endpoints for blog category lookup. Secondary documentation surface
-        for Sanctum-authenticated clients. The primary UI remains Inertia/web.
+        Read-only audit trail for Sanctum-authenticated (mobile) clients. Reuses the
+        exact same query handlers as the web/Inertia controller. Authorization is
+        checked on the model (`hasPermissionTo`) rather than the `permission:`
+        middleware, which is guard-safe under the `sanctum` guard.
       subgroup: ''
       subgroupDescription: ''
-      title: 'List blog categories.'
-      description: 'Returns a paginated list of blog categories.'
+      title: 'List activity log entries'
+      description: 'Returns a paginated, filtered list of audit-trail entries, newest first.'
       authenticated: true
       deprecated: false
     headers:
@@ -28,19 +32,91 @@ endpoints:
     urlParameters: []
     cleanUrlParameters: []
     queryParameters:
+      search:
+        custom: []
+        name: search
+        description: 'Free-text match on description / event / subject.'
+        required: false
+        example: login
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      event:
+        custom: []
+        name: event
+        description: 'Exact event name.'
+        required: false
+        example: created
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      causer_id:
+        custom: []
+        name: causer_id
+        description: 'Filter by the actor id.'
+        required: false
+        example: '42'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      date_from:
+        custom: []
+        name: date_from
+        description: 'date Inclusive lower bound (Y-m-d).'
+        required: false
+        example: '2026-06-01'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      date_to:
+        custom: []
+        name: date_to
+        description: 'date Inclusive upper bound (Y-m-d).'
+        required: false
+        example: '2026-06-30'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      sort_dir:
+        custom: []
+        name: sort_dir
+        description: 'Sort direction on created_at: asc or desc.'
+        required: false
+        example: desc
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
       per_page:
         custom: []
         name: per_page
-        description: 'Page size.'
+        description: 'Page size (default 15).'
         required: false
-        example: 15
+        example: 25
         type: integer
         enumValues: []
         exampleWasSpecified: true
         nullable: false
         deprecated: false
     cleanQueryParameters:
-      per_page: 15
+      search: login
+      event: created
+      causer_id: '42'
+      date_from: '2026-06-01'
+      date_to: '2026-06-30'
+      sort_dir: desc
+      per_page: 25
     bodyParameters: []
     cleanBodyParameters: []
     fileParameters: []
@@ -57,7 +133,7 @@ endpoints:
       -
         custom: []
         status: 403
-        content: '{"message":"This action is unauthorized."}'
+        content: '{"message": "This action is unauthorized."}'
         headers: []
         description: ''
     responseFields: []
@@ -69,37 +145,41 @@ endpoints:
     custom: []
     httpMethods:
       - GET
-    uri: 'api/blog-categories/{uuid}'
+    uri: 'api/activity-logs/{id}'
     metadata:
       custom: []
-      groupName: 'Blog Categories'
+      groupName: 'Activity Log'
       groupDescription: |-
 
-        API endpoints for blog category lookup. Secondary documentation surface
-        for Sanctum-authenticated clients. The primary UI remains Inertia/web.
+        Read-only audit trail for Sanctum-authenticated (mobile) clients. Reuses the
+        exact same query handlers as the web/Inertia controller. Authorization is
+        checked on the model (`hasPermissionTo`) rather than the `permission:`
+        middleware, which is guard-safe under the `sanctum` guard.
       subgroup: ''
       subgroupDescription: ''
-      title: 'Show a blog category.'
-      description: 'Returns a single blog category by UUID.'
+      title: 'Show an activity log entry'
+      description: |-
+        Returns a single audit-trail entry with its full property and
+        attribute-change payloads.
       authenticated: true
       deprecated: false
     headers:
       Content-Type: application/json
       Accept: application/json
     urlParameters:
-      uuid:
+      id:
         custom: []
-        name: uuid
-        description: 'The blog category UUID.'
+        name: id
+        description: 'The activity log id.'
         required: true
-        example: 00000000-0000-0000-0000-000000000000
-        type: string
+        example: 128
+        type: integer
         enumValues: []
         exampleWasSpecified: true
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      uuid: 00000000-0000-0000-0000-000000000000
+      id: 128
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters: []
@@ -117,14 +197,8 @@ endpoints:
         description: null
       -
         custom: []
-        status: 403
-        content: '{"message":"This action is unauthorized."}'
-        headers: []
-        description: ''
-      -
-        custom: []
         status: 404
-        content: '{"message":"Not found."}'
+        content: '{"message": "Not found."}'
         headers: []
         description: ''
     responseFields: []

@@ -1,29 +1,25 @@
-name: 'Activity Log'
+name: Roles
 description: |-
 
-  Read-only audit trail for Sanctum-authenticated (mobile) clients. Reuses the
-  exact same query handlers as the web/Inertia controller. Authorization is
-  checked on the model (`hasPermissionTo`) rather than the `permission:`
-  middleware, which is guard-safe under the `sanctum` guard.
+  API endpoints for role lookup. Secondary documentation surface for
+  Sanctum-authenticated clients. The primary UI remains Inertia/web.
 endpoints:
   -
     custom: []
     httpMethods:
       - GET
-    uri: api/activity-logs
+    uri: api/roles
     metadata:
       custom: []
-      groupName: 'Activity Log'
+      groupName: Roles
       groupDescription: |-
 
-        Read-only audit trail for Sanctum-authenticated (mobile) clients. Reuses the
-        exact same query handlers as the web/Inertia controller. Authorization is
-        checked on the model (`hasPermissionTo`) rather than the `permission:`
-        middleware, which is guard-safe under the `sanctum` guard.
+        API endpoints for role lookup. Secondary documentation surface for
+        Sanctum-authenticated clients. The primary UI remains Inertia/web.
       subgroup: ''
       subgroupDescription: ''
-      title: 'List activity log entries'
-      description: 'Returns a paginated, filtered list of audit-trail entries, newest first.'
+      title: 'List roles.'
+      description: 'Returns a paginated list of roles.'
       authenticated: true
       deprecated: false
     headers:
@@ -32,91 +28,19 @@ endpoints:
     urlParameters: []
     cleanUrlParameters: []
     queryParameters:
-      search:
-        custom: []
-        name: search
-        description: 'Free-text match on description / event / subject.'
-        required: false
-        example: login
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-      event:
-        custom: []
-        name: event
-        description: 'Exact event name.'
-        required: false
-        example: created
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-      causer_id:
-        custom: []
-        name: causer_id
-        description: 'Filter by the actor id.'
-        required: false
-        example: '42'
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-      date_from:
-        custom: []
-        name: date_from
-        description: 'date Inclusive lower bound (Y-m-d).'
-        required: false
-        example: '2026-06-01'
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-      date_to:
-        custom: []
-        name: date_to
-        description: 'date Inclusive upper bound (Y-m-d).'
-        required: false
-        example: '2026-06-30'
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-      sort_dir:
-        custom: []
-        name: sort_dir
-        description: 'Sort direction on created_at: asc or desc.'
-        required: false
-        example: desc
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
       per_page:
         custom: []
         name: per_page
-        description: 'Page size (default 15).'
+        description: 'Page size.'
         required: false
-        example: 25
+        example: 15
         type: integer
         enumValues: []
         exampleWasSpecified: true
         nullable: false
         deprecated: false
     cleanQueryParameters:
-      search: login
-      event: created
-      causer_id: '42'
-      date_from: '2026-06-01'
-      date_to: '2026-06-30'
-      sort_dir: desc
-      per_page: 25
+      per_page: 15
     bodyParameters: []
     cleanBodyParameters: []
     fileParameters: []
@@ -133,7 +57,7 @@ endpoints:
       -
         custom: []
         status: 403
-        content: '{"message": "This action is unauthorized."}'
+        content: '{"message":"This action is unauthorized."}'
         headers: []
         description: ''
     responseFields: []
@@ -145,41 +69,37 @@ endpoints:
     custom: []
     httpMethods:
       - GET
-    uri: 'api/activity-logs/{id}'
+    uri: 'api/roles/{uuid}'
     metadata:
       custom: []
-      groupName: 'Activity Log'
+      groupName: Roles
       groupDescription: |-
 
-        Read-only audit trail for Sanctum-authenticated (mobile) clients. Reuses the
-        exact same query handlers as the web/Inertia controller. Authorization is
-        checked on the model (`hasPermissionTo`) rather than the `permission:`
-        middleware, which is guard-safe under the `sanctum` guard.
+        API endpoints for role lookup. Secondary documentation surface for
+        Sanctum-authenticated clients. The primary UI remains Inertia/web.
       subgroup: ''
       subgroupDescription: ''
-      title: 'Show an activity log entry'
-      description: |-
-        Returns a single audit-trail entry with its full property and
-        attribute-change payloads.
+      title: 'Show a role.'
+      description: 'Returns a single role (with its permissions) by UUID.'
       authenticated: true
       deprecated: false
     headers:
       Content-Type: application/json
       Accept: application/json
     urlParameters:
-      id:
+      uuid:
         custom: []
-        name: id
-        description: 'The activity log id.'
+        name: uuid
+        description: 'The role UUID.'
         required: true
-        example: 128
-        type: integer
+        example: 00000000-0000-0000-0000-000000000000
+        type: string
         enumValues: []
         exampleWasSpecified: true
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      id: 128
+      uuid: 00000000-0000-0000-0000-000000000000
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters: []
@@ -197,8 +117,14 @@ endpoints:
         description: null
       -
         custom: []
+        status: 403
+        content: '{"message":"This action is unauthorized."}'
+        headers: []
+        description: ''
+      -
+        custom: []
         status: 404
-        content: '{"message": "Not found."}'
+        content: '{"message":"Not found."}'
         headers: []
         description: ''
     responseFields: []

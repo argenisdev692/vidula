@@ -6,6 +6,7 @@ use App\Providers\HorizonServiceProvider;
 use App\Providers\TelescopeServiceProvider;
 use Modules\ActivityLog\Providers\ActivityLogServiceProvider;
 use Modules\Auth\Providers\AuthServiceProvider;
+use Modules\Authorization\Providers\AuthorizationServiceProvider;
 use Modules\Backup\Providers\BackupServiceProvider;
 use Modules\Blog\Providers\BlogServiceProvider;
 use Modules\Company\Providers\CompanyServiceProvider;
@@ -19,6 +20,7 @@ return [
     TelescopeServiceProvider::class,
     SharedServiceProvider::class,
     AuthServiceProvider::class,
+    AuthorizationServiceProvider::class,
     UsersServiceProvider::class,
     CompanyServiceProvider::class,
     ActivityLogServiceProvider::class,
