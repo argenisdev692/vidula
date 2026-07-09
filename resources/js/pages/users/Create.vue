@@ -48,7 +48,9 @@ defineProps<{
     display: flex;
     flex-direction: column;
     gap: var(--space-4);
+    width: 100%;
     max-width: 52rem;
+    margin-inline: auto;
 }
 
 .card {

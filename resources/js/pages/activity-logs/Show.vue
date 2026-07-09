@@ -96,6 +96,9 @@ function pretty(value: Record<string, unknown> | null): string {
     display: flex;
     flex-direction: column;
     gap: var(--space-5);
+    width: 100%;
+    max-width: 52rem;
+    margin-inline: auto;
 }
 
 .card {

@@ -7,21 +7,34 @@ import { z } from 'zod';
  * '' → null before submit (see UserForm) so uniqueness checks and storage stay
  * clean. Coordinates are numeric and filled silently by the address autocomplete.
  *
- *   · first_name / email required (email valid), everything else optional
+ *   · first_name / last_name / email required; first_name & last_name are
+ *     letters-only (no spaces, digits or symbols) — the UserForm sanitises input
+ *     to a single Capitalized word before it ever reaches this schema
  *   · phone canonical E.164 string ≤50 (PhoneField emits it)
  *   · gender is a plain string bound to a fixed Select; the backend allowlist
  *     (Rule::in) stays authoritative
- *   · roles is invite-only; force_password_change is edit-only
+ *   · roles is invite-only (single role, submitted as a 0/1-length array);
+ *     force_password_change is edit-only
  *
  * The backend stays authoritative — email/username uniqueness is enforced there.
  */
+
+/** Unicode letters only — no whitespace, digits or punctuation. */
+const NAME_PATTERN = /^\p{L}+$/u;
+
 export const userFormSchema = z.object({
     first_name: z
         .string()
         .trim()
         .min(1, 'First name is required.')
-        .max(255, 'First name must be 255 characters or fewer.'),
-    last_name: z.string().trim().max(255, 'Last name must be 255 characters or fewer.'),
+        .max(255, 'First name must be 255 characters or fewer.')
+        .regex(NAME_PATTERN, 'First name must contain letters only — no spaces.'),
+    last_name: z
+        .string()
+        .trim()
+        .min(1, 'Last name is required.')
+        .max(255, 'Last name must be 255 characters or fewer.')
+        .regex(NAME_PATTERN, 'Last name must contain letters only — no spaces.'),
     username: z.string().trim().max(255, 'Username must be 255 characters or fewer.'),
     email: z
         .string()

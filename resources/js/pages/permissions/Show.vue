@@ -94,7 +94,9 @@ const actionLabel = computed<string>(() => parsed.value?.entries[0]?.action ?? '
     display: flex;
     flex-direction: column;
     gap: var(--space-4);
+    width: 100%;
     max-width: 48rem;
+    margin-inline: auto;
 }
 
 .card {
