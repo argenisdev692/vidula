@@ -6,7 +6,7 @@
     },
     "servers": [
         {
-            "url": "https://vidula-laravel-production.up.railway.app/api"
+            "url": "https://vidula.up.railway.app/api"
         }
     ],
     "security": [
