@@ -1,6 +1,7 @@
 <?php
 
 use Dedoc\Scramble\Http\Middleware\RestrictedDocsAccess;
+use Dedoc\Scramble\SecurityDocumentation\MiddlewareAuthSecurityStrategy;
 
 return [
     /*
@@ -159,21 +160,20 @@ return [
      * Set to `null` explicitly to disable. If you already configure security manually via
      * `afterOpenApiGenerated` / `extendOpenApi`, keep this disabled to avoid duplicate schemes.
      *
-     * Customize with a class-string or [class, options]:
+     * Customize with a class-string or [class, options].
      *
-     * 'security_strategy' => [
-     *     \Dedoc\Scramble\SecurityDocumentation\MiddlewareAuthSecurityStrategy::class,
-     *     [
-     *         'middleware' => ['auth', 'auth:*'],
-     *         'scheme' => \Dedoc\Scramble\Support\Generator\SecurityScheme::http('bearer'),
-     *     ],
-     * ],
-     *
-     * NOTE: this strategy is set at runtime in AppServiceProvider::boot() rather
-     * than here. The `scheme` value is a live `SecurityScheme` object that
-     * `php artisan config:cache` cannot `var_export()` (no `__set_state()`), so
-     * keeping it in this file breaks config caching. Setting it in a provider
-     * keeps identical behaviour while leaving the config fully serializable.
+     * IMPORTANT: keep the value fully serializable so `php artisan config:cache`
+     * works. Do NOT put a live `SecurityScheme` object under `scheme` here — it
+     * has no `__set_state()` and breaks `var_export()`. Omitting `scheme` lets
+     * MiddlewareAuthSecurityStrategy default it to `SecurityScheme::http('bearer')`
+     * at runtime, so behaviour is identical while the config stays cache-safe:
+     * routes behind `auth` / `auth:*` are documented as bearer-protected, the
+     * rest are marked public (`security: []`).
      */
-    'security_strategy' => null,
+    'security_strategy' => [
+        MiddlewareAuthSecurityStrategy::class,
+        [
+            'middleware' => ['auth', 'auth:*'],
+        ],
+    ],
 ];

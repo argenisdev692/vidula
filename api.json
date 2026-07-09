@@ -9,6 +9,11 @@
             "url": "https://vidula-laravel-production.up.railway.app/api"
         }
     ],
+    "security": [
+        {
+            "http": []
+        }
+    ],
     "paths": {
         "/activity-logs": {
             "get": {
@@ -1201,6 +1206,12 @@
         }
     },
     "components": {
+        "securitySchemes": {
+            "http": {
+                "type": "http",
+                "scheme": "bearer"
+            }
+        },
         "schemas": {
             "User": {
                 "type": "object",
