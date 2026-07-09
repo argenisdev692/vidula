@@ -10,6 +10,7 @@ use Modules\Authorization\Providers\AuthorizationServiceProvider;
 use Modules\Backup\Providers\BackupServiceProvider;
 use Modules\Blog\Providers\BlogServiceProvider;
 use Modules\Company\Providers\CompanyServiceProvider;
+use Modules\ContactSupport\Providers\ContactSupportServiceProvider;
 use Modules\Users\Providers\UsersServiceProvider;
 use Shared\Providers\SharedServiceProvider;
 
@@ -26,4 +27,5 @@ return [
     ActivityLogServiceProvider::class,
     BackupServiceProvider::class,
     BlogServiceProvider::class,
+    ContactSupportServiceProvider::class,
 ];

@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use Dedoc\Scramble\SecurityDocumentation\MiddlewareAuthSecurityStrategy;
+use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use Illuminate\Contracts\View\View as ViewContract;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -55,5 +58,18 @@ class AppServiceProvider extends ServiceProvider
         View::composer('app', static function (ViewContract $view): void {
             $view->with('documentTitle', CompanyProfile::documentTitle());
         });
+
+        // Scramble API-docs security is configured here rather than in
+        // config/scramble.php: the `scheme` is a live SecurityScheme object that
+        // `config:cache` cannot serialize (no __set_state()). Routes behind
+        // `auth:sanctum` (any `auth:*`) are documented as bearer-protected; the
+        // rest are marked public (`security: []`).
+        Config::set('scramble.security_strategy', [
+            MiddlewareAuthSecurityStrategy::class,
+            [
+                'middleware' => ['auth', 'auth:*'],
+                'scheme' => SecurityScheme::http('bearer'),
+            ],
+        ]);
     }
 }

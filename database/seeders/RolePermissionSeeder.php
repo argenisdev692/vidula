@@ -22,7 +22,7 @@ class RolePermissionSeeder extends Seeder
      *
      * @var list<string>
      */
-    private const array MODULES = ['USERS', 'ROLES', 'PERMISSIONS', 'COMPANY_DATA', 'BLOG_CATEGORIES'];
+    private const array MODULES = ['USERS', 'ROLES', 'PERMISSIONS', 'COMPANY_DATA', 'BLOG_CATEGORIES', 'CONTACT_SUPPORTS'];
 
     /**
      * Full action set granted to every module (browse, view, write,

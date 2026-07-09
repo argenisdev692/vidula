@@ -1,0 +1,45 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('contact_supports', function (Blueprint $table) {
+            $table->id();
+
+            $table->string('uuid')->unique();
+            $table->string('first_name');
+            $table->string('last_name');
+            $table->string('email');
+            $table->string('phone', 20);
+            $table->string('subject', 150);
+            $table->text('message');
+            $table->boolean('sms_consent')->default(false);
+            $table->boolean('readed')->default(false);
+
+            $table->softDeletes();
+            $table->timestamps();
+
+            // Inbox read/unread filter (Prisma idx_contact_supports_readed).
+            $table->index('readed', 'idx_contact_supports_readed');
+            // Canonical list filter pattern (status via deleted_at + default
+            // ordering by created_at) — BACKEND-PHP §4.1.
+            $table->index(['deleted_at', 'created_at']);
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('contact_supports');
+    }
+};

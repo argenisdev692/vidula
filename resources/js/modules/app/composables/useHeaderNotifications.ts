@@ -61,7 +61,7 @@ export function useHeaderNotifications(): { feeds: ComputedRef<HeaderFeed[]> } {
             key: 'support',
             label: 'Contact & Support',
             icon: 'pi pi-envelope',
-            route: '/contact-support',
+            route: '/contact-supports',
             unreadCount: 1,
             items: [
                 {

@@ -1,0 +1,1464 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Vidula",
+        "version": "0.0.1"
+    },
+    "servers": [
+        {
+            "url": "https://vidula-laravel-production.up.railway.app/api"
+        }
+    ],
+    "paths": {
+        "/activity-logs": {
+            "get": {
+                "operationId": "activity-logs.index",
+                "description": "Returns a paginated, filtered list of audit-trail entries, newest first.",
+                "summary": "List activity log entries",
+                "tags": [
+                    "ActivityLogApi"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 403
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/activity-logs/{id}": {
+            "get": {
+                "operationId": "activity-logs.show",
+                "description": "Returns a single audit-trail entry with its full property and\nattribute-change payloads.",
+                "summary": "Show an activity log entry",
+                "tags": [
+                    "ActivityLogApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 404
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "operationId": "auth.login",
+                "description": "Verifies credentials, enforces email verification + account lockout, then\nissues a rotated Sanctum token (admins expire in 1h, users in 24h).",
+                "summary": "Log in and issue an API token",
+                "tags": [
+                    "Auth"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 200
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/auth/refresh": {
+            "post": {
+                "operationId": "auth.refresh",
+                "description": "Revokes the caller's current token and issues a fresh one with the same\ndevice name and a renewed expiry.",
+                "summary": "Rotate the current API token",
+                "tags": [
+                    "Auth"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 200
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/auth/me": {
+            "get": {
+                "operationId": "auth.me",
+                "summary": "Get the authenticated user",
+                "tags": [
+                    "Auth"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 200
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "operationId": "auth.logout",
+                "summary": "Log out (revoke the current token)",
+                "tags": [
+                    "Auth"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 200
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/backups": {
+            "get": {
+                "operationId": "backups.index",
+                "description": "Returns every archive plus a health/status summary (reachability,\nfreshness, count, storage used).",
+                "summary": "List backups",
+                "tags": [
+                    "BackupApi"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 403
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/backups/run": {
+            "post": {
+                "operationId": "backups.run",
+                "description": "Queues a full (database + files) backup on a background worker.",
+                "summary": "Run a backup now",
+                "tags": [
+                    "BackupApi"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 202
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/backups/{backup}/download": {
+            "get": {
+                "operationId": "backups.download",
+                "description": "Streams the backup ZIP as a file download.",
+                "summary": "Download a backup",
+                "tags": [
+                    "BackupApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "backup",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 404
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/backups/{backup}": {
+            "delete": {
+                "operationId": "backups.destroy",
+                "description": "Permanently removes a single archive from the destination disk.",
+                "summary": "Delete a backup",
+                "tags": [
+                    "BackupApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "backup",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 200
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/blog-categories": {
+            "get": {
+                "operationId": "blog-categories.index",
+                "description": "Returns a paginated list of blog categories.",
+                "summary": "List blog categories",
+                "tags": [
+                    "BlogCategoryApi"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 403
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/blog-categories/{uuid}": {
+            "get": {
+                "operationId": "blog-categories.show",
+                "description": "Returns a single blog category by UUID.",
+                "summary": "Show a blog category",
+                "tags": [
+                    "BlogCategoryApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 403
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/contact-supports": {
+            "get": {
+                "operationId": "contact-supports.index",
+                "description": "Returns a paginated list of contact-support submissions.",
+                "summary": "List contact requests",
+                "tags": [
+                    "ContactSupportApi"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 403
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/contact-supports/{uuid}": {
+            "get": {
+                "operationId": "contact-supports.show",
+                "description": "Returns a single contact-support submission by UUID.",
+                "summary": "Show a contact request",
+                "tags": [
+                    "ContactSupportApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 403
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/user": {
+            "get": {
+                "operationId": "currentUser",
+                "tags": [
+                    "CurrentUser"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`User`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/auth/otp/request": {
+            "post": {
+                "operationId": "auth.otp.request",
+                "summary": "Request a one-time password by email",
+                "tags": [
+                    "OtpAuth"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    }
+                                },
+                                "required": [
+                                    "email"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 200
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "security": []
+            }
+        },
+        "/auth/otp/login": {
+            "post": {
+                "operationId": "auth.otp.login",
+                "summary": "Exchange a one-time password for an API token",
+                "tags": [
+                    "OtpAuth"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "one_time_password": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "email",
+                                    "one_time_password"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 200
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "security": []
+            }
+        },
+        "/auth/password/forgot": {
+            "post": {
+                "operationId": "auth.password.forgot",
+                "summary": "Request a password-reset code by email",
+                "tags": [
+                    "PasswordReset"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    }
+                                },
+                                "required": [
+                                    "email"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 200
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "security": []
+            }
+        },
+        "/auth/password/reset": {
+            "post": {
+                "operationId": "auth.password.reset",
+                "summary": "Reset the password with a 6-digit code",
+                "tags": [
+                    "PasswordReset"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "one_time_password": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "email",
+                                    "one_time_password"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 200
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "security": []
+            }
+        },
+        "/permissions": {
+            "get": {
+                "operationId": "permissions.index",
+                "description": "Returns a paginated list of permissions.",
+                "summary": "List permissions",
+                "tags": [
+                    "PermissionApi"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 403
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/permissions/{uuid}": {
+            "get": {
+                "operationId": "permissions.show",
+                "description": "Returns a single permission by UUID.",
+                "summary": "Show a permission",
+                "tags": [
+                    "PermissionApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 403
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/roles": {
+            "get": {
+                "operationId": "roles.index",
+                "description": "Returns a paginated list of roles.",
+                "summary": "List roles",
+                "tags": [
+                    "RoleApi"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 403
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/roles/{uuid}": {
+            "get": {
+                "operationId": "roles.show",
+                "description": "Returns a single role (with its permissions) by UUID.",
+                "summary": "Show a role",
+                "tags": [
+                    "RoleApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 403
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/auth/social/{provider}": {
+            "post": {
+                "operationId": "auth.social",
+                "summary": "Exchange a provider access token for an API token",
+                "tags": [
+                    "SocialAuth"
+                ],
+                "parameters": [
+                    {
+                        "name": "provider",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "access_token": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "access_token"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 200
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "security": []
+            }
+        },
+        "/auth/sessions": {
+            "get": {
+                "operationId": "auth.sessions.index",
+                "summary": "List the caller's active API tokens",
+                "tags": [
+                    "Token"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 200
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/auth/sessions/others": {
+            "delete": {
+                "operationId": "auth.sessions.others",
+                "summary": "Revoke all API tokens except the current one",
+                "tags": [
+                    "Token"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 200
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/auth/sessions/{token}": {
+            "delete": {
+                "operationId": "auth.sessions.destroy",
+                "summary": "Revoke a specific API token",
+                "tags": [
+                    "Token"
+                ],
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 200
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/auth/two-factor": {
+            "get": {
+                "operationId": "auth.two-factor",
+                "summary": "Get the caller's two-factor authentication status",
+                "tags": [
+                    "TwoFactorStatus"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 200
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "User": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "uuid": {
+                        "type": "string"
+                    },
+                    "first_name": {
+                        "type": "string"
+                    },
+                    "last_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "username": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "email_verified_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "phone": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "date_of_birth": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "address": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "address_2": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "zip_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "city": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "state": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "country": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "latitude": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "longitude": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "gender": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "profile_photo_path": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "terms_and_conditions": {
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "deleted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "password_changed_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "must_change_password": {
+                        "type": "boolean"
+                    },
+                    "invited_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "invited_by": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "two_factor_secret": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "two_factor_recovery_codes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "two_factor_confirmed_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "uuid",
+                    "first_name",
+                    "last_name",
+                    "username",
+                    "email",
+                    "email_verified_at",
+                    "phone",
+                    "date_of_birth",
+                    "address",
+                    "address_2",
+                    "zip_code",
+                    "city",
+                    "state",
+                    "country",
+                    "latitude",
+                    "longitude",
+                    "gender",
+                    "profile_photo_path",
+                    "terms_and_conditions",
+                    "created_at",
+                    "updated_at",
+                    "deleted_at",
+                    "password_changed_at",
+                    "must_change_password",
+                    "invited_at",
+                    "invited_by",
+                    "two_factor_secret",
+                    "two_factor_recovery_codes",
+                    "two_factor_confirmed_at"
+                ],
+                "title": "User"
+            }
+        },
+        "responses": {
+            "ValidationException": {
+                "description": "Validation error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "Errors overview."
+                                },
+                                "errors": {
+                                    "type": "object",
+                                    "description": "A detailed description of each field that failed validation.",
+                                    "additionalProperties": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            },
+                            "required": [
+                                "message",
+                                "errors"
+                            ]
+                        }
+                    }
+                }
+            },
+            "AuthenticationException": {
+                "description": "Unauthenticated",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "Error overview."
+                                }
+                            },
+                            "required": [
+                                "message"
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,8 +1,6 @@
 <?php
 
 use Dedoc\Scramble\Http\Middleware\RestrictedDocsAccess;
-use Dedoc\Scramble\SecurityDocumentation\MiddlewareAuthSecurityStrategy;
-use Dedoc\Scramble\Support\Generator\SecurityScheme;
 
 return [
     /*
@@ -170,14 +168,12 @@ return [
      *         'scheme' => \Dedoc\Scramble\Support\Generator\SecurityScheme::http('bearer'),
      *     ],
      * ],
+     *
+     * NOTE: this strategy is set at runtime in AppServiceProvider::boot() rather
+     * than here. The `scheme` value is a live `SecurityScheme` object that
+     * `php artisan config:cache` cannot `var_export()` (no `__set_state()`), so
+     * keeping it in this file breaks config caching. Setting it in a provider
+     * keeps identical behaviour while leaving the config fully serializable.
      */
-    'security_strategy' => [
-        MiddlewareAuthSecurityStrategy::class,
-        [
-            // Routes behind `auth:sanctum` (and any `auth:*`) are documented as bearer-protected;
-            // routes without matching middleware are marked public (`security: []`).
-            'middleware' => ['auth', 'auth:*'],
-            'scheme' => SecurityScheme::http('bearer'),
-        ],
-    ],
+    'security_strategy' => null,
 ];

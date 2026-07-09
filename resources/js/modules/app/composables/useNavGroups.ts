@@ -27,7 +27,7 @@ export function useNavGroups(): { navItems: ComputedRef<NavItem[]> } {
             children: [
                 { icon: 'pi pi-calendar', label: 'Appointments', href: '/appointments' },
                 { icon: 'pi pi-clock', label: 'Availability', href: '/availability' },
-                { icon: 'pi pi-envelope', label: 'Contact & Support', href: '/contact-support' },
+                { icon: 'pi pi-envelope', label: 'Contact & Support', href: '/contact-supports', permission: 'VIEW_ANY_CONTACT_SUPPORTS' },
             ],
         },
         {
