@@ -1,34 +1,26 @@
 <script setup lang="ts">
 /**
- * Access management for a single user — roles + direct permission top-ups.
- * Submits the FULL desired set (sync semantics) to PUT /users/{uuid}/access via
- * Inertia `useForm`. Mirrors the Juan/Carlos model: a role bundle plus optional
- * per-user direct grants.
+ * Role assignment for a single user. Submits the FULL desired role set (sync
+ * semantics) to PUT /users/{uuid}/roles via Inertia `useForm`. Direct permission
+ * top-ups live on their own dedicated screen (see users/Permissions.vue).
  *
  * Anti-escalation is enforced server-side (AssignableAccess): an actor may only
- * delegate access they hold. This panel reflects that by DISABLING roles/perms
- * outside `assignableRoles` / `assignablePermissions`, and — so a delegated admin
- * never silently revokes grants they cannot manage — it PRESERVES any currently
- * held role/permission that falls outside their assignable set in the payload.
+ * delegate roles they hold. This panel reflects that by DISABLING roles outside
+ * `assignableRoles`, and — so a delegated admin never silently revokes a role they
+ * cannot manage — it PRESERVES any held role outside their assignable set on submit.
  */
-import { computed, ref, watch } from 'vue';
+import { computed, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import Button from '@/volt/Button.vue';
-import PermissionPicker from '@/pages/roles/components/PermissionPicker.vue';
-import type { UserAccessProps } from '@/modules/users/types';
 
-const props = defineProps<UserAccessProps & { userUuid: string }>();
+const props = defineProps<{
+    userUuid: string;
+    userRoles: string[];
+    availableRoles: string[];
+    assignableRoles: string[];
+}>();
 
-interface AccessForm {
-    roles: string[];
-    direct_permissions: string[];
-    [key: string]: string[];
-}
-
-const form = useForm<AccessForm>({
-    roles: [...props.userRoles],
-    direct_permissions: [...props.directPermissions],
-});
+const form = useForm<{ roles: string[] }>({ roles: [...props.userRoles] });
 
 /** Roles to render — the assignable catalogue plus any held role outside it. */
 const roleOptions = computed<string[]>(() => {
@@ -37,14 +29,10 @@ const roleOptions = computed<string[]>(() => {
 });
 
 const assignableRoleSet = computed<Set<string>>(() => new Set(props.assignableRoles));
-const assignablePermissionSet = computed<Set<string>>(() => new Set(props.assignablePermissions));
 
-/** Held grants the actor cannot manage — preserved verbatim on submit. */
+/** Held roles the actor cannot manage — preserved verbatim on submit. */
 const lockedRoles = computed<string[]>(() =>
     props.userRoles.filter((r) => !assignableRoleSet.value.has(r)),
-);
-const lockedPermissions = computed<string[]>(() =>
-    props.directPermissions.filter((p) => !assignablePermissionSet.value.has(p)),
 );
 
 function isRoleDisabled(role: string): boolean {
@@ -64,39 +52,26 @@ function toggleRole(role: string): void {
         : [...form.roles, role];
 }
 
-/** Re-seed if the server props change (e.g. after a successful sync reload). */
 watch(
-    () => [props.userRoles, props.directPermissions],
+    () => props.userRoles,
     () => {
         form.roles = [...props.userRoles];
-        form.direct_permissions = [...props.directPermissions];
         form.clearErrors();
     },
 );
 
 const dirty = computed<boolean>(() => form.isDirty);
-const savedFlash = ref<boolean>(false);
 
 function submit(): void {
     form
         .transform((data) => ({
-            roles: [...new Set([...(data.roles as string[]), ...lockedRoles.value])],
-            direct_permissions: [
-                ...new Set([...(data.direct_permissions as string[]), ...lockedPermissions.value]),
-            ],
+            roles: [...new Set([...data.roles, ...lockedRoles.value])],
         }))
-        .put(`/users/${props.userUuid}/access`, {
-            preserveScroll: true,
-            onSuccess: () => {
-                savedFlash.value = true;
-                window.setTimeout(() => (savedFlash.value = false), 2500);
-            },
-        });
+        .put(`/users/${props.userUuid}/roles`, { preserveScroll: true });
 }
 
 function reset(): void {
     form.roles = [...props.userRoles];
-    form.direct_permissions = [...props.directPermissions];
     form.clearErrors();
 }
 </script>
@@ -105,64 +80,41 @@ function reset(): void {
     <section class="access" aria-labelledby="access-heading">
         <header class="access__head">
             <h2 id="access-heading" class="access__title">
-                <i class="pi pi-shield" aria-hidden="true" /> Access
+                <i class="pi pi-users" aria-hidden="true" /> Roles
             </h2>
             <p class="access__hint">
-                Assign role bundles and fine-tune with direct permission grants. You can only
-                delegate access you hold yourself.
+                Assign role bundles. You can only delegate roles you hold yourself — fine-tune
+                individual permissions from “Manage permissions”.
             </p>
         </header>
 
-        <!-- Roles -->
-        <div class="access__block">
-            <span class="access__label">Roles</span>
-            <div class="roles" role="group" aria-label="Roles">
-                <label
-                    v-for="role in roleOptions"
-                    :key="role"
-                    class="chip"
-                    :class="{ 'chip--disabled': isRoleDisabled(role) }"
-                >
-                    <input
-                        type="checkbox"
-                        class="chip__input"
-                        :checked="isRoleChecked(role)"
-                        :disabled="isRoleDisabled(role)"
-                        @change="toggleRole(role)"
-                    />
-                    <span class="chip__box" aria-hidden="true"><i class="pi pi-check" /></span>
-                    <span class="chip__label">{{ role }}</span>
-                    <i
-                        v-if="isRoleDisabled(role)"
-                        class="pi pi-lock chip__lock"
-                        aria-hidden="true"
-                        v-tooltip.top="'Outside your assignable set'"
-                    />
-                </label>
-            </div>
-            <p v-if="form.errors.roles" class="access__error" role="alert">{{ form.errors.roles }}</p>
+        <div class="roles" role="group" aria-label="Roles">
+            <label
+                v-for="role in roleOptions"
+                :key="role"
+                class="chip"
+                :class="{ 'chip--disabled': isRoleDisabled(role) }"
+            >
+                <input
+                    type="checkbox"
+                    class="chip__input"
+                    :checked="isRoleChecked(role)"
+                    :disabled="isRoleDisabled(role)"
+                    @change="toggleRole(role)"
+                />
+                <span class="chip__box" aria-hidden="true"><i class="pi pi-check" /></span>
+                <span class="chip__label">{{ role }}</span>
+                <i
+                    v-if="isRoleDisabled(role)"
+                    class="pi pi-lock chip__lock"
+                    aria-hidden="true"
+                    v-tooltip.top="'Outside your assignable set'"
+                />
+            </label>
         </div>
-
-        <!-- Direct permissions -->
-        <div class="access__block">
-            <span class="access__label">Direct permissions</span>
-            <p class="access__sublabel">
-                Extra grants on top of the roles above (an empty set revokes every direct grant).
-            </p>
-            <PermissionPicker v-model="form.direct_permissions" :available="assignablePermissions" />
-            <p v-if="lockedPermissions.length" class="access__note">
-                <i class="pi pi-info-circle" aria-hidden="true" />
-                {{ lockedPermissions.length }} direct grant(s) outside your reach are preserved.
-            </p>
-            <p v-if="form.errors.direct_permissions" class="access__error" role="alert">
-                {{ form.errors.direct_permissions }}
-            </p>
-        </div>
+        <p v-if="form.errors.roles" class="access__error" role="alert">{{ form.errors.roles }}</p>
 
         <footer class="access__footer">
-            <span v-if="savedFlash" class="access__saved">
-                <i class="pi pi-check-circle" aria-hidden="true" /> Saved
-            </span>
             <Button
                 label="Reset"
                 text
@@ -172,7 +124,7 @@ function reset(): void {
             />
             <Button
                 type="button"
-                label="Save access"
+                label="Save roles"
                 :icon="form.processing ? undefined : 'pi pi-check'"
                 :loading="form.processing"
                 :disabled="!dirty"
@@ -218,24 +170,6 @@ function reset(): void {
 .access__hint {
     margin: 0;
     font-size: var(--text-sm);
-    color: var(--text-muted);
-}
-
-.access__block {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-}
-
-.access__label {
-    font-size: var(--text-sm);
-    font-weight: var(--font-semibold);
-    color: var(--text-secondary);
-}
-
-.access__sublabel {
-    margin: 0;
-    font-size: var(--text-xs);
     color: var(--text-muted);
 }
 
@@ -311,15 +245,6 @@ function reset(): void {
     color: var(--text-muted);
 }
 
-.access__note {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    margin: 0;
-    font-size: var(--text-xs);
-    color: var(--text-muted);
-}
-
 .access__error {
     margin: 0;
     font-size: var(--text-xs);
@@ -331,15 +256,6 @@ function reset(): void {
     align-items: center;
     justify-content: flex-end;
     gap: var(--space-3);
-}
-
-.access__saved {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    margin-right: auto;
-    font-size: var(--text-sm);
-    color: var(--accent-success);
 }
 
 @media (max-width: 640px) {

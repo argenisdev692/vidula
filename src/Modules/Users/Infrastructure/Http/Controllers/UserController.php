@@ -18,12 +18,14 @@ use Modules\Users\Application\Commands\DeleteUserHandler;
 use Modules\Users\Application\Commands\InviteUserHandler;
 use Modules\Users\Application\Commands\ResendInvitationHandler;
 use Modules\Users\Application\Commands\RestoreUserHandler;
-use Modules\Users\Application\Commands\SyncUserAccessHandler;
+use Modules\Users\Application\Commands\SetUserPermissionHandler;
+use Modules\Users\Application\Commands\SyncUserRolesHandler;
 use Modules\Users\Application\Commands\UpdateUserHandler;
 use Modules\Users\Application\DTOs\InviteUserData;
+use Modules\Users\Application\DTOs\SetPermissionData;
 use Modules\Users\Application\DTOs\UpdateUserData;
-use Modules\Users\Application\DTOs\UserAccessData;
 use Modules\Users\Application\DTOs\UserFilterData;
+use Modules\Users\Application\DTOs\UserRolesData;
 use Modules\Users\Application\Queries\GetUserHandler;
 use Modules\Users\Application\Queries\ListUsersHandler;
 use Modules\Users\Domain\Exceptions\PrivilegeEscalationException;
@@ -36,7 +38,7 @@ use Shared\Application\DTOs\BulkUuidsData;
  */
 final readonly class UserController
 {
-    public function index(Request $request, ListUsersHandler $list, RoleRepositoryPort $roles): InertiaResponse|JsonResponse
+    public function index(Request $request, ListUsersHandler $list): InertiaResponse|JsonResponse
     {
         $filters = UserFilterData::validateAndCreate($request);
         $users = $list->handle($filters, (int) $request->integer('per_page', 15));
@@ -45,14 +47,9 @@ final readonly class UserController
             return response()->json($users);
         }
 
-        /** @var User $actor */
-        $actor = $request->user();
-
         return Inertia::render('users/Index', [
             'users' => $users,
             'filters' => $filters,
-            'availableRoles' => $roles->allAssignableNames(),
-            'assignableRoles' => $this->assignableRoleNames($actor, $roles),
         ]);
     }
 
@@ -61,7 +58,6 @@ final readonly class UserController
         Request $request,
         GetUserHandler $get,
         RoleRepositoryPort $roles,
-        PermissionRepositoryPort $permissions,
     ): InertiaResponse|JsonResponse {
         $user = $get->handle($uuid);
 
@@ -71,18 +67,52 @@ final readonly class UserController
 
         /** @var User $actor */
         $actor = $request->user();
-        $availableRoles = $roles->allAssignableNames();
-        $availablePermissions = $permissions->allActiveNames();
 
         return Inertia::render('users/Show', [
             'user' => $user,
             'userRoles' => $user->getRoleNames()->all(),
             'directPermissions' => $user->getDirectPermissions()->pluck('name')->all(),
             'effectivePermissions' => $user->getAllPermissions()->pluck('name')->all(),
-            'availableRoles' => $availableRoles,
-            'availablePermissions' => $availablePermissions,
+            'availableRoles' => $roles->allAssignableNames(),
             'assignableRoles' => $this->assignableRoleNames($actor, $roles),
-            'assignablePermissions' => $this->assignablePermissionNames($actor, $availablePermissions),
+        ]);
+    }
+
+    public function create(Request $request, RoleRepositoryPort $roles): InertiaResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        return Inertia::render('users/Create', [
+            'availableRoles' => $roles->allAssignableNames(),
+            'assignableRoles' => $this->assignableRoleNames($actor, $roles),
+        ]);
+    }
+
+    public function edit(string $uuid, GetUserHandler $get): InertiaResponse
+    {
+        // Project only the editable columns — never serialise the whole model
+        // (it would leak two-factor secrets and other non-editable fields).
+        return Inertia::render('users/Edit', [
+            'user' => $get->handle($uuid)->only([
+                'uuid',
+                'first_name',
+                'last_name',
+                'username',
+                'email',
+                'phone',
+                'date_of_birth',
+                'gender',
+                'address',
+                'address_2',
+                'zip_code',
+                'city',
+                'state',
+                'country',
+                'latitude',
+                'longitude',
+                'must_change_password',
+            ]),
         ]);
     }
 
@@ -102,28 +132,65 @@ final readonly class UserController
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', __('Invitation sent.'))->with('uuid', $uuid);
+        return redirect()->route('users.index')->with('success', __('Invitation sent.'))->with('uuid', $uuid);
     }
 
-    public function access(string $uuid, Request $request, UserAccessData $data, GetUserHandler $get, SyncUserAccessHandler $sync): RedirectResponse
+    public function roles(string $uuid, Request $request, UserRolesData $data, GetUserHandler $get, SyncUserRolesHandler $sync): RedirectResponse
     {
         /** @var User $actor */
         $actor = $request->user();
 
         try {
-            $sync->handle($actor, $get->handle($uuid), $data);
+            $sync->handle($actor, $get->handle($uuid), $data->roles);
         } catch (PrivilegeEscalationException $e) {
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', __('User access updated.'));
+        return back()->with('success', __('User roles updated.'));
+    }
+
+    /**
+     * Dedicated per-user direct-permissions screen (module-grouped, instant
+     * toggle). Read model: the full catalogue, which grants the user holds
+     * DIRECTLY, which they inherit VIA a role (checked + locked), and the subset
+     * the acting admin may delegate.
+     */
+    public function permissions(string $uuid, Request $request, GetUserHandler $get, PermissionRepositoryPort $permissions): InertiaResponse
+    {
+        $user = $get->handle($uuid);
+
+        /** @var User $actor */
+        $actor = $request->user();
+        $catalogue = $permissions->allActiveNames();
+
+        return Inertia::render('users/Permissions', [
+            'user' => $user->only(['uuid', 'first_name', 'last_name', 'email']),
+            'directPermissions' => $user->getDirectPermissions()->pluck('name')->all(),
+            'rolePermissions' => $user->getPermissionsViaRoles()->pluck('name')->all(),
+            'availablePermissions' => $catalogue,
+            'assignablePermissions' => $this->assignablePermissionNames($actor, $catalogue),
+        ]);
+    }
+
+    public function setPermission(string $uuid, Request $request, SetPermissionData $data, GetUserHandler $get, SetUserPermissionHandler $handler): RedirectResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        try {
+            $handler->handle($actor, $get->handle($uuid), $data->permission, $data->granted);
+        } catch (PrivilegeEscalationException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', $data->granted ? __('Permission granted.') : __('Permission revoked.'));
     }
 
     public function update(string $uuid, UpdateUserData $data, GetUserHandler $get, UpdateUserHandler $update): RedirectResponse
     {
         $update->handle($get->handle($uuid), $data);
 
-        return back()->with('success', __('User updated.'));
+        return redirect()->route('users.index')->with('success', __('User updated.'));
     }
 
     public function destroy(string $uuid, DeleteUserHandler $delete): RedirectResponse

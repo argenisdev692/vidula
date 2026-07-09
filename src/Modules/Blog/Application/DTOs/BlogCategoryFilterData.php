@@ -4,43 +4,32 @@ declare(strict_types=1);
 
 namespace Modules\Blog\Application\DTOs;
 
+use Shared\Application\DTOs\SoftDeleteFilterData;
 use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Attributes\MapOutputName;
-use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 
 /**
  * Shared list filter — consumed by ListBlogCategoriesHandler via the single
  * `BlogCategoryEloquentModel::scopeApplyFilters()` (BACKEND-PHP §4.1 — no
- * duplicated `when()` chains).
+ * duplicated `when()` chains). Inherits the search/status/date shape from
+ * {@see SoftDeleteFilterData}; `status`: active | suspended (soft-deleted).
  *
- * `status`: active | suspended (soft-deleted). The date range filters on
- * `created_at` with inclusive day boundaries.
- *
- * Serializes to the Inertia `filters` prop, so the output is snake_cased
- * (`date_from` / `date_to`) to honour the frontend snake_case contract.
+ * `#[MapOutputName]` snake-cases the payload (`date_from` / `date_to`) so the
+ * DTO round-trips into the Inertia `filters` prop under the frontend contract.
  */
 #[MapInputName(SnakeCaseMapper::class)]
 #[MapOutputName(SnakeCaseMapper::class)]
-final class BlogCategoryFilterData extends Data
+final class BlogCategoryFilterData extends SoftDeleteFilterData
 {
-    public function __construct(
-        public ?string $search = null,
-        public ?string $status = null,
-        public ?string $dateFrom = null,
-        public ?string $dateTo = null,
-    ) {}
-
     /**
      * @return array<string, mixed>
      */
     public static function rules(): array
     {
         return [
-            'search' => ['nullable', 'string', 'max:255'],
+            ...self::baseRules(),
             'status' => ['nullable', 'string', 'in:active,suspended'],
-            'date_from' => ['nullable', 'date'],
-            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
         ];
     }
 }

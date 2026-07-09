@@ -30,6 +30,9 @@ return new class extends Migration
             Schema::table($table, static function (Blueprint $blueprint): void {
                 $blueprint->uuid('uuid')->nullable()->after('id');
                 $blueprint->softDeletes();
+                // Admin list/export filter pattern (BACKEND-PHP §4.1 #6 / §5.2):
+                // status filters soft-delete state, date range filters created_at.
+                $blueprint->index(['deleted_at', 'created_at']);
             });
 
             $this->backfillUuids($table);
@@ -44,6 +47,7 @@ return new class extends Migration
     {
         foreach ($this->tables() as $table) {
             Schema::table($table, static function (Blueprint $blueprint): void {
+                $blueprint->dropIndex(['deleted_at', 'created_at']);
                 $blueprint->dropUnique(['uuid']);
                 $blueprint->dropColumn(['uuid', 'deleted_at']);
             });

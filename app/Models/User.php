@@ -18,6 +18,7 @@ use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\DatabaseNotificationCollection;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\CarbonImmutable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -230,8 +231,12 @@ class User extends Authenticatable implements MustVerifyEmailContract
             }))
             ->when($filters->status === 'pending', fn ($q) => $q->whereNull('password'))
             ->when($filters->status === 'active', fn ($q) => $q->whereNotNull('password'))
-            ->when($filters->dateFrom !== null, fn ($q) => $q->whereDate('created_at', '>=', $filters->dateFrom))
-            ->when($filters->dateTo !== null, fn ($q) => $q->whereDate('created_at', '<=', $filters->dateTo));
+            ->when($filters->dateFrom !== null && $filters->dateTo !== null, fn ($q) => $q->whereBetween('created_at', [
+                CarbonImmutable::parse($filters->dateFrom)->startOfDay(),
+                CarbonImmutable::parse($filters->dateTo)->endOfDay(),
+            ]))
+            ->when($filters->dateFrom !== null && $filters->dateTo === null, fn ($q) => $q->where('created_at', '>=', CarbonImmutable::parse($filters->dateFrom)->startOfDay()))
+            ->when($filters->dateFrom === null && $filters->dateTo !== null, fn ($q) => $q->where('created_at', '<=', CarbonImmutable::parse($filters->dateTo)->endOfDay()));
     }
 
     /**

@@ -46,78 +46,116 @@ final class UserAccessTest extends TestCase
         return $user;
     }
 
-    public function test_super_admin_syncs_roles_and_direct_permissions(): void
+    /* ── Roles ─────────────────────────────────────────────────────────────── */
+
+    public function test_super_admin_syncs_roles(): void
     {
         $admin = $this->superAdmin();
         $target = User::factory()->create();
 
         $this->actingAs($admin)
-            ->put("/users/{$target->uuid}/access", [
-                'roles' => ['USER'],
-                'direct_permissions' => ['VIEW_USERS', 'UPDATE_USERS'],
-            ])
+            ->put("/users/{$target->uuid}/roles", ['roles' => ['USER']])
             ->assertRedirect()
             ->assertSessionHas('success');
 
-        $target->refresh();
-        $this->assertTrue($target->hasRole('USER'));
-        $this->assertTrue($target->hasDirectPermission('VIEW_USERS'));
-        $this->assertTrue($target->hasDirectPermission('UPDATE_USERS'));
+        $this->assertTrue($target->refresh()->hasRole('USER'));
     }
 
-    public function test_sync_is_a_replace_not_a_merge(): void
+    public function test_role_sync_is_a_replace_not_a_merge(): void
     {
         $admin = $this->superAdmin();
         $target = User::factory()->create();
         $target->assignRole('ADMIN');
-        $target->givePermissionTo('DELETE_USERS');
 
         $this->actingAs($admin)
-            ->put("/users/{$target->uuid}/access", ['roles' => ['USER'], 'direct_permissions' => []])
+            ->put("/users/{$target->uuid}/roles", ['roles' => ['USER']])
             ->assertRedirect();
 
         $target->refresh();
         $this->assertTrue($target->hasRole('USER'));
         $this->assertFalse($target->hasRole('ADMIN'), 'Roles are synced, not merged.');
-        $this->assertFalse($target->hasDirectPermission('DELETE_USERS'), 'Direct grants are synced, not merged.');
     }
 
-    public function test_access_route_is_forbidden_without_the_assign_permissions(): void
+    public function test_roles_route_is_forbidden_without_assign_roles(): void
     {
         $plain = User::factory()->create();
         $plain->assignRole('USER');
         $target = User::factory()->create();
 
         $this->actingAs($plain)
-            ->put("/users/{$target->uuid}/access", ['roles' => ['USER'], 'direct_permissions' => []])
+            ->put("/users/{$target->uuid}/roles", ['roles' => ['USER']])
             ->assertForbidden();
     }
 
     public function test_a_delegate_cannot_assign_a_role_they_do_not_hold(): void
     {
-        $delegate = $this->delegateWith(['ASSIGN_ROLES_USERS', 'ASSIGN_PERMISSIONS_USERS']);
+        $delegate = $this->delegateWith(['ASSIGN_ROLES_USERS']);
         $target = User::factory()->create();
 
         $this->actingAs($delegate)
-            ->put("/users/{$target->uuid}/access", ['roles' => ['ADMIN'], 'direct_permissions' => []])
+            ->put("/users/{$target->uuid}/roles", ['roles' => ['ADMIN']])
             ->assertRedirect()
             ->assertSessionHas('error');
 
         $this->assertFalse($target->refresh()->hasRole('ADMIN'), 'Escalation must be blocked.');
     }
 
+    /* ── Direct permissions (dedicated screen) ─────────────────────────────── */
+
+    public function test_dedicated_permissions_screen_is_reachable_with_permission(): void
+    {
+        $admin = $this->superAdmin();
+        $target = User::factory()->create();
+
+        $this->actingAs($admin)
+            ->get("/users/{$target->uuid}/permissions")
+            ->assertOk();
+    }
+
+    public function test_permissions_screen_is_forbidden_without_assign_permissions(): void
+    {
+        $plain = User::factory()->create();
+        $plain->assignRole('USER');
+        $target = User::factory()->create();
+
+        $this->actingAs($plain)
+            ->get("/users/{$target->uuid}/permissions")
+            ->assertForbidden();
+    }
+
+    public function test_super_admin_grants_then_revokes_a_direct_permission(): void
+    {
+        $admin = $this->superAdmin();
+        $target = User::factory()->create();
+
+        $this->actingAs($admin)
+            ->put("/users/{$target->uuid}/permissions", ['permission' => 'VIEW_USERS', 'granted' => true])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertTrue($target->refresh()->hasDirectPermission('VIEW_USERS'));
+
+        $this->actingAs($admin)
+            ->put("/users/{$target->uuid}/permissions", ['permission' => 'VIEW_USERS', 'granted' => false])
+            ->assertRedirect();
+
+        $this->assertFalse($target->refresh()->hasDirectPermission('VIEW_USERS'));
+    }
+
     public function test_a_delegate_cannot_grant_a_permission_they_do_not_hold(): void
     {
-        $delegate = $this->delegateWith(['ASSIGN_ROLES_USERS', 'ASSIGN_PERMISSIONS_USERS']);
+        $delegate = $this->delegateWith(['ASSIGN_PERMISSIONS_USERS']);
         $target = User::factory()->create();
 
         $this->actingAs($delegate)
-            ->put("/users/{$target->uuid}/access", ['roles' => [], 'direct_permissions' => ['DELETE_USERS']])
+            ->put("/users/{$target->uuid}/permissions", ['permission' => 'DELETE_USERS', 'granted' => true])
             ->assertRedirect()
             ->assertSessionHas('error');
 
         $this->assertFalse($target->refresh()->hasDirectPermission('DELETE_USERS'));
     }
+
+    /* ── Invite ────────────────────────────────────────────────────────────── */
 
     public function test_invite_assigns_the_selected_roles(): void
     {

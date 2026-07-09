@@ -23,14 +23,28 @@ final readonly class SimpleExcelExportAdapter implements ExportPort
 
     public function tabular(string $filename, array $headers, iterable $rows): StreamedResponse
     {
-        $writer = SimpleExcelWriter::streamDownload($filename) // '.csv' | '.xlsx' → driver picked from extension
-            ->addHeader($headers);
+        $extension = pathinfo($filename, PATHINFO_EXTENSION) ?: 'csv';
 
-        foreach ($rows as $row) { // LazyCollection / generator → memory-safe streaming
-            $writer->addRow($row);
-        }
+        // Defer all writing into the StreamedResponse callback. SimpleExcel's own
+        // `streamDownload()->toBrowser()` opens and closes `php://output` eagerly
+        // during the request; that closes the process' stdout under PHPUnit
+        // ("Premature end of PHP process"). Writing inside the callback keeps the
+        // export memory-safe (LazyCollection/generator) AND test-safe — the closure
+        // only runs when the response is sent or `streamedContent()` is called.
+        return response()->streamDownload(function () use ($headers, $rows, $extension): void {
+            $writer = SimpleExcelWriter::create('php://output', $extension) // driver picked from the type
+                ->addHeader($headers);
 
-        return $writer->toBrowser();
+            foreach ($rows as $row) {
+                $writer->addRow($row);
+            }
+
+            $writer->close();
+        }, $filename, [
+            'Content-Type' => $extension === 'csv'
+                ? 'text/csv'
+                : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
     }
 
     public function pdf(

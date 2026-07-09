@@ -37,6 +37,10 @@ return new class extends Migration
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();
+
+            // Admin list/export filter pattern (BACKEND-PHP §4.1 #6 / §5.2):
+            // every query filters soft-delete state and sorts/filters on created_at.
+            $table->index(['deleted_at', 'created_at']);
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

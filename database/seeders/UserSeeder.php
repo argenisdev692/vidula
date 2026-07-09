@@ -29,6 +29,7 @@ class UserSeeder extends Seeder
                 'password' => 'argenis01=',
                 'address' => '123 Random Web Dev St, Suite 404, Tech City',
                 'terms_and_conditions' => true,
+                'email_verified_at' => now(),
             ],
         );
         $superAdmin->syncRoles('SUPER_ADMIN');
@@ -43,6 +44,7 @@ class UserSeeder extends Seeder
                 'password' => 'password123',
                 'address' => 'Admin Address, City',
                 'terms_and_conditions' => true,
+                'email_verified_at' => now(),
             ],
         );
         $admin->syncRoles('ADMIN');
@@ -57,6 +59,7 @@ class UserSeeder extends Seeder
                 'password' => 'password123',
                 'address' => 'User Address, City',
                 'terms_and_conditions' => true,
+                'email_verified_at' => now(),
             ],
         );
         $standard->syncRoles('USER');
@@ -71,6 +74,7 @@ class UserSeeder extends Seeder
                 'password' => 'password123',
                 'address' => 'Guest Address, City',
                 'terms_and_conditions' => true,
+                'email_verified_at' => now(),
             ],
         );
         $guest->syncRoles('GUEST');

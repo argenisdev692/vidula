@@ -45,8 +45,7 @@ final readonly class UserExportTransformer
             'Name' => trim("{$user->first_name} {$user->last_name}"),
             'Email' => $user->email,
             'Username' => $user->username ?? '—',
-            'Phone' => PhoneFormatter::international($user->phone),
-            'Address 2' => $user->address_2 ?? '—',
+            'Phone' => PhoneFormatter::national($user->phone),
             'Status' => self::status($user),
             'Created At' => (string) $user->created_at?->toDateTimeString(),
         ];

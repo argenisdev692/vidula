@@ -37,8 +37,35 @@ final class InviteUserData extends Data
         #[Nullable, Max(50)]
         public ?string $phone = null,
 
+        #[Nullable]
+        public ?string $dateOfBirth = null,
+
+        #[Nullable]
+        public ?string $gender = null,
+
+        #[Nullable, Max(255)]
+        public ?string $address = null,
+
         #[MapInputName('address_2'), Nullable, Max(255)]
         public ?string $address2 = null,
+
+        #[Nullable, Max(20)]
+        public ?string $zipCode = null,
+
+        #[Nullable, Max(120)]
+        public ?string $city = null,
+
+        #[Nullable, Max(120)]
+        public ?string $state = null,
+
+        #[Nullable, Max(120)]
+        public ?string $country = null,
+
+        #[Nullable]
+        public ?float $latitude = null,
+
+        #[Nullable]
+        public ?float $longitude = null,
 
         /** @var array<int, string> Role names the invited user is created with (optional). */
         public array $roles = [],
@@ -50,6 +77,10 @@ final class InviteUserData extends Data
     public static function rules(): array
     {
         return [
+            'date_of_birth' => ['nullable', 'date', 'before:today'],
+            'gender' => ['nullable', Rule::in(['male', 'female', 'other', 'prefer_not_to_say'])],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'roles' => ['array'],
             'roles.*' => [
                 'string',

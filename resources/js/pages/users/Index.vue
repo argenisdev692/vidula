@@ -27,7 +27,6 @@ import AdvancedFilter, { type FilterCriteria, type FilterField } from '@/common/
 import ConfirmDialog from '@/common/data-table/ConfirmDialog.vue';
 import Button from '@/volt/Button.vue';
 import UsersTable from './components/UsersTable.vue';
-import UserFormDialog from './components/UserFormDialog.vue';
 import type { SharedProps } from '@/types/inertia';
 import type { PaginatedResponse, User, UserFilters, UserQuery, UserStatus } from '@/modules/users/types';
 import { buildUserExportUrl, buildUserQueryParams, type UserExportFormat } from '@/modules/users/helpers/buildUserQueryParams';
@@ -37,8 +36,6 @@ defineOptions({ layout: AppLayout });
 const props = defineProps<{
     users: PaginatedResponse<User>;
     filters: UserFilters;
-    availableRoles: string[];
-    assignableRoles: string[];
 }>();
 
 usePage<SharedProps>();
@@ -124,26 +121,13 @@ function openExport(format: UserExportFormat): void {
     window.location.href = buildUserExportUrl(query, format);
 }
 
-/* ── Invite / edit ────────────────────────────────────────────────────── */
-const formVisible = ref<boolean>(false);
-const formMode = ref<'create' | 'edit'>('create');
-const formUser = ref<User | null>(null);
-
+/* ── Invite / edit — dedicated pages (no modal) ───────────────────────── */
 function openCreate(): void {
-    formMode.value = 'create';
-    formUser.value = null;
-    formVisible.value = true;
+    router.visit('/users/create');
 }
 
 function openEdit(user: User): void {
-    formMode.value = 'edit';
-    formUser.value = user;
-    formVisible.value = true;
-}
-
-function onSaved(): void {
-    selection.value = [];
-    reload();
+    router.visit(`/users/${user.uuid}/edit`);
 }
 
 /* ── Single-row delete / restore / resend ─────────────────────────────── */
@@ -348,15 +332,6 @@ function confirmBulk(): void {
             />
         </div>
     </PermissionGuard>
-
-    <UserFormDialog
-        v-model:visible="formVisible"
-        :mode="formMode"
-        :user="formUser"
-        :available-roles="props.availableRoles"
-        :assignable-roles="props.assignableRoles"
-        @saved="onSaved"
-    />
 
     <ConfirmDialog
         v-model:visible="rowActionVisible"

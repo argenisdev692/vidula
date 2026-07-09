@@ -10,6 +10,7 @@ import { computed } from 'vue';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import AppHeader from '@/modules/app/components/AppHeader.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
+import BackLink from '@/common/ui/BackLink.vue';
 import AccessPanel from '@/pages/users/components/AccessPanel.vue';
 import { formatDate } from '@/modules/users/helpers/formatDate';
 import { resolveUserStatus, USER_STATUS_META } from '@/modules/users/helpers/userStatus';
@@ -46,9 +47,7 @@ const status = computed(() => USER_STATUS_META[resolveUserStatus(props.user)]);
         </template>
 
         <div class="detail">
-            <Link href="/users" class="back" aria-label="Back to users">
-                <i class="pi pi-arrow-left" aria-hidden="true" /> Back to users
-            </Link>
+            <BackLink href="/users" label="Back to users" />
 
             <article class="card">
                 <div class="card__head">
@@ -101,20 +100,36 @@ const status = computed(() => USER_STATUS_META[resolveUserStatus(props.user)]);
                             <span v-else>—</span>
                         </dd>
                     </div>
+                    <div class="fact fact--wide">
+                        <dt>Direct permissions</dt>
+                        <dd>
+                            <span v-if="directPermissions.length" class="role-tags">
+                                <span v-for="perm in directPermissions" :key="perm" class="perm-tag">{{ perm }}</span>
+                            </span>
+                            <span v-else>—</span>
+                        </dd>
+                    </div>
                 </dl>
             </article>
 
-            <PermissionGuard :permission="['ASSIGN_ROLES_USERS', 'ASSIGN_PERMISSIONS_USERS']" require-all>
+            <PermissionGuard permission="ASSIGN_ROLES_USERS">
                 <AccessPanel
                     :user-uuid="user.uuid"
                     :user-roles="userRoles"
-                    :direct-permissions="directPermissions"
-                    :effective-permissions="effectivePermissions"
                     :available-roles="availableRoles"
-                    :available-permissions="availablePermissions"
                     :assignable-roles="assignableRoles"
-                    :assignable-permissions="assignablePermissions"
                 />
+            </PermissionGuard>
+
+            <PermissionGuard permission="ASSIGN_PERMISSIONS_USERS">
+                <Link :href="`/users/${user.uuid}/permissions`" class="manage-perms">
+                    <i class="pi pi-shield" aria-hidden="true" />
+                    <span>
+                        <span class="manage-perms__title">Manage permissions</span>
+                        <span class="manage-perms__hint">Grant individual permissions independent of roles</span>
+                    </span>
+                    <i class="pi pi-arrow-right manage-perms__go" aria-hidden="true" />
+                </Link>
             </PermissionGuard>
         </div>
     </PermissionGuard>
@@ -126,21 +141,6 @@ const status = computed(() => USER_STATUS_META[resolveUserStatus(props.user)]);
     flex-direction: column;
     gap: var(--space-4);
     max-width: 52rem;
-}
-
-.back {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-    color: var(--text-secondary);
-    transition: color var(--transition);
-    width: fit-content;
-}
-
-.back:hover {
-    color: var(--accent-primary);
 }
 
 .card {
@@ -221,6 +221,69 @@ const status = computed(() => USER_STATUS_META[resolveUserStatus(props.user)]);
     font-size: var(--text-xs);
     font-weight: var(--font-medium);
     font-family: var(--font-mono, monospace);
+}
+
+.perm-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--accent-info) 14%, transparent);
+    color: var(--accent-info);
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+    font-family: var(--font-mono, monospace);
+}
+
+.manage-perms {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-6);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-2xl);
+    background: color-mix(in srgb, var(--bg-surface) 60%, transparent);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    transition: border-color var(--transition), background var(--transition);
+}
+
+.manage-perms:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+}
+
+.manage-perms > .pi-shield {
+    font-size: var(--text-xl);
+    color: var(--accent-primary);
+}
+
+.manage-perms > span {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.manage-perms__title {
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+}
+
+.manage-perms__hint {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+.manage-perms__go {
+    color: var(--text-muted);
+    transition: transform var(--transition);
+}
+
+.manage-perms:hover .manage-perms__go {
+    transform: translateX(3px);
+    color: var(--accent-primary);
 }
 
 .badge {

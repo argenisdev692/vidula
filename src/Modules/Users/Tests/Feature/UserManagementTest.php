@@ -77,6 +77,61 @@ final class UserManagementTest extends TestCase
         $this->assertSame('Suite 9C', $user->refresh()->address_2);
     }
 
+    public function test_invite_and_update_persist_profile_and_address_fields(): void
+    {
+        Notification::fake();
+        $admin = $this->superAdmin();
+
+        $this->actingAs($admin)
+            ->post('/users', [
+                'first_name' => 'Geo',
+                'email' => 'geo.user@example.com',
+                'date_of_birth' => '1990-05-15',
+                'gender' => 'female',
+                'address' => '1600 Amphitheatre Pkwy',
+                'city' => 'Mountain View',
+                'state' => 'CA',
+                'zip_code' => '94043',
+                'country' => 'United States',
+                'latitude' => 37.4221,
+                'longitude' => -122.0841,
+            ])
+            ->assertRedirect();
+
+        $user = User::query()->where('email', 'geo.user@example.com')->firstOrFail();
+        $this->assertSame('female', $user->gender);
+        $this->assertSame('Mountain View', $user->city);
+        $this->assertSame('CA', $user->state);
+        $this->assertSame('94043', $user->zip_code);
+        $this->assertSame(37.4221, $user->latitude);
+        $this->assertSame(-122.0841, $user->longitude);
+
+        $this->actingAs($admin)
+            ->put("/users/{$user->uuid}", [
+                'first_name' => 'Geo',
+                'email' => 'geo.user@example.com',
+                'gender' => 'other',
+                'city' => 'San Francisco',
+            ])
+            ->assertRedirect();
+
+        $user->refresh();
+        $this->assertSame('other', $user->gender);
+        $this->assertSame('San Francisco', $user->city);
+    }
+
+    public function test_invite_rejects_an_invalid_gender(): void
+    {
+        $this->actingAs($this->superAdmin())
+            ->postJson('/users', [
+                'first_name' => 'Bad',
+                'email' => 'bad.gender@example.com',
+                'gender' => 'unknown',
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('gender');
+    }
+
     public function test_invitation_email_uses_the_branded_template(): void
     {
         $html = view('emails.invitation', [

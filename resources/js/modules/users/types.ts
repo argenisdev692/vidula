@@ -52,18 +52,66 @@ export interface UserDetail extends User {
 }
 
 /**
- * Access panel props (GET /users/{uuid}). `assignable*` is the subset the acting
- * admin may delegate — everything for a SUPER_ADMIN, otherwise only what they hold
- * (mirrors the backend AssignableAccess invariant). The panel disables any option
- * outside that set; the server stays authoritative.
+ * Editable projection for the Edit page (GET /users/{uuid}/edit) — the full set
+ * of columns the admin form manages (profile photo excluded; that stays a
+ * self-service concern). Every optional field is nullable; coordinates are
+ * numeric and filled silently by the address autocomplete.
+ */
+export interface UserEditData {
+    uuid: string;
+    first_name: string;
+    last_name: string | null;
+    username: string | null;
+    email: string;
+    phone: string | null;
+    date_of_birth: string | null;
+    gender: string | null;
+    address: string | null;
+    address_2: string | null;
+    zip_code: string | null;
+    city: string | null;
+    state: string | null;
+    country: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    must_change_password: boolean;
+}
+
+/**
+ * Roles-panel props on the user detail (GET /users/{uuid}). `assignableRoles` is
+ * the subset the acting admin may delegate — everything for a SUPER_ADMIN,
+ * otherwise only the roles they hold (mirrors the backend AssignableAccess
+ * invariant). Direct-permission props are surfaced read-only for display; live
+ * management happens on the dedicated permissions screen.
  */
 export interface UserAccessProps {
     userRoles: string[];
     directPermissions: string[];
     effectivePermissions: string[];
     availableRoles: string[];
-    availablePermissions: string[];
     assignableRoles: string[];
+}
+
+/** A minimal user identity carried by the dedicated permissions screen. */
+export interface UserIdentity {
+    uuid: string;
+    first_name: string;
+    last_name: string | null;
+    email: string;
+}
+
+/**
+ * Dedicated per-user permissions screen props (GET /users/{uuid}/permissions).
+ *   · directPermissions — grants held DIRECTLY (editable checkboxes).
+ *   · rolePermissions   — grants inherited VIA a role (checked + locked).
+ *   · availablePermissions — the full active catalogue, grouped by module.
+ *   · assignablePermissions — the subset the acting admin may grant/revoke.
+ */
+export interface UserPermissionsProps {
+    user: UserIdentity;
+    directPermissions: string[];
+    rolePermissions: string[];
+    availablePermissions: string[];
     assignablePermissions: string[];
 }
 

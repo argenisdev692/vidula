@@ -5,11 +5,12 @@
  * attribute-change blobs are rendered as escaped, pretty-printed JSON — never
  * v-html — since they may contain user-influenced strings.
  */
-import { Head, Link } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import AppHeader from '@/modules/app/components/AppHeader.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
+import BackLink from '@/common/ui/BackLink.vue';
 import type { ActivityLogDetail } from '@/modules/activity-log/types';
 import { formatDateTime } from '@/modules/activity-log/helpers/formatDateTime';
 
@@ -48,10 +49,7 @@ function pretty(value: Record<string, unknown> | null): string {
         </template>
 
         <div class="detail">
-            <Link href="/activity-logs" class="back">
-                <i class="pi pi-arrow-left" aria-hidden="true" />
-                <span>Back to Activity Log</span>
-            </Link>
+            <BackLink href="/activity-logs" label="Back to Activity Log" />
 
             <section class="card card--hero">
                 <div class="avatar" aria-hidden="true">
@@ -98,21 +96,6 @@ function pretty(value: Record<string, unknown> | null): string {
     display: flex;
     flex-direction: column;
     gap: var(--space-5);
-}
-
-.back {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    align-self: flex-start;
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-    color: var(--text-secondary);
-    transition: color var(--transition);
-}
-
-.back:hover {
-    color: var(--text-primary);
 }
 
 .card {

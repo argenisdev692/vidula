@@ -31,4 +31,22 @@ final class PhoneFormatter
             return $e164;
         }
     }
+
+    /**
+     * National format, e.g. `(787) 987-3452` — the mandated export format
+     * (BACKEND-PHP §8). Returns an em dash for an empty value so export cells
+     * stay aligned.
+     */
+    public static function national(?string $e164, string $empty = '—'): string
+    {
+        if ($e164 === null || $e164 === '') {
+            return $empty;
+        }
+
+        try {
+            return (new PhoneNumber($e164))->formatNational();
+        } catch (Throwable) {
+            return $e164;
+        }
+    }
 }

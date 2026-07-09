@@ -18,8 +18,7 @@ import { useForm } from '@inertiajs/vue3';
 import TextField from '@/common/form/TextField.vue';
 import TextareaField from '@/common/form/TextareaField.vue';
 import FileField from '@/common/form/FileField.vue';
-import Dialog from '@/volt/Dialog.vue';
-import Button from '@/volt/Button.vue';
+import AppModal from '@/common/ui/AppModal.vue';
 import { blogCategoryFormSchema, type BlogCategoryFormValues } from '@/modules/blog/schemas/blogCategoryFormSchema';
 import type { BlogCategory } from '@/modules/blog/types';
 
@@ -105,13 +104,18 @@ function submit(): void {
 </script>
 
 <template>
-    <Dialog
+    <AppModal
         v-model:visible="visible"
-        :header="dialogTitle"
-        modal
-        :draggable="false"
-        :dismissable-mask="!form.processing"
-        :style="{ width: '34rem', maxWidth: '94vw' }"
+        :title="dialogTitle"
+        :subtitle="isEdit ? 'Update this category’s details.' : 'Create a new, searchable category.'"
+        icon="pi pi-tag"
+        :confirm-label="isEdit ? 'Save changes' : 'Create category'"
+        confirm-icon="pi pi-check"
+        :loading="form.processing"
+        :dismissable="!form.processing"
+        width="34rem"
+        @confirm="submit"
+        @cancel="close"
     >
         <form class="cat-form" @submit.prevent="submit">
             <TextField
@@ -149,18 +153,7 @@ function submit(): void {
             <!-- Hidden submit lets Enter submit the form from any field. -->
             <button type="submit" class="cat-form__enter" tabindex="-1" aria-hidden="true" />
         </form>
-
-        <template #footer>
-            <Button label="Cancel" text severity="secondary" :disabled="form.processing" @click="close" />
-            <Button
-                type="button"
-                :label="isEdit ? 'Save changes' : 'Create category'"
-                :icon="form.processing ? undefined : 'pi pi-check'"
-                :loading="form.processing"
-                @click="submit"
-            />
-        </template>
-    </Dialog>
+    </AppModal>
 </template>
 
 <style scoped>

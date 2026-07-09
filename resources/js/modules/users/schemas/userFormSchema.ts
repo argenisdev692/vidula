@@ -2,13 +2,16 @@ import { z } from 'zod';
 
 /**
  * Client-side UX validation for the invite (create) / edit user form (Zod v4).
- * Mirrors the backend rules in InviteUserData / UpdateUserData:
- *   · first_name required ≤255
- *   · last_name / username / address_2 optional ≤255 (empty ⇒ normalised to null
- *     before submit — see UserFormDialog)
- *   · email required, valid, ≤255
- *   · phone optional, canonical E.164 string ≤50 (PhoneField emits it)
- *   · force_password_change is EDIT-only (InviteUserData has no such field)
+ * Mirrors the backend rules in InviteUserData / UpdateUserData. The form is flat
+ * (every text field is a string, '' when empty) — optional strings are normalised
+ * '' → null before submit (see UserForm) so uniqueness checks and storage stay
+ * clean. Coordinates are numeric and filled silently by the address autocomplete.
+ *
+ *   · first_name / email required (email valid), everything else optional
+ *   · phone canonical E.164 string ≤50 (PhoneField emits it)
+ *   · gender is a plain string bound to a fixed Select; the backend allowlist
+ *     (Rule::in) stays authoritative
+ *   · roles is invite-only; force_password_change is edit-only
  *
  * The backend stays authoritative — email/username uniqueness is enforced there.
  */
@@ -19,19 +22,25 @@ export const userFormSchema = z.object({
         .min(1, 'First name is required.')
         .max(255, 'First name must be 255 characters or fewer.'),
     last_name: z.string().trim().max(255, 'Last name must be 255 characters or fewer.'),
+    username: z.string().trim().max(255, 'Username must be 255 characters or fewer.'),
     email: z
         .string()
         .trim()
         .min(1, 'Email is required.')
         .email('Enter a valid email address.')
         .max(255, 'Email must be 255 characters or fewer.'),
-    username: z.string().trim().max(255, 'Username must be 255 characters or fewer.'),
-    phone: z
-        .string()
-        .trim()
-        .max(50, 'Phone must be 50 characters or fewer.')
-        .nullable(),
+    phone: z.string().trim().max(50, 'Phone must be 50 characters or fewer.'),
+    date_of_birth: z.string().trim(),
+    gender: z.string().trim(),
+    address: z.string().trim().max(255, 'Address must be 255 characters or fewer.'),
     address_2: z.string().trim().max(255, 'Address line 2 must be 255 characters or fewer.'),
+    zip_code: z.string().trim().max(20, 'ZIP / postal code must be 20 characters or fewer.'),
+    city: z.string().trim().max(120, 'City must be 120 characters or fewer.'),
+    state: z.string().trim().max(120, 'State must be 120 characters or fewer.'),
+    country: z.string().trim().max(120, 'Country must be 120 characters or fewer.'),
+    latitude: z.number().nullable(),
+    longitude: z.number().nullable(),
+    roles: z.array(z.string()),
     force_password_change: z.boolean(),
 });
 

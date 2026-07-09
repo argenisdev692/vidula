@@ -4,11 +4,12 @@
  * handler resolves the record `withTrashed`, so a suspended role is viewable
  * here; its status is shown via a badge. Grants are shown grouped by module.
  */
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { Head, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import AppHeader from '@/modules/app/components/AppHeader.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
+import BackLink from '@/common/ui/BackLink.vue';
 import { formatDate } from '@/modules/authorization/helpers/formatDate';
 import { groupPermissions } from '@/modules/authorization/helpers/groupPermissions';
 import type { SharedProps } from '@/types/inertia';
@@ -41,9 +42,7 @@ const groups = computed(() => groupPermissions(permissionNames.value));
         </template>
 
         <div class="detail">
-            <Link href="/roles" class="back" aria-label="Back to roles">
-                <i class="pi pi-arrow-left" aria-hidden="true" /> Back to roles
-            </Link>
+            <BackLink href="/roles" label="Back to roles" />
 
             <article class="card">
                 <div class="card__head">
@@ -104,21 +103,6 @@ const groups = computed(() => groupPermissions(permissionNames.value));
     flex-direction: column;
     gap: var(--space-4);
     max-width: 52rem;
-}
-
-.back {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-    color: var(--text-secondary);
-    transition: color var(--transition);
-    width: fit-content;
-}
-
-.back:hover {
-    color: var(--accent-primary);
 }
 
 .card {

@@ -21,7 +21,16 @@ final readonly class UpdateUserHandler
             'email' => $data->email,
             'username' => $data->username,
             'phone' => $data->phone,
+            'date_of_birth' => $data->dateOfBirth,
+            'gender' => $data->gender,
+            'address' => $data->address,
             'address_2' => $data->address2,
+            'zip_code' => $data->zipCode,
+            'city' => $data->city,
+            'state' => $data->state,
+            'country' => $data->country,
+            'latitude' => $data->latitude,
+            'longitude' => $data->longitude,
             'must_change_password' => $data->forcePasswordChange,
         ]);
 

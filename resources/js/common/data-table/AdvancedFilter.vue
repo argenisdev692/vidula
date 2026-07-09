@@ -12,6 +12,7 @@ import Button from '@/volt/Button.vue';
 import Select from '@/volt/Select.vue';
 import InputText from '@/volt/InputText.vue';
 import DatePicker from '@/volt/DatePicker.vue';
+import GradientButton from '@/common/form/GradientButton.vue';
 
 export interface FilterOption {
     label: string;
@@ -197,7 +198,7 @@ function clear(): void {
                 severity="secondary"
                 @click="emit('exportCsv')"
             />
-            <Button
+            <GradientButton
                 v-if="showCreate"
                 type="button"
                 icon="pi pi-plus"

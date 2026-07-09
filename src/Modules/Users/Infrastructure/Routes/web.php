@@ -30,6 +30,9 @@ Route::middleware(['web', 'auth'])->prefix('users')->name('users.')->group(funct
     Route::get('/export', UserExportController::class)
         ->middleware('permission:EXPORT_USERS')->name('export');
 
+    Route::get('/create', [UserController::class, 'create'])
+        ->middleware('permission:CREATE_USERS')->name('create');
+
     Route::post('/', [UserController::class, 'store'])
         ->middleware('permission:CREATE_USERS')->name('store');
 
@@ -42,16 +45,26 @@ Route::middleware(['web', 'auth'])->prefix('users')->name('users.')->group(funct
     Route::get('/{uuid}', [UserController::class, 'show'])
         ->middleware('permission:VIEW_USERS')->whereUuid('uuid')->name('show');
 
+    Route::get('/{uuid}/edit', [UserController::class, 'edit'])
+        ->middleware('permission:UPDATE_USERS')->whereUuid('uuid')->name('edit');
+
     Route::put('/{uuid}', [UserController::class, 'update'])
         ->middleware('permission:UPDATE_USERS')->whereUuid('uuid')->name('update');
 
-    // Access management (roles + direct permission top-ups). Guarded by BOTH
-    // dedicated permissions — granting access is more sensitive than editing a
-    // profile, so it never rides on UPDATE_USERS. The handler additionally blocks
-    // privilege escalation (an actor may only delegate access they hold).
-    Route::put('/{uuid}/access', [UserController::class, 'access'])
-        ->middleware(['permission:ASSIGN_ROLES_USERS', 'permission:ASSIGN_PERMISSIONS_USERS'])
-        ->whereUuid('uuid')->name('access');
+    // Role assignment (sync). Dedicated permission — granting access is more
+    // sensitive than editing a profile, so it never rides on UPDATE_USERS. The
+    // handler additionally blocks privilege escalation (an actor may only
+    // delegate roles they hold).
+    Route::put('/{uuid}/roles', [UserController::class, 'roles'])
+        ->middleware('permission:ASSIGN_ROLES_USERS')->whereUuid('uuid')->name('roles');
+
+    // Dedicated per-user direct-permissions screen + instant per-permission
+    // toggle. Separate dedicated permission; same anti-escalation guard.
+    Route::get('/{uuid}/permissions', [UserController::class, 'permissions'])
+        ->middleware('permission:ASSIGN_PERMISSIONS_USERS')->whereUuid('uuid')->name('permissions');
+
+    Route::put('/{uuid}/permissions', [UserController::class, 'setPermission'])
+        ->middleware('permission:ASSIGN_PERMISSIONS_USERS')->whereUuid('uuid')->name('permissions.set');
 
     Route::delete('/{uuid}', [UserController::class, 'destroy'])
         ->middleware('permission:DELETE_USERS')->whereUuid('uuid')->name('destroy');

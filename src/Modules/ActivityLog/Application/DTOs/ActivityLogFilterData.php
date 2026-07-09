@@ -6,6 +6,7 @@ namespace Modules\ActivityLog\Application\DTOs;
 
 use Illuminate\Database\Eloquent\Builder;
 use Modules\ActivityLog\Application\Queries\ListActivityLogsHandler;
+use Shared\Application\DTOs\Concerns\DateRangeFilterRules;
 use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\SnakeCaseMapper;
@@ -21,6 +22,8 @@ use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 #[MapInputName(SnakeCaseMapper::class)]
 final class ActivityLogFilterData extends Data
 {
+    use DateRangeFilterRules;
+
     public function __construct(
         public ?string $search = null,
         public ?string $event = null,
@@ -36,12 +39,10 @@ final class ActivityLogFilterData extends Data
     public static function rules(): array
     {
         return [
-            'search' => ['nullable', 'string', 'max:255'],
+            ...self::dateRangeRules(),
             'event' => ['nullable', 'string', 'max:255'],
             'log_name' => ['nullable', 'string', 'max:255'],
             'causer_id' => ['nullable', 'string', 'max:255'],
-            'date_from' => ['nullable', 'date'],
-            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
         ];
     }
 

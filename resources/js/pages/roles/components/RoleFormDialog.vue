@@ -16,8 +16,7 @@
 import { computed, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import TextField from '@/common/form/TextField.vue';
-import Dialog from '@/volt/Dialog.vue';
-import Button from '@/volt/Button.vue';
+import AppModal from '@/common/ui/AppModal.vue';
 import PermissionPicker from './PermissionPicker.vue';
 import { roleFormSchema, type RoleFormValues } from '@/modules/authorization/schemas/roleFormSchema';
 import type { Role } from '@/modules/authorization/types';
@@ -91,13 +90,18 @@ function submit(): void {
 </script>
 
 <template>
-    <Dialog
+    <AppModal
         v-model:visible="visible"
-        :header="dialogTitle"
-        modal
-        :draggable="false"
-        :dismissable-mask="!form.processing"
-        :style="{ width: '44rem', maxWidth: '96vw' }"
+        :title="dialogTitle"
+        subtitle="Name the role and choose the permissions it grants."
+        icon="pi pi-shield"
+        :confirm-label="isEdit ? 'Save changes' : 'Create role'"
+        confirm-icon="pi pi-check"
+        :loading="form.processing"
+        :dismissable="!form.processing"
+        width="44rem"
+        @confirm="submit"
+        @cancel="close"
     >
         <form class="role-form" @submit.prevent="submit">
             <TextField
@@ -123,18 +127,7 @@ function submit(): void {
             <!-- Hidden submit lets Enter submit the form from the name field. -->
             <button type="submit" class="role-form__enter" tabindex="-1" aria-hidden="true" />
         </form>
-
-        <template #footer>
-            <Button label="Cancel" text severity="secondary" :disabled="form.processing" @click="close" />
-            <Button
-                type="button"
-                :label="isEdit ? 'Save changes' : 'Create role'"
-                :icon="form.processing ? undefined : 'pi pi-check'"
-                :loading="form.processing"
-                @click="submit"
-            />
-        </template>
-    </Dialog>
+    </AppModal>
 </template>
 
 <style scoped>

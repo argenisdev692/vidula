@@ -143,6 +143,18 @@ function rowClass(row: User): string | undefined {
                             </Link>
                         </PermissionGuard>
 
+                        <PermissionGuard permission="ASSIGN_PERMISSIONS_USERS">
+                            <Link
+                                :href="`/users/${(data as User).uuid}/permissions`"
+                                class="btn-crud-action btn-crud-action-permissions"
+                                aria-label="Manage permissions"
+                                title="Permissions"
+                                v-tooltip.top="'Permissions'"
+                            >
+                                <i class="pi pi-shield" aria-hidden="true" />
+                            </Link>
+                        </PermissionGuard>
+
                         <template v-if="(data as User).deleted_at">
                             <PermissionGuard permission="RESTORE_USERS">
                                 <button
@@ -401,6 +413,14 @@ function rowClass(row: User): string | undefined {
 
 .btn-crud-action-view:hover {
     box-shadow: 0 0 12px color-mix(in srgb, var(--accent-info) 30%, transparent);
+}
+
+.btn-crud-action-permissions {
+    color: var(--accent-primary);
+}
+
+.btn-crud-action-permissions:hover {
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-primary) 30%, transparent);
 }
 
 .btn-crud-action-resend {

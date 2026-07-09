@@ -4,11 +4,12 @@
  * (VIEW_PERMISSIONS). The handler resolves the record `withTrashed`, so a
  * suspended permission is viewable here; its status is shown via a badge.
  */
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { Head, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import AppHeader from '@/modules/app/components/AppHeader.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
+import BackLink from '@/common/ui/BackLink.vue';
 import { formatDate } from '@/modules/authorization/helpers/formatDate';
 import { groupPermissions } from '@/modules/authorization/helpers/groupPermissions';
 import type { SharedProps } from '@/types/inertia';
@@ -44,9 +45,7 @@ const actionLabel = computed<string>(() => parsed.value?.entries[0]?.action ?? '
         </template>
 
         <div class="detail">
-            <Link href="/permissions" class="back" aria-label="Back to permissions">
-                <i class="pi pi-arrow-left" aria-hidden="true" /> Back to permissions
-            </Link>
+            <BackLink href="/permissions" label="Back to permissions" />
 
             <article class="card">
                 <div class="card__head">
@@ -96,21 +95,6 @@ const actionLabel = computed<string>(() => parsed.value?.entries[0]?.action ?? '
     flex-direction: column;
     gap: var(--space-4);
     max-width: 48rem;
-}
-
-.back {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-    color: var(--text-secondary);
-    transition: color var(--transition);
-    width: fit-content;
-}
-
-.back:hover {
-    color: var(--accent-primary);
 }
 
 .card {

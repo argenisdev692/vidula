@@ -25,8 +25,17 @@ final class UpdateUserData extends Data
         public string $email,
         public ?string $username = null,
         public ?string $phone = null,
+        public ?string $dateOfBirth = null,
+        public ?string $gender = null,
+        public ?string $address = null,
         #[MapInputName('address_2')]
         public ?string $address2 = null,
+        public ?string $zipCode = null,
+        public ?string $city = null,
+        public ?string $state = null,
+        public ?string $country = null,
+        public ?float $latitude = null,
+        public ?float $longitude = null,
         public bool $forcePasswordChange = false,
     ) {}
 
@@ -43,7 +52,16 @@ final class UpdateUserData extends Data
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($uuid, 'uuid')],
             'username' => ['nullable', 'string', 'max:255', Rule::unique('users', 'username')->ignore($uuid, 'uuid')],
             'phone' => ['nullable', 'string', 'max:50'],
+            'date_of_birth' => ['nullable', 'date', 'before:today'],
+            'gender' => ['nullable', Rule::in(['male', 'female', 'other', 'prefer_not_to_say'])],
+            'address' => ['nullable', 'string', 'max:255'],
             'address_2' => ['nullable', 'string', 'max:255'],
+            'zip_code' => ['nullable', 'string', 'max:20'],
+            'city' => ['nullable', 'string', 'max:120'],
+            'state' => ['nullable', 'string', 'max:120'],
+            'country' => ['nullable', 'string', 'max:120'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'force_password_change' => ['boolean'],
         ];
     }
