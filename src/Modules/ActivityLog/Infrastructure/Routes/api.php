@@ -7,7 +7,7 @@ use Modules\ActivityLog\Infrastructure\Http\Controllers\Api\ActivityLogApiContro
 
 /*
 | Activity Log module — API (Sanctum). Secondary surface for mobile clients;
-| the web/Inertia routes remain primary. Documented by Scribe (prefix api/*).
+| the web/Inertia routes remain primary. Documented by Scramble (prefix api/*).
 */
 
 Route::middleware('auth:sanctum')->prefix('activity-logs')->name('api.activity-logs.')->group(function (): void {

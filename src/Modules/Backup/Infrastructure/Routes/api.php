@@ -7,7 +7,7 @@ use Modules\Backup\Infrastructure\Http\Controllers\Api\BackupApiController;
 
 /*
 | Backup module — API (Sanctum). Secondary surface for mobile clients; the
-| web/Inertia routes remain primary. Documented by Scribe (prefix api/*). The
+| web/Inertia routes remain primary. Documented by Scramble (prefix api/*). The
 | `{backup}` param is a file basename, charset-constrained and re-resolved
 | against the live archive list.
 */

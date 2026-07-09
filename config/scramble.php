@@ -1,6 +1,8 @@
 <?php
 
 use Dedoc\Scramble\Http\Middleware\RestrictedDocsAccess;
+use Dedoc\Scramble\SecurityDocumentation\MiddlewareAuthSecurityStrategy;
+use Dedoc\Scramble\Support\Generator\SecurityScheme;
 
 return [
     /*
@@ -169,6 +171,13 @@ return [
      *     ],
      * ],
      */
-    // 'security_strategy' => \Dedoc\Scramble\SecurityDocumentation\MiddlewareAuthSecurityStrategy::class,
-    'security_strategy' => null,
+    'security_strategy' => [
+        MiddlewareAuthSecurityStrategy::class,
+        [
+            // Routes behind `auth:sanctum` (and any `auth:*`) are documented as bearer-protected;
+            // routes without matching middleware are marked public (`security: []`).
+            'middleware' => ['auth', 'auth:*'],
+            'scheme' => SecurityScheme::http('bearer'),
+        ],
+    ],
 ];

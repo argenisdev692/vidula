@@ -8,7 +8,7 @@ use Modules\Authorization\Infrastructure\Http\Controllers\Api\RoleApiController;
 
 /*
 | Authorization API routes. Secondary surface for Sanctum-authenticated clients.
-| Documented by Scribe under /api/roles and /api/permissions.
+| Documented by Scramble under /api/roles and /api/permissions.
 */
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::prefix('roles')->name('api.roles.')->group(function (): void {

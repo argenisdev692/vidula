@@ -7,7 +7,7 @@ use Modules\Blog\Infrastructure\Http\Controllers\Api\BlogCategoryApiController;
 
 /*
 | Blog category API routes. Secondary surface for Sanctum-authenticated
-| clients. Documented by Scribe under /api/blog-categories.
+| clients. Documented by Scramble under /api/blog-categories.
 */
 Route::middleware('auth:sanctum')
     ->prefix('blog-categories')
