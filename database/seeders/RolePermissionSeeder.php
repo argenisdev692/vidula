@@ -45,6 +45,17 @@ class RolePermissionSeeder extends Seeder
     ];
 
     /**
+     * Access-management permissions on the USERS module. Kept separate from the
+     * standard CRUD set because granting access (attaching roles / direct
+     * permission top-ups to a user) is far more sensitive than editing a name —
+     * holding UPDATE_USERS must NOT imply the ability to elevate privileges.
+     * Enforced at the route and, defence-in-depth, in SyncUserAccessHandler.
+     *
+     * @var list<string>
+     */
+    private const array USER_ACCESS_ACTIONS = ['ASSIGN_ROLES', 'ASSIGN_PERMISSIONS'];
+
+    /**
      * Read-only modules (immutable audit trail): only browse / view / export.
      * No create/update/delete — the activity log is trimmed by cron, not the UI.
      *
@@ -95,6 +106,7 @@ class RolePermissionSeeder extends Seeder
     {
         $names = [
             ...$this->matrix(self::MODULES, self::MODULES_ACTIONS),
+            ...$this->matrix(['USERS'], self::USER_ACCESS_ACTIONS),
             ...$this->matrix(self::READ_ONLY_MODULES, self::READ_ONLY_ACTIONS),
             ...$this->matrix(['BACKUPS'], self::BACKUP_ACTIONS),
         ];

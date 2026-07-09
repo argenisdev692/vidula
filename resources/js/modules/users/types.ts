@@ -22,6 +22,12 @@ export type { PaginatedResponse };
 /** Server-side status filter — matches UserFilterData `in:pending,active,suspended`. */
 export type UserStatus = 'pending' | 'active' | 'suspended';
 
+/** A named role reference as loaded onto a user (`roles:id,name`). */
+export interface RoleRef {
+    id: number;
+    name: string;
+}
+
 /** A row in the users DataTable (lean list projection). */
 export interface User {
     uuid: string;
@@ -35,12 +41,30 @@ export interface User {
     must_change_password: boolean;
     created_at: string | null;
     deleted_at: string | null;
+    /** Assigned roles (eager-loaded on the list projection). */
+    roles?: RoleRef[];
 }
 
 /** The detail render (GET /users/{uuid}) resolves the full record withTrashed. */
 export interface UserDetail extends User {
     invited_at?: string | null;
     updated_at?: string | null;
+}
+
+/**
+ * Access panel props (GET /users/{uuid}). `assignable*` is the subset the acting
+ * admin may delegate — everything for a SUPER_ADMIN, otherwise only what they hold
+ * (mirrors the backend AssignableAccess invariant). The panel disables any option
+ * outside that set; the server stays authoritative.
+ */
+export interface UserAccessProps {
+    userRoles: string[];
+    directPermissions: string[];
+    effectivePermissions: string[];
+    availableRoles: string[];
+    availablePermissions: string[];
+    assignableRoles: string[];
+    assignablePermissions: string[];
 }
 
 /* ── Filters / query state ────────────────────────────────────────────────── */

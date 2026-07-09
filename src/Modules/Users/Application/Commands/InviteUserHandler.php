@@ -7,6 +7,7 @@ namespace Modules\Users\Application\Commands;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Modules\Users\Application\DTOs\InviteUserData;
+use Modules\Users\Domain\AssignableAccess;
 use Modules\Users\Domain\Events\UserInvited;
 use Modules\Users\Domain\Ports\InvitationLinkPort;
 use Modules\Users\Domain\Ports\UserRepositoryPort;
@@ -26,18 +27,33 @@ final readonly class InviteUserHandler
     ) {}
 
     #[\NoDiscard]
-    public function handle(InviteUserData $data, ?string $invitedByUuid): string
+    public function handle(InviteUserData $data, ?User $actor): string
     {
-        $user = DB::transaction(fn (): User => $this->users->createPending([
-            'first_name' => $data->firstName,
-            'last_name' => $data->lastName,
-            'email' => $data->email,
-            'username' => $data->username,
-            'phone' => $data->phone,
-            'address_2' => $data->address2,
-            'invited_at' => now(),
-            'invited_by' => $invitedByUuid,
-        ]));
+        // Defence-in-depth: an actor can only seed roles they themselves hold.
+        if ($actor !== null) {
+            AssignableAccess::assertRolesAllowed($actor, $data->roles);
+        }
+
+        $invitedByUuid = $actor?->uuid;
+
+        $user = DB::transaction(function () use ($data, $invitedByUuid): User {
+            $user = $this->users->createPending([
+                'first_name' => $data->firstName,
+                'last_name' => $data->lastName,
+                'email' => $data->email,
+                'username' => $data->username,
+                'phone' => $data->phone,
+                'address_2' => $data->address2,
+                'invited_at' => now(),
+                'invited_by' => $invitedByUuid,
+            ]);
+
+            if ($data->roles !== []) {
+                $user->syncRoles($data->roles);
+            }
+
+            return $user;
+        });
 
         $this->dispatchInvitation($user, $invitedByUuid);
 

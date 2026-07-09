@@ -16,6 +16,8 @@ const ACTION_PREFIXES: readonly string[] = [
     'BULK_RESTORE',
     'BULK_FORCE_DELETE',
     'FORCE_DELETE',
+    'ASSIGN_ROLES',
+    'ASSIGN_PERMISSIONS',
     'VIEW',
     'CREATE',
     'UPDATE',

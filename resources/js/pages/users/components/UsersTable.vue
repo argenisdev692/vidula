@@ -103,6 +103,17 @@ function rowClass(row: User): string | undefined {
                 </template>
             </Column>
 
+            <Column header="Roles">
+                <template #body="{ data }">
+                    <span v-if="(data as User).roles?.length" class="role-tags">
+                        <span v-for="role in (data as User).roles" :key="role.id" class="role-tag">
+                            {{ role.name }}
+                        </span>
+                    </span>
+                    <span v-else class="mono">—</span>
+                </template>
+            </Column>
+
             <Column header="Status">
                 <template #body="{ data }">
                     <span class="badge" :class="USER_STATUS_META[resolveUserStatus(data as User)].className">
@@ -253,6 +264,25 @@ function rowClass(row: User): string | undefined {
     font-family: var(--font-mono, monospace);
     font-size: var(--text-sm);
     color: var(--text-secondary);
+}
+
+.role-tags {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-1);
+}
+
+.role-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px var(--space-2);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    color: var(--accent-primary);
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+    font-family: var(--font-mono, monospace);
 }
 
 /* ── Minimalist transparent CRUD table (matches the reference tables) ── */

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Users\Application\DTOs;
 
+use Illuminate\Validation\Rule;
 use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Attributes\Validation\Email;
 use Spatie\LaravelData\Attributes\Validation\Max;
@@ -38,5 +39,22 @@ final class InviteUserData extends Data
 
         #[MapInputName('address_2'), Nullable, Max(255)]
         public ?string $address2 = null,
+
+        /** @var array<int, string> Role names the invited user is created with (optional). */
+        public array $roles = [],
     ) {}
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function rules(): array
+    {
+        return [
+            'roles' => ['array'],
+            'roles.*' => [
+                'string',
+                Rule::exists('roles', 'name')->where('guard_name', 'web')->whereNull('deleted_at'),
+            ],
+        ];
+    }
 }

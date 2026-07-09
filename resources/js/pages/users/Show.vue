@@ -10,16 +10,19 @@ import { computed } from 'vue';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import AppHeader from '@/modules/app/components/AppHeader.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
+import AccessPanel from '@/pages/users/components/AccessPanel.vue';
 import { formatDate } from '@/modules/users/helpers/formatDate';
 import { resolveUserStatus, USER_STATUS_META } from '@/modules/users/helpers/userStatus';
 import type { SharedProps } from '@/types/inertia';
-import type { UserDetail } from '@/modules/users/types';
+import type { UserAccessProps, UserDetail } from '@/modules/users/types';
 
 defineOptions({ layout: AppLayout });
 
-const props = defineProps<{
-    user: UserDetail;
-}>();
+const props = defineProps<
+    {
+        user: UserDetail;
+    } & UserAccessProps
+>();
 
 usePage<SharedProps>();
 
@@ -89,8 +92,30 @@ const status = computed(() => USER_STATUS_META[resolveUserStatus(props.user)]);
                         <dt>Created</dt>
                         <dd>{{ formatDate(user.created_at) }}</dd>
                     </div>
+                    <div class="fact fact--wide">
+                        <dt>Roles</dt>
+                        <dd>
+                            <span v-if="userRoles.length" class="role-tags">
+                                <span v-for="role in userRoles" :key="role" class="role-tag">{{ role }}</span>
+                            </span>
+                            <span v-else>—</span>
+                        </dd>
+                    </div>
                 </dl>
             </article>
+
+            <PermissionGuard :permission="['ASSIGN_ROLES_USERS', 'ASSIGN_PERMISSIONS_USERS']" require-all>
+                <AccessPanel
+                    :user-uuid="user.uuid"
+                    :user-roles="userRoles"
+                    :direct-permissions="directPermissions"
+                    :effective-permissions="effectivePermissions"
+                    :available-roles="availableRoles"
+                    :available-permissions="availablePermissions"
+                    :assignable-roles="assignableRoles"
+                    :assignable-permissions="assignablePermissions"
+                />
+            </PermissionGuard>
         </div>
     </PermissionGuard>
 </template>
@@ -173,6 +198,28 @@ const status = computed(() => USER_STATUS_META[resolveUserStatus(props.user)]);
 }
 
 .mono {
+    font-family: var(--font-mono, monospace);
+}
+
+.fact--wide {
+    grid-column: 1 / -1;
+}
+
+.role-tags {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.role-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    color: var(--accent-primary);
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
     font-family: var(--font-mono, monospace);
 }
 

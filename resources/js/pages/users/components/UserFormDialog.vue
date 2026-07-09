@@ -15,6 +15,7 @@
  */
 import { computed, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
+import { useAuthorization } from '@/modules/auth/composables/useAuthorization';
 import TextField from '@/common/form/TextField.vue';
 import PhoneField from '@/common/form/PhoneField.vue';
 import Dialog from '@/volt/Dialog.vue';
@@ -29,13 +30,15 @@ const props = withDefaults(
     defineProps<{
         mode?: 'create' | 'edit';
         user?: User | null;
+        availableRoles?: string[];
+        assignableRoles?: string[];
     }>(),
-    { mode: 'create', user: null },
+    { mode: 'create', user: null, availableRoles: () => [], assignableRoles: () => [] },
 );
 
 const emit = defineEmits<{ saved: [] }>();
 
-const form = useForm<UserFormValues>({
+const form = useForm<UserFormValues & { roles: string[] }>({
     first_name: '',
     last_name: '',
     email: '',
@@ -43,7 +46,26 @@ const form = useForm<UserFormValues>({
     phone: null,
     address_2: '',
     force_password_change: false,
+    roles: [],
 });
+
+const { hasPermission } = useAuthorization();
+const canAssignRoles = computed<boolean>(() => hasPermission('ASSIGN_ROLES_USERS'));
+
+const assignableRoleSet = computed<Set<string>>(() => new Set(props.assignableRoles));
+
+function isRoleDisabled(role: string): boolean {
+    return !assignableRoleSet.value.has(role);
+}
+
+function toggleRole(role: string): void {
+    if (isRoleDisabled(role)) {
+        return;
+    }
+    form.roles = form.roles.includes(role)
+        ? form.roles.filter((r) => r !== role)
+        : [...form.roles, role];
+}
 
 const isEdit = computed<boolean>(() => props.mode === 'edit');
 const dialogTitle = computed<string>(() => (isEdit.value ? 'Edit user' : 'Invite user'));
@@ -62,6 +84,7 @@ watch(visible, (open) => {
     form.phone = props.user?.phone ?? null;
     form.address_2 = props.user?.address_2 ?? '';
     form.force_password_change = false;
+    form.roles = [];
 });
 
 function close(): void {
@@ -100,6 +123,9 @@ function submit(): void {
         // force_password_change is meaningless on invite (InviteUserData ignores it).
         if (edit) {
             payload.force_password_change = data.force_password_change;
+        } else {
+            // Roles are invite-only here; the Access panel manages them afterwards.
+            payload.roles = data.roles;
         }
         return payload;
     });
@@ -193,6 +219,31 @@ function submit(): void {
                 :error="form.errors.address_2"
             />
 
+            <div v-if="!isEdit && canAssignRoles && availableRoles.length" class="user-form__roles">
+                <span class="user-form__roles-label">Roles <span class="user-form__optional">(optional)</span></span>
+                <span class="user-form__roles-hint">
+                    Assign a starter role now — fine-tune permissions later from the user's Access panel.
+                </span>
+                <div class="user-form__roles-list" role="group" aria-label="Roles">
+                    <label
+                        v-for="role in availableRoles"
+                        :key="role"
+                        class="role-chip"
+                        :class="{ 'role-chip--disabled': isRoleDisabled(role) }"
+                    >
+                        <input
+                            type="checkbox"
+                            class="role-chip__input"
+                            :checked="form.roles.includes(role)"
+                            :disabled="isRoleDisabled(role)"
+                            @change="toggleRole(role)"
+                        />
+                        <span class="role-chip__box" aria-hidden="true"><i class="pi pi-check" /></span>
+                        <span class="role-chip__label">{{ role }}</span>
+                    </label>
+                </div>
+            </div>
+
             <div v-if="isEdit" class="user-form__toggle">
                 <div class="user-form__toggle-copy">
                     <span class="user-form__toggle-label">Force password change</span>
@@ -263,6 +314,95 @@ function submit(): void {
 .user-form__toggle-hint {
     font-size: var(--text-xs);
     color: var(--text-muted);
+}
+
+.user-form__roles {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.user-form__roles-label {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+}
+
+.user-form__optional {
+    font-weight: var(--font-normal);
+    color: var(--text-muted);
+}
+
+.user-form__roles-hint {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+.user-form__roles-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.role-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--bg-elevated) 40%, transparent);
+    cursor: pointer;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    transition: border-color var(--transition), background var(--transition);
+}
+
+.role-chip:has(.role-chip__input:checked) {
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    color: var(--text-primary);
+}
+
+.role-chip--disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.role-chip__input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.role-chip__box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    background: var(--input-bg);
+    color: transparent;
+    transition: background var(--transition), border-color var(--transition), color var(--transition);
+}
+
+.role-chip__box .pi {
+    font-size: 0.6rem;
+}
+
+.role-chip__input:checked + .role-chip__box {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: var(--on-accent, #fff);
+}
+
+.role-chip__input:focus-visible + .role-chip__box {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
 }
 
 .user-form__enter {

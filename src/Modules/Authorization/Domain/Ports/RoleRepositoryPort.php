@@ -18,6 +18,14 @@ interface RoleRepositoryPort
     public function findByUuid(string $uuid): ?Role;
 
     /**
+     * Every active (non-suspended) role name, ordered — the catalogue the user
+     * access panel and the invite form assign against.
+     *
+     * @return array<int, string>
+     */
+    public function allAssignableNames(): array;
+
+    /**
      * @param  array<string, mixed>  $attributes
      */
     public function create(array $attributes): Role;

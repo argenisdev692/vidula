@@ -37,6 +37,8 @@ defineOptions({ layout: AppLayout });
 const props = defineProps<{
     users: PaginatedResponse<User>;
     filters: UserFilters;
+    availableRoles: string[];
+    assignableRoles: string[];
 }>();
 
 usePage<SharedProps>();
@@ -351,6 +353,8 @@ function confirmBulk(): void {
         v-model:visible="formVisible"
         :mode="formMode"
         :user="formUser"
+        :available-roles="props.availableRoles"
+        :assignable-roles="props.assignableRoles"
         @saved="onSaved"
     />
 

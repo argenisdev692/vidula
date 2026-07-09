@@ -54,6 +54,15 @@ final class EloquentRoleRepository implements RoleRepositoryPort
             ->first();
     }
 
+    public function allAssignableNames(): array
+    {
+        return Role::query()
+            ->where('guard_name', 'web')
+            ->orderBy('name')
+            ->pluck('name')
+            ->all();
+    }
+
     public function create(array $attributes): Role
     {
         return Role::query()->create($attributes);

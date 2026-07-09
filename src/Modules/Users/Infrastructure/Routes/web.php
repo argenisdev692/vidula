@@ -45,6 +45,14 @@ Route::middleware(['web', 'auth'])->prefix('users')->name('users.')->group(funct
     Route::put('/{uuid}', [UserController::class, 'update'])
         ->middleware('permission:UPDATE_USERS')->whereUuid('uuid')->name('update');
 
+    // Access management (roles + direct permission top-ups). Guarded by BOTH
+    // dedicated permissions — granting access is more sensitive than editing a
+    // profile, so it never rides on UPDATE_USERS. The handler additionally blocks
+    // privilege escalation (an actor may only delegate access they hold).
+    Route::put('/{uuid}/access', [UserController::class, 'access'])
+        ->middleware(['permission:ASSIGN_ROLES_USERS', 'permission:ASSIGN_PERMISSIONS_USERS'])
+        ->whereUuid('uuid')->name('access');
+
     Route::delete('/{uuid}', [UserController::class, 'destroy'])
         ->middleware('permission:DELETE_USERS')->whereUuid('uuid')->name('destroy');
 
