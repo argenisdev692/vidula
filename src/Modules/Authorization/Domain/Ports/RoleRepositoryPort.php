@@ -18,6 +18,17 @@ interface RoleRepositoryPort
     public function findByUuid(string $uuid): ?Role;
 
     /**
+     * First role name in the given UUID set that matches one of `$protectedNames`,
+     * or null when none match — lets a bulk handler reject a batch that would touch
+     * a protected system role without reaching into Eloquent from the Application
+     * layer.
+     *
+     * @param  array<int, string>  $uuids
+     * @param  array<int, string>  $protectedNames
+     */
+    public function firstProtectedName(array $uuids, array $protectedNames): ?string;
+
+    /**
      * Every active (non-suspended) role name, ordered — the catalogue the user
      * access panel and the invite form assign against.
      *

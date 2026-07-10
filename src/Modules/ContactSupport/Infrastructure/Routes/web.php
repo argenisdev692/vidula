@@ -13,7 +13,7 @@ use Modules\ContactSupport\Infrastructure\Http\Controllers\ContactSupportExportC
 | permissions, never roles). Static segments are declared BEFORE the `{uuid}`
 | wildcard so `/bulk-delete` and `/bulk-restore` are never captured as a UUID.
 */
-Route::middleware(['web', 'auth'])->prefix('contact-supports')->name('contact-supports.')->group(function (): void {
+Route::middleware(['web', 'auth', 'throttle:60,1'])->prefix('contact-supports')->name('contact-supports.')->group(function (): void {
     Route::get('/', [ContactSupportController::class, 'index'])
         ->middleware('permission:VIEW_ANY_CONTACT_SUPPORTS')->name('index');
 
@@ -27,7 +27,7 @@ Route::middleware(['web', 'auth'])->prefix('contact-supports')->name('contact-su
         ->middleware('permission:BULK_RESTORE_CONTACT_SUPPORTS')->name('bulk-restore');
 
     Route::get('/export', ContactSupportExportController::class)
-        ->middleware('permission:EXPORT_CONTACT_SUPPORTS')->name('export');
+        ->middleware(['permission:EXPORT_CONTACT_SUPPORTS', 'throttle:10,1'])->name('export');
 
     Route::get('/{uuid}', [ContactSupportController::class, 'show'])
         ->middleware('permission:VIEW_CONTACT_SUPPORTS')->whereUuid('uuid')->name('show');

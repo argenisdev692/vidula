@@ -10,19 +10,13 @@ use Illuminate\Http\Request;
 use Laravel\Sanctum\PersonalAccessToken;
 
 /**
- * @group Authentication
- *
  * API "active sessions" = the caller's Sanctum personal access tokens. Lets a
  * mobile/external client list and revoke its device tokens (prompt §6).
  */
 final readonly class TokenController
 {
     /**
-     * List the caller's active API tokens
-     *
-     * @authenticated
-     *
-     * @response 200 scenario="Success" {"data":[{"id":1,"name":"iphone-15","current":true,"last_used_at":null,"expires_at":"2026-06-23T10:00:00+00:00"}]}
+     * List the caller's active API tokens.
      */
     public function index(Request $request): JsonResponse
     {
@@ -47,11 +41,7 @@ final readonly class TokenController
     }
 
     /**
-     * Revoke a specific API token
-     *
-     * @authenticated
-     *
-     * @response 200 {"message":"Token revoked."}
+     * Revoke a specific API token.
      */
     public function destroy(Request $request, string $token): JsonResponse
     {
@@ -63,11 +53,7 @@ final readonly class TokenController
     }
 
     /**
-     * Revoke all API tokens except the current one
-     *
-     * @authenticated
-     *
-     * @response 200 {"message":"Other tokens revoked."}
+     * Revoke all API tokens except the current one.
      */
     public function destroyOthers(Request $request): JsonResponse
     {

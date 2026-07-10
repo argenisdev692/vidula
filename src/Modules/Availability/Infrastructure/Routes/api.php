@@ -10,7 +10,7 @@ use Modules\Availability\Infrastructure\Http\Controllers\Api\AvailabilityRuleApi
 | Availability module API routes. Secondary surface for Sanctum-authenticated
 | clients. Documented by Scramble under /api/availability-*.
 */
-Route::middleware('auth:sanctum')->group(function (): void {
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function (): void {
     Route::prefix('availability-rules')
         ->name('api.availability-rules.')
         ->group(function (): void {

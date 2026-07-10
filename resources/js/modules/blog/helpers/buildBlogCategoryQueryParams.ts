@@ -1,7 +1,8 @@
+import { buildExportUrl, type ExportFormat } from '@/lib/queryParams';
 import type { BlogCategoryQuery } from '../types';
 
 /** Export formats accepted by GET /blog-categories/export. */
-export type BlogCategoryExportFormat = 'csv' | 'xlsx' | 'pdf';
+export type BlogCategoryExportFormat = ExportFormat;
 
 /**
  * Single source of truth for the blog-category request params — consumed by BOTH
@@ -34,14 +35,5 @@ export function buildBlogCategoryQueryParams(query: BlogCategoryQuery): Record<s
 
 /** Builds the export download URL for the given format, reusing the same filters. */
 export function buildBlogCategoryExportUrl(query: BlogCategoryQuery, format: BlogCategoryExportFormat): string {
-    const params = buildBlogCategoryQueryParams(query);
-    const search = new URLSearchParams(
-        Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)])),
-    );
-    // Page size is irrelevant to a full export — drop pagination for clarity.
-    search.delete('page');
-    search.delete('per_page');
-    search.set('format', format);
-
-    return `/blog-categories/export?${search.toString()}`;
+    return buildExportUrl('/blog-categories/export', buildBlogCategoryQueryParams(query), format);
 }

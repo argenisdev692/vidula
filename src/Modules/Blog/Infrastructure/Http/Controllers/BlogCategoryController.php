@@ -31,7 +31,7 @@ final readonly class BlogCategoryController
     public function index(Request $request, ListBlogCategoriesHandler $list): InertiaResponse|JsonResponse
     {
         $filters = BlogCategoryFilterData::validateAndCreate($request);
-        $categories = $list->handle($filters, (int) $request->integer('per_page', 15));
+        $categories = $list->handle($filters, min(max($request->integer('per_page', 15), 1), 100));
 
         return $request->expectsJson()
             ? response()->json($categories)

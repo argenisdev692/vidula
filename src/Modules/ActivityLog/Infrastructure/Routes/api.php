@@ -10,7 +10,7 @@ use Modules\ActivityLog\Infrastructure\Http\Controllers\Api\ActivityLogApiContro
 | the web/Inertia routes remain primary. Documented by Scramble (prefix api/*).
 */
 
-Route::middleware('auth:sanctum')->prefix('activity-logs')->name('api.activity-logs.')->group(function (): void {
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->prefix('activity-logs')->name('api.activity-logs.')->group(function (): void {
     Route::get('/', [ActivityLogApiController::class, 'index'])->name('index');
     Route::get('/{id}', [ActivityLogApiController::class, 'show'])->whereNumber('id')->name('show');
 });

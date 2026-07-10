@@ -31,7 +31,7 @@ final readonly class AvailabilityExceptionController
     public function index(Request $request, ListAvailabilityExceptionsHandler $list): InertiaResponse|JsonResponse
     {
         $filters = AvailabilityExceptionFilterData::validateAndCreate($request);
-        $exceptions = $list->handle($filters, (int) $request->integer('per_page', 15));
+        $exceptions = $list->handle($filters, min(max($request->integer('per_page', 15), 1), 100));
 
         return $request->expectsJson()
             ? response()->json($exceptions)

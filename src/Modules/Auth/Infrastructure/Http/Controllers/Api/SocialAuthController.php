@@ -17,8 +17,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
 /**
- * @group Authentication
- *
  * Token-based social login for mobile/native clients: the client performs the
  * OAuth dance with the provider SDK and posts the resulting access token here
  * to exchange it for a Sanctum API token.
@@ -35,15 +33,10 @@ final readonly class SocialAuthController
     ) {}
 
     /**
-     * Exchange a provider access token for an API token
+     * Exchange a provider access token for an API token.
      *
-     * @unauthenticated
-     *
-     * @bodyParam access_token string required The OAuth access token from the provider SDK. Example: ya29.a0Af...
-     *
-     * @response 200 scenario="Success" {"token":"5|ghi...","token_type":"Bearer","expires_at":"2026-06-23T10:00:00+00:00","user":{"uuid":"...","email":"jane@example.com"}}
-     * @response 401 scenario="Invalid provider token" {"message":"Invalid provider token."}
-     * @response 409 scenario="Email already registered" {"message":"This email is already registered..."}
+     * Returns 401 on an invalid provider token and 409 when the email is already
+     * registered to a different account.
      */
     public function __invoke(Request $request, string $provider): JsonResponse
     {

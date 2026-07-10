@@ -14,12 +14,12 @@ use Modules\Backup\Infrastructure\Http\Controllers\BackupController;
 | no caller-supplied path ever reaches the filesystem.
 */
 
-Route::middleware(['web', 'auth'])->prefix('backups')->name('backups.')->group(function (): void {
+Route::middleware(['web', 'auth', 'throttle:60,1'])->prefix('backups')->name('backups.')->group(function (): void {
     Route::get('/', [BackupController::class, 'index'])
         ->middleware('permission:VIEW_ANY_BACKUPS')->name('index');
 
     Route::post('/run', [BackupController::class, 'store'])
-        ->middleware('permission:CREATE_BACKUPS')->name('run');
+        ->middleware(['permission:CREATE_BACKUPS', 'throttle:6,1'])->name('run');
 
     Route::get('/{backup}/download', [BackupController::class, 'download'])
         ->middleware('permission:DOWNLOAD_BACKUPS')->where('backup', '[A-Za-z0-9._\- ]+')->name('download');

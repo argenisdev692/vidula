@@ -100,9 +100,21 @@ final class UserAccessTest extends TestCase
         $this->assertFalse($target->refresh()->hasRole('ADMIN'), 'Escalation must be blocked.');
     }
 
-    /* ── Direct permissions (dedicated screen) ─────────────────────────────── */
+    public function test_a_user_may_hold_at_most_one_role(): void
+    {
+        $admin = $this->superAdmin();
+        $target = User::factory()->create();
 
-    public function test_dedicated_permissions_screen_is_reachable_with_permission(): void
+        $this->actingAs($admin)
+            ->put("/users/{$target->uuid}/roles", ['roles' => ['USER', 'ADMIN']])
+            ->assertSessionHasErrors('roles');
+
+        $this->assertFalse($target->refresh()->hasAnyRole(['USER', 'ADMIN']), 'A rejected payload assigns nothing.');
+    }
+
+    /* ── Access screen (role + direct permissions) ─────────────────────────── */
+
+    public function test_access_screen_is_reachable_with_permission(): void
     {
         $admin = $this->superAdmin();
         $target = User::factory()->create();
@@ -112,7 +124,17 @@ final class UserAccessTest extends TestCase
             ->assertOk();
     }
 
-    public function test_permissions_screen_is_forbidden_without_assign_permissions(): void
+    public function test_a_role_only_delegate_can_reach_the_access_screen(): void
+    {
+        $delegate = $this->delegateWith(['ASSIGN_ROLES_USERS']);
+        $target = User::factory()->create();
+
+        $this->actingAs($delegate)
+            ->get("/users/{$target->uuid}/permissions")
+            ->assertOk();
+    }
+
+    public function test_access_screen_is_forbidden_without_any_assign_permission(): void
     {
         $plain = User::factory()->create();
         $plain->assignRole('USER');

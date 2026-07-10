@@ -11,23 +11,17 @@ use Modules\Authorization\Application\Queries\GetPermissionHandler;
 use Modules\Authorization\Application\Queries\ListPermissionsHandler;
 
 /**
- * @group Permissions
- *
- * API endpoints for permission lookup. Secondary documentation surface for
- * Sanctum-authenticated clients.
+ * API endpoints for permission lookup. Secondary Sanctum-authenticated surface.
+ * Documented by Scramble via return types + `auth:sanctum` detection — no manual
+ * annotations.
  */
 final readonly class PermissionApiController
 {
     /**
      * List permissions.
      *
-     * Returns a paginated list of permissions.
-     *
-     * @authenticated
-     *
-     * @queryParam per_page int Page size. Example: 15
-     *
-     * @response 403 {"message":"This action is unauthorized."}
+     * Returns a paginated list of permissions. `per_page` is capped at 100 to
+     * bound resource consumption (OWASP API4).
      */
     public function index(Request $request, ListPermissionsHandler $list): JsonResponse
     {
@@ -35,20 +29,13 @@ final readonly class PermissionApiController
 
         $filters = PermissionFilterData::validateAndCreate($request);
 
-        return response()->json($list->handle($filters, (int) $request->integer('per_page', 15)));
+        return response()->json($list->handle($filters, min(max($request->integer('per_page', 15), 1), 100)));
     }
 
     /**
      * Show a permission.
      *
      * Returns a single permission by UUID.
-     *
-     * @authenticated
-     *
-     * @urlParam uuid string required The permission UUID. Example: 00000000-0000-0000-0000-000000000000
-     *
-     * @response 403 {"message":"This action is unauthorized."}
-     * @response 404 {"message":"Not found."}
      */
     public function show(Request $request, string $uuid, GetPermissionHandler $get): JsonResponse
     {

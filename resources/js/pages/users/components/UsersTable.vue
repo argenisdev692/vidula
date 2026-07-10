@@ -142,11 +142,11 @@ function rowClass(row: User): string | undefined {
                             />
                         </PermissionGuard>
 
-                        <PermissionGuard permission="ASSIGN_PERMISSIONS_USERS">
+                        <PermissionGuard :permission="['ASSIGN_ROLES_USERS', 'ASSIGN_PERMISSIONS_USERS']">
                             <ActionButton
                                 icon="pi pi-shield"
                                 tone="warning"
-                                label="Manage permissions"
+                                label="Manage access"
                                 :href="`/users/${(data as User).uuid}/permissions`"
                             />
                         </PermissionGuard>

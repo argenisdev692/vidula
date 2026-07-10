@@ -18,10 +18,20 @@
         "/activity-logs": {
             "get": {
                 "operationId": "activity-logs.index",
-                "description": "Returns a paginated, filtered list of audit-trail entries, newest first.",
+                "description": "Returns a paginated, filtered list of audit-trail entries, newest first.\nAccepts `search`, `event`, `causer_id`, `date_from`, `date_to`, `sort_dir`\nand `per_page` (capped at 100 to bound resource consumption \u2014 OWASP API4).",
                 "summary": "List activity log entries",
                 "tags": [
                     "ActivityLogApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
                 ],
                 "responses": {
                     "200": {
@@ -29,8 +39,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 403
+                                    "$ref": "#/components/schemas/LengthAwarePaginator"
                                 }
                             }
                         }
@@ -85,8 +94,106 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 404
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                },
+                                                "log_name": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "description": {
+                                                    "type": "string"
+                                                },
+                                                "event": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "subject_type": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "subject_id": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "causer_id": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "causer_label": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "created_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "causer_type": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "properties": {
+                                                    "type": [
+                                                        "object",
+                                                        "null"
+                                                    ],
+                                                    "additionalProperties": {}
+                                                },
+                                                "attribute_changes": {
+                                                    "type": [
+                                                        "object",
+                                                        "null"
+                                                    ],
+                                                    "additionalProperties": {}
+                                                },
+                                                "updated_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "log_name",
+                                                "description",
+                                                "event",
+                                                "subject_type",
+                                                "subject_id",
+                                                "causer_id",
+                                                "causer_label",
+                                                "created_at",
+                                                "causer_type",
+                                                "properties",
+                                                "attribute_changes",
+                                                "updated_at"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
                                 }
                             }
                         }
@@ -120,7 +227,7 @@
         "/auth/login": {
             "post": {
                 "operationId": "auth.login",
-                "description": "Verifies credentials, enforces email verification + account lockout, then\nissues a rotated Sanctum token (admins expire in 1h, users in 24h).",
+                "description": "Verifies credentials, enforces email verification + account lockout, then\nissues a rotated Sanctum token (admins expire in 1h, users in 24h). Returns\n422 on bad credentials, 403 when the email is unverified, and 429 with a\n`retry_after` when the account is locked.",
                 "summary": "Log in and issue an API token",
                 "tags": [
                     "Auth"
@@ -131,8 +238,80 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 200
+                                    "type": "object",
+                                    "properties": {
+                                        "token": {
+                                            "type": "string"
+                                        },
+                                        "token_type": {
+                                            "type": "string",
+                                            "const": "Bearer"
+                                        },
+                                        "expires_at": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        },
+                                        "user": {
+                                            "$ref": "#/components/schemas/AuthUserData"
+                                        }
+                                    },
+                                    "required": [
+                                        "token",
+                                        "token_type",
+                                        "expires_at",
+                                        "user"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Your email address is not verified."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Account temporarily locked due to too many failed attempts."
+                                        },
+                                        "retry_after": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "retry_after"
+                                    ]
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Retry-After": {
+                                "schema": {
+                                    "type": "integer"
                                 }
                             }
                         }
@@ -155,8 +334,27 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 200
+                                    "type": "object",
+                                    "properties": {
+                                        "token": {
+                                            "type": "string"
+                                        },
+                                        "token_type": {
+                                            "type": "string",
+                                            "const": "Bearer"
+                                        },
+                                        "expires_at": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "token",
+                                        "token_type",
+                                        "expires_at"
+                                    ]
                                 }
                             }
                         }
@@ -180,8 +378,15 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 200
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AuthUserData"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
                                 }
                             }
                         }
@@ -205,8 +410,284 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 200
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Logged out."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/auth/register/availability": {
+            "get": {
+                "operationId": "auth.register.availability",
+                "tags": [
+                    "Availability"
+                ],
+                "parameters": [
+                    {
+                        "name": "field",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "username",
+                                "email"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "value",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 255
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "available": {
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "required": [
+                                        "available"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "security": []
+            }
+        },
+        "/auth/profile/availability": {
+            "get": {
+                "operationId": "auth.profile.availability",
+                "tags": [
+                    "Availability"
+                ],
+                "parameters": [
+                    {
+                        "name": "field",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "username",
+                                "email"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "value",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 255
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "available": {
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "required": [
+                                        "available"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/availability-exceptions": {
+            "get": {
+                "operationId": "availability-exceptions.index",
+                "description": "Returns a paginated list of date exceptions. `per_page` is capped at 100 to\nbound resource consumption (OWASP API4).",
+                "summary": "List availability exceptions",
+                "tags": [
+                    "AvailabilityExceptionApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/availability-exceptions/{uuid}": {
+            "get": {
+                "operationId": "availability-exceptions.show",
+                "description": "Returns a single date exception by UUID.",
+                "summary": "Show an availability exception",
+                "tags": [
+                    "AvailabilityExceptionApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AvailabilityExceptionEloquentModel"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/availability-rules": {
+            "get": {
+                "operationId": "availability-rules.index",
+                "description": "Returns a paginated list of weekly availability rules. `per_page` is capped\nat 100 to bound resource consumption (OWASP API4).",
+                "summary": "List availability rules",
+                "tags": [
+                    "AvailabilityRuleApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/availability-rules/{uuid}": {
+            "get": {
+                "operationId": "availability-rules.show",
+                "description": "Returns a single weekly availability rule by UUID.",
+                "summary": "Show an availability rule",
+                "tags": [
+                    "AvailabilityRuleApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AvailabilityRuleEloquentModel"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
                                 }
                             }
                         }
@@ -231,8 +712,62 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 403
+                                    "type": "object",
+                                    "properties": {
+                                        "backups": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "status": {
+                                            "type": "object",
+                                            "properties": {
+                                                "reachable": {
+                                                    "type": "boolean"
+                                                },
+                                                "healthy": {
+                                                    "type": "string"
+                                                },
+                                                "backup_count": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "newest_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "used_storage_bytes": {
+                                                    "type": "integer"
+                                                },
+                                                "used_storage_human": {
+                                                    "type": "string"
+                                                },
+                                                "disk": {
+                                                    "type": "string"
+                                                },
+                                                "backup_name": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "reachable",
+                                                "healthy",
+                                                "backup_count",
+                                                "newest_at",
+                                                "used_storage_bytes",
+                                                "used_storage_human",
+                                                "disk",
+                                                "backup_name"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "backups",
+                                        "status"
+                                    ]
                                 }
                             }
                         }
@@ -272,13 +807,21 @@
                     "BackupApi"
                 ],
                 "responses": {
-                    "200": {
+                    "202": {
                         "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 202
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Backup queued."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
                                 }
                             }
                         }
@@ -312,7 +855,7 @@
         "/backups/{backup}/download": {
             "get": {
                 "operationId": "backups.download",
-                "description": "Streams the backup ZIP as a file download.",
+                "description": "Streams the backup ZIP as a file download by basename.",
                 "summary": "Download a backup",
                 "tags": [
                     "BackupApi"
@@ -333,8 +876,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 404
+                                    "type": "object"
                                 }
                             }
                         }
@@ -368,7 +910,7 @@
         "/backups/{backup}": {
             "delete": {
                 "operationId": "backups.destroy",
-                "description": "Permanently removes a single archive from the destination disk.",
+                "description": "Permanently removes a single archive from the destination disk by basename.",
                 "summary": "Delete a backup",
                 "tags": [
                     "BackupApi"
@@ -389,8 +931,16 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 200
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Backup deleted."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
                                 }
                             }
                         }
@@ -424,10 +974,20 @@
         "/blog-categories": {
             "get": {
                 "operationId": "blog-categories.index",
-                "description": "Returns a paginated list of blog categories.",
+                "description": "Returns a paginated list of blog categories. `per_page` is capped at 100 to\nbound resource consumption (OWASP API4).",
                 "summary": "List blog categories",
                 "tags": [
                     "BlogCategoryApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
                 ],
                 "responses": {
                     "200": {
@@ -435,8 +995,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 403
+                                    "type": "object"
                                 }
                             }
                         }
@@ -491,8 +1050,15 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 403
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/BlogCategoryEloquentModel"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
                                 }
                             }
                         }
@@ -526,10 +1092,20 @@
         "/contact-supports": {
             "get": {
                 "operationId": "contact-supports.index",
-                "description": "Returns a paginated list of contact-support submissions.",
+                "description": "Returns a paginated list of contact-support submissions. `per_page` is\ncapped at 100 to bound resource consumption (OWASP API4).",
                 "summary": "List contact requests",
                 "tags": [
                     "ContactSupportApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
                 ],
                 "responses": {
                     "200": {
@@ -537,8 +1113,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 403
+                                    "type": "object"
                                 }
                             }
                         }
@@ -593,8 +1168,15 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 403
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ContactSupportEloquentModel"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
                                 }
                             }
                         }
@@ -651,6 +1233,7 @@
         "/auth/otp/request": {
             "post": {
                 "operationId": "auth.otp.request",
+                "description": "Always returns 200 with a neutral message (no account enumeration).",
                 "summary": "Request a one-time password by email",
                 "tags": [
                     "OtpAuth"
@@ -680,8 +1263,16 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 200
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "If the email exists, a one-time password has been sent."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
                                 }
                             }
                         }
@@ -696,6 +1287,7 @@
         "/auth/otp/login": {
             "post": {
                 "operationId": "auth.otp.login",
+                "description": "Returns 422 when the code is invalid or expired.",
                 "summary": "Exchange a one-time password for an API token",
                 "tags": [
                     "OtpAuth"
@@ -729,8 +1321,31 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 200
+                                    "type": "object",
+                                    "properties": {
+                                        "token": {
+                                            "type": "string"
+                                        },
+                                        "token_type": {
+                                            "type": "string",
+                                            "const": "Bearer"
+                                        },
+                                        "expires_at": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        },
+                                        "user": {
+                                            "$ref": "#/components/schemas/AuthUserData"
+                                        }
+                                    },
+                                    "required": [
+                                        "token",
+                                        "token_type",
+                                        "expires_at",
+                                        "user"
+                                    ]
                                 }
                             }
                         }
@@ -745,6 +1360,7 @@
         "/auth/password/forgot": {
             "post": {
                 "operationId": "auth.password.forgot",
+                "description": "Always returns 200 with a neutral message (no account enumeration).",
                 "summary": "Request a password-reset code by email",
                 "tags": [
                     "PasswordReset"
@@ -774,8 +1390,16 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 200
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "If the email exists, a reset code has been sent."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
                                 }
                             }
                         }
@@ -790,6 +1414,7 @@
         "/auth/password/reset": {
             "post": {
                 "operationId": "auth.password.reset",
+                "description": "Returns 422 when the code is invalid and 429 (with `retry_after`) when the\naccount is locked.",
                 "summary": "Reset the password with a 6-digit code",
                 "tags": [
                     "PasswordReset"
@@ -823,14 +1448,52 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 200
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Your password has been reset."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
                                 }
                             }
                         }
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
+                    },
+                    "429": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Account temporarily locked due to too many failed attempts."
+                                        },
+                                        "retry_after": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "retry_after"
+                                    ]
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Retry-After": {
+                                "schema": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": []
@@ -839,10 +1502,20 @@
         "/permissions": {
             "get": {
                 "operationId": "permissions.index",
-                "description": "Returns a paginated list of permissions.",
+                "description": "Returns a paginated list of permissions. `per_page` is capped at 100 to\nbound resource consumption (OWASP API4).",
                 "summary": "List permissions",
                 "tags": [
                     "PermissionApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
                 ],
                 "responses": {
                     "200": {
@@ -850,8 +1523,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 403
+                                    "type": "object"
                                 }
                             }
                         }
@@ -906,8 +1578,15 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 403
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Permission"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
                                 }
                             }
                         }
@@ -941,10 +1620,20 @@
         "/roles": {
             "get": {
                 "operationId": "roles.index",
-                "description": "Returns a paginated list of roles.",
+                "description": "Returns a paginated list of roles on the `web` guard. `per_page` is capped\nat 100 to bound resource consumption (OWASP API4).",
                 "summary": "List roles",
                 "tags": [
                     "RoleApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
                 ],
                 "responses": {
                     "200": {
@@ -952,8 +1641,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 403
+                                    "type": "object"
                                 }
                             }
                         }
@@ -987,7 +1675,7 @@
         "/roles/{uuid}": {
             "get": {
                 "operationId": "roles.show",
-                "description": "Returns a single role (with its permissions) by UUID.",
+                "description": "Returns a single role with its permissions by UUID.",
                 "summary": "Show a role",
                 "tags": [
                     "RoleApi"
@@ -1008,8 +1696,15 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 403
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Role"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
                                 }
                             }
                         }
@@ -1043,6 +1738,7 @@
         "/auth/social/{provider}": {
             "post": {
                 "operationId": "auth.social",
+                "description": "Returns 401 on an invalid provider token and 409 when the email is already\nregistered to a different account.",
                 "summary": "Exchange a provider access token for an API token",
                 "tags": [
                     "SocialAuth"
@@ -1081,8 +1777,68 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 200
+                                    "type": "object",
+                                    "properties": {
+                                        "token": {
+                                            "type": "string"
+                                        },
+                                        "token_type": {
+                                            "type": "string",
+                                            "const": "Bearer"
+                                        },
+                                        "expires_at": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        },
+                                        "user": {
+                                            "$ref": "#/components/schemas/AuthUserData"
+                                        }
+                                    },
+                                    "required": [
+                                        "token",
+                                        "token_type",
+                                        "expires_at",
+                                        "user"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Invalid provider token."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
                                 }
                             }
                         }
@@ -1107,8 +1863,55 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 200
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "current": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "last_used_at": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "created_at": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "expires_at": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "name",
+                                                    "current",
+                                                    "last_used_at",
+                                                    "created_at",
+                                                    "expires_at"
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
                                 }
                             }
                         }
@@ -1132,8 +1935,16 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 200
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Other tokens revoked."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
                                 }
                             }
                         }
@@ -1167,8 +1978,16 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 200
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Token revoked."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
                                 }
                             }
                         }
@@ -1192,11 +2011,103 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 200
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "enabled": {
+                                                    "type": "boolean"
+                                                },
+                                                "confirmed": {
+                                                    "type": "boolean"
+                                                },
+                                                "trusted_devices": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "enabled",
+                                                "confirmed",
+                                                "trusted_devices"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
                                 }
                             }
                         }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/users/availability": {
+            "get": {
+                "operationId": "users.availability",
+                "tags": [
+                    "UserAvailability"
+                ],
+                "parameters": [
+                    {
+                        "name": "field",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "username",
+                                "email"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "value",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 255
+                        }
+                    },
+                    {
+                        "name": "ignore",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "available": {
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "required": [
+                                        "available"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -1213,6 +2124,510 @@
             }
         },
         "schemas": {
+            "AuthUserData": {
+                "type": "object",
+                "additionalProperties": {},
+                "title": "AuthUserData"
+            },
+            "AvailabilityExceptionEloquentModel": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "uuid": {
+                        "type": "string"
+                    },
+                    "date": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "is_available": {
+                        "type": "boolean"
+                    },
+                    "start_time": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "end_time": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "reason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "source": {
+                        "$ref": "#/components/schemas/ExceptionSource"
+                    },
+                    "deleted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "uuid",
+                    "date",
+                    "is_available",
+                    "start_time",
+                    "end_time",
+                    "reason",
+                    "source",
+                    "deleted_at",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "AvailabilityExceptionEloquentModel"
+            },
+            "AvailabilityRuleEloquentModel": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "uuid": {
+                        "type": "string"
+                    },
+                    "day_of_week": {
+                        "type": "integer"
+                    },
+                    "start_time": {
+                        "type": "string"
+                    },
+                    "end_time": {
+                        "type": "string"
+                    },
+                    "is_available": {
+                        "type": "boolean"
+                    },
+                    "deleted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "uuid",
+                    "day_of_week",
+                    "start_time",
+                    "end_time",
+                    "is_available",
+                    "deleted_at",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "AvailabilityRuleEloquentModel"
+            },
+            "BlogCategoryEloquentModel": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "uuid": {
+                        "type": "string"
+                    },
+                    "blog_category_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "blog_category_description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "blog_category_image": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "user_id": {
+                        "type": "integer"
+                    },
+                    "deleted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "image_url": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "uuid",
+                    "blog_category_name",
+                    "blog_category_description",
+                    "blog_category_image",
+                    "user_id",
+                    "deleted_at",
+                    "created_at",
+                    "updated_at",
+                    "image_url"
+                ],
+                "title": "BlogCategoryEloquentModel"
+            },
+            "ContactSupportEloquentModel": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "uuid": {
+                        "type": "string"
+                    },
+                    "first_name": {
+                        "type": "string"
+                    },
+                    "last_name": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "phone": {
+                        "type": "string"
+                    },
+                    "subject": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "sms_consent": {
+                        "type": "boolean"
+                    },
+                    "readed": {
+                        "type": "boolean"
+                    },
+                    "deleted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "uuid",
+                    "first_name",
+                    "last_name",
+                    "email",
+                    "phone",
+                    "subject",
+                    "message",
+                    "sms_consent",
+                    "readed",
+                    "deleted_at",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "ContactSupportEloquentModel"
+            },
+            "ExceptionSource": {
+                "type": "string",
+                "description": "Provenance of a date exception. A `Manual` row is a user-created override and is never touched by the holiday sync; a `Holiday` row is system-materialised from the country provider and is purged/rebuilt on a country change or the yearly sync. This is the single source of truth for the `source` column.\n",
+                "enum": [
+                    "manual",
+                    "holiday"
+                ],
+                "title": "ExceptionSource"
+            },
+            "LengthAwarePaginator": {
+                "type": "object",
+                "properties": {
+                    "current_page": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "first_page_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "from": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
+                    },
+                    "last_page_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "last_page": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "links": {
+                        "type": "array",
+                        "description": "Generated paginator links.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "url": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "label": {
+                                    "type": "string"
+                                },
+                                "active": {
+                                    "type": "boolean"
+                                }
+                            },
+                            "required": [
+                                "url",
+                                "label",
+                                "active"
+                            ]
+                        }
+                    },
+                    "next_page_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "path": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Base path for paginator generated URLs."
+                    },
+                    "per_page": {
+                        "type": "integer",
+                        "description": "Number of items shown per page.",
+                        "minimum": 0
+                    },
+                    "prev_page_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "to": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "description": "Number of the last item in the slice.",
+                        "minimum": 1
+                    },
+                    "total": {
+                        "type": "integer",
+                        "description": "Total number of items being paginated.",
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "current_page",
+                    "data",
+                    "first_page_url",
+                    "from",
+                    "last_page_url",
+                    "last_page",
+                    "links",
+                    "next_page_url",
+                    "path",
+                    "per_page",
+                    "prev_page_url",
+                    "to",
+                    "total"
+                ],
+                "title": "LengthAwarePaginator"
+            },
+            "Permission": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "guard_name": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "uuid": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "deleted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "guard_name",
+                    "created_at",
+                    "updated_at",
+                    "uuid",
+                    "deleted_at"
+                ],
+                "title": "Permission"
+            },
+            "Role": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "guard_name": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "uuid": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "deleted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "guard_name",
+                    "created_at",
+                    "updated_at",
+                    "uuid",
+                    "deleted_at"
+                ],
+                "title": "Role"
+            },
             "User": {
                 "type": "object",
                 "properties": {
@@ -1290,6 +2705,12 @@
                         ]
                     },
                     "country": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "country_code": {
                         "type": [
                             "string",
                             "null"
@@ -1401,6 +2822,7 @@
                     "city",
                     "state",
                     "country",
+                    "country_code",
                     "latitude",
                     "longitude",
                     "gender",

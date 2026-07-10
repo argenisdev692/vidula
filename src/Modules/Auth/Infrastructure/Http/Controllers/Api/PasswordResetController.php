@@ -14,8 +14,6 @@ use Modules\Auth\Domain\Ports\AccountLockoutPort;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * @group Authentication
- *
  * Passwordless password reset for API clients: request a 6-digit code by email,
  * then submit the code plus a new password. Uses spatie one-time-passwords
  * (codes valid 30 min) — the same mechanism as OTP login and activation.
@@ -29,13 +27,9 @@ final readonly class PasswordResetController
     ) {}
 
     /**
-     * Request a password-reset code by email
+     * Request a password-reset code by email.
      *
-     * @unauthenticated
-     *
-     * @bodyParam email string required Example: jane@example.com
-     *
-     * @response 200 {"message":"If the email exists, a reset code has been sent."}
+     * Always returns 200 with a neutral message (no account enumeration).
      */
     public function request(Request $request): JsonResponse
     {
@@ -52,18 +46,10 @@ final readonly class PasswordResetController
     }
 
     /**
-     * Reset the password with a 6-digit code
+     * Reset the password with a 6-digit code.
      *
-     * @unauthenticated
-     *
-     * @bodyParam email string required Example: jane@example.com
-     * @bodyParam one_time_password string required The emailed code. Example: 123456
-     * @bodyParam password string required The new password. Example: Sup3rS3cret!2026
-     * @bodyParam password_confirmation string required Must match password. Example: Sup3rS3cret!2026
-     *
-     * @response 200 scenario="Success" {"message":"Your password has been reset."}
-     * @response 422 scenario="Invalid code" {"message":"The provided code is invalid.","errors":{"one_time_password":["..."]}}
-     * @response 429 scenario="Account locked" {"message":"Account temporarily locked due to too many failed attempts.","retry_after":840}
+     * Returns 422 when the code is invalid and 429 (with `retry_after`) when the
+     * account is locked.
      */
     public function reset(Request $request): JsonResponse
     {

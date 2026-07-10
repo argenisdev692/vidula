@@ -9,7 +9,7 @@ use Modules\ContactSupport\Infrastructure\Http\Controllers\Api\ContactSupportApi
 | Contact-support API routes. Secondary surface for Sanctum-authenticated
 | clients. Documented by Scramble under /api/contact-supports.
 */
-Route::middleware('auth:sanctum')
+Route::middleware(['auth:sanctum', 'throttle:60,1'])
     ->prefix('contact-supports')
     ->name('api.contact-supports.')
     ->group(function (): void {

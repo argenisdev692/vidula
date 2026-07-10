@@ -12,9 +12,9 @@ use Modules\Backup\Infrastructure\Http\Controllers\Api\BackupApiController;
 | against the live archive list.
 */
 
-Route::middleware('auth:sanctum')->prefix('backups')->name('api.backups.')->group(function (): void {
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->prefix('backups')->name('api.backups.')->group(function (): void {
     Route::get('/', [BackupApiController::class, 'index'])->name('index');
-    Route::post('/run', [BackupApiController::class, 'run'])->name('run');
+    Route::post('/run', [BackupApiController::class, 'run'])->middleware('throttle:6,1')->name('run');
     Route::get('/{backup}/download', [BackupApiController::class, 'download'])
         ->where('backup', '[A-Za-z0-9._\- ]+')->name('download');
     Route::delete('/{backup}', [BackupApiController::class, 'destroy'])

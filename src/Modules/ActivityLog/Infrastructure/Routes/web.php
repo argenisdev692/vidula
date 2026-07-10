@@ -14,13 +14,13 @@ use Modules\ActivityLog\Infrastructure\Http\Controllers\ActivityLogExportControl
 | UI authorization uses permissions (`*_ACTIVITY_LOGS`), never roles.
 */
 
-Route::middleware(['web', 'auth'])->prefix('activity-logs')->name('activity-logs.')->group(function (): void {
+Route::middleware(['web', 'auth', 'throttle:60,1'])->prefix('activity-logs')->name('activity-logs.')->group(function (): void {
     // Static segments BEFORE the numeric wildcard.
     Route::get('/', [ActivityLogController::class, 'index'])
         ->middleware('permission:VIEW_ANY_ACTIVITY_LOGS')->name('index');
 
     Route::get('/export', ActivityLogExportController::class)
-        ->middleware('permission:EXPORT_ACTIVITY_LOGS')->name('export');
+        ->middleware(['permission:EXPORT_ACTIVITY_LOGS', 'throttle:10,1'])->name('export');
 
     Route::get('/{activity}', [ActivityLogController::class, 'show'])
         ->middleware('permission:VIEW_ACTIVITY_LOGS')->whereNumber('activity')->name('show');

@@ -31,7 +31,7 @@ final readonly class PermissionController
     public function index(Request $request, ListPermissionsHandler $list): InertiaResponse|JsonResponse
     {
         $filters = PermissionFilterData::validateAndCreate($request);
-        $permissions = $list->handle($filters, (int) $request->integer('per_page', 15));
+        $permissions = $list->handle($filters, min(max($request->integer('per_page', 15), 1), 100));
 
         return $request->expectsJson()
             ? response()->json($permissions)

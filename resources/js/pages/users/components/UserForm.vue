@@ -15,7 +15,7 @@
  * intentionally out of scope (a self-service concern).
  *
  * `force_password_change` is EDIT-only; role seeding is CREATE-only (afterwards
- * roles are managed from the user's Access panel). Client-side Zod validation
+ * the role is managed from the user's Access screen). Client-side Zod validation
  * mirrors the backend; the server stays authoritative on uniqueness.
  */
 import { computed, ref, watch } from 'vue';
@@ -464,7 +464,7 @@ function submit(): void {
             <header class="user-form__section-head">
                 <h3 class="user-form__section-title">Access</h3>
                 <p class="user-form__section-hint">
-                    Assign a starter role now — fine-tune permissions later from the user's Access panel.
+                    Assign a starter role now — fine-tune permissions later from the user's Access screen.
                 </p>
             </header>
             <div class="user-form__grid">
@@ -521,7 +521,7 @@ function submit(): void {
 .user-form__section {
     display: flex;
     flex-direction: column;
-    gap: var(--space-5);
+    gap: var(--space-6);
 }
 
 .user-form__section-head {
@@ -563,7 +563,7 @@ function submit(): void {
 .user-form__grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-4);
+    gap: var(--space-3);
 }
 
 /* Highlight the activation-link notice on the invite form in accent yellow. */

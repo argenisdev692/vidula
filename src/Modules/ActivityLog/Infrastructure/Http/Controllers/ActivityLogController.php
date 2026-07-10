@@ -24,7 +24,7 @@ final readonly class ActivityLogController
     {
         $filters = ActivityLogFilterData::validateAndCreate($request);
         $sortDir = $request->string('sort_dir', 'desc') === 'asc' ? 'asc' : 'desc';
-        $logs = $list->handle($filters, (int) $request->integer('per_page', 15), $sortDir);
+        $logs = $list->handle($filters, min(max($request->integer('per_page', 15), 1), 100), $sortDir);
 
         return $request->expectsJson()
             ? response()->json($logs)

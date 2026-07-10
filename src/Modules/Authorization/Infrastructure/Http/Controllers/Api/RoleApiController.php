@@ -11,23 +11,17 @@ use Modules\Authorization\Application\Queries\GetRoleHandler;
 use Modules\Authorization\Application\Queries\ListRolesHandler;
 
 /**
- * @group Roles
- *
- * API endpoints for role lookup. Secondary documentation surface for
- * Sanctum-authenticated clients. The primary UI remains Inertia/web.
+ * API endpoints for role lookup. Secondary Sanctum-authenticated surface; the
+ * primary UI stays Inertia/web. Documented by Scramble via return types +
+ * `auth:sanctum` detection — no manual annotations.
  */
 final readonly class RoleApiController
 {
     /**
      * List roles.
      *
-     * Returns a paginated list of roles.
-     *
-     * @authenticated
-     *
-     * @queryParam per_page int Page size. Example: 15
-     *
-     * @response 403 {"message":"This action is unauthorized."}
+     * Returns a paginated list of roles on the `web` guard. `per_page` is capped
+     * at 100 to bound resource consumption (OWASP API4).
      */
     public function index(Request $request, ListRolesHandler $list): JsonResponse
     {
@@ -35,20 +29,13 @@ final readonly class RoleApiController
 
         $filters = RoleFilterData::validateAndCreate($request);
 
-        return response()->json($list->handle($filters, (int) $request->integer('per_page', 15)));
+        return response()->json($list->handle($filters, min(max($request->integer('per_page', 15), 1), 100)));
     }
 
     /**
      * Show a role.
      *
-     * Returns a single role (with its permissions) by UUID.
-     *
-     * @authenticated
-     *
-     * @urlParam uuid string required The role UUID. Example: 00000000-0000-0000-0000-000000000000
-     *
-     * @response 403 {"message":"This action is unauthorized."}
-     * @response 404 {"message":"Not found."}
+     * Returns a single role with its permissions by UUID.
      */
     public function show(Request $request, string $uuid, GetRoleHandler $get): JsonResponse
     {

@@ -2,7 +2,7 @@
 /**
  * Edit user — dedicated edit page (GET /users/{uuid}/edit, UPDATE_USERS). Same
  * shell as the Show / Create screens (BackLink + card) driven by the shared
- * UserForm. Roles are NOT edited here (that stays on the user's Access panel);
+ * UserForm. Roles are NOT edited here (that stays on the user's Access screen);
  * profile photo is out of scope. On success the backend redirects to the list.
  */
 import { Head } from '@inertiajs/vue3';

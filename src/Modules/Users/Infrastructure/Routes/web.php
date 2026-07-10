@@ -23,13 +23,13 @@ Route::match(['get', 'post'], '/users/activate/{uuid}', AccountActivationControl
     ->name('users.activation.show');
 
 // ---- Admin management -------------------------------------------------------
-Route::middleware(['web', 'auth'])->prefix('users')->name('users.')->group(function (): void {
+Route::middleware(['web', 'auth', 'throttle:60,1'])->prefix('users')->name('users.')->group(function (): void {
     // Static segments BEFORE the wildcard.
     Route::get('/', [UserController::class, 'index'])
         ->middleware('permission:VIEW_ANY_USERS')->name('index');
 
     Route::get('/export', UserExportController::class)
-        ->middleware('permission:EXPORT_USERS')->name('export');
+        ->middleware(['permission:EXPORT_USERS', 'throttle:10,1'])->name('export');
 
     // Realtime username/email availability for the create/edit forms. The edit
     // form passes `?ignore={uuid}` so the user's own value reads as available.
@@ -57,17 +57,18 @@ Route::middleware(['web', 'auth'])->prefix('users')->name('users.')->group(funct
     Route::put('/{uuid}', [UserController::class, 'update'])
         ->middleware('permission:UPDATE_USERS')->whereUuid('uuid')->name('update');
 
-    // Role assignment (sync). Dedicated permission — granting access is more
-    // sensitive than editing a profile, so it never rides on UPDATE_USERS. The
-    // handler additionally blocks privilege escalation (an actor may only
+    // Role assignment (sync, single role). Dedicated permission — granting access
+    // is more sensitive than editing a profile, so it never rides on UPDATE_USERS.
+    // The handler additionally blocks privilege escalation (an actor may only
     // delegate roles they hold).
     Route::put('/{uuid}/roles', [UserController::class, 'roles'])
         ->middleware('permission:ASSIGN_ROLES_USERS')->whereUuid('uuid')->name('roles');
 
-    // Dedicated per-user direct-permissions screen + instant per-permission
-    // toggle. Separate dedicated permission; same anti-escalation guard.
+    // Combined per-user Access screen: the single role + direct-permission top-ups.
+    // Reachable with EITHER access permission; each section is independently guarded
+    // in the UI and each mutation keeps its own dedicated permission + escalation guard.
     Route::get('/{uuid}/permissions', [UserController::class, 'permissions'])
-        ->middleware('permission:ASSIGN_PERMISSIONS_USERS')->whereUuid('uuid')->name('permissions');
+        ->middleware('permission:ASSIGN_ROLES_USERS|ASSIGN_PERMISSIONS_USERS')->whereUuid('uuid')->name('permissions');
 
     Route::put('/{uuid}/permissions', [UserController::class, 'setPermission'])
         ->middleware('permission:ASSIGN_PERMISSIONS_USERS')->whereUuid('uuid')->name('permissions.set');

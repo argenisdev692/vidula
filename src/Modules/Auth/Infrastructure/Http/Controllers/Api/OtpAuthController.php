@@ -14,8 +14,6 @@ use Modules\Auth\Infrastructure\Auth\SanctumTokenService;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * @group Authentication
- *
  * Passwordless (OTP) login for API clients: request a code, then exchange the
  * code for a Sanctum token. Uses consumeOneTimePassword() (no session login).
  *
@@ -31,13 +29,9 @@ final readonly class OtpAuthController
     ) {}
 
     /**
-     * Request a one-time password by email
+     * Request a one-time password by email.
      *
-     * @unauthenticated
-     *
-     * @bodyParam email string required Example: jane@example.com
-     *
-     * @response 200 {"message":"If the email exists, a one-time password has been sent."}
+     * Always returns 200 with a neutral message (no account enumeration).
      */
     public function request(Request $request): JsonResponse
     {
@@ -54,15 +48,9 @@ final readonly class OtpAuthController
     }
 
     /**
-     * Exchange a one-time password for an API token
+     * Exchange a one-time password for an API token.
      *
-     * @unauthenticated
-     *
-     * @bodyParam email string required Example: jane@example.com
-     * @bodyParam one_time_password string required The emailed code. Example: 123456
-     *
-     * @response 200 scenario="Success" {"token":"6|jkl...","token_type":"Bearer","expires_at":"2026-06-23T10:00:00+00:00","user":{"uuid":"...","email":"jane@example.com"}}
-     * @response 422 scenario="Invalid code" {"message":"The provided one-time password is invalid.","errors":{"one_time_password":["..."]}}
+     * Returns 422 when the code is invalid or expired.
      */
     public function login(Request $request): JsonResponse
     {

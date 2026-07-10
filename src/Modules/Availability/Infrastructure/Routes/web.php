@@ -17,7 +17,7 @@ use Modules\Availability\Infrastructure\Http\Controllers\AvailabilityRuleExportC
 | segments are declared BEFORE the `{uuid}` wildcard so `/bulk-*` and `/calendar`
 | are never captured as a UUID.
 */
-Route::middleware(['web', 'auth'])->group(function (): void {
+Route::middleware(['web', 'auth', 'throttle:60,1'])->group(function (): void {
     Route::prefix('availability-rules')->name('availability-rules.')->group(function (): void {
         Route::get('/', [AvailabilityRuleController::class, 'index'])
             ->middleware('permission:VIEW_ANY_AVAILABILITY_RULES')->name('index');
@@ -35,7 +35,7 @@ Route::middleware(['web', 'auth'])->group(function (): void {
             ->middleware('permission:VIEW_ANY_AVAILABILITY_RULES')->name('calendar');
 
         Route::get('/export', AvailabilityRuleExportController::class)
-            ->middleware('permission:EXPORT_AVAILABILITY_RULES')->name('export');
+            ->middleware(['permission:EXPORT_AVAILABILITY_RULES', 'throttle:10,1'])->name('export');
 
         Route::get('/{uuid}', [AvailabilityRuleController::class, 'show'])
             ->middleware('permission:VIEW_AVAILABILITY_RULES')->whereUuid('uuid')->name('show');
@@ -64,7 +64,7 @@ Route::middleware(['web', 'auth'])->group(function (): void {
             ->middleware('permission:BULK_RESTORE_AVAILABILITY_EXCEPTIONS')->name('bulk-restore');
 
         Route::get('/export', AvailabilityExceptionExportController::class)
-            ->middleware('permission:EXPORT_AVAILABILITY_EXCEPTIONS')->name('export');
+            ->middleware(['permission:EXPORT_AVAILABILITY_EXCEPTIONS', 'throttle:10,1'])->name('export');
 
         Route::get('/{uuid}', [AvailabilityExceptionController::class, 'show'])
             ->middleware('permission:VIEW_AVAILABILITY_EXCEPTIONS')->whereUuid('uuid')->name('show');

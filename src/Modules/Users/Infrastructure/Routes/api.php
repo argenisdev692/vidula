@@ -11,7 +11,7 @@ use Modules\Users\Infrastructure\Http\Controllers\UserAvailabilityController;
 | web app (that uses the session routes in web.php).
 */
 
-Route::prefix('api/users')->middleware(['auth:sanctum'])->name('api.users.')->group(function (): void {
+Route::prefix('api/users')->middleware(['auth:sanctum', 'throttle:60,1'])->name('api.users.')->group(function (): void {
     // Realtime username/email availability for the create/edit forms.
     Route::get('/availability', UserAvailabilityController::class)
         ->middleware('permission:CREATE_USERS|UPDATE_USERS')->name('availability');

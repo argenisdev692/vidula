@@ -9,16 +9,13 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * @group Authentication
+ * Reports the caller's two-factor authentication status (enabled / confirmed /
+ * trusted-device count) for Sanctum-authenticated clients.
  */
 final readonly class TwoFactorStatusController
 {
     /**
-     * Get the caller's two-factor authentication status
-     *
-     * @authenticated
-     *
-     * @response 200 scenario="Success" {"data":{"enabled":true,"confirmed":true,"trusted_devices":2}}
+     * Get the caller's two-factor authentication status.
      */
     public function __invoke(Request $request): JsonResponse
     {

@@ -3,34 +3,27 @@
  * Users — admin user management over a soft-deletable account with a three-state
  * lifecycle (Pending → Active, plus Suspended when soft-deleted).
  *
- * Like the sibling Roles / Blog Categories screens, the list is driven by Inertia
- * partial reloads (`router.get` with `only: ['users','filters']` on every filter /
- * page change) rather than a JSON API. There are no create/edit page routes — the
- * backend store/update return `back()` redirects — so invite & edit happen in a
- * Volt Dialog, and delete / restore / resend / bulk go through the reusable
- * ConfirmDialog. Success / error feedback flows through the backend flash surfaced
- * app-wide by AppLayout (no duplicate client toasts).
- *
- * Suspended rows only ever appear under the "Suspended" filter (onlyTrashed), so
- * the list is always homogeneous: bulk action = restore in that view, suspend
- * otherwise. The page is gated by VIEW_ANY_USERS; every mutating control by its
- * own permission.
+ * The shared list mechanics live in {@see useResourceList}, the confirm dialogs
+ * in {@see useConfirmAction}, and the page chrome in {@see CrudIndexShell}. Unlike
+ * the sibling modules, invite & edit are dedicated pages (not a modal), so create
+ * / edit navigate via `router.visit`; and a row carries a third `resend` action
+ * alongside suspend / restore. Success / error feedback flows through the backend
+ * flash surfaced app-wide by AppLayout. Gated by VIEW_ANY_USERS; every mutating
+ * control by its own permission.
  */
-import { Head, router, usePage } from '@inertiajs/vue3';
-import { computed, reactive, ref } from 'vue';
-import type { DataTablePageEvent } from 'primevue/datatable';
+import { computed, reactive } from 'vue';
+import { router } from '@inertiajs/vue3';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
-import AppHeader from '@/modules/app/components/AppHeader.vue';
-import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import { useAuthorization } from '@/modules/auth/composables/useAuthorization';
-import AdvancedFilter, { type FilterCriteria, type FilterField } from '@/common/data-table/AdvancedFilter.vue';
+import type { FilterCriteria, FilterField } from '@/common/data-table/AdvancedFilter.vue';
+import CrudIndexShell from '@/common/data-table/CrudIndexShell.vue';
 import ConfirmDialog from '@/common/data-table/ConfirmDialog.vue';
-import Button from '@/volt/Button.vue';
-import UsersTable from './components/UsersTable.vue';
-import type { SharedProps } from '@/types/inertia';
-import type { PaginatedResponse, User, UserFilters, UserQuery, UserStatus } from '@/modules/users/types';
-import { buildUserExportUrl, buildUserQueryParams, type UserExportFormat } from '@/modules/users/helpers/buildUserQueryParams';
+import { useResourceList } from '@/common/data-table/useResourceList';
+import { useConfirmAction } from '@/common/data-table/useConfirmAction';
 import { toLocalIsoDate } from '@/lib/date';
+import UsersTable from './components/UsersTable.vue';
+import type { PaginatedResponse, User, UserFilters, UserQuery, UserStatus } from '@/modules/users/types';
+import { buildUserExportUrl, buildUserQueryParams } from '@/modules/users/helpers/buildUserQueryParams';
 
 defineOptions({ layout: AppLayout });
 
@@ -39,16 +32,12 @@ const props = defineProps<{
     filters: UserFilters;
 }>();
 
-usePage<SharedProps>();
 const { hasPermission } = useAuthorization();
 
 const canCreate = computed<boolean>(() => hasPermission('CREATE_USERS'));
 const canExport = computed<boolean>(() => hasPermission('EXPORT_USERS'));
 const canBulkDelete = computed<boolean>(() => hasPermission('BULK_DELETE_USERS'));
 const canBulkRestore = computed<boolean>(() => hasPermission('BULK_RESTORE_USERS'));
-
-const loading = ref<boolean>(false);
-const selection = ref<User[]>([]);
 
 /** The reactive request state — seeded once from the server-echoed props. */
 const query = reactive<UserQuery>({
@@ -60,12 +49,141 @@ const query = reactive<UserQuery>({
     per_page: props.users.per_page,
 });
 
-const firstRecord = computed<number>(() => (props.users.current_page - 1) * props.users.per_page);
-const recordLabel = computed<string>(() => `${props.users.total} ${props.users.total === 1 ? 'record' : 'records'} found`);
+function applyCriteria(target: UserQuery, criteria: FilterCriteria): void {
+    target.search = criteria.search || null;
+    target.status = (criteria.status as UserStatus | undefined) || null;
 
-/** Suspended rows only appear in the suspended view ⇒ restore, otherwise suspend. */
-const isSuspendedView = computed<boolean>(() => query.status === 'suspended');
+    const range = criteria.dateRange as Date[] | undefined;
+    target.date_from = range?.[0] ? toLocalIsoDate(range[0]) : null;
+    target.date_to = range?.[1] ? toLocalIsoDate(range[1]) : null;
+}
+
+const { loading, selection, firstRecord, recordLabel, isSuspendedView, resetSelection, onFilters, onPage, openExport } =
+    useResourceList<User, UserQuery>({
+        baseUrl: '/users',
+        propKey: 'users',
+        query,
+        pagination: computed(() => props.users),
+        buildParams: buildUserQueryParams,
+        applyCriteria,
+        exportUrl: buildUserExportUrl,
+    });
+
 const canBulkAct = computed<boolean>(() => (isSuspendedView.value ? canBulkRestore.value : canBulkDelete.value));
+
+/* ── Invite / edit — dedicated pages (no modal) ───────────────────────── */
+function openCreate(): void {
+    router.visit('/users/create');
+}
+
+function openEdit(user: User): void {
+    router.visit(`/users/${user.uuid}/edit`);
+}
+
+/* ── Single-row suspend / restore / resend ────────────────────────────── */
+type RowKind = 'delete' | 'restore' | 'resend';
+type RowAction = { kind: RowKind; user: User };
+
+function displayName(user: User): string {
+    return [user.first_name, user.last_name].filter(Boolean).join(' ').trim() || user.email;
+}
+
+const {
+    visible: rowVisible,
+    loading: rowLoading,
+    confirm: rowConfirm,
+    ask: askRow,
+    run: runRow,
+} = useConfirmAction<RowAction>((action) => {
+    const name = displayName(action.user);
+    if (action.kind === 'restore') {
+        return {
+            title: 'Restore user',
+            message: `Restore “${name}”? Their account becomes active again and they can sign in.`,
+            confirmLabel: 'Restore',
+            confirmIcon: 'pi pi-check-circle',
+            tone: 'success',
+        };
+    }
+    if (action.kind === 'resend') {
+        return {
+            title: 'Resend invitation',
+            message: `Send a fresh activation link to “${name}”? Any previous link is superseded.`,
+            confirmLabel: 'Resend',
+            confirmIcon: 'pi pi-send',
+            tone: 'primary',
+        };
+    }
+    return {
+        title: 'Suspend user',
+        message: `Suspend “${name}”? Their account is soft-deleted and sign-in is revoked. You can restore it later.`,
+        confirmLabel: 'Suspend',
+        confirmIcon: 'pi pi-trash',
+        tone: 'danger',
+    };
+});
+
+function confirmRowAction(): void {
+    runRow((action, finish) => {
+        const options = {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: resetSelection,
+            onFinish: finish,
+        };
+        if (action.kind === 'delete') {
+            router.delete(`/users/${action.user.uuid}`, options);
+        } else if (action.kind === 'restore') {
+            router.post(`/users/${action.user.uuid}/restore`, {}, options);
+        } else {
+            router.post(`/users/${action.user.uuid}/resend-invitation`, {}, options);
+        }
+    });
+}
+
+/* ── Bulk suspend / restore ───────────────────────────────────────────── */
+const {
+    visible: bulkVisible,
+    loading: bulkLoading,
+    confirm: bulkConfirm,
+    ask: askBulkConfirm,
+    run: runBulk,
+} = useConfirmAction<{ count: number }>((action) => {
+    if (isSuspendedView.value) {
+        return {
+            title: 'Restore selected',
+            message: `Restore ${action.count} ${action.count === 1 ? 'user' : 'users'}? Their accounts become active again.`,
+            confirmLabel: 'Restore all',
+            confirmIcon: 'pi pi-check-circle',
+            tone: 'success',
+        };
+    }
+    return {
+        title: 'Suspend selected',
+        message: `Suspend ${action.count} ${action.count === 1 ? 'user' : 'users'}? Their accounts are soft-deleted and sign-in revoked.`,
+        confirmLabel: 'Suspend all',
+        confirmIcon: 'pi pi-trash',
+        tone: 'danger',
+    };
+});
+
+function askBulk(): void {
+    if (selection.value.length > 0) {
+        askBulkConfirm({ count: selection.value.length });
+    }
+}
+
+function confirmBulk(): void {
+    runBulk((_action, finish) => {
+        const uuids = selection.value.map((user) => user.uuid);
+        if (uuids.length === 0) {
+            finish();
+            return;
+        }
+        const url = isSuspendedView.value ? '/users/bulk-restore' : '/users/bulk-delete';
+        router.post(url, { uuids }, { preserveScroll: true, preserveState: true, onSuccess: resetSelection, onFinish: finish });
+    });
+}
 
 const filterFields: FilterField[] = [
     { key: 'dateRange', label: 'Created between', type: 'date-range', placeholder: 'Start — End' },
@@ -81,239 +199,31 @@ const filterFields: FilterField[] = [
         ],
     },
 ];
-
-function reload(): void {
-    loading.value = true;
-    router.get('/users', buildUserQueryParams(query), {
-        preserveState: true,
-        preserveScroll: true,
-        replace: true,
-        only: ['users', 'filters'],
-        onFinish: () => {
-            loading.value = false;
-        },
-    });
-}
-
-function onFilters(criteria: FilterCriteria): void {
-    query.search = criteria.search || null;
-    query.status = (criteria.status as UserStatus | undefined) || null;
-
-    const range = criteria.dateRange as Date[] | undefined;
-    query.date_from = range?.[0] ? toLocalIsoDate(range[0]) : null;
-    query.date_to = range?.[1] ? toLocalIsoDate(range[1]) : null;
-
-    query.page = 1;
-    selection.value = [];
-    reload();
-}
-
-function onPage(event: DataTablePageEvent): void {
-    query.page = event.page + 1;
-    query.per_page = event.rows;
-    reload();
-}
-
-function openExport(format: UserExportFormat): void {
-    window.location.href = buildUserExportUrl(query, format);
-}
-
-/* ── Invite / edit — dedicated pages (no modal) ───────────────────────── */
-function openCreate(): void {
-    router.visit('/users/create');
-}
-
-function openEdit(user: User): void {
-    router.visit(`/users/${user.uuid}/edit`);
-}
-
-/* ── Single-row delete / restore / resend ─────────────────────────────── */
-type RowActionKind = 'delete' | 'restore' | 'resend';
-const rowAction = ref<{ kind: RowActionKind; user: User } | null>(null);
-const rowActionVisible = ref<boolean>(false);
-const rowActionLoading = ref<boolean>(false);
-
-function displayName(user: User | undefined): string {
-    if (!user) {
-        return 'this user';
-    }
-    return [user.first_name, user.last_name].filter(Boolean).join(' ').trim() || user.email;
-}
-
-const rowConfirm = computed(() => {
-    const name = displayName(rowAction.value?.user);
-    if (rowAction.value?.kind === 'restore') {
-        return {
-            title: 'Restore user',
-            message: `Restore “${name}”? Their account becomes active again and they can sign in.`,
-            confirmLabel: 'Restore',
-            confirmIcon: 'pi pi-check-circle',
-            tone: 'success' as const,
-        };
-    }
-    if (rowAction.value?.kind === 'resend') {
-        return {
-            title: 'Resend invitation',
-            message: `Send a fresh activation link to “${name}”? Any previous link is superseded.`,
-            confirmLabel: 'Resend',
-            confirmIcon: 'pi pi-send',
-            tone: 'primary' as const,
-        };
-    }
-    return {
-        title: 'Suspend user',
-        message: `Suspend “${name}”? Their account is soft-deleted and sign-in is revoked. You can restore it later.`,
-        confirmLabel: 'Suspend',
-        confirmIcon: 'pi pi-trash',
-        tone: 'danger' as const,
-    };
-});
-
-function askDelete(user: User): void {
-    rowAction.value = { kind: 'delete', user };
-    rowActionVisible.value = true;
-}
-
-function askRestore(user: User): void {
-    rowAction.value = { kind: 'restore', user };
-    rowActionVisible.value = true;
-}
-
-function askResend(user: User): void {
-    rowAction.value = { kind: 'resend', user };
-    rowActionVisible.value = true;
-}
-
-function confirmRowAction(): void {
-    const action = rowAction.value;
-    if (!action) {
-        return;
-    }
-    rowActionLoading.value = true;
-
-    const options = {
-        preserveScroll: true,
-        preserveState: true,
-        onSuccess: () => {
-            selection.value = [];
-        },
-        onFinish: () => {
-            rowActionLoading.value = false;
-            rowActionVisible.value = false;
-        },
-    };
-
-    if (action.kind === 'delete') {
-        router.delete(`/users/${action.user.uuid}`, options);
-    } else if (action.kind === 'restore') {
-        router.post(`/users/${action.user.uuid}/restore`, {}, options);
-    } else {
-        router.post(`/users/${action.user.uuid}/resend-invitation`, {}, options);
-    }
-}
-
-/* ── Bulk suspend / restore ───────────────────────────────────────────── */
-const bulkVisible = ref<boolean>(false);
-const bulkLoading = ref<boolean>(false);
-
-const bulkConfirm = computed(() => {
-    const count = selection.value.length;
-    if (isSuspendedView.value) {
-        return {
-            title: 'Restore selected',
-            message: `Restore ${count} ${count === 1 ? 'user' : 'users'}? Their accounts become active again.`,
-            confirmLabel: 'Restore all',
-            confirmIcon: 'pi pi-check-circle',
-            tone: 'success' as const,
-        };
-    }
-    return {
-        title: 'Suspend selected',
-        message: `Suspend ${count} ${count === 1 ? 'user' : 'users'}? Their accounts are soft-deleted and sign-in revoked.`,
-        confirmLabel: 'Suspend all',
-        confirmIcon: 'pi pi-trash',
-        tone: 'danger' as const,
-    };
-});
-
-function askBulk(): void {
-    if (selection.value.length > 0) {
-        bulkVisible.value = true;
-    }
-}
-
-function confirmBulk(): void {
-    const uuids = selection.value.map((u) => u.uuid);
-    if (uuids.length === 0) {
-        return;
-    }
-    bulkLoading.value = true;
-
-    const url = isSuspendedView.value ? '/users/bulk-restore' : '/users/bulk-delete';
-    router.post(
-        url,
-        { uuids },
-        {
-            preserveScroll: true,
-            preserveState: true,
-            onSuccess: () => {
-                selection.value = [];
-            },
-            onFinish: () => {
-                bulkLoading.value = false;
-                bulkVisible.value = false;
-            },
-        },
-    );
-}
 </script>
 
 <template>
-    <Head title="Users" />
-
-    <AppHeader title="Users" subtitle="Invite, manage and suspend the people who can access the app" />
-
-    <PermissionGuard permission="VIEW_ANY_USERS">
-        <template #fallback>
-            <div class="empty">
-                <i class="pi pi-lock" aria-hidden="true" />
-                <p>You don't have permission to view users.</p>
-            </div>
-        </template>
-
-        <div class="page">
-            <AdvancedFilter
-                search-placeholder="Search name, username or email…"
-                :fields="filterFields"
-                :show-export-pdf="canExport"
-                :show-export-excel="canExport"
-                :show-export-csv="canExport"
-                :show-create="canCreate"
-                create-label="Invite user"
-                @filters-change="onFilters"
-                @create="openCreate"
-                @export-pdf="openExport('pdf')"
-                @export-excel="openExport('xlsx')"
-                @export-csv="openExport('csv')"
-            />
-
-            <div class="toolbar">
-                <p class="counter">{{ recordLabel }}</p>
-
-                <Transition name="fade">
-                    <div v-if="selection.length > 0 && canBulkAct" class="bulk-bar">
-                        <span class="bulk-bar__count">{{ selection.length }} selected</span>
-                        <Button
-                            size="small"
-                            :label="isSuspendedView ? 'Restore selected' : 'Suspend selected'"
-                            :icon="isSuspendedView ? 'pi pi-check-circle' : 'pi pi-trash'"
-                            outlined
-                            @click="askBulk"
-                        />
-                    </div>
-                </Transition>
-            </div>
-
+    <CrudIndexShell
+        title="Users"
+        subtitle="Invite, manage and suspend the people who can access the app"
+        permission="VIEW_ANY_USERS"
+        fallback-text="You don't have permission to view users."
+        search-placeholder="Search name, username or email…"
+        :fields="filterFields"
+        :can-export="canExport"
+        :can-create="canCreate"
+        create-label="Invite user"
+        :record-label="recordLabel"
+        :selection-count="selection.length"
+        :can-bulk-act="canBulkAct"
+        :is-suspended-view="isSuspendedView"
+        @filters-change="onFilters"
+        @create="openCreate"
+        @export-pdf="openExport('pdf')"
+        @export-excel="openExport('xlsx')"
+        @export-csv="openExport('csv')"
+        @bulk="askBulk"
+    >
+        <template #table>
             <UsersTable
                 v-model:selection="selection"
                 :data="users.data"
@@ -323,91 +233,34 @@ function confirmBulk(): void {
                 :loading="loading"
                 @page="onPage"
                 @edit="openEdit"
-                @delete="askDelete"
-                @restore="askRestore"
-                @resend="askResend"
+                @delete="(user: User) => askRow({ kind: 'delete', user })"
+                @restore="(user: User) => askRow({ kind: 'restore', user })"
+                @resend="(user: User) => askRow({ kind: 'resend', user })"
             />
-        </div>
-    </PermissionGuard>
+        </template>
 
-    <ConfirmDialog
-        v-model:visible="rowActionVisible"
-        :title="rowConfirm.title"
-        :message="rowConfirm.message"
-        :confirm-label="rowConfirm.confirmLabel"
-        :confirm-icon="rowConfirm.confirmIcon"
-        :tone="rowConfirm.tone"
-        :loading="rowActionLoading"
-        @confirm="confirmRowAction"
-    />
+        <template #dialogs>
+            <ConfirmDialog
+                v-model:visible="rowVisible"
+                :title="rowConfirm.title"
+                :message="rowConfirm.message"
+                :confirm-label="rowConfirm.confirmLabel"
+                :confirm-icon="rowConfirm.confirmIcon"
+                :tone="rowConfirm.tone"
+                :loading="rowLoading"
+                @confirm="confirmRowAction"
+            />
 
-    <ConfirmDialog
-        v-model:visible="bulkVisible"
-        :title="bulkConfirm.title"
-        :message="bulkConfirm.message"
-        :confirm-label="bulkConfirm.confirmLabel"
-        :confirm-icon="bulkConfirm.confirmIcon"
-        :tone="bulkConfirm.tone"
-        :loading="bulkLoading"
-        @confirm="confirmBulk"
-    />
+            <ConfirmDialog
+                v-model:visible="bulkVisible"
+                :title="bulkConfirm.title"
+                :message="bulkConfirm.message"
+                :confirm-label="bulkConfirm.confirmLabel"
+                :confirm-icon="bulkConfirm.confirmIcon"
+                :tone="bulkConfirm.tone"
+                :loading="bulkLoading"
+                @confirm="confirmBulk"
+            />
+        </template>
+    </CrudIndexShell>
 </template>
-
-<style scoped>
-.page {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-}
-
-.toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-4);
-    flex-wrap: wrap;
-}
-
-.counter {
-    margin: 0;
-    font-size: var(--text-sm);
-    color: var(--text-muted);
-}
-
-.bulk-bar {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    flex-wrap: wrap;
-}
-
-.bulk-bar__count {
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-    color: var(--text-secondary);
-}
-
-.fade-enter-active,
-.fade-leave-active {
-    transition: opacity var(--transition), transform var(--transition);
-}
-
-.fade-enter-from,
-.fade-leave-to {
-    opacity: 0;
-    transform: translateY(-4px);
-}
-
-.empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-3);
-    padding: var(--space-16) var(--space-6);
-    color: var(--text-muted);
-}
-
-.empty .pi {
-    font-size: var(--text-3xl);
-}
-</style>

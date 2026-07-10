@@ -15,7 +15,7 @@ use Modules\Authorization\Infrastructure\Http\Controllers\RoleExportController;
 | permissions, never roles). Static segments (`/bulk-*`, `/export`) are declared
 | BEFORE the `{uuid}` wildcard so they are never captured as a UUID.
 */
-Route::middleware(['web', 'auth'])->group(function (): void {
+Route::middleware(['web', 'auth', 'throttle:60,1'])->group(function (): void {
     Route::prefix('roles')->name('roles.')->group(function (): void {
         Route::get('/', [RoleController::class, 'index'])
             ->middleware('permission:VIEW_ANY_ROLES')->name('index');
@@ -30,7 +30,7 @@ Route::middleware(['web', 'auth'])->group(function (): void {
             ->middleware('permission:BULK_RESTORE_ROLES')->name('bulk-restore');
 
         Route::get('/export', RoleExportController::class)
-            ->middleware('permission:EXPORT_ROLES')->name('export');
+            ->middleware(['permission:EXPORT_ROLES', 'throttle:10,1'])->name('export');
 
         Route::get('/{uuid}', [RoleController::class, 'show'])
             ->middleware('permission:VIEW_ROLES')->whereUuid('uuid')->name('show');
@@ -59,7 +59,7 @@ Route::middleware(['web', 'auth'])->group(function (): void {
             ->middleware('permission:BULK_RESTORE_PERMISSIONS')->name('bulk-restore');
 
         Route::get('/export', PermissionExportController::class)
-            ->middleware('permission:EXPORT_PERMISSIONS')->name('export');
+            ->middleware(['permission:EXPORT_PERMISSIONS', 'throttle:10,1'])->name('export');
 
         Route::get('/{uuid}', [PermissionController::class, 'show'])
             ->middleware('permission:VIEW_PERMISSIONS')->whereUuid('uuid')->name('show');

@@ -11,43 +11,30 @@ use Modules\Availability\Application\Queries\GetAvailabilityExceptionHandler;
 use Modules\Availability\Application\Queries\ListAvailabilityExceptionsHandler;
 
 /**
- * @group Availability Exceptions
- *
  * API endpoints for date-specific overrides (closures / forced-open days).
- * Secondary documentation surface for Sanctum-authenticated clients. The
- * primary UI remains Inertia/web.
+ * Secondary Sanctum-authenticated surface; the primary UI remains Inertia/web.
+ * Documented by Scramble via return types + `auth:sanctum` detection — no manual
+ * annotations.
  */
 final readonly class AvailabilityExceptionApiController
 {
     /**
      * List availability exceptions.
      *
-     * Returns a paginated list of date exceptions.
-     *
-     * @authenticated
-     *
-     * @queryParam per_page int Page size. Example: 15
-     *
-     * @response 403 {"message":"This action is unauthorized."}
+     * Returns a paginated list of date exceptions. `per_page` is capped at 100 to
+     * bound resource consumption (OWASP API4).
      */
     public function index(Request $request, ListAvailabilityExceptionsHandler $list): JsonResponse
     {
         $filters = AvailabilityExceptionFilterData::validateAndCreate($request);
 
-        return response()->json($list->handle($filters, (int) $request->integer('per_page', 15)));
+        return response()->json($list->handle($filters, min(max($request->integer('per_page', 15), 1), 100)));
     }
 
     /**
      * Show an availability exception.
      *
      * Returns a single date exception by UUID.
-     *
-     * @authenticated
-     *
-     * @urlParam uuid string required The availability exception UUID. Example: 00000000-0000-0000-0000-000000000000
-     *
-     * @response 403 {"message":"This action is unauthorized."}
-     * @response 404 {"message":"Not found."}
      */
     public function show(string $uuid, GetAvailabilityExceptionHandler $get): JsonResponse
     {

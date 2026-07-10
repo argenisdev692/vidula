@@ -54,6 +54,16 @@ final class EloquentRoleRepository implements RoleRepositoryPort
             ->first();
     }
 
+    public function firstProtectedName(array $uuids, array $protectedNames): ?string
+    {
+        $name = Role::query()
+            ->whereIn('uuid', $uuids)
+            ->whereIn('name', $protectedNames)
+            ->value('name');
+
+        return $name !== null ? (string) $name : null;
+    }
+
     public function allAssignableNames(): array
     {
         return Role::query()

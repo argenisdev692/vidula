@@ -31,7 +31,7 @@ final readonly class AvailabilityRuleController
     public function index(Request $request, ListAvailabilityRulesHandler $list): InertiaResponse|JsonResponse
     {
         $filters = AvailabilityRuleFilterData::validateAndCreate($request);
-        $rules = $list->handle($filters, (int) $request->integer('per_page', 15));
+        $rules = $list->handle($filters, min(max($request->integer('per_page', 15), 1), 100));
 
         return $request->expectsJson()
             ? response()->json($rules)

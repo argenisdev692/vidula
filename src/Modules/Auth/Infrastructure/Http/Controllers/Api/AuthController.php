@@ -22,11 +22,10 @@ use Symfony\Component\HttpFoundation\Response;
 use function event;
 
 /**
- * @group Authentication
- *
  * Stateless token-based authentication for mobile / external clients (Sanctum
  * personal access tokens). The web app uses session auth via Fortify and must
- * NOT call these endpoints.
+ * NOT call these endpoints. Documented by Scramble via return types + middleware
+ * detection — no manual annotations.
  */
 final readonly class AuthController
 {
@@ -37,21 +36,12 @@ final readonly class AuthController
     ) {}
 
     /**
-     * Log in and issue an API token
+     * Log in and issue an API token.
      *
      * Verifies credentials, enforces email verification + account lockout, then
-     * issues a rotated Sanctum token (admins expire in 1h, users in 24h).
-     *
-     * @unauthenticated
-     *
-     * @bodyParam email string required The account email. Example: jane@example.com
-     * @bodyParam password string required The account password. Example: Sup3rS3cret!2026
-     * @bodyParam device_name string The device label used as the token name. Example: iphone-15
-     *
-     * @response 200 scenario="Success" {"token":"3|abc...","token_type":"Bearer","expires_at":"2026-06-23T10:00:00+00:00","user":{"uuid":"...","email":"jane@example.com"}}
-     * @response 422 scenario="Invalid credentials" {"message":"These credentials do not match our records.","errors":{"email":["These credentials do not match our records."]}}
-     * @response 403 scenario="Email not verified" {"message":"Your email address is not verified."}
-     * @response 429 scenario="Account locked" {"message":"Account temporarily locked.","retry_after":840}
+     * issues a rotated Sanctum token (admins expire in 1h, users in 24h). Returns
+     * 422 on bad credentials, 403 when the email is unverified, and 429 with a
+     * `retry_after` when the account is locked.
      */
     public function login(ApiLoginData $data, Request $request): JsonResponse
     {
@@ -105,14 +95,10 @@ final readonly class AuthController
     }
 
     /**
-     * Rotate the current API token
+     * Rotate the current API token.
      *
      * Revokes the caller's current token and issues a fresh one with the same
      * device name and a renewed expiry.
-     *
-     * @authenticated
-     *
-     * @response 200 scenario="Success" {"token":"4|def...","token_type":"Bearer","expires_at":"2026-06-23T10:00:00+00:00"}
      */
     public function refresh(Request $request): JsonResponse
     {
@@ -129,11 +115,7 @@ final readonly class AuthController
     }
 
     /**
-     * Get the authenticated user
-     *
-     * @authenticated
-     *
-     * @response 200 scenario="Success" {"data":{"uuid":"...","first_name":"Jane","email":"jane@example.com","roles":["USER"],"permissions":[]}}
+     * Get the authenticated user.
      */
     public function me(Request $request): JsonResponse
     {
@@ -146,11 +128,7 @@ final readonly class AuthController
     }
 
     /**
-     * Log out (revoke the current token)
-     *
-     * @authenticated
-     *
-     * @response 200 scenario="Success" {"message":"Logged out."}
+     * Log out (revoke the current token).
      */
     public function logout(Request $request): JsonResponse
     {

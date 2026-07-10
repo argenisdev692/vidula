@@ -7,7 +7,6 @@ namespace Modules\Authorization\Application\Commands;
 use Modules\Authorization\Domain\Exceptions\ProtectedRoleException;
 use Modules\Authorization\Domain\Ports\RoleRepositoryPort;
 use Modules\Authorization\Domain\SystemRoles;
-use Modules\Authorization\Infrastructure\Persistence\Eloquent\Models\Role;
 use Shared\Application\DTOs\BulkUuidsData;
 
 /**
@@ -21,10 +20,7 @@ final readonly class BulkDeleteRolesHandler
 
     public function handle(BulkUuidsData $data): int
     {
-        $protected = Role::query()
-            ->whereIn('uuid', $data->uuids)
-            ->whereIn('name', SystemRoles::PROTECTED)
-            ->value('name');
+        $protected = $this->roles->firstProtectedName($data->uuids, SystemRoles::PROTECTED);
 
         if ($protected !== null) {
             throw ProtectedRoleException::cannotModify($protected);

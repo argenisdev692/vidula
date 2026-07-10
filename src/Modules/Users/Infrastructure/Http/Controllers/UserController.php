@@ -41,7 +41,7 @@ final readonly class UserController
     public function index(Request $request, ListUsersHandler $list): InertiaResponse|JsonResponse
     {
         $filters = UserFilterData::validateAndCreate($request);
-        $users = $list->handle($filters, (int) $request->integer('per_page', 15));
+        $users = $list->handle($filters, min(max($request->integer('per_page', 15), 1), 100));
 
         if ($request->expectsJson()) {
             return response()->json($users);
@@ -57,7 +57,6 @@ final readonly class UserController
         string $uuid,
         Request $request,
         GetUserHandler $get,
-        RoleRepositoryPort $roles,
     ): InertiaResponse|JsonResponse {
         $user = $get->handle($uuid);
 
@@ -65,16 +64,15 @@ final readonly class UserController
             return response()->json(['data' => $user]);
         }
 
-        /** @var User $actor */
-        $actor = $request->user();
-
+        // Read-only detail: the role, the DIRECT grants, and the full EFFECTIVE set
+        // (direct + inherited via the role) for display only. Access management
+        // (assigning the role and direct permissions) lives on the dedicated Access
+        // screen ({@see permissions()}).
         return Inertia::render('users/Show', [
             'user' => $user,
             'userRoles' => $user->getRoleNames()->all(),
             'directPermissions' => $user->getDirectPermissions()->pluck('name')->all(),
             'effectivePermissions' => $user->getAllPermissions()->pluck('name')->all(),
-            'availableRoles' => $roles->allAssignableNames(),
-            'assignableRoles' => $this->assignableRoleNames($actor, $roles),
         ]);
     }
 
@@ -151,12 +149,13 @@ final readonly class UserController
     }
 
     /**
-     * Dedicated per-user direct-permissions screen (module-grouped, instant
-     * toggle). Read model: the full catalogue, which grants the user holds
-     * DIRECTLY, which they inherit VIA a role (checked + locked), and the subset
-     * the acting admin may delegate.
+     * Dedicated per-user Access screen: the single role (searchable single-select)
+     * plus direct-permission top-ups (module-grouped, instant toggle). Read model:
+     * the user's single role, the assignable role catalogue, the full permission
+     * catalogue, which grants the user holds DIRECTLY, which they inherit VIA the
+     * role (checked + locked), and the subset the acting admin may delegate.
      */
-    public function permissions(string $uuid, Request $request, GetUserHandler $get, PermissionRepositoryPort $permissions): InertiaResponse
+    public function permissions(string $uuid, Request $request, GetUserHandler $get, RoleRepositoryPort $roles, PermissionRepositoryPort $permissions): InertiaResponse
     {
         $user = $get->handle($uuid);
 
@@ -166,6 +165,9 @@ final readonly class UserController
 
         return Inertia::render('users/Permissions', [
             'user' => $user->only(['uuid', 'first_name', 'last_name', 'email']),
+            'userRoles' => $user->getRoleNames()->all(),
+            'availableRoles' => $roles->allAssignableNames(),
+            'assignableRoles' => $this->assignableRoleNames($actor, $roles),
             'directPermissions' => $user->getDirectPermissions()->pluck('name')->all(),
             'rolePermissions' => $user->getPermissionsViaRoles()->pluck('name')->all(),
             'availablePermissions' => $catalogue,

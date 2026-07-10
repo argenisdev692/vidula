@@ -13,7 +13,7 @@ use Modules\Blog\Infrastructure\Http\Controllers\BlogCategoryExportController;
 | permissions, never roles). Static segments are declared BEFORE the `{uuid}`
 | wildcard so `/bulk-delete` and `/bulk-restore` are never captured as a UUID.
 */
-Route::middleware(['web', 'auth'])->prefix('blog-categories')->name('blog-categories.')->group(function (): void {
+Route::middleware(['web', 'auth', 'throttle:60,1'])->prefix('blog-categories')->name('blog-categories.')->group(function (): void {
     Route::get('/', [BlogCategoryController::class, 'index'])
         ->middleware('permission:VIEW_ANY_BLOG_CATEGORIES')->name('index');
 
@@ -27,7 +27,7 @@ Route::middleware(['web', 'auth'])->prefix('blog-categories')->name('blog-catego
         ->middleware('permission:BULK_RESTORE_BLOG_CATEGORIES')->name('bulk-restore');
 
     Route::get('/export', BlogCategoryExportController::class)
-        ->middleware('permission:EXPORT_BLOG_CATEGORIES')->name('export');
+        ->middleware(['permission:EXPORT_BLOG_CATEGORIES', 'throttle:10,1'])->name('export');
 
     Route::get('/{uuid}', [BlogCategoryController::class, 'show'])
         ->middleware('permission:VIEW_BLOG_CATEGORIES')->whereUuid('uuid')->name('show');

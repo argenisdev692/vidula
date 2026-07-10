@@ -1,8 +1,10 @@
 <script setup lang="ts">
 /**
- * Dedicated per-user direct-permissions screen (GET /users/{uuid}/permissions),
- * modelled on the GUIDE reference: a module-grouped grid of checkboxes with an
- * instant toggle per permission (PUT /users/{uuid}/permissions).
+ * Combined per-user Access screen (GET /users/{uuid}/permissions): the user's
+ * single role (searchable single-select, see RolePicker) on top, and a
+ * module-grouped grid of direct-permission top-ups below, each with an instant
+ * toggle (PUT /users/{uuid}/permissions). The two sections are independently
+ * gated — role by ASSIGN_ROLES_USERS, permissions by ASSIGN_PERMISSIONS_USERS.
  *
  * Three states per permission:
  *   · direct   — granted directly to the user (editable checkbox).
@@ -20,6 +22,7 @@ import AppLayout from '@/pages/layouts/AppLayout.vue';
 import AppHeader from '@/modules/app/components/AppHeader.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import BackLink from '@/common/ui/BackLink.vue';
+import RolePicker from '@/pages/users/components/RolePicker.vue';
 import { groupPermissions } from '@/modules/authorization/helpers/groupPermissions';
 import type { SharedProps } from '@/types/inertia';
 import type { UserPermissionsProps } from '@/modules/users/types';
@@ -115,23 +118,25 @@ function toggle(name: string): void {
 <template>
     <Head :title="`Permissions — ${fullName}`" />
 
-    <AppHeader title="Permissions" :subtitle="`Manage ${fullName}'s permissions by module`" />
+    <AppHeader title="Access" :subtitle="`Manage ${fullName}'s role & permissions`" />
 
-    <PermissionGuard permission="ASSIGN_PERMISSIONS_USERS">
-        <template #fallback>
-            <div class="empty">
-                <i class="pi pi-lock" aria-hidden="true" />
-                <p>You don't have permission to manage this user's permissions.</p>
-            </div>
-        </template>
+    <div class="perms">
+        <BackLink :href="`/users/${user.uuid}`" label="Back to user" />
 
-        <div class="perms">
-            <BackLink :href="`/users/${user.uuid}`" label="Back to user" />
+        <PermissionGuard permission="ASSIGN_ROLES_USERS">
+            <RolePicker
+                :user-uuid="user.uuid"
+                :user-roles="userRoles"
+                :available-roles="availableRoles"
+                :assignable-roles="assignableRoles"
+            />
+        </PermissionGuard>
 
+        <PermissionGuard permission="ASSIGN_PERMISSIONS_USERS">
             <p class="perms__hint">
                 <i class="pi pi-info-circle" aria-hidden="true" />
-                Direct grants add to whatever the user already inherits from their roles. Permissions
-                marked <span class="badge badge--role">via role</span> come from a role and are managed there.
+                Direct grants add to whatever the user already inherits from their role. Permissions
+                marked <span class="badge badge--role">via role</span> come from the role and are managed above.
             </p>
 
             <div class="grid">
@@ -182,8 +187,8 @@ function toggle(name: string): void {
                     <p>No permissions available in the system.</p>
                 </div>
             </div>
-        </div>
-    </PermissionGuard>
+        </PermissionGuard>
+    </div>
 </template>
 
 <style scoped>

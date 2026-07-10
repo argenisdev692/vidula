@@ -14,25 +14,20 @@ use Modules\Backup\Infrastructure\Http\Presenters\BackupPresenter;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * @group Backups
- *
  * Admin backups panel over spatie/laravel-backup for Sanctum-authenticated
  * clients. Reuses the same handlers as the web controller. Authorization is
  * checked on the model (`hasPermissionTo`) so it is safe under the `sanctum`
  * guard. The `{backup}` segment is a file basename, re-resolved against the live
- * archive list (no caller-supplied path reaches the filesystem).
+ * archive list (no caller-supplied path reaches the filesystem). Documented by
+ * Scramble via return types + `auth:sanctum` detection — no manual annotations.
  */
 final readonly class BackupApiController
 {
     /**
-     * List backups
+     * List backups.
      *
      * Returns every archive plus a health/status summary (reachability,
      * freshness, count, storage used).
-     *
-     * @authenticated
-     *
-     * @response 403 {"message": "This action is unauthorized."}
      */
     public function index(Request $request, ListBackupsHandler $list): JsonResponse
     {
@@ -42,15 +37,9 @@ final readonly class BackupApiController
     }
 
     /**
-     * Download a backup
+     * Download a backup.
      *
-     * Streams the backup ZIP as a file download.
-     *
-     * @authenticated
-     *
-     * @urlParam backup string required The backup file basename. Example: 2026-07-06-02-00-00.zip
-     *
-     * @response 404 {"message": "Backup not found."}
+     * Streams the backup ZIP as a file download by basename.
      */
     public function download(Request $request, string $backup, FindBackupHandler $find): StreamedResponse
     {
@@ -62,13 +51,9 @@ final readonly class BackupApiController
     }
 
     /**
-     * Run a backup now
+     * Run a backup now.
      *
      * Queues a full (database + files) backup on a background worker.
-     *
-     * @authenticated
-     *
-     * @response 202 {"message": "Backup queued."}
      */
     public function run(Request $request, RunBackupHandler $run): JsonResponse
     {
@@ -80,15 +65,9 @@ final readonly class BackupApiController
     }
 
     /**
-     * Delete a backup
+     * Delete a backup.
      *
-     * Permanently removes a single archive from the destination disk.
-     *
-     * @authenticated
-     *
-     * @urlParam backup string required The backup file basename. Example: 2026-07-06-02-00-00.zip
-     *
-     * @response 200 {"message": "Backup deleted."}
+     * Permanently removes a single archive from the destination disk by basename.
      */
     public function destroy(Request $request, string $backup, DeleteBackupHandler $delete): JsonResponse
     {

@@ -15,7 +15,7 @@ use Modules\Company\Infrastructure\Http\Controllers\CompanyDataController;
 */
 
 // ---- Admin: company settings data -------------------------------------------
-Route::middleware(['web', 'auth'])->prefix('company-data')->name('company-data.')->group(function (): void {
+Route::middleware(['web', 'auth', 'throttle:60,1'])->prefix('company-data')->name('company-data.')->group(function (): void {
     Route::get('/', [CompanyDataController::class, 'index'])
         ->middleware('permission:VIEW_ANY_COMPANY_DATA')->name('index');
 
@@ -27,7 +27,7 @@ Route::middleware(['web', 'auth'])->prefix('company-data')->name('company-data.'
 });
 
 // ---- Admin: brand + signature assets ----------------------------------------
-Route::middleware(['web', 'auth'])->prefix('settings/company')->name('settings.company.')->group(function (): void {
+Route::middleware(['web', 'auth', 'throttle:60,1'])->prefix('settings/company')->name('settings.company.')->group(function (): void {
     Route::post('/logo', [CompanyDataController::class, 'updateLogo'])
         ->middleware('permission:UPDATE_COMPANY_DATA')->name('logo.update');
 

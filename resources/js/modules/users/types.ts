@@ -79,18 +79,15 @@ export interface UserEditData {
 }
 
 /**
- * Roles-panel props on the user detail (GET /users/{uuid}). `assignableRoles` is
- * the subset the acting admin may delegate — everything for a SUPER_ADMIN,
- * otherwise only the roles they hold (mirrors the backend AssignableAccess
- * invariant). Direct-permission props are surfaced read-only for display; live
- * management happens on the dedicated permissions screen.
+ * Read-only access facts on the user detail (GET /users/{uuid}). The detail page
+ * only DISPLAYS access — the role, the DIRECT grants, and the full EFFECTIVE set
+ * (direct + inherited via the role). Assigning them happens on the dedicated
+ * Access screen (see UserPermissionsProps).
  */
 export interface UserAccessProps {
     userRoles: string[];
     directPermissions: string[];
     effectivePermissions: string[];
-    availableRoles: string[];
-    assignableRoles: string[];
 }
 
 /** A minimal user identity carried by the dedicated permissions screen. */
@@ -102,14 +99,21 @@ export interface UserIdentity {
 }
 
 /**
- * Dedicated per-user permissions screen props (GET /users/{uuid}/permissions).
+ * Dedicated per-user Access screen props (GET /users/{uuid}/permissions): the
+ * single role plus direct-permission top-ups.
+ *   · userRoles      — the role(s) the user currently holds (single-role model).
+ *   · availableRoles — the assignable role catalogue for the role select.
+ *   · assignableRoles — the subset the acting admin may delegate.
  *   · directPermissions — grants held DIRECTLY (editable checkboxes).
- *   · rolePermissions   — grants inherited VIA a role (checked + locked).
+ *   · rolePermissions   — grants inherited VIA the role (checked + locked).
  *   · availablePermissions — the full active catalogue, grouped by module.
  *   · assignablePermissions — the subset the acting admin may grant/revoke.
  */
 export interface UserPermissionsProps {
     user: UserIdentity;
+    userRoles: string[];
+    availableRoles: string[];
+    assignableRoles: string[];
     directPermissions: string[];
     rolePermissions: string[];
     availablePermissions: string[];

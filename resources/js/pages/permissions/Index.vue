@@ -2,31 +2,28 @@
 /**
  * Permissions — full CRUD over the soft-deletable permission catalogue.
  *
- * Like the sibling Roles / Blog Categories screens, the list is driven by Inertia
- * partial reloads (`router.get` with `only: ['permissions','filters']` on every
- * filter / page change) rather than a separate JSON API. There are no create/edit
- * page routes — the backend store/update return `back()` redirects — so create &
- * edit happen in a Volt Dialog, and delete / restore / bulk go through the
- * reusable ConfirmDialog. Success / error feedback flows through the backend flash
- * surfaced app-wide by AppLayout. The whole page is gated by VIEW_ANY_PERMISSIONS;
- * every mutating control by its own permission.
+ * The shared list mechanics live in {@see useResourceList}, the confirm dialogs
+ * in {@see useConfirmAction}, and the page chrome in {@see CrudIndexShell}. This
+ * file keeps only what is specific to permissions: its filter fields and confirm
+ * copy. Success / error feedback flows through the backend flash surfaced
+ * app-wide by AppLayout. Gated by VIEW_ANY_PERMISSIONS; every mutating control by
+ * its own permission.
  */
-import { Head, router, usePage } from '@inertiajs/vue3';
-import { computed, reactive, ref } from 'vue';
-import type { DataTablePageEvent } from 'primevue/datatable';
+import { computed, reactive } from 'vue';
+import { router } from '@inertiajs/vue3';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
-import AppHeader from '@/modules/app/components/AppHeader.vue';
-import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import { useAuthorization } from '@/modules/auth/composables/useAuthorization';
-import AdvancedFilter, { type FilterCriteria, type FilterField } from '@/common/data-table/AdvancedFilter.vue';
-import { toLocalIsoDate } from '@/lib/date';
+import type { FilterCriteria, FilterField } from '@/common/data-table/AdvancedFilter.vue';
+import CrudIndexShell from '@/common/data-table/CrudIndexShell.vue';
 import ConfirmDialog from '@/common/data-table/ConfirmDialog.vue';
-import Button from '@/volt/Button.vue';
+import { useResourceList } from '@/common/data-table/useResourceList';
+import { useConfirmAction } from '@/common/data-table/useConfirmAction';
+import { useFormDialog } from '@/common/data-table/useFormDialog';
+import { toLocalIsoDate } from '@/lib/date';
 import PermissionsTable from './components/PermissionsTable.vue';
 import PermissionFormDialog from './components/PermissionFormDialog.vue';
-import type { SharedProps } from '@/types/inertia';
 import type { AuthorizationFilters, AuthorizationQuery, AuthorizationStatus, PaginatedResponse, Permission } from '@/modules/authorization/types';
-import { buildPermissionExportUrl, buildPermissionQueryParams, type PermissionExportFormat } from '@/modules/authorization/helpers/buildPermissionQueryParams';
+import { buildPermissionExportUrl, buildPermissionQueryParams } from '@/modules/authorization/helpers/buildPermissionQueryParams';
 
 defineOptions({ layout: AppLayout });
 
@@ -35,16 +32,12 @@ const props = defineProps<{
     filters: AuthorizationFilters;
 }>();
 
-usePage<SharedProps>();
 const { hasPermission } = useAuthorization();
 
 const canCreate = computed<boolean>(() => hasPermission('CREATE_PERMISSIONS'));
 const canExport = computed<boolean>(() => hasPermission('EXPORT_PERMISSIONS'));
 const canBulkDelete = computed<boolean>(() => hasPermission('BULK_DELETE_PERMISSIONS'));
 const canBulkRestore = computed<boolean>(() => hasPermission('BULK_RESTORE_PERMISSIONS'));
-
-const loading = ref<boolean>(false);
-const selection = ref<Permission[]>([]);
 
 /** The reactive request state — seeded once from the server-echoed props. */
 const query = reactive<AuthorizationQuery>({
@@ -56,12 +49,124 @@ const query = reactive<AuthorizationQuery>({
     per_page: props.permissions.per_page,
 });
 
-const firstRecord = computed<number>(() => (props.permissions.current_page - 1) * props.permissions.per_page);
-const recordLabel = computed<string>(() => `${props.permissions.total} ${props.permissions.total === 1 ? 'record' : 'records'} found`);
+function applyCriteria(target: AuthorizationQuery, criteria: FilterCriteria): void {
+    target.search = criteria.search || null;
+    target.status = (criteria.status as AuthorizationStatus | undefined) || null;
 
-/** The current list is homogeneous: suspended view ⇒ restore, otherwise suspend. */
-const isSuspendedView = computed<boolean>(() => query.status === 'suspended');
+    const range = criteria.dateRange as Date[] | undefined;
+    target.date_from = range?.[0] ? toLocalIsoDate(range[0]) : null;
+    target.date_to = range?.[1] ? toLocalIsoDate(range[1]) : null;
+}
+
+const { loading, selection, firstRecord, recordLabel, isSuspendedView, resetSelection, reload, onFilters, onPage, openExport } =
+    useResourceList<Permission, AuthorizationQuery>({
+        baseUrl: '/permissions',
+        propKey: 'permissions',
+        query,
+        pagination: computed(() => props.permissions),
+        buildParams: buildPermissionQueryParams,
+        applyCriteria,
+        exportUrl: buildPermissionExportUrl,
+    });
+
 const canBulkAct = computed<boolean>(() => (isSuspendedView.value ? canBulkRestore.value : canBulkDelete.value));
+
+/* ── Create / edit ────────────────────────────────────────────────────── */
+const { visible: formVisible, mode: formMode, entity: formPermission, openCreate, openEdit } = useFormDialog<Permission>();
+
+function onSaved(): void {
+    resetSelection();
+    reload();
+}
+
+/* ── Single-row suspend / restore ─────────────────────────────────────── */
+type RowAction = { kind: 'delete' | 'restore'; permission: Permission };
+
+const {
+    visible: rowVisible,
+    loading: rowLoading,
+    confirm: rowConfirm,
+    ask: askRow,
+    run: runRow,
+} = useConfirmAction<RowAction>((action) => {
+    const name = action.permission.name;
+    if (action.kind === 'restore') {
+        return {
+            title: 'Restore permission',
+            message: `Restore “${name}”? It will become active again.`,
+            confirmLabel: 'Restore',
+            confirmIcon: 'pi pi-check-circle',
+            tone: 'success',
+        };
+    }
+    return {
+        title: 'Suspend permission',
+        message: `Suspend “${name}”? It will be soft-deleted and removed from every role's effective grants. You can restore it later.`,
+        confirmLabel: 'Suspend',
+        confirmIcon: 'pi pi-trash',
+        tone: 'danger',
+    };
+});
+
+function confirmRowAction(): void {
+    runRow((action, finish) => {
+        const options = {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: resetSelection,
+            onFinish: finish,
+        };
+        if (action.kind === 'delete') {
+            router.delete(`/permissions/${action.permission.uuid}`, options);
+        } else {
+            router.post(`/permissions/${action.permission.uuid}/restore`, {}, options);
+        }
+    });
+}
+
+/* ── Bulk suspend / restore ───────────────────────────────────────────── */
+const {
+    visible: bulkVisible,
+    loading: bulkLoading,
+    confirm: bulkConfirm,
+    ask: askBulkConfirm,
+    run: runBulk,
+} = useConfirmAction<{ count: number }>((action) => {
+    if (isSuspendedView.value) {
+        return {
+            title: 'Restore selected',
+            message: `Restore ${action.count} ${action.count === 1 ? 'permission' : 'permissions'}? They will become active again.`,
+            confirmLabel: 'Restore all',
+            confirmIcon: 'pi pi-check-circle',
+            tone: 'success',
+        };
+    }
+    return {
+        title: 'Suspend selected',
+        message: `Suspend ${action.count} ${action.count === 1 ? 'permission' : 'permissions'}? They will be soft-deleted and removed from every role's grants.`,
+        confirmLabel: 'Suspend all',
+        confirmIcon: 'pi pi-trash',
+        tone: 'danger',
+    };
+});
+
+function askBulk(): void {
+    if (selection.value.length > 0) {
+        askBulkConfirm({ count: selection.value.length });
+    }
+}
+
+function confirmBulk(): void {
+    runBulk((_action, finish) => {
+        const uuids = selection.value.map((permission) => permission.uuid);
+        if (uuids.length === 0) {
+            finish();
+            return;
+        }
+        const url = isSuspendedView.value ? '/permissions/bulk-restore' : '/permissions/bulk-delete';
+        router.post(url, { uuids }, { preserveScroll: true, preserveState: true, onSuccess: resetSelection, onFinish: finish });
+    });
+}
 
 const filterFields: FilterField[] = [
     { key: 'dateRange', label: 'Created between', type: 'date-range', placeholder: 'Start — End' },
@@ -76,228 +181,31 @@ const filterFields: FilterField[] = [
         ],
     },
 ];
-
-function reload(): void {
-    loading.value = true;
-    router.get('/permissions', buildPermissionQueryParams(query), {
-        preserveState: true,
-        preserveScroll: true,
-        replace: true,
-        only: ['permissions', 'filters'],
-        onFinish: () => {
-            loading.value = false;
-        },
-    });
-}
-
-function onFilters(criteria: FilterCriteria): void {
-    query.search = criteria.search || null;
-    query.status = (criteria.status as AuthorizationStatus | undefined) || null;
-
-    const range = criteria.dateRange as Date[] | undefined;
-    query.date_from = range?.[0] ? toLocalIsoDate(range[0]) : null;
-    query.date_to = range?.[1] ? toLocalIsoDate(range[1]) : null;
-
-    query.page = 1;
-    selection.value = [];
-    reload();
-}
-
-function onPage(event: DataTablePageEvent): void {
-    query.page = event.page + 1;
-    query.per_page = event.rows;
-    reload();
-}
-
-function openExport(format: PermissionExportFormat): void {
-    window.location.href = buildPermissionExportUrl(query, format);
-}
-
-/* ── Create / edit ────────────────────────────────────────────────────── */
-const formVisible = ref<boolean>(false);
-const formMode = ref<'create' | 'edit'>('create');
-const formPermission = ref<Permission | null>(null);
-
-function openCreate(): void {
-    formMode.value = 'create';
-    formPermission.value = null;
-    formVisible.value = true;
-}
-
-function openEdit(permission: Permission): void {
-    formMode.value = 'edit';
-    formPermission.value = permission;
-    formVisible.value = true;
-}
-
-function onSaved(): void {
-    selection.value = [];
-    reload();
-}
-
-/* ── Single-row delete / restore ──────────────────────────────────────── */
-const rowAction = ref<{ kind: 'delete' | 'restore'; permission: Permission } | null>(null);
-const rowActionVisible = ref<boolean>(false);
-const rowActionLoading = ref<boolean>(false);
-
-const rowConfirm = computed(() => {
-    const name = rowAction.value?.permission.name ?? 'this permission';
-    if (rowAction.value?.kind === 'restore') {
-        return {
-            title: 'Restore permission',
-            message: `Restore “${name}”? It will become active again.`,
-            confirmLabel: 'Restore',
-            confirmIcon: 'pi pi-check-circle',
-            tone: 'success' as const,
-        };
-    }
-    return {
-        title: 'Suspend permission',
-        message: `Suspend “${name}”? It will be soft-deleted and removed from every role's effective grants. You can restore it later.`,
-        confirmLabel: 'Suspend',
-        confirmIcon: 'pi pi-trash',
-        tone: 'danger' as const,
-    };
-});
-
-function askDelete(permission: Permission): void {
-    rowAction.value = { kind: 'delete', permission };
-    rowActionVisible.value = true;
-}
-
-function askRestore(permission: Permission): void {
-    rowAction.value = { kind: 'restore', permission };
-    rowActionVisible.value = true;
-}
-
-function confirmRowAction(): void {
-    const action = rowAction.value;
-    if (!action) {
-        return;
-    }
-    rowActionLoading.value = true;
-
-    const options = {
-        preserveScroll: true,
-        preserveState: true,
-        onSuccess: () => {
-            selection.value = [];
-        },
-        onFinish: () => {
-            rowActionLoading.value = false;
-            rowActionVisible.value = false;
-        },
-    };
-
-    if (action.kind === 'delete') {
-        router.delete(`/permissions/${action.permission.uuid}`, options);
-    } else {
-        router.post(`/permissions/${action.permission.uuid}/restore`, {}, options);
-    }
-}
-
-/* ── Bulk suspend / restore ───────────────────────────────────────────── */
-const bulkVisible = ref<boolean>(false);
-const bulkLoading = ref<boolean>(false);
-
-const bulkConfirm = computed(() => {
-    const count = selection.value.length;
-    if (isSuspendedView.value) {
-        return {
-            title: 'Restore selected',
-            message: `Restore ${count} ${count === 1 ? 'permission' : 'permissions'}? They will become active again.`,
-            confirmLabel: 'Restore all',
-            confirmIcon: 'pi pi-check-circle',
-            tone: 'success' as const,
-        };
-    }
-    return {
-        title: 'Suspend selected',
-        message: `Suspend ${count} ${count === 1 ? 'permission' : 'permissions'}? They will be soft-deleted and removed from every role's grants.`,
-        confirmLabel: 'Suspend all',
-        confirmIcon: 'pi pi-trash',
-        tone: 'danger' as const,
-    };
-});
-
-function askBulk(): void {
-    if (selection.value.length > 0) {
-        bulkVisible.value = true;
-    }
-}
-
-function confirmBulk(): void {
-    const uuids = selection.value.map((p) => p.uuid);
-    if (uuids.length === 0) {
-        return;
-    }
-    bulkLoading.value = true;
-
-    const url = isSuspendedView.value ? '/permissions/bulk-restore' : '/permissions/bulk-delete';
-    router.post(
-        url,
-        { uuids },
-        {
-            preserveScroll: true,
-            preserveState: true,
-            onSuccess: () => {
-                selection.value = [];
-            },
-            onFinish: () => {
-                bulkLoading.value = false;
-                bulkVisible.value = false;
-            },
-        },
-    );
-}
 </script>
 
 <template>
-    <Head title="Permissions" />
-
-    <AppHeader title="Permissions" subtitle="The catalogue of grants roles can be built from" />
-
-    <PermissionGuard permission="VIEW_ANY_PERMISSIONS">
-        <template #fallback>
-            <div class="empty">
-                <i class="pi pi-lock" aria-hidden="true" />
-                <p>You don't have permission to view permissions.</p>
-            </div>
-        </template>
-
-        <div class="page">
-            <AdvancedFilter
-                search-placeholder="Search permission name…"
-                :fields="filterFields"
-                :show-export-pdf="canExport"
-                :show-export-excel="canExport"
-                :show-export-csv="canExport"
-                :show-create="canCreate"
-                create-label="New permission"
-                @filters-change="onFilters"
-                @create="openCreate"
-                @export-pdf="openExport('pdf')"
-                @export-excel="openExport('xlsx')"
-                @export-csv="openExport('csv')"
-            />
-
-            <div class="toolbar">
-                <p class="counter">{{ recordLabel }}</p>
-
-                <Transition name="fade">
-                    <div v-if="selection.length > 0 && canBulkAct" class="bulk-bar">
-                        <span class="bulk-bar__count">{{ selection.length }} selected</span>
-                        <Button
-                            size="small"
-                            :label="isSuspendedView ? 'Restore selected' : 'Suspend selected'"
-                            :icon="isSuspendedView ? 'pi pi-check-circle' : 'pi pi-trash'"
-                            outlined
-                            @click="askBulk"
-                        />
-                    </div>
-                </Transition>
-            </div>
-
+    <CrudIndexShell
+        title="Permissions"
+        subtitle="The catalogue of grants roles can be built from"
+        permission="VIEW_ANY_PERMISSIONS"
+        fallback-text="You don't have permission to view permissions."
+        search-placeholder="Search permission name…"
+        :fields="filterFields"
+        :can-export="canExport"
+        :can-create="canCreate"
+        create-label="New permission"
+        :record-label="recordLabel"
+        :selection-count="selection.length"
+        :can-bulk-act="canBulkAct"
+        :is-suspended-view="isSuspendedView"
+        @filters-change="onFilters"
+        @create="openCreate"
+        @export-pdf="openExport('pdf')"
+        @export-excel="openExport('xlsx')"
+        @export-csv="openExport('csv')"
+        @bulk="askBulk"
+    >
+        <template #table>
             <PermissionsTable
                 v-model:selection="selection"
                 :data="permissions.data"
@@ -307,96 +215,40 @@ function confirmBulk(): void {
                 :loading="loading"
                 @page="onPage"
                 @edit="openEdit"
-                @delete="askDelete"
-                @restore="askRestore"
+                @delete="(permission: Permission) => askRow({ kind: 'delete', permission })"
+                @restore="(permission: Permission) => askRow({ kind: 'restore', permission })"
             />
-        </div>
-    </PermissionGuard>
+        </template>
 
-    <PermissionFormDialog
-        v-model:visible="formVisible"
-        :mode="formMode"
-        :permission="formPermission"
-        @saved="onSaved"
-    />
+        <template #dialogs>
+            <PermissionFormDialog
+                v-model:visible="formVisible"
+                :mode="formMode"
+                :permission="formPermission"
+                @saved="onSaved"
+            />
 
-    <ConfirmDialog
-        v-model:visible="rowActionVisible"
-        :title="rowConfirm.title"
-        :message="rowConfirm.message"
-        :confirm-label="rowConfirm.confirmLabel"
-        :confirm-icon="rowConfirm.confirmIcon"
-        :tone="rowConfirm.tone"
-        :loading="rowActionLoading"
-        @confirm="confirmRowAction"
-    />
+            <ConfirmDialog
+                v-model:visible="rowVisible"
+                :title="rowConfirm.title"
+                :message="rowConfirm.message"
+                :confirm-label="rowConfirm.confirmLabel"
+                :confirm-icon="rowConfirm.confirmIcon"
+                :tone="rowConfirm.tone"
+                :loading="rowLoading"
+                @confirm="confirmRowAction"
+            />
 
-    <ConfirmDialog
-        v-model:visible="bulkVisible"
-        :title="bulkConfirm.title"
-        :message="bulkConfirm.message"
-        :confirm-label="bulkConfirm.confirmLabel"
-        :confirm-icon="bulkConfirm.confirmIcon"
-        :tone="bulkConfirm.tone"
-        :loading="bulkLoading"
-        @confirm="confirmBulk"
-    />
+            <ConfirmDialog
+                v-model:visible="bulkVisible"
+                :title="bulkConfirm.title"
+                :message="bulkConfirm.message"
+                :confirm-label="bulkConfirm.confirmLabel"
+                :confirm-icon="bulkConfirm.confirmIcon"
+                :tone="bulkConfirm.tone"
+                :loading="bulkLoading"
+                @confirm="confirmBulk"
+            />
+        </template>
+    </CrudIndexShell>
 </template>
-
-<style scoped>
-.page {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-}
-
-.toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-4);
-    flex-wrap: wrap;
-}
-
-.counter {
-    margin: 0;
-    font-size: var(--text-sm);
-    color: var(--text-muted);
-}
-
-.bulk-bar {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-}
-
-.bulk-bar__count {
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-    color: var(--text-secondary);
-}
-
-.fade-enter-active,
-.fade-leave-active {
-    transition: opacity var(--transition), transform var(--transition);
-}
-
-.fade-enter-from,
-.fade-leave-to {
-    opacity: 0;
-    transform: translateY(-4px);
-}
-
-.empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-3);
-    padding: var(--space-16) var(--space-6);
-    color: var(--text-muted);
-}
-
-.empty .pi {
-    font-size: var(--text-3xl);
-}
-</style>

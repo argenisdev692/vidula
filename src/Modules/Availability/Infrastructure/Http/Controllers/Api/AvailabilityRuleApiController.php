@@ -11,42 +11,29 @@ use Modules\Availability\Application\Queries\GetAvailabilityRuleHandler;
 use Modules\Availability\Application\Queries\ListAvailabilityRulesHandler;
 
 /**
- * @group Availability Rules
- *
- * API endpoints for the weekly availability template. Secondary documentation
- * surface for Sanctum-authenticated clients. The primary UI remains Inertia/web.
+ * API endpoints for the weekly availability template. Secondary
+ * Sanctum-authenticated surface; the primary UI remains Inertia/web. Documented
+ * by Scramble via return types + `auth:sanctum` detection — no manual annotations.
  */
 final readonly class AvailabilityRuleApiController
 {
     /**
      * List availability rules.
      *
-     * Returns a paginated list of weekly availability rules.
-     *
-     * @authenticated
-     *
-     * @queryParam per_page int Page size. Example: 15
-     *
-     * @response 403 {"message":"This action is unauthorized."}
+     * Returns a paginated list of weekly availability rules. `per_page` is capped
+     * at 100 to bound resource consumption (OWASP API4).
      */
     public function index(Request $request, ListAvailabilityRulesHandler $list): JsonResponse
     {
         $filters = AvailabilityRuleFilterData::validateAndCreate($request);
 
-        return response()->json($list->handle($filters, (int) $request->integer('per_page', 15)));
+        return response()->json($list->handle($filters, min(max($request->integer('per_page', 15), 1), 100)));
     }
 
     /**
      * Show an availability rule.
      *
      * Returns a single weekly availability rule by UUID.
-     *
-     * @authenticated
-     *
-     * @urlParam uuid string required The availability rule UUID. Example: 00000000-0000-0000-0000-000000000000
-     *
-     * @response 403 {"message":"This action is unauthorized."}
-     * @response 404 {"message":"Not found."}
      */
     public function show(string $uuid, GetAvailabilityRuleHandler $get): JsonResponse
     {
