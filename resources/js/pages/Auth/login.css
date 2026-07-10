@@ -671,6 +671,7 @@
 }
 
 .form-input.error { border-color: var(--accent-error); }
+.form-input.valid { border-color: var(--accent-success); }
 .form-input::placeholder { color: transparent; }
 
 .form-label {
@@ -733,6 +734,13 @@
   font-family: var(--font-sans);
   font-size: var(--text-xs);
   color: var(--accent-error);
+  margin-left: var(--space-2);
+}
+
+.success-message {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--accent-success);
   margin-left: var(--space-2);
 }
 

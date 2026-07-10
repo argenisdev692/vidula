@@ -4,17 +4,20 @@
  * `v-model` binds a string; supports any native input `type` (text, email,
  * password, tel, …). Server/client validation messages surface via `error`.
  */
+import { computed } from 'vue';
 import InputText from '@/volt/InputText.vue';
 import FormField from './FormField.vue';
 
 const model = defineModel<string>({ default: '' });
 
-withDefaults(
+const props = withDefaults(
     defineProps<{
         label?: string;
         /** Field name — also the input `id` for label association. */
         name?: string;
         error?: string;
+        /** Positive (green) message + border — e.g. a passed availability check. */
+        success?: string;
         hint?: string;
         required?: boolean;
         placeholder?: string;
@@ -26,10 +29,15 @@ withDefaults(
     }>(),
     { type: 'text' },
 );
+
+/** Green border only when a success message is present and there is no error. */
+const validClass = computed<string | undefined>(() =>
+    props.success && !props.error ? 'border-[var(--accent-success)]! enabled:hover:border-[var(--accent-success)]!' : undefined,
+);
 </script>
 
 <template>
-    <FormField :label="label" :for-id="name" :required="required" :error="error" :hint="hint">
+    <FormField :label="label" :for-id="name" :required="required" :error="error" :success="success" :hint="hint">
         <InputText
             :id="name"
             v-model="model"
@@ -40,6 +48,7 @@ withDefaults(
             :maxlength="maxlength"
             :inputmode="inputmode"
             :invalid="!!error"
+            :class="validClass"
             fluid
         />
     </FormField>

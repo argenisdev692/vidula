@@ -9,6 +9,7 @@ use Modules\Auth\Infrastructure\Http\Controllers\Api\PasswordResetController;
 use Modules\Auth\Infrastructure\Http\Controllers\Api\SocialAuthController;
 use Modules\Auth\Infrastructure\Http\Controllers\Api\TokenController;
 use Modules\Auth\Infrastructure\Http\Controllers\Api\TwoFactorStatusController;
+use Modules\Auth\Infrastructure\Http\Controllers\AvailabilityController;
 
 /*
 | Sanctum token API (mobile / external). Loaded with the `api` middleware group
@@ -16,6 +17,10 @@ use Modules\Auth\Infrastructure\Http\Controllers\Api\TwoFactorStatusController;
 */
 
 Route::prefix('api/auth')->group(function (): void {
+    // Public: realtime username/email availability for the register form.
+    Route::get('/register/availability', AvailabilityController::class)
+        ->middleware('throttle:30,1')->name('api.auth.register.availability');
+
     // Public: issue a token. Extra brute-force ceiling on top of account lockout.
     Route::post('/login', [AuthController::class, 'login'])
         ->middleware('throttle:10,1')
@@ -39,6 +44,10 @@ Route::prefix('api/auth')->group(function (): void {
         ->middleware('throttle:10,1')->name('api.auth.social');
 
     Route::middleware('auth:sanctum')->group(function (): void {
+        // Realtime availability for the profile form (excludes the caller's row).
+        Route::get('/profile/availability', AvailabilityController::class)
+            ->middleware('throttle:60,1')->name('api.auth.profile.availability');
+
         Route::post('/refresh', [AuthController::class, 'refresh'])->name('api.auth.refresh');
         Route::get('/me', [AuthController::class, 'me'])->name('api.auth.me');
         Route::post('/logout', [AuthController::class, 'logout'])->name('api.auth.logout');

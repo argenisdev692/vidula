@@ -12,6 +12,8 @@ defineProps<{
     forId?: string;
     required?: boolean;
     error?: string;
+    /** Positive (green) message — e.g. a passed realtime availability check. */
+    success?: string;
     hint?: string;
 }>();
 </script>
@@ -26,6 +28,7 @@ defineProps<{
         <slot />
 
         <p v-if="error" class="form-field__error" role="alert">{{ error }}</p>
+        <p v-else-if="success" class="form-field__success">{{ success }}</p>
         <p v-else-if="hint" class="form-field__hint">{{ hint }}</p>
     </div>
 </template>
@@ -53,6 +56,12 @@ defineProps<{
     margin: 0;
     font-size: var(--text-xs);
     color: var(--accent-error);
+}
+
+.form-field__success {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--accent-success);
 }
 
 .form-field__hint {

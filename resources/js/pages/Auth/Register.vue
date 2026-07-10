@@ -3,6 +3,7 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import CursorOrb from '@/modules/app/components/CursorOrb.vue';
 import { computed, onMounted, ref, useTemplateRef } from 'vue';
 import { useCompany } from '@/modules/app/composables/useCompany';
+import { useFieldAvailability } from '@/common/composables/useFieldAvailability';
 
 /**
  * Register — same dark-hero shell as Login, wired to Fortify registration:
@@ -36,8 +37,25 @@ function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
-const emailError = computed(() =>
-  !email.value ? '' : !isValidEmail(email.value) ? 'Please enter a valid email address' : '',
+/* Realtime email availability against the guest register endpoint (color check). */
+const { status: emailStatus } = useFieldAvailability({
+  field: 'email',
+  endpoint: '/register/availability',
+  source: () => email.value,
+  validate: isValidEmail,
+});
+
+const emailError = computed(() => {
+  if (!email.value) {
+    return '';
+  }
+  if (!isValidEmail(email.value)) {
+    return 'Please enter a valid email address';
+  }
+  return emailStatus.value === 'taken' ? 'This email is already registered' : '';
+});
+const emailSuccess = computed(() =>
+  emailStatus.value === 'available' ? '✓ Email is available' : emailStatus.value === 'checking' ? 'Checking availability…' : '',
 );
 const passwordError = computed(() =>
   !password.value ? '' : password.value.length < 8 ? 'Password must be at least 8 characters' : '',
@@ -54,6 +72,7 @@ const canSubmit = computed(
   () =>
     firstName.value.trim().length > 0 &&
     isValidEmail(email.value) &&
+    emailStatus.value !== 'taken' &&
     password.value.length >= 8 &&
     passwordConfirmation.value === password.value &&
     acceptedTerms.value &&
@@ -179,7 +198,7 @@ onMounted(() => {
                     type="email"
                     placeholder=" "
                     class="form-input"
-                    :class="{ error: emailError }"
+                    :class="{ error: emailError || fieldErrors.email, valid: emailStatus === 'available' && !emailError }"
                     autocomplete="email"
                   />
                   <label for="email" class="form-label">Email address</label>
@@ -193,6 +212,7 @@ onMounted(() => {
                 <span v-if="emailError || fieldErrors.email" class="error-message">
                   {{ emailError || fieldErrors.email }}
                 </span>
+                <span v-else-if="emailSuccess" class="success-message">{{ emailSuccess }}</span>
               </div>
 
               <div class="form-group">

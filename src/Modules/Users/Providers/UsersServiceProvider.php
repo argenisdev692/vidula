@@ -22,10 +22,16 @@ final class UsersServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->registerWebRoutes();
+        $this->registerApiRoutes();
     }
 
     private function registerWebRoutes(): void
     {
         Route::middleware('web')->group(__DIR__.'/../Infrastructure/Routes/web.php');
+    }
+
+    private function registerApiRoutes(): void
+    {
+        Route::middleware('api')->group(__DIR__.'/../Infrastructure/Routes/api.php');
     }
 }

@@ -17,8 +17,7 @@
  * from the reusable common/form kit + common/media/ImageCropper.
  */
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
-import { computed, ref, watch } from 'vue';
-import { useDebounceFn } from '@vueuse/core';
+import { computed, ref } from 'vue';
 import { useQueryCache } from '@pinia/colada';
 import { useToast } from 'primevue/usetoast';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
@@ -38,6 +37,7 @@ import SecondaryButton from '@/volt/SecondaryButton.vue';
 import InputText from '@/volt/InputText.vue';
 import Dialog from '@/volt/Dialog.vue';
 import { apiFetch, HttpError } from '@/lib/http';
+import { useFieldAvailability } from '@/common/composables/useFieldAvailability';
 import { genderOptions } from '@/modules/profile/helpers/genderOptions';
 import { profileFormSchema } from '@/modules/profile/schemas/profileFormSchema';
 import { passwordFormSchema } from '@/modules/profile/schemas/passwordFormSchema';
@@ -141,62 +141,31 @@ const form = useForm<ProfileFormValues>({
     longitude: props.profile.longitude,
 });
 
-/* ── Realtime username / email availability ───────────────────────────── */
-type AvailabilityStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid';
+/* ── Realtime username / email availability (shared composable) ─────────── */
+const emailPattern = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-const usernameStatus = ref<AvailabilityStatus>('idle');
-const emailStatus = ref<AvailabilityStatus>('idle');
-
-async function checkAvailability(field: 'username' | 'email', value: string): Promise<AvailabilityStatus> {
-    const params = new URLSearchParams({ field, value });
-    try {
-        const result = await apiFetch<{ available: boolean }>('GET', `/profile/availability?${params.toString()}`);
-        return result.available ? 'available' : 'taken';
-    } catch {
-        // Network/rate-limit hiccup — don't block the form on a failed check.
-        return 'idle';
-    }
-}
-
-const runUsernameCheck = useDebounceFn(async () => {
-    const value = form.username.trim();
-    // Empty or unchanged from the stored value → nothing to validate.
-    if (!value || value === (props.profile.username ?? '')) {
-        usernameStatus.value = 'idle';
-        return;
-    }
-    if (value.length > 15) {
-        usernameStatus.value = 'invalid';
-        return;
-    }
-    usernameStatus.value = 'checking';
-    usernameStatus.value = await checkAvailability('username', value);
-}, 400);
-
-const runEmailCheck = useDebounceFn(async () => {
-    const value = form.email.trim();
-    if (!value || value === props.profile.email) {
-        emailStatus.value = 'idle';
-        return;
-    }
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) {
-        emailStatus.value = 'invalid';
-        return;
-    }
-    emailStatus.value = 'checking';
-    emailStatus.value = await checkAvailability('email', value);
-}, 400);
-
-watch(() => form.username, () => runUsernameCheck());
-watch(() => form.email, () => runEmailCheck());
-
-const usernameHint = computed<string | undefined>(() => {
-    if (usernameStatus.value === 'checking') {
-        return 'Checking availability…';
-    }
-    return usernameStatus.value === 'available' ? '✓ Username is available' : undefined;
+const { status: usernameStatus } = useFieldAvailability({
+    field: 'username',
+    endpoint: '/profile/availability',
+    source: () => form.username,
+    original: () => props.profile.username,
+    validate: (value) => value.length <= 15,
 });
 
+const { status: emailStatus } = useFieldAvailability({
+    field: 'email',
+    endpoint: '/profile/availability',
+    source: () => form.email,
+    original: () => props.profile.email,
+    validate: (value) => emailPattern.test(value),
+});
+
+const usernameSuccess = computed<string | undefined>(() =>
+    usernameStatus.value === 'available' ? '✓ Username is available' : undefined,
+);
+const usernameHint = computed<string | undefined>(() =>
+    usernameStatus.value === 'checking' ? 'Checking availability…' : undefined,
+);
 const usernameError = computed<string | undefined>(() => {
     if (form.errors.username) {
         return form.errors.username;
@@ -207,13 +176,12 @@ const usernameError = computed<string | undefined>(() => {
     return usernameStatus.value === 'invalid' ? 'Username must be 15 characters or fewer' : undefined;
 });
 
-const emailHint = computed<string | undefined>(() => {
-    if (emailStatus.value === 'checking') {
-        return 'Checking availability…';
-    }
-    return emailStatus.value === 'available' ? '✓ Email is available' : undefined;
-});
-
+const emailSuccess = computed<string | undefined>(() =>
+    emailStatus.value === 'available' ? '✓ Email is available' : undefined,
+);
+const emailHint = computed<string | undefined>(() =>
+    emailStatus.value === 'checking' ? 'Checking availability…' : undefined,
+);
 const emailError = computed<string | undefined>(() => {
     if (form.errors.email) {
         return form.errors.email;
@@ -659,6 +627,7 @@ function revokeTrustedDevice(uuid: string): void {
                         autocomplete="username"
                         :maxlength="15"
                         :error="usernameError"
+                        :success="usernameSuccess"
                         :hint="usernameHint"
                     />
                     <TextField
@@ -669,6 +638,7 @@ function revokeTrustedDevice(uuid: string): void {
                         required
                         autocomplete="email"
                         :error="emailError"
+                        :success="emailSuccess"
                         :hint="emailHint"
                     />
                     <div class="form-grid__full">

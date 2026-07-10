@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Modules\Auth\Infrastructure\Http\Controllers\AvailabilityController;
 use Modules\Auth\Infrastructure\Http\Controllers\Web\AuthPageController;
 use Modules\Auth\Infrastructure\Http\Controllers\Web\OtpAuthController;
 use Modules\Auth\Infrastructure\Http\Controllers\Web\PasswordResetController;
@@ -24,6 +25,11 @@ use Modules\Auth\Infrastructure\Http\Controllers\Web\TrustedDeviceController;
 
 // ---- Guest flows: OTP login + OAuth ----------------------------------------
 Route::middleware('web')->group(function (): void {
+    // Realtime username/email availability for the register form (guest). Ignores
+    // no row; rate-limited to blunt account enumeration.
+    Route::get('/register/availability', AvailabilityController::class)
+        ->middleware('throttle:30,1')->name('register.availability');
+
     // Passwordless OTP login.
     Route::get('/auth/otp', [AuthPageController::class, 'otpLogin'])->name('auth.otp');
     Route::post('/auth/otp/request', [OtpAuthController::class, 'request'])
@@ -76,8 +82,9 @@ Route::middleware(['web', 'auth'])->group(function (): void {
     // the password by PUT /user/password.
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
 
-    // Realtime username/email availability check for the profile form.
-    Route::get('/profile/availability', [ProfileController::class, 'availability'])
+    // Realtime username/email availability check for the profile form (excludes
+    // the current user's own record — see AvailabilityController).
+    Route::get('/profile/availability', AvailabilityController::class)
         ->middleware('throttle:60,1')->name('profile.availability');
 
     // Self-service profile photo (stored on Cloudflare R2, private + signed URL).

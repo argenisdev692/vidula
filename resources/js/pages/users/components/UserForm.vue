@@ -18,9 +18,10 @@
  * roles are managed from the user's Access panel). Client-side Zod validation
  * mirrors the backend; the server stays authoritative on uniqueness.
  */
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
 import { useAuthorization } from '@/modules/auth/composables/useAuthorization';
+import { useFieldAvailability } from '@/common/composables/useFieldAvailability';
 import TextField from '@/common/form/TextField.vue';
 import SelectField from '@/common/form/SelectField.vue';
 import DateField from '@/common/form/DateField.vue';
@@ -154,6 +155,105 @@ const addressErrors = computed(() => ({
     country_code: form.errors.country_code,
 }));
 
+/* ── Realtime username / email availability (color check) ──────────────── */
+/** On edit the endpoint excludes the edited user so their own value stays free. */
+const ignoreParams = computed<Record<string, string>>(() =>
+    isEdit.value && props.user?.uuid ? { ignore: props.user.uuid } : {},
+);
+
+const emailPattern = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+const { status: usernameStatus } = useFieldAvailability({
+    field: 'username',
+    endpoint: '/users/availability',
+    source: () => form.username,
+    original: () => props.user?.username,
+    extraParams: () => ignoreParams.value,
+    validate: (value) => value.length <= 255,
+});
+
+const { status: emailStatus } = useFieldAvailability({
+    field: 'email',
+    endpoint: '/users/availability',
+    source: () => form.email,
+    original: () => props.user?.email,
+    extraParams: () => ignoreParams.value,
+    validate: (value) => emailPattern.test(value),
+});
+
+const usernameSuccess = computed<string | undefined>(() =>
+    usernameStatus.value === 'available' ? '✓ Username is available' : undefined,
+);
+const usernameError = computed<string | undefined>(() => {
+    if (form.errors.username) {
+        return form.errors.username;
+    }
+    return usernameStatus.value === 'taken' ? 'This username is already taken' : undefined;
+});
+
+const emailSuccess = computed<string | undefined>(() =>
+    emailStatus.value === 'available' ? '✓ Email is available' : undefined,
+);
+const emailError = computed<string | undefined>(() => {
+    if (form.errors.email) {
+        return form.errors.email;
+    }
+    return emailStatus.value === 'taken' ? 'This email is already registered' : undefined;
+});
+const emailFieldHint = computed<string | undefined>(() => {
+    if (emailStatus.value === 'checking') {
+        return 'Checking availability…';
+    }
+    return isEdit.value ? undefined : 'An activation link will be emailed here — the invitee sets their own password.';
+});
+
+/* ── Username auto-generation (create only) ────────────────────────────────
+ * Suggest `firstnamelastname###` (3 random digits) as the names are typed, and
+ * re-roll the digits whenever the suggestion collides — until the admin edits
+ * the field themselves, after which we never overwrite their choice. */
+const usernameTouched = ref<boolean>(isEdit.value);
+const regenAttempts = ref<number>(0);
+const MAX_REGEN = 5;
+
+/** Username the user edits directly — typing here freezes auto-generation. */
+const usernameModel = computed<string>({
+    get: () => form.username,
+    set: (value) => {
+        usernameTouched.value = true;
+        form.username = value;
+    },
+});
+
+function alphaNumeric(value: string): string {
+    return value.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function randomThreeDigits(): string {
+    return String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+}
+
+function generatedUsername(): string {
+    const base = `${alphaNumeric(form.first_name)}${alphaNumeric(form.last_name)}`;
+    return base === '' ? '' : `${base}${randomThreeDigits()}`;
+}
+
+// Names changed → refresh the suggestion (unless the admin has taken over).
+watch([() => form.first_name, () => form.last_name], () => {
+    if (usernameTouched.value) {
+        return;
+    }
+    regenAttempts.value = 0;
+    form.username = generatedUsername();
+});
+
+// Suggestion collided → re-roll the digits a bounded number of times.
+watch(usernameStatus, (status) => {
+    if (status === 'taken' && !usernameTouched.value && regenAttempts.value < MAX_REGEN) {
+        regenAttempts.value += 1;
+        form.username = generatedUsername();
+    }
+});
+
 /* ── Submit ───────────────────────────────────────────────────────────── */
 const submitLabel = computed<string>(() => (isEdit.value ? 'Save changes' : 'Send invitation'));
 const submitIcon = computed<string>(() => (isEdit.value ? 'pi pi-check' : 'pi pi-send'));
@@ -174,6 +274,17 @@ function submit(): void {
                 form.setError(key as keyof UserFormValues, issue.message);
             }
         }
+        return;
+    }
+
+    // Block on a known-taken email/username — the backend stays authoritative,
+    // but this spares an obviously-doomed round-trip.
+    if (emailStatus.value === 'taken') {
+        form.setError('email', 'This email is already registered');
+        return;
+    }
+    if (usernameStatus.value === 'taken') {
+        form.setError('username', 'This username is already taken');
         return;
     }
 
@@ -277,17 +388,20 @@ function submit(): void {
                     required
                     :maxlength="255"
                     autocomplete="email"
-                    :error="form.errors.email"
-                    :hint="isEdit ? undefined : 'An activation link will be emailed here — the invitee sets their own password.'"
+                    :error="emailError"
+                    :success="emailSuccess"
+                    :hint="emailFieldHint"
                 />
                 <TextField
-                    v-model="form.username"
+                    v-model="usernameModel"
                     name="username"
                     label="Username"
-                    placeholder="Optional"
+                    placeholder="Auto-generated from name"
                     :maxlength="255"
                     autocomplete="username"
-                    :error="form.errors.username"
+                    :error="usernameError"
+                    :success="usernameSuccess"
+                    :hint="usernameStatus === 'checking' ? 'Checking availability…' : undefined"
                 />
 
                 <PhoneField

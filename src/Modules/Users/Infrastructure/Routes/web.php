@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\Users\Infrastructure\Http\Controllers\AccountActivationController;
+use Modules\Users\Infrastructure\Http\Controllers\UserAvailabilityController;
 use Modules\Users\Infrastructure\Http\Controllers\UserController;
 use Modules\Users\Infrastructure\Http\Controllers\UserExportController;
 
@@ -29,6 +30,11 @@ Route::middleware(['web', 'auth'])->prefix('users')->name('users.')->group(funct
 
     Route::get('/export', UserExportController::class)
         ->middleware('permission:EXPORT_USERS')->name('export');
+
+    // Realtime username/email availability for the create/edit forms. The edit
+    // form passes `?ignore={uuid}` so the user's own value reads as available.
+    Route::get('/availability', UserAvailabilityController::class)
+        ->middleware('permission:CREATE_USERS|UPDATE_USERS')->name('availability');
 
     Route::get('/create', [UserController::class, 'create'])
         ->middleware('permission:CREATE_USERS')->name('create');
