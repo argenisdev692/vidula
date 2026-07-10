@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Users\Application\Commands;
 
 use App\Models\User;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Facades\DB;
 use Modules\Users\Application\DTOs\InviteUserData;
 use Modules\Users\Domain\AssignableAccess;
@@ -24,6 +25,7 @@ final readonly class InviteUserHandler
     public function __construct(
         private UserRepositoryPort $users,
         private InvitationLinkPort $links,
+        private Dispatcher $events,
     ) {}
 
     #[\NoDiscard]
@@ -76,6 +78,6 @@ final readonly class InviteUserHandler
 
         $user->notify(new UserInvitationNotification($link, self::LINK_TTL_HOURS));
 
-        event(new UserInvited($user->uuid, $user->email, $invitedByUuid));
+        $this->events->dispatch(new UserInvited($user->uuid, $user->email, $invitedByUuid));
     }
 }

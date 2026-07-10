@@ -332,6 +332,7 @@ function confirmBulk(): void {
                             :label="isSuspendedView ? 'Restore selected' : 'Suspend selected'"
                             :icon="isSuspendedView ? 'pi pi-check-circle' : 'pi pi-trash'"
                             outlined
+                            :class="['bulk-btn', isSuspendedView ? 'bulk-btn--restore' : 'bulk-btn--suspend']"
                             @click="askBulk"
                         />
                     </div>
@@ -414,6 +415,50 @@ function confirmBulk(): void {
     font-size: var(--text-sm);
     font-weight: var(--font-medium);
     color: var(--text-secondary);
+}
+
+/* Themed bulk action — subtle accent tint at rest, fills + lifts + glows on hover. */
+.bulk-bar :deep(.bulk-btn) {
+    border-radius: var(--radius-md);
+    font-weight: var(--font-semibold);
+    transition:
+        transform var(--transition),
+        box-shadow var(--transition),
+        background-color var(--transition),
+        border-color var(--transition),
+        color var(--transition);
+}
+
+.bulk-bar :deep(.bulk-btn--suspend) {
+    color: var(--accent-error) !important;
+    border-color: color-mix(in srgb, var(--accent-error) 40%, transparent) !important;
+    background: color-mix(in srgb, var(--accent-error) 10%, transparent) !important;
+}
+
+.bulk-bar :deep(.bulk-btn--suspend:hover) {
+    color: var(--on-accent, #fff) !important;
+    border-color: var(--accent-error) !important;
+    background: var(--accent-error) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--accent-error) 35%, transparent);
+}
+
+.bulk-bar :deep(.bulk-btn--restore) {
+    color: var(--accent-success) !important;
+    border-color: color-mix(in srgb, var(--accent-success) 40%, transparent) !important;
+    background: color-mix(in srgb, var(--accent-success) 10%, transparent) !important;
+}
+
+.bulk-bar :deep(.bulk-btn--restore:hover) {
+    color: var(--on-accent, #fff) !important;
+    border-color: var(--accent-success) !important;
+    background: var(--accent-success) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--accent-success) 35%, transparent);
+}
+
+.bulk-bar :deep(.bulk-btn:active) {
+    transform: translateY(0) scale(0.97);
 }
 
 .fade-enter-active,

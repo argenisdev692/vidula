@@ -30,7 +30,7 @@ final readonly class PermissionExportController
         $rows = Permission::query()
             ->when($filters->status === 'suspended', fn ($q) => $q->onlyTrashed())
             ->applyFilters($filters)
-            ->withCount('roles')
+            ->with('roles:id,name')
             ->orderBy('name')
             ->lazy();
 

@@ -22,6 +22,7 @@ import { computed, ref, watch } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
 import { useAuthorization } from '@/modules/auth/composables/useAuthorization';
 import { useFieldAvailability } from '@/common/composables/useFieldAvailability';
+import { isValidUsername, sanitizeUsername, USERNAME_MAX, USERNAME_MIN, USERNAME_RULE_MESSAGE } from '@/common/form/username';
 import TextField from '@/common/form/TextField.vue';
 import SelectField from '@/common/form/SelectField.vue';
 import DateField from '@/common/form/DateField.vue';
@@ -36,6 +37,7 @@ import { genderOptions } from '@/modules/profile/helpers/genderOptions';
 import { userFormSchema, type UserFormValues } from '@/modules/users/schemas/userFormSchema';
 import type { SelectOption } from '@/common/form/types';
 import type { UserEditData } from '@/modules/users/types';
+import { toLocalIsoDate } from '@/lib/date';
 
 const props = withDefaults(
     defineProps<{
@@ -49,7 +51,7 @@ const props = withDefaults(
 
 const isEdit = computed<boolean>(() => props.mode === 'edit');
 const page = usePage<SharedProps>();
-const today = new Date().toISOString().slice(0, 10);
+const today = toLocalIsoDate(new Date());
 
 const form = useForm<UserFormValues>({
     first_name: props.user?.first_name ?? '',
@@ -157,9 +159,13 @@ const addressErrors = computed(() => ({
 
 /* ── Realtime username / email availability (color check) ──────────────── */
 /** On edit the endpoint excludes the edited user so their own value stays free. */
-const ignoreParams = computed<Record<string, string>>(() =>
-    isEdit.value && props.user?.uuid ? { ignore: props.user.uuid } : {},
-);
+const ignoreParams = computed<Record<string, string>>(() => {
+    const params: Record<string, string> = {};
+    if (isEdit.value && props.user?.uuid) {
+        params.ignore = props.user.uuid;
+    }
+    return params;
+});
 
 const emailPattern = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -169,7 +175,7 @@ const { status: usernameStatus } = useFieldAvailability({
     source: () => form.username,
     original: () => props.user?.username,
     extraParams: () => ignoreParams.value,
-    validate: (value) => value.length <= 255,
+    validate: isValidUsername,
 });
 
 const { status: emailStatus } = useFieldAvailability({
@@ -188,7 +194,10 @@ const usernameError = computed<string | undefined>(() => {
     if (form.errors.username) {
         return form.errors.username;
     }
-    return usernameStatus.value === 'taken' ? 'This username is already taken' : undefined;
+    if (usernameStatus.value === 'taken') {
+        return 'This username is already taken';
+    }
+    return usernameStatus.value === 'invalid' ? USERNAME_RULE_MESSAGE : undefined;
 });
 
 const emailSuccess = computed<string | undefined>(() =>
@@ -215,12 +224,20 @@ const usernameTouched = ref<boolean>(isEdit.value);
 const regenAttempts = ref<number>(0);
 const MAX_REGEN = 5;
 
-/** Username the user edits directly — typing here freezes auto-generation. */
+/** Username the user edits directly — typing here freezes auto-generation.
+ * Input is sanitised on every keystroke: non-alphanumerics are dropped and the
+ * value is hard-capped at USERNAME_MAX, so it can never exceed the limit. */
 const usernameModel = computed<string>({
     get: () => form.username,
     set: (value) => {
+        const next = sanitizeUsername(value);
+        // A no-op emit (same value, or an invalid keystroke that sanitises away)
+        // must NOT freeze auto-generation — only a real edit takes over.
+        if (next === form.username) {
+            return;
+        }
         usernameTouched.value = true;
-        form.username = value;
+        form.username = next;
     },
 });
 
@@ -228,13 +245,27 @@ function alphaNumeric(value: string): string {
     return value.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
-function randomThreeDigits(): string {
-    return String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+function randomDigits(count: number): string {
+    let digits = '';
+    for (let i = 0; i < count; i += 1) {
+        digits += String(Math.floor(Math.random() * 10));
+    }
+    return digits;
 }
 
+/**
+ * Build `firstnamelastname` + random digits, guaranteed to land within
+ * [USERNAME_MIN, USERNAME_MAX]: the name base is capped so at least 3 digits
+ * still fit, and enough digits are appended to reach the minimum length.
+ */
 function generatedUsername(): string {
-    const base = `${alphaNumeric(form.first_name)}${alphaNumeric(form.last_name)}`;
-    return base === '' ? '' : `${base}${randomThreeDigits()}`;
+    const base = `${alphaNumeric(form.first_name)}${alphaNumeric(form.last_name)}`.slice(0, USERNAME_MAX - 3);
+    if (base === '') {
+        return '';
+    }
+    const maxDigits = USERNAME_MAX - base.length;
+    const digitCount = Math.min(maxDigits, Math.max(3, USERNAME_MIN - base.length));
+    return `${base}${randomDigits(digitCount)}`;
 }
 
 // Names changed → refresh the suggestion (unless the admin has taken over).
@@ -391,13 +422,14 @@ function submit(): void {
                     :error="emailError"
                     :success="emailSuccess"
                     :hint="emailFieldHint"
+                    class="user-form__email"
                 />
                 <TextField
                     v-model="usernameModel"
                     name="username"
                     label="Username"
                     placeholder="Auto-generated from name"
-                    :maxlength="255"
+                    :maxlength="USERNAME_MAX"
                     autocomplete="username"
                     :error="usernameError"
                     :success="usernameSuccess"
@@ -489,28 +521,41 @@ function submit(): void {
 .user-form__section {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+    gap: var(--space-5);
 }
 
 .user-form__section-head {
     display: flex;
     flex-direction: column;
     gap: var(--space-1);
-    padding-bottom: var(--space-2);
-    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--border-default);
 }
 
 .user-form__section-title {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
     margin: 0;
-    font-size: var(--text-xs);
+    font-size: var(--text-sm);
     font-weight: var(--font-semibold);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--text-muted);
+    letter-spacing: 0.01em;
+    color: var(--accent-primary);
+}
+
+/* Leading gradient accent bar — anchors the title and adds colour. */
+.user-form__section-title::before {
+    content: '';
+    width: 3px;
+    height: 1.1em;
+    flex-shrink: 0;
+    border-radius: var(--radius-full, 99px);
+    background: var(--grad-primary, var(--accent-primary));
 }
 
 .user-form__section-hint {
     margin: 0;
+    padding-left: calc(3px + var(--space-2));
     font-size: var(--text-xs);
     color: var(--text-muted);
 }
@@ -519,6 +564,11 @@ function submit(): void {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-4);
+}
+
+/* Highlight the activation-link notice on the invite form in accent yellow. */
+.user-form__email :deep(.form-field__hint) {
+    color: var(--accent-warning);
 }
 
 .user-form__toggle {

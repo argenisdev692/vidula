@@ -15,7 +15,7 @@ use Shared\Infrastructure\Persistence\Concerns\BulkSoftDeletesByUuid;
  * {@see User} auth model. Bulk soft-delete/restore are inherited from the Shared
  * {@see BulkSoftDeletesByUuid} trait (DRY).
  */
-final class EloquentUserRepository implements UserRepositoryPort
+final readonly class EloquentUserRepository implements UserRepositoryPort
 {
     use BulkSoftDeletesByUuid;
 
@@ -30,7 +30,6 @@ final class EloquentUserRepository implements UserRepositoryPort
     public function paginate(UserFilterData $filters, int $perPage): LengthAwarePaginator
     {
         return User::query()
-            ->when($filters->status === 'suspended', fn ($q) => $q->onlyTrashed())
             ->applyFilters($filters)
             ->with(['roles:id,name'])
             ->select(['id', 'uuid', 'first_name', 'last_name', 'username', 'email', 'phone', 'address_2', 'email_verified_at', 'password', 'must_change_password', 'created_at', 'deleted_at'])

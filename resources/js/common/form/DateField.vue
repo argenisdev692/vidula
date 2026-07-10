@@ -19,6 +19,8 @@ defineProps<{
     required?: boolean;
     placeholder?: string;
     disabled?: boolean;
+    /** Earliest selectable date, as `YYYY-MM-DD` (past dates are disabled in the picker). */
+    minDate?: string;
     /** Latest selectable date, as `YYYY-MM-DD`. */
     maxDate?: string;
 }>();
@@ -51,6 +53,7 @@ const dateValue = computed<Date | null>({
             date-format="yy-mm-dd"
             :placeholder="placeholder"
             :disabled="disabled"
+            :min-date="minDate ? fromIso(minDate) : undefined"
             :max-date="maxDate ? fromIso(maxDate) : undefined"
             :invalid="!!error"
             show-icon

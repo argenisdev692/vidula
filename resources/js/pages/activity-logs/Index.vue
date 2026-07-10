@@ -21,6 +21,7 @@ import AppHeader from '@/modules/app/components/AppHeader.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import { useAuthorization } from '@/modules/auth/composables/useAuthorization';
 import AdvancedFilter, { type FilterCriteria, type FilterField } from '@/common/data-table/AdvancedFilter.vue';
+import { toLocalIsoDate } from '@/lib/date';
 import DataTable from '@/volt/DataTable.vue';
 import type { SharedProps } from '@/types/inertia';
 import type { PaginatedResponse } from '@/modules/company/types';
@@ -79,18 +80,14 @@ function reload(): void {
     });
 }
 
-function toIsoDate(date: Date): string {
-    return date.toISOString().slice(0, 10);
-}
-
 function onFilters(criteria: FilterCriteria): void {
     query.search = criteria.search || null;
     query.event = (criteria.event as string | undefined) || null;
     query.causer_id = (criteria.causerId as string | undefined) || null;
 
     const range = criteria.dateRange as Date[] | undefined;
-    query.date_from = range?.[0] ? toIsoDate(range[0]) : null;
-    query.date_to = range?.[1] ? toIsoDate(range[1]) : null;
+    query.date_from = range?.[0] ? toLocalIsoDate(range[0]) : null;
+    query.date_to = range?.[1] ? toLocalIsoDate(range[1]) : null;
 
     query.page = 1;
     reload();

@@ -30,16 +30,18 @@ final class AvailabilityExceptionManagementTest extends TestCase
 
     public function test_super_admin_creates_a_closure_exception(): void
     {
+        $date = now()->addMonths(2)->format('Y-m-d');
+
         $this->actingAs($this->superAdmin())
             ->post('/availability-exceptions', [
-                'date' => '2026-12-25',
+                'date' => $date,
                 'is_available' => false,
                 'reason' => 'Christmas',
             ])
             ->assertRedirect();
 
         $this->assertDatabaseHas('availability_exceptions', [
-            'date' => '2026-12-25',
+            'date' => $date,
             'is_available' => false,
             'start_time' => null,
         ]);
@@ -49,7 +51,7 @@ final class AvailabilityExceptionManagementTest extends TestCase
     {
         $this->actingAs($this->superAdmin())
             ->post('/availability-exceptions', [
-                'date' => '2026-12-26',
+                'date' => now()->addMonths(2)->format('Y-m-d'),
                 'is_available' => true,
             ])
             ->assertSessionHasErrors(['start_time', 'end_time']);
@@ -57,9 +59,11 @@ final class AvailabilityExceptionManagementTest extends TestCase
 
     public function test_forced_open_exception_stores_its_hours(): void
     {
+        $date = now()->addMonths(2)->format('Y-m-d');
+
         $this->actingAs($this->superAdmin())
             ->post('/availability-exceptions', [
-                'date' => '2026-12-26',
+                'date' => $date,
                 'is_available' => true,
                 'start_time' => '10:00',
                 'end_time' => '14:00',
@@ -68,7 +72,7 @@ final class AvailabilityExceptionManagementTest extends TestCase
             ->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('availability_exceptions', [
-            'date' => '2026-12-26',
+            'date' => $date,
             'is_available' => true,
             'start_time' => '10:00:00',
             'end_time' => '14:00:00',
@@ -97,11 +101,12 @@ final class AvailabilityExceptionManagementTest extends TestCase
 
     public function test_only_one_active_exception_per_date(): void
     {
-        AvailabilityExceptionEloquentModel::factory()->on('2026-05-20')->create();
+        $date = now()->addMonths(2)->format('Y-m-d');
+        AvailabilityExceptionEloquentModel::factory()->on($date)->create();
 
         $this->actingAs($this->superAdmin())
             ->post('/availability-exceptions', [
-                'date' => '2026-05-20',
+                'date' => $date,
                 'is_available' => false,
                 'reason' => 'Duplicate',
             ])
@@ -111,15 +116,42 @@ final class AvailabilityExceptionManagementTest extends TestCase
     public function test_a_date_can_be_reused_after_the_previous_exception_is_soft_deleted(): void
     {
         $admin = $this->superAdmin();
-        $exception = AvailabilityExceptionEloquentModel::factory()->on('2026-05-20')->create();
+        $date = now()->addMonths(2)->format('Y-m-d');
+        $exception = AvailabilityExceptionEloquentModel::factory()->on($date)->create();
 
         $this->actingAs($admin)->delete("/availability-exceptions/{$exception->uuid}")->assertRedirect();
 
         $this->actingAs($admin)
             ->post('/availability-exceptions', [
-                'date' => '2026-05-20',
+                'date' => $date,
                 'is_available' => false,
                 'reason' => 'Recreated',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+    }
+
+    public function test_cannot_create_an_exception_in_the_past(): void
+    {
+        $this->actingAs($this->superAdmin())
+            ->post('/availability-exceptions', [
+                'date' => now()->subDay()->format('Y-m-d'),
+                'is_available' => false,
+                'reason' => 'Yesterday',
+            ])
+            ->assertSessionHasErrors('date');
+    }
+
+    public function test_a_past_exception_can_still_be_edited(): void
+    {
+        $date = now()->subMonth()->format('Y-m-d');
+        $exception = AvailabilityExceptionEloquentModel::factory()->on($date)->create();
+
+        $this->actingAs($this->superAdmin())
+            ->put("/availability-exceptions/{$exception->uuid}", [
+                'date' => $date,
+                'is_available' => false,
+                'reason' => 'Updated reason',
             ])
             ->assertRedirect()
             ->assertSessionHasNoErrors();

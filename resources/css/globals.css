@@ -244,6 +244,57 @@
     }
 }
 
+/* ---- Status chips (Volt <Tag>) — token-driven severities, ONE source for every
+   table + Show page. Applied by @/volt/Tag.vue's pt (props.severity → class).
+   The 18%-accent-fill + accent-text recipe matches the legacy per-SFC `.badge`
+   so the migration is pixel-faithful; accents flip automatically under `.dark`. */
+.status-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.status-tag--primary {
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    color: var(--accent-primary);
+}
+
+.status-tag--secondary {
+    background: color-mix(in srgb, var(--text-muted) 16%, transparent);
+    color: var(--text-secondary);
+}
+
+.status-tag--success {
+    background: color-mix(in srgb, var(--accent-success) 18%, transparent);
+    color: var(--accent-success);
+}
+
+.status-tag--info {
+    background: color-mix(in srgb, var(--accent-info) 18%, transparent);
+    color: var(--accent-info);
+}
+
+.status-tag--warn {
+    background: color-mix(in srgb, var(--accent-warning) 18%, transparent);
+    color: var(--accent-warning);
+}
+
+.status-tag--danger {
+    background: color-mix(in srgb, var(--accent-error) 18%, transparent);
+    color: var(--accent-error);
+}
+
+.status-tag--contrast {
+    background: var(--text-primary);
+    color: var(--bg-surface);
+}
+
 /* ---- Custom scrollbar (ported from GUIDE; themed via tokens, works in both
    light & dark). Firefox uses scrollbar-color/-width; Chromium/WebKit use the
    ::-webkit-scrollbar pseudo-elements. On-theme indigo thumb that floats via a

@@ -39,10 +39,15 @@ final class AvailabilityExceptionData extends Data
         // ignored (and cleared by the handler) for a closure.
         $open = request()->boolean('is_available');
 
+        // A brand-new exception may only be scheduled from today onward; editing
+        // stays open so an already-past exception can still be adjusted.
+        $isCreate = $uuid === null;
+
         return [
             'date' => [
                 'required',
                 'date_format:Y-m-d',
+                ...($isCreate ? ['after_or_equal:today'] : []),
                 Rule::unique('availability_exceptions', 'date')
                     ->ignore($uuid, 'uuid')
                     ->whereNull('deleted_at'),

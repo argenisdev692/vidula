@@ -21,7 +21,7 @@ final readonly class PermissionExportTransformer
         return [
             'Name' => $permission->name,
             'Guard' => $permission->guard_name,
-            'Roles' => (string) ($permission->roles_count ?? 0),
+            'Roles' => $permission->roles->pluck('name')->implode(', ') ?: '—',
             'Created' => $permission->created_at?->toDateTimeString() ?? '—',
             'Status' => $permission->deleted_at !== null ? 'Suspended' : 'Active',
         ];

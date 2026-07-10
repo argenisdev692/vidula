@@ -23,6 +23,7 @@ final readonly class SimpleExcelExportAdapter implements ExportPort
 
     public function tabular(string $filename, array $headers, iterable $rows): StreamedResponse
     {
+        $filename = $this->withTimestamp($filename);
         $extension = pathinfo($filename, PATHINFO_EXTENSION) ?: 'csv';
 
         // Defer all writing into the StreamedResponse callback. SimpleExcel's own
@@ -54,6 +55,18 @@ final readonly class SimpleExcelExportAdapter implements ExportPort
         string $paper = 'a4',
         string $orientation = 'landscape',
     ): Response {
-        return $this->pdf->render($filename, $view, $data, $paper, $orientation);
+        return $this->pdf->render($this->withTimestamp($filename), $view, $data, $paper, $orientation);
+    }
+
+    /**
+     * Prefixes the base name with a sortable `Ymd-His` timestamp so repeated
+     * exports never collide and stay chronologically ordered on disk
+     * (e.g. `permissions.pdf` → `20260710-143022-permissions.pdf`). The
+     * extension is preserved so the tabular writer's driver selection is
+     * unaffected.
+     */
+    private function withTimestamp(string $filename): string
+    {
+        return now()->format('Ymd-His').'-'.$filename;
     }
 }

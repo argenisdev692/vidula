@@ -15,7 +15,7 @@ import Column from 'primevue/column';
 import DataTable from '@/volt/DataTable.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import { formatDate } from '@/modules/authorization/helpers/formatDate';
-import type { Permission } from '@/modules/authorization/types';
+import type { Permission, PermissionRole } from '@/modules/authorization/types';
 
 const props = defineProps<{
     data: Permission[];
@@ -36,6 +36,17 @@ const emit = defineEmits<{
 
 function rowClass(row: Permission): string | undefined {
     return row.deleted_at ? 'deleted-row' : undefined;
+}
+
+/** Cap the role tags shown per row; the rest collapse into a "+N more" pill. */
+const MAX_VISIBLE_ROLES = 3;
+
+function visibleRoles(row: Permission): PermissionRole[] {
+    return (row.roles ?? []).slice(0, MAX_VISIBLE_ROLES);
+}
+
+function overflowRoles(row: Permission): PermissionRole[] {
+    return (row.roles ?? []).slice(MAX_VISIBLE_ROLES);
 }
 </script>
 
@@ -75,12 +86,21 @@ function rowClass(row: Permission): string | undefined {
                 </template>
             </Column>
 
-            <Column header="Used by">
+            <Column header="Roles">
                 <template #body="{ data }">
-                    <span class="chip chip--count">
-                        {{ (data as Permission).roles_count }}
-                        {{ (data as Permission).roles_count === 1 ? 'role' : 'roles' }}
+                    <span v-if="(data as Permission).roles?.length" class="role-tags">
+                        <span v-for="role in visibleRoles(data as Permission)" :key="role.id" class="role-tag">
+                            {{ role.name }}
+                        </span>
+                        <span
+                            v-if="overflowRoles(data as Permission).length"
+                            class="role-tag role-tag--more"
+                            v-tooltip.top="overflowRoles(data as Permission).map((r) => r.name).join(', ')"
+                        >
+                            +{{ overflowRoles(data as Permission).length }} more
+                        </span>
                     </span>
+                    <span v-else class="mono">—</span>
                 </template>
             </Column>
 
@@ -179,19 +199,29 @@ function rowClass(row: Permission): string | undefined {
     color: var(--text-primary);
 }
 
-.chip {
+.role-tags {
     display: inline-flex;
-    align-items: center;
-    padding: 2px var(--space-2);
-    border-radius: var(--radius-sm);
-    font-size: var(--text-xs);
-    font-weight: var(--font-medium);
-    line-height: 1.4;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-1);
 }
 
-.chip--count {
-    background: color-mix(in srgb, var(--accent-info) 14%, transparent);
-    color: var(--accent-info);
+.role-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px var(--space-2);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    color: var(--accent-primary);
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+    font-family: var(--font-mono, monospace);
+}
+
+.role-tag--more {
+    background: color-mix(in srgb, var(--text-muted) 16%, transparent);
+    color: var(--text-muted);
+    cursor: default;
 }
 
 .mono {

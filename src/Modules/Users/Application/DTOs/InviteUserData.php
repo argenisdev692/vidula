@@ -31,7 +31,7 @@ final class InviteUserData extends Data
         #[Required, Email, Max(255), Unique('users', 'email')]
         public string $email,
 
-        #[Nullable, Max(255), Unique('users', 'username')]
+        // Username shape (letters/digits, 8–15) is enforced in rules() below.
         public ?string $username = null,
 
         #[Nullable, Max(50)]
@@ -80,6 +80,7 @@ final class InviteUserData extends Data
     public static function rules(): array
     {
         return [
+            'username' => ['nullable', 'string', 'min:8', 'max:15', 'regex:/^[a-zA-Z0-9]+$/', Rule::unique('users', 'username')],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'gender' => ['nullable', Rule::in(['male', 'female', 'other', 'prefer_not_to_say'])],
             'country_code' => ['nullable', 'string', 'size:2', 'alpha', 'uppercase'],

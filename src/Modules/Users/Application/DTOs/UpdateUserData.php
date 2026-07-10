@@ -51,7 +51,7 @@ final class UpdateUserData extends Data
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($uuid, 'uuid')],
-            'username' => ['nullable', 'string', 'max:255', Rule::unique('users', 'username')->ignore($uuid, 'uuid')],
+            'username' => ['nullable', 'string', 'min:8', 'max:15', 'regex:/^[a-zA-Z0-9]+$/', Rule::unique('users', 'username')->ignore($uuid, 'uuid')],
             'phone' => ['nullable', 'string', 'max:50'],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'gender' => ['nullable', Rule::in(['male', 'female', 'other', 'prefer_not_to_say'])],

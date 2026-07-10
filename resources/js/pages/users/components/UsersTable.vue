@@ -10,10 +10,11 @@
  * Transparent-grid + action-pill styling mirrors the Roles / Blog Categories
  * tables (the project's DataTable reference).
  */
-import { Link } from '@inertiajs/vue3';
 import type { DataTablePageEvent } from 'primevue/datatable';
 import Column from 'primevue/column';
 import DataTable from '@/volt/DataTable.vue';
+import Tag from '@/volt/Tag.vue';
+import ActionButton from '@/common/data-table/ActionButton.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import { formatDate } from '@/modules/users/helpers/formatDate';
 import { resolveUserStatus, USER_STATUS_META } from '@/modules/users/helpers/userStatus';
@@ -116,9 +117,10 @@ function rowClass(row: User): string | undefined {
 
             <Column header="Status">
                 <template #body="{ data }">
-                    <span class="badge" :class="USER_STATUS_META[resolveUserStatus(data as User)].className">
-                        {{ USER_STATUS_META[resolveUserStatus(data as User)].label }}
-                    </span>
+                    <Tag
+                        :value="USER_STATUS_META[resolveUserStatus(data as User)].label"
+                        :severity="USER_STATUS_META[resolveUserStatus(data as User)].severity"
+                    />
                 </template>
             </Column>
 
@@ -132,82 +134,60 @@ function rowClass(row: User): string | undefined {
                 <template #body="{ data }">
                     <div class="actions-cell">
                         <PermissionGuard permission="VIEW_USERS">
-                            <Link
+                            <ActionButton
+                                icon="pi pi-eye"
+                                tone="view"
+                                label="View user"
                                 :href="`/users/${(data as User).uuid}`"
-                                class="btn-crud-action btn-crud-action-view"
-                                aria-label="View user"
-                                title="View"
-                                v-tooltip.top="'View'"
-                            >
-                                <i class="pi pi-eye" aria-hidden="true" />
-                            </Link>
+                            />
                         </PermissionGuard>
 
                         <PermissionGuard permission="ASSIGN_PERMISSIONS_USERS">
-                            <Link
+                            <ActionButton
+                                icon="pi pi-shield"
+                                tone="warning"
+                                label="Manage permissions"
                                 :href="`/users/${(data as User).uuid}/permissions`"
-                                class="btn-crud-action btn-crud-action-permissions"
-                                aria-label="Manage permissions"
-                                title="Permissions"
-                                v-tooltip.top="'Permissions'"
-                            >
-                                <i class="pi pi-shield" aria-hidden="true" />
-                            </Link>
+                            />
                         </PermissionGuard>
 
                         <template v-if="(data as User).deleted_at">
                             <PermissionGuard permission="RESTORE_USERS">
-                                <button
-                                    type="button"
-                                    class="btn-crud-action btn-crud-action-restore"
-                                    aria-label="Restore user"
-                                    title="Restore"
-                                    v-tooltip.top="'Restore'"
+                                <ActionButton
+                                    icon="pi pi-check-circle"
+                                    tone="restore"
+                                    label="Restore user"
                                     @click="emit('restore', data as User)"
-                                >
-                                    <i class="pi pi-check-circle" aria-hidden="true" />
-                                </button>
+                                />
                             </PermissionGuard>
                         </template>
 
                         <template v-else>
                             <PermissionGuard v-if="isPending(data as User)" permission="CREATE_USERS">
-                                <button
-                                    type="button"
-                                    class="btn-crud-action btn-crud-action-resend"
-                                    aria-label="Resend invitation"
-                                    title="Resend invitation"
-                                    v-tooltip.top="'Resend invitation'"
+                                <ActionButton
+                                    icon="pi pi-send"
+                                    tone="warning"
+                                    label="Resend invitation"
                                     @click="emit('resend', data as User)"
-                                >
-                                    <i class="pi pi-send" aria-hidden="true" />
-                                </button>
+                                />
                             </PermissionGuard>
 
                             <PermissionGuard permission="UPDATE_USERS">
-                                <button
-                                    type="button"
-                                    class="btn-crud-action btn-crud-action-edit"
-                                    aria-label="Edit user"
-                                    title="Edit"
-                                    v-tooltip.top="'Edit'"
+                                <ActionButton
+                                    icon="pi pi-pencil"
+                                    tone="edit"
+                                    label="Edit user"
                                     @click="emit('edit', data as User)"
-                                >
-                                    <i class="pi pi-pencil" aria-hidden="true" />
-                                </button>
+                                />
                             </PermissionGuard>
 
                             <PermissionGuard permission="DELETE_USERS">
-                                <button
-                                    type="button"
-                                    class="btn-crud-action btn-crud-action-delete"
-                                    aria-label="Suspend user"
-                                    title="Suspend"
-                                    v-tooltip.top="'Suspend'"
+                                <ActionButton
+                                    icon="pi pi-trash"
+                                    tone="delete"
+                                    label="Suspend user"
                                     @click="emit('delete', data as User)"
-                                >
-                                    <i class="pi pi-trash" aria-hidden="true" />
-                                </button>
+                                />
                             </PermissionGuard>
                         </template>
                     </div>
@@ -245,31 +225,6 @@ function rowClass(row: User): string | undefined {
 .user-name__handle {
     font-size: var(--text-xs);
     color: var(--text-muted);
-}
-
-.badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 2px var(--space-2);
-    border-radius: var(--radius-sm);
-    font-size: var(--text-xs);
-    font-weight: var(--font-medium);
-    line-height: 1.4;
-}
-
-.badge--pending {
-    background: color-mix(in srgb, var(--accent-warning) 18%, transparent);
-    color: var(--accent-warning);
-}
-
-.badge--active {
-    background: color-mix(in srgb, var(--accent-success) 18%, transparent);
-    color: var(--accent-success);
-}
-
-.badge--suspended {
-    background: color-mix(in srgb, var(--accent-error) 18%, transparent);
-    color: var(--accent-error);
 }
 
 .mono {
@@ -355,104 +310,6 @@ function rowClass(row: User): string | undefined {
     justify-content: center;
     gap: var(--space-2);
     white-space: nowrap;
-}
-
-.btn-crud-action {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border-subtle);
-    background: color-mix(in srgb, var(--bg-elevated) 50%, transparent);
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
-    overflow: hidden;
-}
-
-.btn-crud-action::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: currentColor;
-    opacity: 0;
-    border-radius: inherit;
-    transition: opacity var(--transition);
-}
-
-.btn-crud-action:hover {
-    transform: scale(1.15);
-    border-color: currentColor;
-}
-
-.btn-crud-action:hover::after {
-    opacity: 0.1;
-}
-
-.btn-crud-action:active {
-    transform: scale(0.95);
-}
-
-.btn-crud-action:focus-visible {
-    outline: 2px solid currentColor;
-    outline-offset: 2px;
-}
-
-.btn-crud-action .pi {
-    position: relative;
-    z-index: 1;
-    font-size: 0.8rem;
-}
-
-.btn-crud-action-view {
-    color: var(--accent-info);
-}
-
-.btn-crud-action-view:hover {
-    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-info) 30%, transparent);
-}
-
-.btn-crud-action-permissions {
-    color: var(--accent-primary);
-}
-
-.btn-crud-action-permissions:hover {
-    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-primary) 30%, transparent);
-}
-
-.btn-crud-action-resend {
-    color: var(--accent-warning);
-}
-
-.btn-crud-action-resend:hover {
-    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-warning) 30%, transparent);
-}
-
-.btn-crud-action-edit {
-    color: var(--accent-primary);
-}
-
-.btn-crud-action-edit:hover {
-    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-primary) 30%, transparent);
-}
-
-.btn-crud-action-delete {
-    color: var(--accent-error);
-}
-
-.btn-crud-action-delete:hover {
-    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-error) 30%, transparent);
-}
-
-.btn-crud-action-restore {
-    color: var(--accent-success);
-}
-
-.btn-crud-action-restore:hover {
-    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-success) 30%, transparent);
 }
 
 .table-empty {

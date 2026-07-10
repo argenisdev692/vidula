@@ -1,3 +1,4 @@
+import type { TagSeverity } from '@/volt/Tag.vue';
 import type { User, UserStatus } from '../types';
 
 /**
@@ -17,9 +18,9 @@ export function resolveUserStatus(user: Pick<User, 'deleted_at' | 'email_verifie
     return 'active';
 }
 
-/** Presentation metadata per status — label + token-driven badge modifier class. */
-export const USER_STATUS_META: Record<UserStatus, { label: string; className: string }> = {
-    pending: { label: 'Pending', className: 'badge--pending' },
-    active: { label: 'Active', className: 'badge--active' },
-    suspended: { label: 'Suspended', className: 'badge--suspended' },
+/** Presentation metadata per status — label + Volt <Tag> severity. */
+export const USER_STATUS_META: Record<UserStatus, { label: string; severity: TagSeverity }> = {
+    pending: { label: 'Pending', severity: 'warn' },
+    active: { label: 'Active', severity: 'success' },
+    suspended: { label: 'Suspended', severity: 'danger' },
 };

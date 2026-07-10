@@ -29,7 +29,6 @@ final readonly class UserExportController
         $filters = UserFilterData::validateAndCreate($request);
 
         $rows = User::query()
-            ->when($filters->status === 'suspended', fn ($q) => $q->onlyTrashed())
             ->applyFilters($filters)
             ->orderByDesc('created_at')
             ->lazy();

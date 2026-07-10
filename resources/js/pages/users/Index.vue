@@ -30,6 +30,7 @@ import UsersTable from './components/UsersTable.vue';
 import type { SharedProps } from '@/types/inertia';
 import type { PaginatedResponse, User, UserFilters, UserQuery, UserStatus } from '@/modules/users/types';
 import { buildUserExportUrl, buildUserQueryParams, type UserExportFormat } from '@/modules/users/helpers/buildUserQueryParams';
+import { toLocalIsoDate } from '@/lib/date';
 
 defineOptions({ layout: AppLayout });
 
@@ -81,10 +82,6 @@ const filterFields: FilterField[] = [
     },
 ];
 
-function toIsoDate(date: Date): string {
-    return date.toISOString().slice(0, 10);
-}
-
 function reload(): void {
     loading.value = true;
     router.get('/users', buildUserQueryParams(query), {
@@ -103,8 +100,8 @@ function onFilters(criteria: FilterCriteria): void {
     query.status = (criteria.status as UserStatus | undefined) || null;
 
     const range = criteria.dateRange as Date[] | undefined;
-    query.date_from = range?.[0] ? toIsoDate(range[0]) : null;
-    query.date_to = range?.[1] ? toIsoDate(range[1]) : null;
+    query.date_from = range?.[0] ? toLocalIsoDate(range[0]) : null;
+    query.date_to = range?.[1] ? toLocalIsoDate(range[1]) : null;
 
     query.page = 1;
     selection.value = [];

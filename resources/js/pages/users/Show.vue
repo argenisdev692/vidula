@@ -11,6 +11,7 @@ import AppLayout from '@/pages/layouts/AppLayout.vue';
 import AppHeader from '@/modules/app/components/AppHeader.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import BackLink from '@/common/ui/BackLink.vue';
+import Tag from '@/volt/Tag.vue';
 import AccessPanel from '@/pages/users/components/AccessPanel.vue';
 import { formatDate } from '@/modules/users/helpers/formatDate';
 import { resolveUserStatus, USER_STATUS_META } from '@/modules/users/helpers/userStatus';
@@ -55,7 +56,7 @@ const status = computed(() => USER_STATUS_META[resolveUserStatus(props.user)]);
                         <i class="pi pi-user" aria-hidden="true" />
                         {{ fullName }}
                     </h2>
-                    <span class="badge" :class="status.className">{{ status.label }}</span>
+                    <Tag :value="status.label" :severity="status.severity" />
                 </div>
 
                 <dl class="facts">
@@ -286,30 +287,6 @@ const status = computed(() => USER_STATUS_META[resolveUserStatus(props.user)]);
 .manage-perms:hover .manage-perms__go {
     transform: translateX(3px);
     color: var(--accent-primary);
-}
-
-.badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 2px var(--space-3);
-    border-radius: var(--radius-sm);
-    font-size: var(--text-xs);
-    font-weight: var(--font-medium);
-}
-
-.badge--pending {
-    background: color-mix(in srgb, var(--accent-warning) 18%, transparent);
-    color: var(--accent-warning);
-}
-
-.badge--active {
-    background: color-mix(in srgb, var(--accent-success) 18%, transparent);
-    color: var(--accent-success);
-}
-
-.badge--suspended {
-    background: color-mix(in srgb, var(--accent-error) 18%, transparent);
-    color: var(--accent-error);
 }
 
 .empty {

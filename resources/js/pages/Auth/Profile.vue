@@ -37,7 +37,9 @@ import SecondaryButton from '@/volt/SecondaryButton.vue';
 import InputText from '@/volt/InputText.vue';
 import Dialog from '@/volt/Dialog.vue';
 import { apiFetch, HttpError } from '@/lib/http';
+import { toLocalIsoDate } from '@/lib/date';
 import { useFieldAvailability } from '@/common/composables/useFieldAvailability';
+import { isValidUsername, sanitizeUsername, USERNAME_MAX, USERNAME_RULE_MESSAGE } from '@/common/form/username';
 import { genderOptions } from '@/modules/profile/helpers/genderOptions';
 import { profileFormSchema } from '@/modules/profile/schemas/profileFormSchema';
 import { passwordFormSchema } from '@/modules/profile/schemas/passwordFormSchema';
@@ -62,7 +64,7 @@ const toast = useToast();
 const queryCache = useQueryCache();
 
 const editing = ref<boolean>(false);
-const today = new Date().toISOString().slice(0, 10);
+const today = toLocalIsoDate(new Date());
 
 const initials = computed<string>(() => {
     const first = props.profile.first_name?.charAt(0) ?? '';
@@ -144,12 +146,20 @@ const form = useForm<ProfileFormValues>({
 /* ── Realtime username / email availability (shared composable) ─────────── */
 const emailPattern = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
+/** Sanitised on every keystroke: non-alphanumerics dropped, hard-capped at max. */
+const usernameModel = computed<string>({
+    get: () => form.username,
+    set: (value) => {
+        form.username = sanitizeUsername(value);
+    },
+});
+
 const { status: usernameStatus } = useFieldAvailability({
     field: 'username',
     endpoint: '/profile/availability',
     source: () => form.username,
     original: () => props.profile.username,
-    validate: (value) => value.length <= 15,
+    validate: isValidUsername,
 });
 
 const { status: emailStatus } = useFieldAvailability({
@@ -173,7 +183,7 @@ const usernameError = computed<string | undefined>(() => {
     if (usernameStatus.value === 'taken') {
         return 'This username is already taken';
     }
-    return usernameStatus.value === 'invalid' ? 'Username must be 15 characters or fewer' : undefined;
+    return usernameStatus.value === 'invalid' ? USERNAME_RULE_MESSAGE : undefined;
 });
 
 const emailSuccess = computed<string | undefined>(() =>
@@ -621,11 +631,11 @@ function revokeTrustedDevice(uuid: string): void {
                         :error="form.errors.last_name"
                     />
                     <TextField
-                        v-model="form.username"
+                        v-model="usernameModel"
                         name="username"
                         label="Username"
                         autocomplete="username"
-                        :maxlength="15"
+                        :maxlength="USERNAME_MAX"
                         :error="usernameError"
                         :success="usernameSuccess"
                         :hint="usernameHint"

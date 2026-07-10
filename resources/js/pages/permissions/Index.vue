@@ -19,6 +19,7 @@ import AppHeader from '@/modules/app/components/AppHeader.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import { useAuthorization } from '@/modules/auth/composables/useAuthorization';
 import AdvancedFilter, { type FilterCriteria, type FilterField } from '@/common/data-table/AdvancedFilter.vue';
+import { toLocalIsoDate } from '@/lib/date';
 import ConfirmDialog from '@/common/data-table/ConfirmDialog.vue';
 import Button from '@/volt/Button.vue';
 import PermissionsTable from './components/PermissionsTable.vue';
@@ -76,10 +77,6 @@ const filterFields: FilterField[] = [
     },
 ];
 
-function toIsoDate(date: Date): string {
-    return date.toISOString().slice(0, 10);
-}
-
 function reload(): void {
     loading.value = true;
     router.get('/permissions', buildPermissionQueryParams(query), {
@@ -98,8 +95,8 @@ function onFilters(criteria: FilterCriteria): void {
     query.status = (criteria.status as AuthorizationStatus | undefined) || null;
 
     const range = criteria.dateRange as Date[] | undefined;
-    query.date_from = range?.[0] ? toIsoDate(range[0]) : null;
-    query.date_to = range?.[1] ? toIsoDate(range[1]) : null;
+    query.date_from = range?.[0] ? toLocalIsoDate(range[0]) : null;
+    query.date_to = range?.[1] ? toLocalIsoDate(range[1]) : null;
 
     query.page = 1;
     selection.value = [];

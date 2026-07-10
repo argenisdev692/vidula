@@ -218,6 +218,8 @@ class User extends Authenticatable implements MustVerifyEmailContract
     /**
      * Reusable list/export filter (BACKEND-PHP §4.1 — single scope shared by
      * ListUsersHandler and UserExportController, no duplicated `when()` chains).
+     * Owns the full `status` lifecycle, including `suspended` → `onlyTrashed()`,
+     * so callers never re-declare the soft-delete branch themselves.
      *
      * @param  Builder<User>  $query
      * @return Builder<User>
@@ -232,6 +234,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
                     ->orWhere('username', 'like', $term)
                     ->orWhere('email', 'like', $term);
             }))
+            ->when($filters->status === 'suspended', fn ($q) => $q->onlyTrashed())
             ->when($filters->status === 'pending', fn ($q) => $q->whereNull('password'))
             ->when($filters->status === 'active', fn ($q) => $q->whereNotNull('password'))
             ->when($filters->dateFrom !== null && $filters->dateTo !== null, fn ($q) => $q->whereBetween('created_at', [

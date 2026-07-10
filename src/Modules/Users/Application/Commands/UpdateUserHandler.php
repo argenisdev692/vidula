@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace Modules\Users\Application\Commands;
 
 use App\Models\User;
+use Illuminate\Contracts\Events\Dispatcher;
 use Modules\Users\Application\DTOs\UpdateUserData;
 use Modules\Users\Domain\Events\UserForcedPasswordChange;
 use Modules\Users\Domain\Ports\UserRepositoryPort;
 
 final readonly class UpdateUserHandler
 {
-    public function __construct(private UserRepositoryPort $users) {}
+    public function __construct(
+        private UserRepositoryPort $users,
+        private Dispatcher $events,
+    ) {}
 
     public function handle(User $user, UpdateUserData $data): User
     {
@@ -36,7 +40,7 @@ final readonly class UpdateUserHandler
         ]);
 
         if ($data->forcePasswordChange) {
-            event(new UserForcedPasswordChange($updated->uuid));
+            $this->events->dispatch(new UserForcedPasswordChange($updated->uuid));
         }
 
         return $updated;

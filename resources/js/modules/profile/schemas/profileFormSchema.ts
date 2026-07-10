@@ -1,5 +1,6 @@
 import { isValidPhoneNumber } from 'libphonenumber-js';
 import { z } from 'zod';
+import { isValidUsername, USERNAME_RULE_MESSAGE } from '@/common/form/username';
 
 /**
  * Client-side UX validation for the profile form (Zod v4). Mirrors the shape of
@@ -12,7 +13,11 @@ import { z } from 'zod';
 export const profileFormSchema = z.object({
     first_name: z.string().trim().min(1, 'First name is required').max(255),
     last_name: z.string().trim().max(255),
-    username: z.string().trim().max(15, 'Username must be 15 characters or fewer'),
+    // Optional — but when provided must be 8–15 letters/digits (mirrors backend).
+    username: z
+        .string()
+        .trim()
+        .refine((value) => value === '' || isValidUsername(value), USERNAME_RULE_MESSAGE),
     email: z.string().trim().min(1, 'Email is required').email('Enter a valid email address').max(255),
     // Stored as E.164 by PhoneField; validate the value is a real phone number
     // (empty is allowed — the page maps blank to null before submitting).

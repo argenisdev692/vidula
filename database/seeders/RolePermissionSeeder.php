@@ -58,7 +58,8 @@ class RolePermissionSeeder extends Seeder
      * standard CRUD set because granting access (attaching roles / direct
      * permission top-ups to a user) is far more sensitive than editing a name —
      * holding UPDATE_USERS must NOT imply the ability to elevate privileges.
-     * Enforced at the route and, defence-in-depth, in SyncUserAccessHandler.
+     * Enforced at the route and, defence-in-depth, in SyncUserRolesHandler /
+     * SetUserPermissionHandler (via the AssignableAccess invariant).
      *
      * @var list<string>
      */

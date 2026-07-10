@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isValidUsername, USERNAME_RULE_MESSAGE } from '@/common/form/username';
 
 /**
  * Client-side UX validation for the invite (create) / edit user form (Zod v4).
@@ -35,7 +36,11 @@ export const userFormSchema = z.object({
         .min(1, 'Last name is required.')
         .max(255, 'Last name must be 255 characters or fewer.')
         .regex(NAME_PATTERN, 'Last name must contain letters only — no spaces.'),
-    username: z.string().trim().max(255, 'Username must be 255 characters or fewer.'),
+    // Optional — but when provided must be 8–15 letters/digits (mirrors backend).
+    username: z
+        .string()
+        .trim()
+        .refine((value) => value === '' || isValidUsername(value), USERNAME_RULE_MESSAGE),
     email: z
         .string()
         .trim()

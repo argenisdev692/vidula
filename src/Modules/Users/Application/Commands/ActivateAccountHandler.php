@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Users\Application\Commands;
 
 use App\Models\User;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Facades\DB;
 use Modules\Users\Application\DTOs\ActivateAccountData;
 use Modules\Users\Domain\Events\UserActivated;
@@ -19,6 +20,8 @@ use Modules\Users\Domain\Events\UserActivated;
  */
 final readonly class ActivateAccountHandler
 {
+    public function __construct(private Dispatcher $events) {}
+
     public function handle(User $user, ActivateAccountData $data): void
     {
         DB::transaction(function () use ($user, $data): void {
@@ -32,6 +35,6 @@ final readonly class ActivateAccountHandler
             }
         });
 
-        event(new UserActivated($user->uuid, $user->email));
+        $this->events->dispatch(new UserActivated($user->uuid, $user->email));
     }
 }

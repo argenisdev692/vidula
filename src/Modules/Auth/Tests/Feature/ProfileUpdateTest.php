@@ -26,7 +26,7 @@ final class ProfileUpdateTest extends TestCase
         return array_merge([
             'first_name' => 'Ada',
             'last_name' => 'Lovelace',
-            'username' => 'ada',
+            'username' => 'adalovelace',
             'email' => 'ada@example.com',
             'phone' => '+14155552671',
             'date_of_birth' => '1990-05-10',
@@ -66,7 +66,7 @@ final class ProfileUpdateTest extends TestCase
         $user->refresh();
 
         $this->assertSame('Ada', $user->first_name);
-        $this->assertSame('ada', $user->username);
+        $this->assertSame('adalovelace', $user->username);
         $this->assertSame('female', $user->gender);
         $this->assertSame('London', $user->city);
         $this->assertSame('GB', $user->country_code);
@@ -98,27 +98,54 @@ final class ProfileUpdateTest extends TestCase
 
     public function test_username_must_be_unique_across_users(): void
     {
-        User::factory()->create(['username' => 'taken']);
-        $user = User::factory()->create(['username' => 'ada']);
+        User::factory()->create(['username' => 'takenuser']);
+        $user = User::factory()->create(['username' => 'adalovelace']);
 
         $this->actingAs($user)
-            ->put('/user/profile-information', $this->payload(['username' => 'taken']))
+            ->put('/user/profile-information', $this->payload(['username' => 'takenuser']))
             ->assertSessionHasErrors(['username'], null, 'updateProfileInformation');
 
-        $this->assertSame('ada', $user->refresh()->username);
+        $this->assertSame('adalovelace', $user->refresh()->username);
+    }
+
+    public function test_username_must_be_at_least_8_characters(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->put('/user/profile-information', $this->payload(['username' => 'ada12']))
+            ->assertSessionHasErrors(['username'], null, 'updateProfileInformation');
+    }
+
+    public function test_username_cannot_exceed_15_characters(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->put('/user/profile-information', $this->payload(['username' => 'adalovelace12345678']))
+            ->assertSessionHasErrors(['username'], null, 'updateProfileInformation');
+    }
+
+    public function test_username_rejects_non_alphanumeric_characters(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->put('/user/profile-information', $this->payload(['username' => 'ada_lovelace']))
+            ->assertSessionHasErrors(['username'], null, 'updateProfileInformation');
     }
 
     public function test_user_can_keep_their_own_email_and_username(): void
     {
         $user = User::factory()->create([
             'email' => 'ada@example.com',
-            'username' => 'ada',
+            'username' => 'adalovelace',
         ]);
 
         $this->actingAs($user)
             ->put('/user/profile-information', $this->payload([
                 'email' => 'ada@example.com',
-                'username' => 'ada',
+                'username' => 'adalovelace',
             ]))
             ->assertSessionHasNoErrors();
     }

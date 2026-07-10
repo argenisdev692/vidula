@@ -13,6 +13,7 @@ use Modules\Backup\Application\Commands\DeleteBackupHandler;
 use Modules\Backup\Application\Commands\RunBackupHandler;
 use Modules\Backup\Application\Queries\FindBackupHandler;
 use Modules\Backup\Application\Queries\ListBackupsHandler;
+use Modules\Backup\Infrastructure\Http\Presenters\BackupPresenter;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -35,7 +36,7 @@ final readonly class BackupController
     {
         $found = $find->handle($backup);
 
-        return $found->disk()->download($found->path(), basename($found->path()));
+        return $found->disk()->download($found->path(), BackupPresenter::downloadName($found));
     }
 
     public function store(Request $request, RunBackupHandler $run): RedirectResponse

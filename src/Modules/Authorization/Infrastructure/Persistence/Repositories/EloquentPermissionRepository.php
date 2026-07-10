@@ -37,6 +37,7 @@ final class EloquentPermissionRepository implements PermissionRepositoryPort
             ->when($filters->status === 'suspended', fn ($q) => $q->onlyTrashed())
             ->applyFilters($filters)
             ->withCount('roles')
+            ->with('roles:id,name')
             ->select(['id', 'uuid', 'name', 'guard_name', 'created_at', 'deleted_at'])
             ->orderBy('name')
             ->paginate($perPage)

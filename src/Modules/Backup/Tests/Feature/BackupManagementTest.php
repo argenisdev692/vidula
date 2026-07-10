@@ -10,6 +10,7 @@ use Illuminate\Foundation\Console\QueuedCommand;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 final class BackupManagementTest extends TestCase
@@ -66,10 +67,12 @@ final class BackupManagementTest extends TestCase
     {
         $this->seedBackupFile();
 
+        $prefix = Str::slug((string) config('backup.backup.name', config('app.name')));
+
         $this->actingAs($this->superAdmin())
             ->get('/backups/'.self::BACKUP_FILE.'/download')
             ->assertOk()
-            ->assertDownload(self::BACKUP_FILE);
+            ->assertDownload($prefix.'-'.self::BACKUP_FILE);
     }
 
     public function test_downloading_an_unknown_backup_returns_404(): void

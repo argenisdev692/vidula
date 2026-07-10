@@ -54,6 +54,22 @@ const form = useForm<ExceptionForm>({
 const isEdit = computed<boolean>(() => props.mode === 'edit');
 const dialogTitle = computed<string>(() => (isEdit.value ? 'Edit date exception' : 'New date exception'));
 
+/** Today as a local `YYYY-MM-DD` (no UTC drift). */
+function isoToday(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+/**
+ * A new exception can only be scheduled from today onward — the picker disables
+ * past days. Editing keeps the field open so an already-past exception (e.g. a
+ * holiday that has since passed) can still have its reason/hours adjusted.
+ */
+const minDate = computed<string | undefined>(() => (isEdit.value ? undefined : isoToday()));
+
 /** Re-seed the form each time the dialog opens (never carry stale state). */
 watch(visible, (open) => {
     if (!open) {
@@ -102,6 +118,13 @@ function submit(): void {
         return;
     }
 
+    // A new exception may not be scheduled in the past (the backend enforces this too).
+    if (!isEdit.value && form.date && form.date < isoToday()) {
+        form.clearErrors();
+        form.setError('date', 'The date cannot be in the past.');
+        return;
+    }
+
     const options = {
         preserveScroll: true,
         onSuccess: () => {
@@ -147,6 +170,7 @@ function submit(): void {
                 label="Date"
                 placeholder="Select a date"
                 required
+                :min-date="minDate"
                 :error="form.errors.date"
             />
 

@@ -38,12 +38,19 @@ export interface Role {
 /** The detail render adds `updated_at` and the full permissions relation. */
 export type RoleDetail = Role & { updated_at?: string | null };
 
-/** A row in the permissions DataTable (list projection + role usage count). */
+/** A role that holds a permission (lean `id,name` projection). */
+export interface PermissionRole {
+    id: number;
+    name: string;
+}
+
+/** A row in the permissions DataTable (list projection + role usage). */
 export interface Permission {
     uuid: string;
     name: string;
     guard_name: string;
     roles_count: number;
+    roles?: PermissionRole[];
     created_at: string | null;
     deleted_at: string | null;
 }
