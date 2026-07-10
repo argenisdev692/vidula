@@ -20,7 +20,10 @@ final class EloquentCompanyRepository implements CompanyRepositoryPort
         return CompanyData::query()
             ->select([
                 'id', 'uuid', 'name', 'company_name', 'email', 'phone', 'website',
-                'address', 'address_2', 'logo_path', 'logo_white_path', 'mark_path',
+                'address', 'address_2', 'zip_code', 'city', 'state', 'country',
+                'country_code', 'latitude', 'longitude',
+                'facebook_link', 'instagram_link', 'linkedin_link', 'twitter_link', 'tiktok_link',
+                'logo_path', 'logo_white_path', 'mark_path',
                 'signature_path', 'created_at', 'updated_at',
             ])
             ->orderBy('id')

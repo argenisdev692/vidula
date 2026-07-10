@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Shared\Providers;
 
 use Illuminate\Contracts\Cache\Repository as Cache;
+use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\View as ViewFactory;
 use Illuminate\Support\ServiceProvider;
 use Shared\Domain\Ports\AuditPort;
 use Shared\Domain\Ports\ExportPort;
 use Shared\Domain\Ports\StoragePort;
 use Shared\Infrastructure\Audit\SpatieActivityLogAdapter;
+use Shared\Infrastructure\Company\CompanyProfile;
 use Shared\Infrastructure\Export\SimpleExcelExportAdapter;
 use Shared\Infrastructure\Resilience\CircuitBreaker\CircuitBreaker;
 use Shared\Infrastructure\Resilience\CircuitBreaker\CircuitBreakerInterface;
@@ -36,5 +39,14 @@ final class SharedServiceProvider extends ServiceProvider
             CircuitBreakerInterface::class,
             static fn ($app): CircuitBreaker => new CircuitBreaker($app->make(Cache::class)),
         );
+    }
+
+    public function boot(): void
+    {
+        // Inject company branding (base64 logos + contact block) into the shared
+        // corporate PDF layout so every export controller stays branding-agnostic.
+        ViewFactory::composer('exports.pdf.layout', static function (View $view): void {
+            $view->with('company', CompanyProfile::pdfBranding());
+        });
     }
 }

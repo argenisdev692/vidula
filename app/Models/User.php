@@ -53,6 +53,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string|null $city
  * @property string|null $state
  * @property string|null $country
+ * @property string|null $country_code
  * @property float|null $latitude
  * @property float|null $longitude
  * @property string|null $gender
@@ -105,6 +106,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @method static Builder<static>|User whereAddress2($value)
  * @method static Builder<static>|User whereCity($value)
  * @method static Builder<static>|User whereCountry($value)
+ * @method static Builder<static>|User whereCountryCode($value)
  * @method static Builder<static>|User whereCreatedAt($value)
  * @method static Builder<static>|User whereDateOfBirth($value)
  * @method static Builder<static>|User whereDeletedAt($value)
@@ -167,6 +169,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
         'city',
         'state',
         'country',
+        'country_code',
         'gender',
         'profile_photo_path',
         'latitude',

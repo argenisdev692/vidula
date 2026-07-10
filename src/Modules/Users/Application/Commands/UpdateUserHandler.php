@@ -29,6 +29,7 @@ final readonly class UpdateUserHandler
             'city' => $data->city,
             'state' => $data->state,
             'country' => $data->country,
+            'country_code' => $data->countryCode,
             'latitude' => $data->latitude,
             'longitude' => $data->longitude,
             'must_change_password' => $data->forcePasswordChange,

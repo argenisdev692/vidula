@@ -29,8 +29,14 @@ const props = withDefaults(
         disabled?: boolean;
         /** Bias predictions to these ISO-3166 region codes (e.g. `['US']`). */
         regionCodes?: string[];
+        /**
+         * Show a managed `country_code` (ISO-3166 alpha-2) field. Opt-in: only
+         * consumers whose backend persists a `country_code` column enable it, so
+         * forms without that column never surface a field they can't store.
+         */
+        withCountryCode?: boolean;
     }>(),
-    { errors: () => ({}), disabled: false, regionCodes: () => [] },
+    { errors: () => ({}), disabled: false, regionCodes: () => [], withCountryCode: false },
 );
 
 const model = defineModel<AddressValue>({ required: true });
@@ -118,17 +124,27 @@ function onKeydown(event: KeyboardEvent): void {
 /* Read-only managed fields + per-field manual unlock                         */
 /* -------------------------------------------------------------------------- */
 
-const managedFields: ReadonlyArray<{
+interface ManagedFieldDef {
     key: ManagedAddressField;
     label: string;
     autocomplete: string;
     placeholder: string;
-}> = [
-    { key: 'city', label: 'City', autocomplete: 'address-level2', placeholder: 'City' },
-    { key: 'state', label: 'State / Province', autocomplete: 'address-level1', placeholder: 'State' },
-    { key: 'zip_code', label: 'ZIP / Postal code', autocomplete: 'postal-code', placeholder: 'ZIP' },
-    { key: 'country', label: 'Country', autocomplete: 'country-name', placeholder: 'Country' },
-];
+}
+
+const managedFields = computed<ReadonlyArray<ManagedFieldDef>>(() => {
+    const fields: ManagedFieldDef[] = [
+        { key: 'city', label: 'City', autocomplete: 'address-level2', placeholder: 'City' },
+        { key: 'state', label: 'State / Province', autocomplete: 'address-level1', placeholder: 'State' },
+        { key: 'zip_code', label: 'ZIP / Postal code', autocomplete: 'postal-code', placeholder: 'ZIP' },
+        { key: 'country', label: 'Country', autocomplete: 'country-name', placeholder: 'Country' },
+    ];
+
+    if (props.withCountryCode) {
+        fields.push({ key: 'country_code', label: 'Country code', autocomplete: 'off', placeholder: 'US' });
+    }
+
+    return fields;
+});
 
 const unlocked = reactive(new Set<ManagedAddressField>());
 

@@ -37,6 +37,7 @@ final class ProfileUpdateTest extends TestCase
             'state' => 'England',
             'zip_code' => 'EC1A',
             'country' => 'UK',
+            'country_code' => 'GB',
             'latitude' => 51.5074,
             'longitude' => -0.1278,
         ], $overrides);
@@ -68,6 +69,7 @@ final class ProfileUpdateTest extends TestCase
         $this->assertSame('ada', $user->username);
         $this->assertSame('female', $user->gender);
         $this->assertSame('London', $user->city);
+        $this->assertSame('GB', $user->country_code);
         $this->assertSame('+14155552671', $user->phone);
         $this->assertSame(51.5074, $user->latitude);
         $this->assertSame(-0.1278, $user->longitude);

@@ -41,6 +41,15 @@ export const companyFormSchema = z.object({
         .refine((value) => value === '' || isValidPhoneNumber(value), 'Enter a valid phone number'),
     address: z.string().trim().max(1000),
     address_2: z.string().trim().max(1000),
+    zip_code: z.string().trim().max(20),
+    city: z.string().trim().max(100),
+    state: z.string().trim().max(100),
+    country: z.string().trim().max(100),
+    // ISO-3166 alpha-2 (uppercased by the form); blank is allowed (mapped to null).
+    country_code: z
+        .string()
+        .trim()
+        .refine((value) => value === '' || /^[A-Z]{2}$/.test(value), 'Enter a 2-letter country code'),
     website: optionalUrl(),
     facebook_link: optionalUrl(),
     instagram_link: optionalUrl(),

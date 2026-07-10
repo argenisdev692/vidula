@@ -28,6 +28,7 @@ return new class extends Migration
             $table->string('city')->nullable();
             $table->string('state')->nullable();
             $table->string('country')->nullable();
+            $table->string('country_code', 2)->nullable();
             $table->double('latitude')->nullable();
             $table->double('longitude')->nullable();
             $table->string('gender')->nullable();

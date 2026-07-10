@@ -56,6 +56,7 @@ final class UpdateUserProfileInformation implements UpdatesUserProfileInformatio
             'state' => ['nullable', 'string', 'max:120'],
             'zip_code' => ['nullable', 'string', 'max:20'],
             'country' => ['nullable', 'string', 'max:120'],
+            'country_code' => ['nullable', 'string', 'size:2', 'alpha', 'uppercase'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
         ])->validateWithBag('updateProfileInformation');
@@ -73,6 +74,7 @@ final class UpdateUserProfileInformation implements UpdatesUserProfileInformatio
             'state' => $validated['state'] ?? null,
             'zip_code' => $validated['zip_code'] ?? null,
             'country' => $validated['country'] ?? null,
+            'country_code' => $validated['country_code'] ?? null,
             'latitude' => $validated['latitude'] ?? null,
             'longitude' => $validated['longitude'] ?? null,
         ];

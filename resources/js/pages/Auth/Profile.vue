@@ -136,6 +136,7 @@ const form = useForm<ProfileFormValues>({
     state: props.profile.state ?? '',
     zip_code: props.profile.zip_code ?? '',
     country: props.profile.country ?? '',
+    country_code: props.profile.country_code ?? '',
     latitude: props.profile.latitude,
     longitude: props.profile.longitude,
 });
@@ -250,6 +251,7 @@ const addressModel = computed<AddressValue>({
         city: form.city || null,
         state: form.state || null,
         country: form.country || null,
+        country_code: form.country_code || null,
         latitude: form.latitude,
         longitude: form.longitude,
     }),
@@ -260,6 +262,8 @@ const addressModel = computed<AddressValue>({
         form.city = value.city ?? '';
         form.state = value.state ?? '';
         form.country = value.country ?? '';
+        // Backend requires uppercase ISO-3166 alpha-2; normalise manual entry too.
+        form.country_code = (value.country_code ?? '').toUpperCase();
         form.latitude = value.latitude;
         form.longitude = value.longitude;
     },
@@ -281,6 +285,7 @@ const addressErrors = computed(() => ({
     city: form.errors.city,
     state: form.errors.state,
     country: form.errors.country,
+    country_code: form.errors.country_code,
 }));
 
 function toggleEdit(): void {
@@ -697,6 +702,7 @@ function revokeTrustedDevice(uuid: string): void {
                             v-model="addressModel"
                             :api-key="page.props.config.google_maps_api_key"
                             :errors="addressErrors"
+                            with-country-code
                         />
                     </div>
                 </div>

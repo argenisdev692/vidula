@@ -22,7 +22,7 @@ class RolePermissionSeeder extends Seeder
      *
      * @var list<string>
      */
-    private const array MODULES = ['USERS', 'ROLES', 'PERMISSIONS', 'COMPANY_DATA', 'BLOG_CATEGORIES', 'CONTACT_SUPPORTS'];
+    private const array MODULES = ['USERS', 'ROLES', 'PERMISSIONS', 'COMPANY_DATA', 'BLOG_CATEGORIES', 'CONTACT_SUPPORTS', 'AVAILABILITY_RULES', 'AVAILABILITY_EXCEPTIONS'];
 
     /**
      * Full action set granted to every module (browse, view, write,
@@ -43,6 +43,15 @@ class RolePermissionSeeder extends Seeder
         'BULK_RESTORE',
         'EXPORT',
     ];
+
+    /**
+     * Modules the ADMIN role manages directly (beyond SUPER_ADMIN, who holds
+     * everything). Availability is delegated to admins so they can run the
+     * booking calendar without the full super-admin reach.
+     *
+     * @var list<string>
+     */
+    private const array ADMIN_MODULES = ['AVAILABILITY_RULES', 'AVAILABILITY_EXCEPTIONS'];
 
     /**
      * Access-management permissions on the USERS module. Kept separate from the
@@ -86,6 +95,7 @@ class RolePermissionSeeder extends Seeder
         $this->ensureRoles();
         $this->ensurePermissions($this->permissionNames());
         $this->grantAllToSuperAdmin();
+        $this->grantModulesToAdmin();
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
@@ -154,5 +164,20 @@ class RolePermissionSeeder extends Seeder
             ->where('guard_name', self::GUARD)
             ->first()
             ?->syncPermissions(Permission::where('guard_name', self::GUARD)->get());
+    }
+
+    /**
+     * ADMIN manages the availability modules directly (full CRUD + export).
+     * Additive and idempotent — never wipes grants the role accrues elsewhere.
+     */
+    private function grantModulesToAdmin(): void
+    {
+        $names = $this->matrix(self::ADMIN_MODULES, self::MODULES_ACTIONS);
+
+        Role::query()
+            ->where('name', 'ADMIN')
+            ->where('guard_name', self::GUARD)
+            ->first()
+            ?->givePermissionTo($names);
     }
 }

@@ -37,11 +37,11 @@ final readonly class CompanyDataController
             : Inertia::render('company-data/Index', ['companies' => $companies]);
     }
 
-    public function show(string $uuid, GetCompanyHandler $get): InertiaResponse|JsonResponse
+    public function show(Request $request, string $uuid, GetCompanyHandler $get): InertiaResponse|JsonResponse
     {
         $company = $get->handle($uuid);
 
-        return request()->expectsJson()
+        return $request->expectsJson()
             ? response()->json(['data' => $company])
             : Inertia::render('company-data/Show', ['company' => $company]);
     }

@@ -22,6 +22,8 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             CompanySeeder::class,
             BlogCategorySeeder::class,
+            AvailabilitySeeder::class,
+            CountryHolidaySeeder::class,
         ]);
     }
 }

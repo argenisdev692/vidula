@@ -6,11 +6,14 @@ namespace Modules\Company\Application\Commands;
 
 use App\Models\CompanyData;
 use Modules\Company\Application\DTOs\UpdateCompanyData;
+use Modules\Company\Domain\Events\CompanyCountryChanged;
 use Modules\Company\Domain\Ports\CompanyRepositoryPort;
 
 /**
  * Updates the company record's text fields. Persisting triggers the CompanyData
- * `saved` hook, which busts the CompanyProfile branding/contact cache.
+ * `saved` hook, which busts the CompanyProfile branding/contact cache. A change
+ * to `country_code` raises {@see CompanyCountryChanged} so the Availability
+ * module can rebuild national holidays for the new country.
  */
 final readonly class UpdateCompanyHandler
 {
@@ -18,13 +21,20 @@ final readonly class UpdateCompanyHandler
 
     public function handle(CompanyData $company, UpdateCompanyData $data): CompanyData
     {
-        return $this->companies->update($company, [
+        $previousCountryCode = $company->country_code;
+
+        $updated = $this->companies->update($company, [
             'name' => $data->name,
             'company_name' => $data->companyName,
             'email' => $data->email,
             'phone' => $data->phone,
             'address' => $data->address,
             'address_2' => $data->address2,
+            'zip_code' => $data->zipCode,
+            'city' => $data->city,
+            'state' => $data->state,
+            'country' => $data->country,
+            'country_code' => $data->countryCode,
             'website' => $data->website,
             'facebook_link' => $data->facebookLink,
             'instagram_link' => $data->instagramLink,
@@ -34,5 +44,11 @@ final readonly class UpdateCompanyHandler
             'latitude' => $data->latitude,
             'longitude' => $data->longitude,
         ]);
+
+        if ($updated->country_code !== $previousCountryCode) {
+            event(new CompanyCountryChanged($previousCountryCode, $updated->country_code));
+        }
+
+        return $updated;
     }
 }

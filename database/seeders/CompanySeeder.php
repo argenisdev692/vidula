@@ -34,6 +34,11 @@ class CompanySeeder extends Seeder
             'email' => 'argenis692@gmail.com',
             'phone' => '+351 963 490 414',
             'address' => 'Rua da Saudade, Nº 1, R/C Esq., 6200-386 Covilhã, Portugal',
+            'zip_code' => '6200-386',
+            'city' => 'Covilhã',
+            'state' => 'Castelo Branco',
+            'country' => 'Portugal',
+            'country_code' => 'PT',
             'website' => null,
             'user_id' => $userId,
             'facebook_link' => null,
@@ -41,8 +46,8 @@ class CompanySeeder extends Seeder
             'linkedin_link' => null,
             'twitter_link' => null,
             'tiktok_link' => 'https://www.tiktok.com/@vidula',
-            'latitude' => null,
-            'longitude' => null,
+            'latitude' => 40.2806,
+            'longitude' => -7.5049,
         ]);
         $company->save();
     }

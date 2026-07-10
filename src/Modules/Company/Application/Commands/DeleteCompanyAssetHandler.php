@@ -6,6 +6,7 @@ namespace Modules\Company\Application\Commands;
 
 use App\Models\CompanyData;
 use Modules\Company\Domain\Ports\CompanyRepositoryPort;
+use Modules\Company\Domain\ValueObjects\CompanyAsset;
 use Shared\Domain\Ports\StoragePort;
 
 /**
@@ -15,14 +16,6 @@ use Shared\Domain\Ports\StoragePort;
  */
 final readonly class DeleteCompanyAssetHandler
 {
-    /** @var array<string, string> */
-    private const array COLUMN_MAP = [
-        'logo' => 'logo_path',
-        'logo_white' => 'logo_white_path',
-        'mark' => 'mark_path',
-        'signature' => 'signature_path',
-    ];
-
     public function __construct(
         private StoragePort $storage,
         private CompanyRepositoryPort $companies,
@@ -30,8 +23,9 @@ final readonly class DeleteCompanyAssetHandler
 
     public function handle(string $asset): CompanyData
     {
-        $column = self::COLUMN_MAP[$asset]
-            ?? throw new \InvalidArgumentException("Unknown company asset [{$asset}].");
+        $column = (CompanyAsset::tryFrom($asset)
+            ?? throw new \InvalidArgumentException("Unknown company asset [{$asset}]."))
+            ->column();
 
         $company = $this->companies->getSingleton();
 

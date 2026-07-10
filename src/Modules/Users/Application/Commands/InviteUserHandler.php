@@ -51,6 +51,7 @@ final readonly class InviteUserHandler
                 'city' => $data->city,
                 'state' => $data->state,
                 'country' => $data->country,
+                'country_code' => $data->countryCode,
                 'latitude' => $data->latitude,
                 'longitude' => $data->longitude,
                 'invited_at' => now(),

@@ -6,6 +6,7 @@ namespace Shared\Infrastructure\Company;
 
 use App\Models\CompanyData;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 use Shared\Domain\Ports\StoragePort;
 use Throwable;
 
@@ -69,6 +70,45 @@ final class CompanyProfile
     public static function forget(): void
     {
         Cache::forget(self::CACHE_KEY);
+        Cache::forget(self::CACHE_KEY.'.pdf');
+    }
+
+    /**
+     * Branding payload for the corporate PDF export layout.
+     *
+     * dompdf renders with remote fetching disabled, so logos are pre-fetched and
+     * embedded as base64 `data:` URIs here rather than referenced by URL. The
+     * white logo sits on the coloured header band; the dark logo is exposed for
+     * light-background contexts. Contact fields feed the header/footer blocks.
+     *
+     * @return array{name: string, website: ?string, email: ?string, phone: ?string, address: ?string, logo_data_uri: string, logo_dark_data_uri: string, socials: array<string, string>}
+     */
+    public static function pdfBranding(): array
+    {
+        return Cache::remember(self::CACHE_KEY.'.pdf', now()->addMinutes(30), static function (): array {
+            try {
+                $company = CompanyData::query()->orderBy('id')->first();
+            } catch (Throwable) {
+                $company = null;
+            }
+
+            return [
+                'name' => (string) ($company?->company_name ?: config('app.name')),
+                'website' => $company?->website ?: config('app.url'),
+                'email' => $company?->email ?: config('mail.from.address'),
+                'phone' => $company?->phone,
+                'address' => self::composeAddress($company),
+                'logo_data_uri' => self::logoDataUri($company?->logo_white_path, self::FALLBACK_LOGO_WHITE),
+                'logo_dark_data_uri' => self::logoDataUri($company?->logo_path, self::FALLBACK_LOGO),
+                'socials' => array_filter([
+                    'linkedin' => $company?->linkedin_link,
+                    'twitter' => $company?->twitter_link,
+                    'instagram' => $company?->instagram_link,
+                    'facebook' => $company?->facebook_link,
+                    'tiktok' => $company?->tiktok_link,
+                ]),
+            ];
+        });
     }
 
     /**
@@ -100,5 +140,66 @@ final class CompanyProfile
     private static function bundledUrl(string $path): string
     {
         return rtrim((string) config('app.url'), '/').'/'.ltrim($path, '/');
+    }
+
+    /**
+     * Collapse the stored address columns into a single presentational line for
+     * the PDF header. Empty parts are dropped so no dangling commas appear.
+     */
+    private static function composeAddress(?CompanyData $company): ?string
+    {
+        if ($company === null) {
+            return null;
+        }
+
+        $cityLine = trim(implode(' ', array_filter([
+            (string) ($company->zip_code ?? ''),
+            (string) ($company->city ?? ''),
+        ])));
+
+        $parts = array_filter([
+            $company->address,
+            $cityLine,
+            (string) ($company->state ?? ''),
+            (string) ($company->country ?? ''),
+        ], static fn (?string $part): bool => $part !== null && $part !== '');
+
+        return $parts === [] ? null : implode(', ', $parts);
+    }
+
+    /**
+     * Resolve a logo reference to an embeddable base64 `data:` URI. Tries the
+     * uploaded object on the cloud disk first, then the bundled public asset,
+     * degrading to an empty string so the layout simply omits the image.
+     */
+    private static function logoDataUri(?string $key, string $fallback): string
+    {
+        if ($key !== null && $key !== '') {
+            try {
+                $disk = Storage::disk((string) config('filesystems.cloud', 'r2'));
+
+                if ($disk->exists($key)) {
+                    $bytes = $disk->get($key);
+
+                    if ($bytes !== null && $bytes !== '') {
+                        $mime = $disk->mimeType($key) ?: 'image/png';
+
+                        return 'data:'.$mime.';base64,'.base64_encode($bytes);
+                    }
+                }
+            } catch (Throwable) {
+            }
+        }
+
+        try {
+            $path = public_path($fallback);
+
+            if (is_file($path)) {
+                return 'data:image/png;base64,'.base64_encode((string) file_get_contents($path));
+            }
+        } catch (Throwable) {
+        }
+
+        return '';
     }
 }

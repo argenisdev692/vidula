@@ -55,6 +55,11 @@ const form = useForm<CompanyFormValues>({
     phone: company.value?.phone ?? '',
     address: company.value?.address ?? '',
     address_2: company.value?.address_2 ?? '',
+    zip_code: company.value?.zip_code ?? '',
+    city: company.value?.city ?? '',
+    state: company.value?.state ?? '',
+    country: company.value?.country ?? '',
+    country_code: company.value?.country_code ?? '',
     website: company.value?.website ?? '',
     facebook_link: company.value?.facebook_link ?? '',
     instagram_link: company.value?.instagram_link ?? '',
@@ -75,23 +80,30 @@ const phoneModel = computed<string | null>({
     },
 });
 
-/* company_data persists only address / address_2 / latitude / longitude — the
-   other AddressValue fields (city, state, …) help the user confirm the picked
-   place but are not stored on this singleton. */
+/* company_data persists the full address slice (street, line 2, city, state,
+   ZIP, country + ISO country code) alongside the silent lat/lng captured from
+   the picked place. */
 const addressModel = computed<AddressValue>({
     get: () => ({
         address: form.address || null,
         address_2: form.address_2 || null,
-        zip_code: null,
-        city: null,
-        state: null,
-        country: null,
+        zip_code: form.zip_code || null,
+        city: form.city || null,
+        state: form.state || null,
+        country: form.country || null,
+        country_code: form.country_code || null,
         latitude: form.latitude,
         longitude: form.longitude,
     }),
     set: (value) => {
         form.address = value.address ?? '';
         form.address_2 = value.address_2 ?? '';
+        form.zip_code = value.zip_code ?? '';
+        form.city = value.city ?? '';
+        form.state = value.state ?? '';
+        form.country = value.country ?? '';
+        // Backend requires uppercase ISO-3166 alpha-2; normalise manual entry too.
+        form.country_code = (value.country_code ?? '').toUpperCase();
         form.latitude = value.latitude;
         form.longitude = value.longitude;
     },
@@ -100,6 +112,11 @@ const addressModel = computed<AddressValue>({
 const addressErrors = computed(() => ({
     address: form.errors.address,
     address_2: form.errors.address_2,
+    zip_code: form.errors.zip_code,
+    city: form.errors.city,
+    state: form.errors.state,
+    country: form.errors.country,
+    country_code: form.errors.country_code,
 }));
 
 function saveDetails(): void {
@@ -322,6 +339,7 @@ function removeSignature(): void {
                     :api-key="page.props.config.google_maps_api_key"
                     :errors="addressErrors"
                     :disabled="!canUpdate"
+                    with-country-code
                 />
 
                 <div class="section-label">Social Links</div>

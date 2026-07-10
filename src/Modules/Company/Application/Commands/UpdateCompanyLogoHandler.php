@@ -7,6 +7,7 @@ namespace Modules\Company\Application\Commands;
 use App\Models\CompanyData;
 use Modules\Company\Application\DTOs\UpdateCompanyLogoData;
 use Modules\Company\Domain\Ports\CompanyRepositoryPort;
+use Modules\Company\Domain\ValueObjects\CompanyAsset;
 use Shared\Domain\Ports\StoragePort;
 
 /**
@@ -17,13 +18,6 @@ use Shared\Domain\Ports\StoragePort;
  */
 final readonly class UpdateCompanyLogoHandler
 {
-    /** @var array<string, string> */
-    private const array COLUMN_MAP = [
-        'logo' => 'logo_path',
-        'logo_white' => 'logo_white_path',
-        'mark' => 'mark_path',
-    ];
-
     public function __construct(
         private StoragePort $storage,
         private CompanyRepositoryPort $companies,
@@ -32,7 +26,7 @@ final readonly class UpdateCompanyLogoHandler
     public function handle(UpdateCompanyLogoData $data): CompanyData
     {
         $company = $this->companies->getSingleton();
-        $column = self::COLUMN_MAP[$data->type];
+        $column = CompanyAsset::from($data->type)->column();
 
         /** @var string|null $previous */
         $previous = $company->{$column};

@@ -62,6 +62,9 @@ final class InviteUserData extends Data
         public ?string $country = null,
 
         #[Nullable]
+        public ?string $countryCode = null,
+
+        #[Nullable]
         public ?float $latitude = null,
 
         #[Nullable]
@@ -79,6 +82,7 @@ final class InviteUserData extends Data
         return [
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'gender' => ['nullable', Rule::in(['male', 'female', 'other', 'prefer_not_to_say'])],
+            'country_code' => ['nullable', 'string', 'size:2', 'alpha', 'uppercase'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'roles' => ['array'],

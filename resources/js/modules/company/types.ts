@@ -18,6 +18,11 @@ export interface CompanyData {
     phone: string | null;
     address: string | null;
     address_2: string | null;
+    zip_code: string | null;
+    city: string | null;
+    state: string | null;
+    country: string | null;
+    country_code: string | null;
     website: string | null;
     facebook_link: string | null;
     instagram_link: string | null;

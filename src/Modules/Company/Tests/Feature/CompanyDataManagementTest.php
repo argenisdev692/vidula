@@ -9,6 +9,7 @@ use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -137,6 +138,44 @@ final class CompanyDataManagementTest extends TestCase
         $company->refresh();
         $this->assertNull($company->logo_path);
         Storage::disk('r2')->assertMissing('branding/logo.png');
+    }
+
+    public function test_changing_the_country_rebuilds_national_holidays(): void
+    {
+        $this->travelTo(Carbon::parse('2026-03-01'));
+        $company = $this->seedCompany(); // country_code starts null
+
+        $this->assertDatabaseCount('availability_exceptions', 0);
+
+        $this->actingAs($this->superAdmin())
+            ->from("/company-data/{$company->uuid}")
+            ->put("/company-data/{$company->uuid}", [
+                'company_name' => 'Vidula',
+                'country' => 'Portugal',
+                'country_code' => 'PT',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('availability_exceptions', [
+            'date' => '2026-12-25',
+            'reason' => 'Natal',
+            'source' => 'holiday',
+        ]);
+    }
+
+    public function test_updating_without_a_country_change_does_not_touch_holidays(): void
+    {
+        $this->travelTo(Carbon::parse('2026-03-01'));
+        $company = $this->seedCompany();
+
+        $this->actingAs($this->superAdmin())
+            ->from("/company-data/{$company->uuid}")
+            ->put("/company-data/{$company->uuid}", [
+                'company_name' => 'Vidula Lda',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseCount('availability_exceptions', 0);
     }
 
     public function test_a_user_without_permission_cannot_update_company_data(): void

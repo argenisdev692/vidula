@@ -109,6 +109,7 @@ final readonly class UserController
                 'city',
                 'state',
                 'country',
+                'country_code',
                 'latitude',
                 'longitude',
                 'must_change_password',

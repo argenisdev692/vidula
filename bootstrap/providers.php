@@ -7,6 +7,7 @@ use App\Providers\TelescopeServiceProvider;
 use Modules\ActivityLog\Providers\ActivityLogServiceProvider;
 use Modules\Auth\Providers\AuthServiceProvider;
 use Modules\Authorization\Providers\AuthorizationServiceProvider;
+use Modules\Availability\Providers\AvailabilityServiceProvider;
 use Modules\Backup\Providers\BackupServiceProvider;
 use Modules\Blog\Providers\BlogServiceProvider;
 use Modules\Company\Providers\CompanyServiceProvider;
@@ -28,4 +29,5 @@ return [
     BackupServiceProvider::class,
     BlogServiceProvider::class,
     ContactSupportServiceProvider::class,
+    AvailabilityServiceProvider::class,
 ];

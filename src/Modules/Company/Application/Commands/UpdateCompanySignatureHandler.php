@@ -7,6 +7,7 @@ namespace Modules\Company\Application\Commands;
 use App\Models\CompanyData;
 use Modules\Company\Application\DTOs\UpdateCompanySignatureData;
 use Modules\Company\Domain\Ports\CompanyRepositoryPort;
+use Modules\Company\Domain\ValueObjects\CompanyAsset;
 use Shared\Domain\Ports\StoragePort;
 
 /**
@@ -25,9 +26,10 @@ final readonly class UpdateCompanySignatureHandler
     public function handle(UpdateCompanySignatureData $data): CompanyData
     {
         $company = $this->companies->getSingleton();
+        $column = CompanyAsset::Signature->column();
 
         /** @var string|null $previous */
-        $previous = $company->signature_path;
+        $previous = $company->{$column};
 
         $path = $this->storage->putFile('branding', $data->signature, 'public');
 
@@ -35,6 +37,6 @@ final readonly class UpdateCompanySignatureHandler
             $this->storage->delete($previous);
         }
 
-        return $this->companies->update($company, ['signature_path' => $path]);
+        return $this->companies->update($company, [$column => $path]);
     }
 }

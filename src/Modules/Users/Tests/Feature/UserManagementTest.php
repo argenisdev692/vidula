@@ -93,6 +93,7 @@ final class UserManagementTest extends TestCase
                 'state' => 'CA',
                 'zip_code' => '94043',
                 'country' => 'United States',
+                'country_code' => 'US',
                 'latitude' => 37.4221,
                 'longitude' => -122.0841,
             ])
@@ -103,6 +104,7 @@ final class UserManagementTest extends TestCase
         $this->assertSame('Mountain View', $user->city);
         $this->assertSame('CA', $user->state);
         $this->assertSame('94043', $user->zip_code);
+        $this->assertSame('US', $user->country_code);
         $this->assertSame(37.4221, $user->latitude);
         $this->assertSame(-122.0841, $user->longitude);
 

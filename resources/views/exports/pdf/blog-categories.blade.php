@@ -1,24 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>Blog categories export</title>
-    <style>
-        * { font-family: DejaVu Sans, sans-serif; }
-        body { font-size: 11px; color: #1f2937; }
-        h1 { font-size: 16px; margin: 0 0 2px; }
-        .meta { color: #6b7280; font-size: 10px; margin-bottom: 12px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
-        th { background: #f3f4f6; text-transform: uppercase; font-size: 9px; letter-spacing: .04em; }
-        tr:nth-child(even) td { background: #fafafa; }
-    </style>
-</head>
-<body>
-    <h1>{{ config('app.name') }} — Blog Categories</h1>
-    <div class="meta">Generated at {{ $generatedAt }}</div>
+@extends('exports.pdf.layout')
 
-    <table>
+@section('report_heading', 'Blog Categories')
+@section('report_subtitle', 'Content taxonomy used across the blog.')
+
+@section('content')
+    <table class="data-table">
         <thead>
             <tr>
                 <th>Name</th>
@@ -29,7 +15,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach ($rows as $row)
+            @forelse ($rows as $row)
                 <tr>
                     <td>{{ $row['Name'] }}</td>
                     <td>{{ $row['Description'] }}</td>
@@ -37,8 +23,9 @@
                     <td>{{ $row['Created'] }}</td>
                     <td>{{ $row['Status'] }}</td>
                 </tr>
-            @endforeach
+            @empty
+                <tr><td colspan="5"><div class="empty-state">No categories to display.</div></td></tr>
+            @endforelse
         </tbody>
     </table>
-</body>
-</html>
+@endsection

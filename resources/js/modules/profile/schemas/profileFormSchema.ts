@@ -28,6 +28,11 @@ export const profileFormSchema = z.object({
     state: z.string().trim().max(120),
     zip_code: z.string().trim().max(20),
     country: z.string().trim().max(120),
+    // ISO-3166 alpha-2 (uppercased by the page); blank allowed (mapped to null).
+    country_code: z
+        .string()
+        .trim()
+        .refine((value) => value === '' || /^[A-Z]{2}$/.test(value), 'Enter a 2-letter country code'),
     latitude: z.number().nullable(),
     longitude: z.number().nullable(),
 });

@@ -64,6 +64,7 @@ const form = useForm<UserFormValues>({
     city: props.user?.city ?? '',
     state: props.user?.state ?? '',
     country: props.user?.country ?? '',
+    country_code: props.user?.country_code ?? '',
     latitude: props.user?.latitude ?? null,
     longitude: props.user?.longitude ?? null,
     roles: [],
@@ -125,6 +126,7 @@ const addressModel = computed<AddressValue>({
         city: form.city || null,
         state: form.state || null,
         country: form.country || null,
+        country_code: form.country_code || null,
         latitude: form.latitude,
         longitude: form.longitude,
     }),
@@ -135,6 +137,8 @@ const addressModel = computed<AddressValue>({
         form.city = value.city ?? '';
         form.state = value.state ?? '';
         form.country = value.country ?? '';
+        // Backend requires uppercase ISO-3166 alpha-2; normalise manual entry too.
+        form.country_code = (value.country_code ?? '').toUpperCase();
         form.latitude = value.latitude;
         form.longitude = value.longitude;
     },
@@ -147,6 +151,7 @@ const addressErrors = computed(() => ({
     city: form.errors.city,
     state: form.errors.state,
     country: form.errors.country,
+    country_code: form.errors.country_code,
 }));
 
 /* ── Submit ───────────────────────────────────────────────────────────── */
@@ -188,6 +193,7 @@ function submit(): void {
             city: emptyToNull(data.city),
             state: emptyToNull(data.state),
             country: emptyToNull(data.country),
+            country_code: emptyToNull(data.country_code),
             latitude: data.latitude,
             longitude: data.longitude,
         };
@@ -303,6 +309,7 @@ function submit(): void {
                 v-model="addressModel"
                 :api-key="page.props.config.google_maps_api_key"
                 :errors="addressErrors"
+                with-country-code
             />
         </section>
 

@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Shared\Infrastructure\Company\CompanyProfile;
+use Spatie\Activitylog\Models\Activity;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
@@ -34,12 +37,13 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property int $user_id
  * @property float|null $latitude
  * @property float|null $longitude
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \Spatie\Activitylog\Models\Activity> $activitiesAsSubject
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, Activity> $activitiesAsSubject
  * @property-read int|null $activities_as_subject_count
- * @property-read \App\Models\User|null $user
+ * @property-read User|null $user
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData onlyTrashed()
@@ -70,6 +74,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereWebsite($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class CompanyData extends Model
@@ -95,6 +100,11 @@ class CompanyData extends Model
         'phone',
         'address',
         'address_2',
+        'zip_code',
+        'city',
+        'state',
+        'country',
+        'country_code',
         'website',
         'facebook_link',
         'instagram_link',
@@ -158,6 +168,11 @@ class CompanyData extends Model
                 'phone',
                 'address',
                 'address_2',
+                'zip_code',
+                'city',
+                'state',
+                'country',
+                'country_code',
                 'website',
                 'facebook_link',
                 'instagram_link',

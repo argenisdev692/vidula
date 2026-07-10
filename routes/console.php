@@ -22,3 +22,5 @@ Schedule::command('activity-log:archive')->dailyAt('02:30')->onOneServer();
 Schedule::command('backup:clean')->daily()->at('01:00')->onOneServer();
 Schedule::command('backup:run')->daily()->at('02:00')->onOneServer();
 Schedule::command('backup:monitor')->daily()->at('03:00')->onOneServer();
+
+Schedule::command('availability:sync-holidays')->cron('0 0 31 12 *')->onOneServer();

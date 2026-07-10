@@ -51,6 +51,11 @@ export const userFormSchema = z.object({
     city: z.string().trim().max(120, 'City must be 120 characters or fewer.'),
     state: z.string().trim().max(120, 'State must be 120 characters or fewer.'),
     country: z.string().trim().max(120, 'Country must be 120 characters or fewer.'),
+    // ISO-3166 alpha-2 (uppercased by the form); blank allowed (mapped to null).
+    country_code: z
+        .string()
+        .trim()
+        .refine((value) => value === '' || /^[A-Z]{2}$/.test(value), 'Enter a 2-letter country code'),
     latitude: z.number().nullable(),
     longitude: z.number().nullable(),
     roles: z.array(z.string()),
