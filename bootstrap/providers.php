@@ -12,6 +12,8 @@ use Modules\Backup\Providers\BackupServiceProvider;
 use Modules\Blog\Providers\BlogServiceProvider;
 use Modules\Company\Providers\CompanyServiceProvider;
 use Modules\ContactSupport\Providers\ContactSupportServiceProvider;
+use Modules\Portfolio\Providers\PortfolioServiceProvider;
+use Modules\Services\Providers\ServicesServiceProvider;
 use Modules\Users\Providers\UsersServiceProvider;
 use Shared\Providers\SharedServiceProvider;
 
@@ -30,4 +32,6 @@ return [
     BlogServiceProvider::class,
     ContactSupportServiceProvider::class,
     AvailabilityServiceProvider::class,
+    PortfolioServiceProvider::class,
+    ServicesServiceProvider::class,
 ];

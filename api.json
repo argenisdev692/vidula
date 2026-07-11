@@ -1657,6 +1657,124 @@
                 }
             }
         },
+        "/portfolios": {
+            "get": {
+                "operationId": "portfolios.index",
+                "description": "Returns a paginated list of portfolio projects. `per_page` is capped at\n100 to bound resource consumption (OWASP API4).",
+                "summary": "List portfolios",
+                "tags": [
+                    "PortfolioApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/portfolios/{uuid}": {
+            "get": {
+                "operationId": "portfolios.show",
+                "description": "Returns a single portfolio project by UUID.",
+                "summary": "Show a portfolio",
+                "tags": [
+                    "PortfolioApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PortfolioEloquentModel"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/contact-supports/honeypot": {
             "get": {
                 "operationId": "contact-supports.honeypot",
@@ -1673,6 +1791,73 @@
                                 "schema": {
                                     "type": "array",
                                     "items": {}
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/portfolios/public": {
+            "get": {
+                "operationId": "portfolios.public",
+                "description": "Paginated feed of published projects for the landing page. `per_page` is\ncapped at 100 to bound resource consumption (OWASP API4).",
+                "summary": "List public portfolios",
+                "tags": [
+                    "PublicPortfolio"
+                ],
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`PaginatedDataCollection`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedDataCollection"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/services/public": {
+            "get": {
+                "operationId": "services.public",
+                "description": "Returns the full list of active services (name, slug, description) for\nthe landing page's service `<select>` input. Not paginated \u2014 the catalog\nis a small, bounded set.",
+                "summary": "List active services",
+                "tags": [
+                    "PublicService"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ServiceEloquentModel"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
                                 }
                             }
                         }
@@ -2468,6 +2653,19 @@
                     "readed": {
                         "type": "boolean"
                     },
+                    "is_spam": {
+                        "type": "boolean"
+                    },
+                    "spam_score": {
+                        "type": "integer"
+                    },
+                    "spam_reasons": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {}
+                    },
                     "deleted_at": {
                         "type": [
                             "string",
@@ -2501,6 +2699,9 @@
                     "message",
                     "sms_consent",
                     "readed",
+                    "is_spam",
+                    "spam_score",
+                    "spam_reasons",
                     "deleted_at",
                     "created_at",
                     "updated_at"
@@ -2633,6 +2834,11 @@
                 ],
                 "title": "LengthAwarePaginator"
             },
+            "PaginatedDataCollection": {
+                "type": "object",
+                "additionalProperties": {},
+                "title": "PaginatedDataCollection"
+            },
             "Permission": {
                 "type": "object",
                 "properties": {
@@ -2684,6 +2890,110 @@
                 ],
                 "title": "Permission"
             },
+            "PortfolioEloquentModel": {
+                "type": "object",
+                "properties": {
+                    "uuid": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "client_name": {
+                        "type": "string"
+                    },
+                    "project_type": {
+                        "type": "string"
+                    },
+                    "live_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "published_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "is_public": {
+                        "type": "boolean"
+                    },
+                    "cover_path": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "video_path": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "sort_order": {
+                        "type": "integer"
+                    },
+                    "user_id": {
+                        "type": "integer"
+                    },
+                    "deleted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "cover_url": {
+                        "type": "string"
+                    },
+                    "video_url": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "uuid",
+                    "title",
+                    "client_name",
+                    "project_type",
+                    "live_url",
+                    "published_at",
+                    "is_public",
+                    "cover_path",
+                    "video_path",
+                    "description",
+                    "sort_order",
+                    "user_id",
+                    "deleted_at",
+                    "created_at",
+                    "updated_at",
+                    "cover_url",
+                    "video_url"
+                ],
+                "title": "PortfolioEloquentModel"
+            },
             "Role": {
                 "type": "object",
                 "properties": {
@@ -2734,6 +3044,69 @@
                     "deleted_at"
                 ],
                 "title": "Role"
+            },
+            "ServiceEloquentModel": {
+                "type": "object",
+                "properties": {
+                    "uuid": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "sort_order": {
+                        "type": "integer"
+                    },
+                    "user_id": {
+                        "type": "integer"
+                    },
+                    "deleted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "uuid",
+                    "name",
+                    "slug",
+                    "description",
+                    "is_active",
+                    "sort_order",
+                    "user_id",
+                    "deleted_at",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "ServiceEloquentModel"
             },
             "User": {
                 "type": "object",

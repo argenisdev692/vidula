@@ -40,7 +40,12 @@ final class SecurityHeaders
             $response->headers->set($header, $value);
         }
 
-        $response->headers->set('Content-Security-Policy', $this->contentSecurityPolicy($nonce));
+        $response->headers->set(
+            'Content-Security-Policy',
+            $this->isApiDocsRequest($request)
+                ? $this->apiDocsContentSecurityPolicy()
+                : $this->contentSecurityPolicy($nonce),
+        );
 
         return $response;
     }
@@ -78,6 +83,51 @@ final class SecurityHeaders
         }
 
         return $headers;
+    }
+
+    /**
+     * The Scramble API docs UI (Stoplight Elements) boots from the unpkg CDN and
+     * initializes via inline `<script>`/`<style>` tags inside a vendor Blade view
+     * that cannot carry our per-request nonce. Under the strict app CSP all of it
+     * is blocked and the page renders blank. This matches ONLY that internal,
+     * access-restricted tooling page (guarded by Scramble's `RestrictedDocsAccess`
+     * middleware) so it can receive a scoped CSP; every other route stays
+     * nonce-strict. Default Scramble paths: `docs/api` (UI) + `docs/api.json`
+     * (spec). Update these if `Scramble::configure()->expose()` changes them.
+     */
+    private function isApiDocsRequest(Request $request): bool
+    {
+        return $request->is('docs/api', 'docs/api.json', 'docs/api/*');
+    }
+
+    /**
+     * Scoped CSP for the Scramble docs UI only (see {@see self::isApiDocsRequest()}).
+     * Permits exactly what Stoplight Elements needs — its unpkg bundle, the inline
+     * boot script/style, `eval`-based syntax highlighting, and CDN webfonts — while
+     * keeping `object-src`/`frame-ancestors`/`base-uri` locked down. Same-origin
+     * `connect-src` is enough because the OpenAPI document is inlined into the page
+     * and "Try It" calls hit this app's own API under the current session.
+     */
+    private function apiDocsContentSecurityPolicy(): string
+    {
+        $directives = [
+            'default-src' => ["'self'"],
+            'base-uri' => ["'self'"],
+            'object-src' => ["'none'"],
+            'frame-ancestors' => ["'none'"],
+            'form-action' => ["'self'"],
+            'img-src' => ["'self'", 'data:', 'https:'],
+            'font-src' => ["'self'", 'data:', 'https://fonts.gstatic.com'],
+            'style-src' => ["'self'", "'unsafe-inline'", 'https://unpkg.com', 'https://fonts.googleapis.com'],
+            'script-src' => ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'https://unpkg.com'],
+            // Stoplight's "Try It" JSON editor spawns web workers from blob URLs.
+            'worker-src' => ["'self'", 'blob:'],
+            'connect-src' => ["'self'"],
+        ];
+
+        return collect($directives)
+            ->map(static fn (array $sources, string $name): string => $name.' '.implode(' ', $sources))
+            ->implode('; ');
     }
 
     /**

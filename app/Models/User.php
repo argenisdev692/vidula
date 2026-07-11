@@ -26,6 +26,8 @@ use Modules\Auth\Infrastructure\Persistence\Eloquent\Models\LinkedSocialAccountE
 use Modules\Auth\Infrastructure\Persistence\Eloquent\Models\PasswordHistoryEloquentModel;
 use Modules\Auth\Infrastructure\Persistence\Eloquent\Models\TrustedDeviceEloquentModel;
 use Modules\Blog\Infrastructure\Persistence\Eloquent\Models\BlogCategoryEloquentModel;
+use Modules\Portfolio\Infrastructure\Persistence\Eloquent\Models\PortfolioEloquentModel;
+use Modules\Services\Infrastructure\Persistence\Eloquent\Models\ServiceEloquentModel;
 use Modules\Users\Application\DTOs\UserFilterData;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
@@ -301,6 +303,26 @@ class User extends Authenticatable implements MustVerifyEmailContract
     public function blogCategories(): HasMany
     {
         return $this->hasMany(BlogCategoryEloquentModel::class);
+    }
+
+    /**
+     * Portfolio projects authored by this user.
+     *
+     * @return HasMany<PortfolioEloquentModel, $this>
+     */
+    public function portfolios(): HasMany
+    {
+        return $this->hasMany(PortfolioEloquentModel::class);
+    }
+
+    /**
+     * Services authored by this user.
+     *
+     * @return HasMany<ServiceEloquentModel, $this>
+     */
+    public function services(): HasMany
+    {
+        return $this->hasMany(ServiceEloquentModel::class);
     }
 
     /**

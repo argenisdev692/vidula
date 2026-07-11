@@ -55,7 +55,8 @@ export function useNavGroups(): { navItems: ComputedRef<NavItem[]> } {
             icon: 'pi pi-cog',
             label: 'Settings',
             children: [
-                { icon: 'pi pi-briefcase', label: 'Portfolio', href: '/portfolio' },
+                { icon: 'pi pi-briefcase', label: 'Portfolio', href: '/portfolios', permission: 'VIEW_ANY_PORTFOLIOS' },
+                { icon: 'pi pi-th-large', label: 'Services', href: '/services', permission: 'VIEW_ANY_SERVICES' },
                 { icon: 'pi pi-shield', label: 'Roles', href: '/roles', permission: 'VIEW_ANY_ROLES' },
                 { icon: 'pi pi-key', label: 'Permissions', href: '/permissions', permission: 'VIEW_ANY_PERMISSIONS' },
                 { icon: 'pi pi-database', label: 'Backups', href: '/backups', permission: 'VIEW_ANY_BACKUPS' },

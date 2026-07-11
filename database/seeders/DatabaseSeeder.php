@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             CompanySeeder::class,
             BlogCategorySeeder::class,
+            ServiceSeeder::class,
             AvailabilitySeeder::class,
             CountryHolidaySeeder::class,
         ]);

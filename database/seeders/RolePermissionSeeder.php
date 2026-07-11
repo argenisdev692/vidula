@@ -25,6 +25,22 @@ class RolePermissionSeeder extends Seeder
     private const array MODULES = ['USERS', 'ROLES', 'PERMISSIONS', 'COMPANY_DATA', 'BLOG_CATEGORIES', 'CONTACT_SUPPORTS', 'AVAILABILITY_RULES', 'AVAILABILITY_EXCEPTIONS'];
 
     /**
+     * Modules with the same CRUD shape as {@see self::MODULES} but no export
+     * endpoint yet, so EXPORT is omitted here (seeding it would only create a
+     * dead permission, same reasoning as the FORCE_DELETE omission below).
+     *
+     * @var list<string>
+     */
+    private const array NO_EXPORT_MODULES = ['PORTFOLIOS', 'SERVICES'];
+
+    /**
+     * @var list<string>
+     */
+    private const array NO_EXPORT_ACTIONS = [
+        'VIEW_ANY', 'VIEW', 'CREATE', 'UPDATE', 'DELETE', 'RESTORE', 'BULK_DELETE', 'BULK_RESTORE',
+    ];
+
+    /**
      * Full action set granted to every module (browse, view, write,
      * soft-delete + restore, bulk soft-delete + restore, and export).
      * FORCE_DELETE / BULK_FORCE_DELETE are omitted: no module implements hard
@@ -117,6 +133,7 @@ class RolePermissionSeeder extends Seeder
     {
         $names = [
             ...$this->matrix(self::MODULES, self::MODULES_ACTIONS),
+            ...$this->matrix(self::NO_EXPORT_MODULES, self::NO_EXPORT_ACTIONS),
             ...$this->matrix(['USERS'], self::USER_ACCESS_ACTIONS),
             ...$this->matrix(self::READ_ONLY_MODULES, self::READ_ONLY_ACTIONS),
             ...$this->matrix(['BACKUPS'], self::BACKUP_ACTIONS),
