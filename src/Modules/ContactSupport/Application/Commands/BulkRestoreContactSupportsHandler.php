@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ContactSupport\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\ContactSupport\Domain\Ports\ContactSupportRepositoryPort;
 use Shared\Application\DTOs\BulkUuidsData;
 
@@ -18,6 +19,6 @@ final readonly class BulkRestoreContactSupportsHandler
 
     public function handle(BulkUuidsData $data): int
     {
-        return $this->contactSupports->bulkRestoreByUuid($data->uuids);
+        return DB::transaction(fn () => $this->contactSupports->bulkRestoreByUuid($data->uuids));
     }
 }

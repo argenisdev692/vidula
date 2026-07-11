@@ -29,6 +29,9 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string $message
  * @property bool $sms_consent
  * @property bool $readed
+ * @property bool $is_spam
+ * @property int $spam_score
+ * @property array<int, string>|null $spam_reasons
  * @property Carbon|null $deleted_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -36,7 +39,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @mixin \Eloquent
  */
 #[Table('contact_supports')]
-#[Fillable(['uuid', 'first_name', 'last_name', 'email', 'phone', 'subject', 'message', 'sms_consent', 'readed'])]
+#[Fillable(['uuid', 'first_name', 'last_name', 'email', 'phone', 'subject', 'message', 'sms_consent', 'readed', 'is_spam', 'spam_score', 'spam_reasons'])]
 final class ContactSupportEloquentModel extends Model
 {
     /** @use HasFactory<ContactSupportFactory> */
@@ -71,6 +74,8 @@ final class ContactSupportEloquentModel extends Model
             }))
             ->when($filters->read === 'read', fn ($q) => $q->where('readed', true))
             ->when($filters->read === 'unread', fn ($q) => $q->where('readed', false))
+            ->when($filters->spam === 'spam', fn ($q) => $q->where('is_spam', true))
+            ->when($filters->spam === 'ham', fn ($q) => $q->where('is_spam', false))
             ->when(
                 $filters->dateFrom !== null && $filters->dateTo !== null,
                 fn ($q) => $q->whereBetween('created_at', [
@@ -96,6 +101,8 @@ final class ContactSupportEloquentModel extends Model
         return [
             'sms_consent' => 'boolean',
             'readed' => 'boolean',
+            'is_spam' => 'boolean',
+            'spam_reasons' => 'array',
         ];
     }
 
@@ -109,6 +116,7 @@ final class ContactSupportEloquentModel extends Model
             ->logOnly([
                 'readed',
                 'sms_consent',
+                'is_spam',
             ])
             ->logOnlyDirty()
             ->dontLogEmptyChanges()

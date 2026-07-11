@@ -92,12 +92,22 @@ function rowClass(row: ContactSupport): string | undefined {
 
             <Column header="Status" :pt="{ bodyCell: 'w-28' }">
                 <template #body="{ data }">
-                    <span
-                        class="badge"
-                        :class="(data as ContactSupport).readed ? 'badge--read' : 'badge--unread'"
-                    >
-                        {{ (data as ContactSupport).readed ? 'Read' : 'Unread' }}
-                    </span>
+                    <div class="status-cell">
+                        <span
+                            class="badge"
+                            :class="(data as ContactSupport).readed ? 'badge--read' : 'badge--unread'"
+                        >
+                            {{ (data as ContactSupport).readed ? 'Read' : 'Unread' }}
+                        </span>
+                        <span
+                            v-if="(data as ContactSupport).is_spam"
+                            class="badge badge--spam"
+                            :title="`Spam score: ${(data as ContactSupport).spam_score}`"
+                            v-tooltip.top="`Flagged as spam (score ${(data as ContactSupport).spam_score})`"
+                        >
+                            <i class="pi pi-flag" aria-hidden="true" /> Spam
+                        </span>
+                    </div>
                 </template>
             </Column>
 
@@ -229,6 +239,21 @@ function rowClass(row: ContactSupport): string | undefined {
     background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
     color: var(--accent-primary);
     font-weight: var(--font-semibold);
+}
+
+.badge--spam {
+    gap: 4px;
+    background: color-mix(in srgb, var(--accent-error) 16%, transparent);
+    color: var(--accent-error);
+    font-weight: var(--font-semibold);
+}
+
+.status-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 /* ── Minimalist transparent CRUD table (matches the Activity Log reference) ── */

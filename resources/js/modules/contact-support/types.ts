@@ -23,8 +23,25 @@ export interface ContactSupport {
     subject: string;
     sms_consent: boolean;
     readed: boolean;
+    /** Flagged by the anti-spam scorer (public submissions only). */
+    is_spam: boolean;
+    /** Accumulated spam weight — explains the verdict on hover. */
+    spam_score: number;
     created_at: string | null;
     deleted_at: string | null;
+}
+
+/**
+ * Honeypot field descriptor handed to the public form by the server
+ * (Spatie\Honeypot\Honeypot::toArray()). The randomized `nameFieldName` and the
+ * encrypted `encryptedValidFrom` are injected into the POST payload so the
+ * ProtectAgainstSpam middleware can validate the trap.
+ */
+export interface HoneypotProps {
+    enabled: boolean;
+    nameFieldName: string;
+    validFromFieldName: string;
+    encryptedValidFrom: string;
 }
 
 /** The detail render returns the full record (adds `message` + `updated_at`). */
@@ -39,11 +56,15 @@ export type ContactSupportStatus = 'active' | 'suspended';
 /** Inbox read/unread filter — maps to the `readed` column. */
 export type ContactSupportRead = 'read' | 'unread';
 
+/** Spam/ham filter — maps to the `is_spam` column. */
+export type ContactSupportSpam = 'spam' | 'ham';
+
 /** Filters echoed back by the server (mirrors ContactSupportFilterData). */
 export interface ContactSupportFilters {
     search: string | null;
     status: ContactSupportStatus | null;
     read: ContactSupportRead | null;
+    spam: ContactSupportSpam | null;
     date_from: string | null;
     date_to: string | null;
 }

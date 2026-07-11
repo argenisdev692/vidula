@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Blog\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Blog\Application\DTOs\BlogCategoryData;
 use Modules\Blog\Domain\Ports\BlogCategoryRepositoryPort;
 use Modules\Blog\Infrastructure\Persistence\Eloquent\Models\BlogCategoryEloquentModel;
@@ -29,18 +30,24 @@ final readonly class UpdateBlogCategoryHandler
             'blog_category_description' => $data->description,
         ];
 
+        $previous = null;
+
         if ($data->image !== null) {
             /** @var string|null $previous */
             $previous = $category->blog_category_image;
-            $path = $this->storage->putFile('blog-categories', $data->image, 'public');
-
-            if ($previous !== null && $previous !== '' && $previous !== $path) {
-                $this->storage->delete($previous);
-            }
-
-            $attributes['blog_category_image'] = $path;
+            // Upload the replacement before the transaction — object storage is
+            // not transactional and must stay out of the DB unit-of-work.
+            $attributes['blog_category_image'] = $this->storage->putFile('blog-categories', $data->image, 'public');
         }
 
-        return $this->blogCategories->update($category, $attributes);
+        $updated = DB::transaction(fn () => $this->blogCategories->update($category, $attributes));
+
+        // Delete the superseded object only after the write commits, so a failed
+        // update never orphans the row from its still-referenced image.
+        if (is_string($previous) && $previous !== '' && $previous !== $updated->blog_category_image) {
+            $this->storage->delete($previous);
+        }
+
+        return $updated;
     }
 }

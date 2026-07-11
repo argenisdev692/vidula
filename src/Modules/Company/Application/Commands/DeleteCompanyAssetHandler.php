@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Company\Application\Commands;
 
 use App\Models\CompanyData;
+use Illuminate\Support\Facades\DB;
 use Modules\Company\Domain\Ports\CompanyRepositoryPort;
 use Modules\Company\Domain\ValueObjects\CompanyAsset;
 use Shared\Domain\Ports\StoragePort;
@@ -32,10 +33,14 @@ final readonly class DeleteCompanyAssetHandler
         /** @var string|null $previous */
         $previous = $company->{$column};
 
+        $updated = DB::transaction(fn () => $this->companies->update($company, [$column => null]));
+
+        // Delete the object only after the column is cleared and committed, so a
+        // failed write never loses a still-referenced asset.
         if (is_string($previous) && $previous !== '') {
             $this->storage->delete($previous);
         }
 
-        return $this->companies->update($company, [$column => null]);
+        return $updated;
     }
 }

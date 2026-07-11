@@ -15,7 +15,7 @@ use Shared\Infrastructure\Persistence\Concerns\BulkSoftDeletesByUuid;
  * soft-delete/restore are inherited from the Shared {@see BulkSoftDeletesByUuid}
  * trait (DRY).
  */
-final class EloquentContactSupportRepository implements ContactSupportRepositoryPort
+final readonly class EloquentContactSupportRepository implements ContactSupportRepositoryPort
 {
     use BulkSoftDeletesByUuid;
 
@@ -42,6 +42,8 @@ final class EloquentContactSupportRepository implements ContactSupportRepository
                 'subject',
                 'sms_consent',
                 'readed',
+                'is_spam',
+                'spam_score',
                 'created_at',
                 'deleted_at',
             ])

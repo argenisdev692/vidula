@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Availability\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Availability\Domain\Ports\AvailabilityRuleRepositoryPort;
 use Shared\Application\DTOs\BulkUuidsData;
 
@@ -17,6 +18,6 @@ final readonly class BulkRestoreAvailabilityRulesHandler
 
     public function handle(BulkUuidsData $data): int
     {
-        return $this->rules->bulkRestoreByUuid($data->uuids);
+        return DB::transaction(fn () => $this->rules->bulkRestoreByUuid($data->uuids));
     }
 }

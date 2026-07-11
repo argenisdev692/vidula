@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Authorization\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Authorization\Domain\Exceptions\ProtectedRoleException;
 use Modules\Authorization\Domain\Ports\RoleRepositoryPort;
 use Modules\Authorization\Domain\SystemRoles;
@@ -26,6 +27,6 @@ final readonly class BulkDeleteRolesHandler
             throw ProtectedRoleException::cannotModify($protected);
         }
 
-        return $this->roles->bulkSoftDeleteByUuid($data->uuids);
+        return DB::transaction(fn () => $this->roles->bulkSoftDeleteByUuid($data->uuids));
     }
 }

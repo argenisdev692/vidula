@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Authorization\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Authorization\Application\DTOs\PermissionData;
 use Modules\Authorization\Domain\Ports\PermissionRepositoryPort;
 use Modules\Authorization\Infrastructure\Persistence\Eloquent\Models\Permission;
@@ -18,6 +19,6 @@ final readonly class UpdatePermissionHandler
 
     public function handle(Permission $permission, PermissionData $data): Permission
     {
-        return $this->permissions->update($permission, ['name' => $data->name |> trim(...)]);
+        return DB::transaction(fn () => $this->permissions->update($permission, ['name' => $data->name |> trim(...)]));
     }
 }

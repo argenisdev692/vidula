@@ -1,7 +1,9 @@
 @extends('emails.layout')
 
+@section('preheader'){{ __('Activate your account and set your password.') }}@endsection
+
 @section('content')
-    <h1 style="margin:0 0 16px; color:#0f1730; font-size:22px; font-weight:700;">
+    <h1 class="email-h1" style="margin:0 0 16px; color:#0f1730; font-size:22px; font-weight:700; line-height:1.3;">
         {{ __('Welcome!') }}
     </h1>
 
@@ -13,14 +15,22 @@
         {{ __('Click the button below to set your password and activate your account.') }}
     </p>
 
-    {{-- CTA button (table-based; solid fallback under the gradient for older clients). --}}
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+    {{-- CTA button (bulletproof: VML for Outlook, gradient for modern clients). --}}
+    <table role="presentation" class="email-cta" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;">
         <tr>
             <td align="center">
+                <!--[if mso]>
+                <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ $activationUrl }}" style="height:50px;v-text-anchor:middle;width:240px;" arcsize="20%" strokecolor="#4f46e5" fillcolor="#4f46e5">
+                    <w:anchorlock/>
+                    <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:bold;">{{ __('Activate account') }}</center>
+                </v:roundrect>
+                <![endif]-->
+                <!--[if !mso]><!-- -->
                 <a href="{{ $activationUrl }}"
-                   style="display:inline-block; padding:14px 32px; background-color:#4f46e5; background:linear-gradient(120deg, #7c3aed 0%, #4f46e5 100%); color:#ffffff; font-size:16px; font-weight:700; text-decoration:none; border-radius:10px;">
+                   style="display:inline-block; padding:15px 34px; background-color:#4f46e5; background:linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%); color:#ffffff; font-size:16px; font-weight:700; text-decoration:none; border-radius:12px; box-shadow:0 8px 20px rgba(79,70,229,0.35);">
                     {{ __('Activate account') }}
                 </a>
+                <!--<![endif]-->
             </td>
         </tr>
     </table>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Authorization\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Authorization\Application\DTOs\PermissionData;
 use Modules\Authorization\Domain\Ports\PermissionRepositoryPort;
 use Modules\Authorization\Infrastructure\Persistence\Eloquent\Models\Permission;
@@ -21,6 +22,6 @@ final readonly class CreatePermissionHandler
     {
         $name = $data->name |> trim(...);
 
-        return $this->permissions->create(['name' => $name, 'guard_name' => 'web']);
+        return DB::transaction(fn () => $this->permissions->create(['name' => $name, 'guard_name' => 'web']));
     }
 }

@@ -1,5 +1,6 @@
 @php
     // Brand palette (inlined — email clients do not support CSS variables).
+    // Aligned with resources/css/globals.css design tokens.
     $cInk = '#090d1c';
     $cBase = '#0f1730';
     $cSurface = '#141d38';
@@ -9,8 +10,9 @@
     $cMuted = '#868ca8';
     $cBorder = 'rgba(255,255,255,0.10)';
     $cAccent = '#7c3aed';
-    $gradient = 'linear-gradient(120deg, #7c3aed 0%, #4f46e5 100%)';
-    $font = "'Exo', 'Segoe UI', ui-sans-serif, system-ui, Arial, sans-serif";
+    $cAccentSoft = '#a78bfa';
+    $gradient = 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)';
+    $font = "'Exo', 'Segoe UI', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif";
 
     // DB-first company branding (App\Models\CompanyData), config/env fallback.
     $profile = \Shared\Infrastructure\Company\CompanyProfile::data();
@@ -20,6 +22,9 @@
     $companyUrl = $profile['url'];
     $address = $profile['address'];
     $support = $profile['support_email'];
+
+    // Preheader: short inbox-preview snippet (child views may @section('preheader')).
+    $preheader = trim($__env->yieldContent('preheader'));
 
     $socials = collect($profile['socials']);
     $socialMeta = [
@@ -31,44 +36,90 @@
     ];
 @endphp
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="color-scheme" content="dark">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="x-apple-disable-message-reformatting">
+    <meta name="color-scheme" content="light dark">
+    <meta name="supported-color-schemes" content="light dark">
     <title>{{ $company }}</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+    <style>
+        /* Client resets */
+        html, body { margin:0 !important; padding:0 !important; height:100% !important; width:100% !important; }
+        * { -ms-text-size-adjust:100%; -webkit-text-size-adjust:100%; }
+        table, td { mso-table-lspace:0pt !important; mso-table-rspace:0pt !important; border-collapse:collapse !important; }
+        img { -ms-interpolation-mode:bicubic; border:0; height:auto; line-height:100%; outline:none; text-decoration:none; }
+        a { text-decoration:none; }
+        a[x-apple-data-detectors] { color:inherit !important; text-decoration:none !important; }
+
+        /* Mobile-first responsive tuning (~600px cap per 2026 best practice) */
+        @media only screen and (max-width:620px) {
+            .email-card { width:100% !important; border-radius:0 !important; }
+            .email-pad { padding-left:22px !important; padding-right:22px !important; }
+            .email-head { padding:24px 22px !important; }
+            .email-h1 { font-size:20px !important; }
+            .email-cta a { display:block !important; width:100% !important; box-sizing:border-box !important; text-align:center !important; }
+        }
+
+        /* Dark-mode chrome awareness (content stays a light "paper" for legibility) */
+        @media (prefers-color-scheme: dark) {
+            .email-bg { background-color:#05070f !important; }
+            .logo-glow { filter:drop-shadow(0 0 1px rgba(255,255,255,0.55)); }
+        }
+    </style>
 </head>
-<body style="margin:0; padding:0; background-color:{{ $cInk }}; font-family:{{ $font }};">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:{{ $cInk }}; padding:32px 0;">
+<body class="email-bg" style="margin:0; padding:0; width:100%; background-color:{{ $cInk }}; font-family:{{ $font }}; -webkit-font-smoothing:antialiased;">
+    {{-- Preheader: shown in the inbox preview, hidden in the body. --}}
+    @if($preheader !== '')
+        <div style="display:none; overflow:hidden; line-height:1px; max-height:0; max-width:0; opacity:0; mso-hide:all;">
+            {{ $preheader }}&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;
+        </div>
+    @endif
+
+    <table role="presentation" class="email-bg" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:{{ $cInk }}; padding:40px 12px;">
         <tr>
             <td align="center">
-                <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px; max-width:600px; background-color:{{ $cSurface }}; border:1px solid {{ $cBorder }}; border-radius:16px; overflow:hidden;">
+                <!--[if mso]>
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td>
+                <![endif]-->
+                <table role="presentation" class="email-card" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px; background-color:{{ $cSurface }}; border:1px solid {{ $cBorder }}; border-radius:20px; overflow:hidden; box-shadow:0 24px 60px rgba(5,7,15,0.55);">
 
                     {{-- Header --}}
                     <tr>
-                        <td style="background:{{ $gradient }}; padding:28px 32px; text-align:center;">
+                        <td class="email-head" style="background:{{ $cAccent }}; background:{{ $gradient }}; padding:34px 32px; text-align:center;">
                             <a href="{{ $companyUrl }}" style="text-decoration:none;">
                                 @if($logo)
-                                    <img src="{{ $logo }}" alt="{{ $company }}" height="40" style="height:40px; display:inline-block;">
+                                    <img src="{{ $logo }}" alt="{{ $company }}" height="42" class="logo-glow" style="height:42px; display:inline-block; border:0;">
                                 @else
-                                    <span style="color:#ffffff; font-size:24px; font-weight:700; letter-spacing:0.5px;">{{ $company }}</span>
+                                    <span style="color:#ffffff; font-size:25px; font-weight:700; letter-spacing:0.4px;">{{ $company }}</span>
                                 @endif
                             </a>
                         </td>
                     </tr>
 
-                    {{-- Body (white content area for readability) --}}
+                    {{-- Body (light "paper" content area for maximum readability) --}}
                     <tr>
-                        <td style="background-color:#ffffff; padding:36px 32px; color:#374151; font-size:16px; line-height:1.6;">
+                        <td class="email-pad" style="background-color:#ffffff; padding:40px 36px; color:#374151; font-size:16px; line-height:1.65;">
                             @yield('content')
                         </td>
                     </tr>
 
                     {{-- Footer --}}
                     <tr>
-                        <td style="background-color:{{ $cBase }}; border-top:1px solid {{ $cBorder }}; padding:28px 32px; text-align:center;">
+                        <td class="email-pad" style="background-color:{{ $cBase }}; border-top:1px solid {{ $cBorder }}; padding:30px 32px; text-align:center;">
                             @if($socials->isNotEmpty())
-                                <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 18px;">
+                                <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 20px;">
                                     <tr>
                                         @foreach($socials as $key => $url)
                                             @php $meta = $socialMeta[$key] ?? null; @endphp
@@ -84,19 +135,22 @@
                                 </table>
                             @endif
 
-                            <p style="margin:0 0 6px; color:{{ $cSecondary }}; font-size:13px;">
+                            <p style="margin:0 0 6px; color:{{ $cSecondary }}; font-size:13px; line-height:1.5;">
                                 &copy; {{ date('Y') }} {{ $company }}. {{ __('All rights reserved.') }}
                             </p>
                             @if($address)
-                                <p style="margin:0 0 6px; color:{{ $cMuted }}; font-size:12px;">{{ $address }}</p>
+                                <p style="margin:0 0 6px; color:{{ $cMuted }}; font-size:12px; line-height:1.5;">{{ $address }}</p>
                             @endif
-                            <p style="margin:0; color:{{ $cMuted }}; font-size:12px;">
-                                {{ __('Need help?') }} <a href="mailto:{{ $support }}" style="color:{{ $cAccent }}; text-decoration:none;">{{ $support }}</a>
+                            <p style="margin:0; color:{{ $cMuted }}; font-size:12px; line-height:1.5;">
+                                {{ __('Need help?') }} <a href="mailto:{{ $support }}" style="color:{{ $cAccentSoft }}; text-decoration:none; font-weight:600;">{{ $support }}</a>
                             </p>
                         </td>
                     </tr>
 
                 </table>
+                <!--[if mso]>
+                </td></tr></table>
+                <![endif]-->
             </td>
         </tr>
     </table>

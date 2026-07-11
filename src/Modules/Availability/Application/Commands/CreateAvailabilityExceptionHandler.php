@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Availability\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Availability\Application\DTOs\AvailabilityExceptionData;
 use Modules\Availability\Domain\Ports\AvailabilityExceptionRepositoryPort;
 use Modules\Availability\Infrastructure\Persistence\Eloquent\Models\AvailabilityExceptionEloquentModel;
@@ -20,7 +21,7 @@ final readonly class CreateAvailabilityExceptionHandler
     #[\NoDiscard]
     public function handle(AvailabilityExceptionData $data): AvailabilityExceptionEloquentModel
     {
-        return $this->exceptions->create($this->attributes($data));
+        return DB::transaction(fn () => $this->exceptions->create($this->attributes($data)));
     }
 
     /**

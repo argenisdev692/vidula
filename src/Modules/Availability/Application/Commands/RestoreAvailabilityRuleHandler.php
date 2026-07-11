@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Availability\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Availability\Domain\Ports\AvailabilityRuleRepositoryPort;
 
 /**
@@ -16,6 +17,6 @@ final readonly class RestoreAvailabilityRuleHandler
 
     public function handle(string $uuid): bool
     {
-        return $this->rules->restore($uuid);
+        return DB::transaction(fn () => $this->rules->restore($uuid));
     }
 }

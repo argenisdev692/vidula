@@ -5,6 +5,22 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Modules\ContactSupport\Infrastructure\Http\Controllers\ContactSupportController;
 use Modules\ContactSupport\Infrastructure\Http\Controllers\ContactSupportExportController;
+use Modules\ContactSupport\Infrastructure\Http\Controllers\PublicContactController;
+use Spatie\Honeypot\ProtectAgainstSpam;
+
+/*
+| Public (guest) contact form. No auth. Two anti-spam layers guard the POST:
+| `ProtectAgainstSpam` (spatie honeypot — hidden field + time-trap, silently
+| drops bots) and a tight per-IP `throttle`. Content scoring (keyword/link
+| heuristics) runs inside the handler, flagging — never rejecting — spam.
+*/
+Route::middleware('web')->group(function (): void {
+    Route::get('/contact', [PublicContactController::class, 'create'])->name('contact.create');
+
+    Route::post('/contact', [PublicContactController::class, 'store'])
+        ->middleware(['throttle:5,1', ProtectAgainstSpam::class])
+        ->name('contact.store');
+});
 
 /*
 | Contact-support module — web (session + Inertia).

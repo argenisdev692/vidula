@@ -1,7 +1,9 @@
 @extends('emails.layout')
 
+@section('preheader'){{ __('Confirmation that your account password was changed.') }}@endsection
+
 @section('content')
-    <h1 style="margin:0 0 16px; color:#0f1730; font-size:22px; font-weight:700;">
+    <h1 class="email-h1" style="margin:0 0 16px; color:#0f1730; font-size:22px; font-weight:700; line-height:1.3;">
         {{ __('Your password was changed') }}
     </h1>
 

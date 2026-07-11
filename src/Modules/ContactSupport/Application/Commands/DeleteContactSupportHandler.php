@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ContactSupport\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\ContactSupport\Domain\Ports\ContactSupportRepositoryPort;
 
 /**
@@ -17,6 +18,6 @@ final readonly class DeleteContactSupportHandler
 
     public function handle(string $uuid): bool
     {
-        return $this->contactSupports->softDelete($uuid);
+        return DB::transaction(fn () => $this->contactSupports->softDelete($uuid));
     }
 }

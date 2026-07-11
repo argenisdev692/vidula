@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Blog\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Blog\Domain\Ports\BlogCategoryRepositoryPort;
 
 /**
@@ -17,6 +18,6 @@ final readonly class DeleteBlogCategoryHandler
 
     public function handle(string $uuid): bool
     {
-        return $this->blogCategories->softDelete($uuid);
+        return DB::transaction(fn () => $this->blogCategories->softDelete($uuid));
     }
 }

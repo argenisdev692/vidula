@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Authorization\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Authorization\Application\DTOs\RoleData;
 use Modules\Authorization\Domain\Exceptions\ProtectedRoleException;
 use Modules\Authorization\Domain\Ports\RoleRepositoryPort;
@@ -27,8 +28,11 @@ final readonly class UpdateRoleHandler
             throw ProtectedRoleException::cannotModify($role->name);
         }
 
-        $updated = $this->roles->update($role, ['name' => $name]);
+        // Rename + permission re-sync are two writes — one unit-of-work.
+        return DB::transaction(function () use ($role, $name, $data): Role {
+            $updated = $this->roles->update($role, ['name' => $name]);
 
-        return $this->roles->syncPermissions($updated, $data->permissions);
+            return $this->roles->syncPermissions($updated, $data->permissions);
+        });
     }
 }

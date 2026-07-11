@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Availability\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Availability\Application\DTOs\AvailabilityExceptionData;
 use Modules\Availability\Domain\Ports\AvailabilityExceptionRepositoryPort;
 use Modules\Availability\Domain\ValueObjects\ExceptionSource;
@@ -22,13 +23,13 @@ final readonly class UpdateAvailabilityExceptionHandler
     #[\NoDiscard]
     public function handle(AvailabilityExceptionEloquentModel $exception, AvailabilityExceptionData $data): AvailabilityExceptionEloquentModel
     {
-        return $this->exceptions->update($exception, [
+        return DB::transaction(fn () => $this->exceptions->update($exception, [
             'date' => $data->date,
             'is_available' => $data->isAvailable,
             'start_time' => $data->isAvailable ? $data->startTime : null,
             'end_time' => $data->isAvailable ? $data->endTime : null,
             'reason' => $data->reason,
             'source' => ExceptionSource::Manual,
-        ]);
+        ]));
     }
 }

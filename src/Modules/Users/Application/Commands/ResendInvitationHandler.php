@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Users\Application\Commands;
 
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Modules\Users\Domain\Ports\InvitationLinkPort;
 use Modules\Users\Infrastructure\Notifications\UserInvitationNotification;
 
@@ -22,7 +23,8 @@ final readonly class ResendInvitationHandler
     {
         $link = $this->links->generate($user, self::LINK_TTL_HOURS);
 
-        $user->forceFill(['invited_at' => now()])->save();
+        DB::transaction(fn () => $user->forceFill(['invited_at' => now()])->save());
+
         $user->notify(new UserInvitationNotification($link, self::LINK_TTL_HOURS));
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Availability\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Availability\Application\DTOs\AvailabilityRuleData;
 use Modules\Availability\Domain\Ports\AvailabilityRuleRepositoryPort;
 use Modules\Availability\Infrastructure\Persistence\Eloquent\Models\AvailabilityRuleEloquentModel;
@@ -19,11 +20,11 @@ final readonly class UpdateAvailabilityRuleHandler
     #[\NoDiscard]
     public function handle(AvailabilityRuleEloquentModel $rule, AvailabilityRuleData $data): AvailabilityRuleEloquentModel
     {
-        return $this->rules->update($rule, [
+        return DB::transaction(fn () => $this->rules->update($rule, [
             'day_of_week' => $data->dayOfWeek,
             'start_time' => $data->startTime,
             'end_time' => $data->endTime,
             'is_available' => $data->isAvailable,
-        ]);
+        ]));
     }
 }

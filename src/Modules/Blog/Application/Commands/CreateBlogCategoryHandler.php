@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Blog\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Blog\Application\DTOs\BlogCategoryData;
 use Modules\Blog\Domain\Ports\BlogCategoryRepositoryPort;
 use Modules\Blog\Infrastructure\Persistence\Eloquent\Models\BlogCategoryEloquentModel;
@@ -25,13 +26,17 @@ final readonly class CreateBlogCategoryHandler
     #[\NoDiscard]
     public function handle(BlogCategoryData $data, int $userId): BlogCategoryEloquentModel
     {
-        return $this->blogCategories->create([
+        // Upload happens before the transaction — object storage is not
+        // transactional and must never run inside the DB unit-of-work.
+        $imagePath = $data->image !== null
+            ? $this->storage->putFile('blog-categories', $data->image, 'public')
+            : null;
+
+        return DB::transaction(fn () => $this->blogCategories->create([
             'blog_category_name' => $data->name,
             'blog_category_description' => $data->description,
-            'blog_category_image' => $data->image !== null
-                ? $this->storage->putFile('blog-categories', $data->image, 'public')
-                : null,
+            'blog_category_image' => $imagePath,
             'user_id' => $userId,
-        ]);
+        ]));
     }
 }

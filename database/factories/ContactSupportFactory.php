@@ -33,6 +33,9 @@ final class ContactSupportFactory extends Factory
             'message' => $this->faker->paragraph(),
             'sms_consent' => $this->faker->boolean(),
             'readed' => false,
+            'is_spam' => false,
+            'spam_score' => 0,
+            'spam_reasons' => null,
         ];
     }
 
@@ -42,5 +45,17 @@ final class ContactSupportFactory extends Factory
     public function read(): self
     {
         return $this->state(fn (): array => ['readed' => true]);
+    }
+
+    /**
+     * Submission the anti-spam scorer flagged (stored for review, not rejected).
+     */
+    public function spam(): self
+    {
+        return $this->state(fn (): array => [
+            'is_spam' => true,
+            'spam_score' => 8,
+            'spam_reasons' => ['keyword:casino', 'links:3'],
+        ]);
     }
 }

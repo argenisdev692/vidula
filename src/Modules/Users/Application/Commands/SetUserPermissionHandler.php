@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Users\Application\Commands;
 
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Modules\Users\Domain\AssignableAccess;
 use Shared\Domain\Ports\AuditPort;
 
@@ -23,11 +24,13 @@ final readonly class SetUserPermissionHandler
     {
         AssignableAccess::assertPermissionsAllowed($actor, [$permission]);
 
-        if ($granted) {
-            $target->givePermissionTo($permission);
-        } else {
-            $target->revokePermissionTo($permission);
-        }
+        DB::transaction(function () use ($target, $permission, $granted): void {
+            if ($granted) {
+                $target->givePermissionTo($permission);
+            } else {
+                $target->revokePermissionTo($permission);
+            }
+        });
 
         $this->audit->log(
             event: $granted ? 'user.permission.granted' : 'user.permission.revoked',

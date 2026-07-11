@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ContactSupport\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\ContactSupport\Domain\Ports\ContactSupportRepositoryPort;
 use Shared\Application\DTOs\BulkUuidsData;
 
@@ -17,6 +18,6 @@ final readonly class BulkDeleteContactSupportsHandler
 
     public function handle(BulkUuidsData $data): int
     {
-        return $this->contactSupports->bulkSoftDeleteByUuid($data->uuids);
+        return DB::transaction(fn () => $this->contactSupports->bulkSoftDeleteByUuid($data->uuids));
     }
 }

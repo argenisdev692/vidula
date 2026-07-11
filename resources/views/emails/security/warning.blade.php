@@ -1,5 +1,7 @@
 @extends('emails.layout')
 
+@section('preheader'){{ __('Security alert: multiple failed sign-in attempts detected.') }}@endsection
+
 @section('content')
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
         <tr>
@@ -11,7 +13,7 @@
         </tr>
     </table>
 
-    <h1 style="margin:0 0 16px; color:#0f1730; font-size:22px; font-weight:700;">
+    <h1 class="email-h1" style="margin:0 0 16px; color:#0f1730; font-size:22px; font-weight:700; line-height:1.3;">
         {{ __('Multiple failed sign-in attempts') }}
     </h1>
 
@@ -35,12 +37,20 @@
     </p>
 
     @if(!empty($resetUrl))
-        <table role="presentation" cellpadding="0" cellspacing="0">
+        <table role="presentation" class="email-cta" cellpadding="0" cellspacing="0" border="0">
             <tr>
-                <td style="background:linear-gradient(120deg,#7c3aed 0%,#4f46e5 100%); border-radius:8px;">
-                    <a href="{{ $resetUrl }}" style="display:inline-block; padding:13px 26px; color:#ffffff; font-size:15px; font-weight:600; text-decoration:none;">
+                <td align="center">
+                    <!--[if mso]>
+                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ $resetUrl }}" style="height:48px;v-text-anchor:middle;width:220px;" arcsize="20%" strokecolor="#4f46e5" fillcolor="#4f46e5">
+                        <w:anchorlock/>
+                        <center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:bold;">{{ __('Reset my password') }}</center>
+                    </v:roundrect>
+                    <![endif]-->
+                    <!--[if !mso]><!-- -->
+                    <a href="{{ $resetUrl }}" style="display:inline-block; padding:14px 28px; background-color:#4f46e5; background:linear-gradient(135deg,#7c3aed 0%,#4f46e5 100%); color:#ffffff; font-size:15px; font-weight:700; text-decoration:none; border-radius:12px; box-shadow:0 8px 20px rgba(79,70,229,0.35);">
                         {{ __('Reset my password') }}
                     </a>
+                    <!--<![endif]-->
                 </td>
             </tr>
         </table>

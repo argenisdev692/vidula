@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Company\Application\Commands;
 
 use App\Models\CompanyData;
+use Illuminate\Support\Facades\DB;
 use Modules\Company\Application\DTOs\UpdateCompanySignatureData;
 use Modules\Company\Domain\Ports\CompanyRepositoryPort;
 use Modules\Company\Domain\ValueObjects\CompanyAsset;
@@ -33,10 +34,14 @@ final readonly class UpdateCompanySignatureHandler
 
         $path = $this->storage->putFile('branding', $data->signature, 'public');
 
+        $updated = DB::transaction(fn () => $this->companies->update($company, [$column => $path]));
+
+        // Delete the superseded object only after the write commits, so a failed
+        // update never destroys the still-referenced previous signature.
         if ($previous !== null && $previous !== $path) {
             $this->storage->delete($previous);
         }
 
-        return $this->companies->update($company, [$column => $path]);
+        return $updated;
     }
 }

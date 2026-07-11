@@ -7,8 +7,8 @@ export type ContactSupportExportFormat = 'csv' | 'xlsx' | 'pdf';
  * Single source of truth for the contact-support request params — consumed by
  * BOTH the server-side DataTable reload AND the export URL, so the two can never
  * drift. Empty filters are omitted so the query string stays clean. The backend
- * `ContactSupportFilterData` reads `search`, `status`, `read`, `date_from`,
- * `date_to`; pagination reads `page` + `per_page`.
+ * `ContactSupportFilterData` reads `search`, `status`, `read`, `spam`,
+ * `date_from`, `date_to`; pagination reads `page` + `per_page`.
  */
 export function buildContactSupportQueryParams(query: ContactSupportQuery): Record<string, string | number> {
     const params: Record<string, string | number> = {
@@ -24,6 +24,9 @@ export function buildContactSupportQueryParams(query: ContactSupportQuery): Reco
     }
     if (query.read) {
         params.read = query.read;
+    }
+    if (query.spam) {
+        params.spam = query.spam;
     }
     if (query.date_from) {
         params.date_from = query.date_from;

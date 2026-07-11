@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Blog\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Blog\Domain\Ports\BlogCategoryRepositoryPort;
 use Shared\Application\DTOs\BulkUuidsData;
 
@@ -17,6 +18,6 @@ final readonly class BulkRestoreBlogCategoriesHandler
 
     public function handle(BulkUuidsData $data): int
     {
-        return $this->blogCategories->bulkRestoreByUuid($data->uuids);
+        return DB::transaction(fn () => $this->blogCategories->bulkRestoreByUuid($data->uuids));
     }
 }

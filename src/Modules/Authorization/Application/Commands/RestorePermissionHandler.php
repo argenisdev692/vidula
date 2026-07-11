@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Authorization\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Authorization\Domain\Ports\PermissionRepositoryPort;
 
 /**
@@ -16,6 +17,6 @@ final readonly class RestorePermissionHandler
 
     public function handle(string $uuid): bool
     {
-        return $this->permissions->restore($uuid);
+        return DB::transaction(fn () => $this->permissions->restore($uuid));
     }
 }

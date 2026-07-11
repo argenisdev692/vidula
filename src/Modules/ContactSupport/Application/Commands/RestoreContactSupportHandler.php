@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ContactSupport\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\ContactSupport\Domain\Ports\ContactSupportRepositoryPort;
 
 /**
@@ -16,6 +17,6 @@ final readonly class RestoreContactSupportHandler
 
     public function handle(string $uuid): bool
     {
-        return $this->contactSupports->restore($uuid);
+        return DB::transaction(fn () => $this->contactSupports->restore($uuid));
     }
 }

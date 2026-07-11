@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Authorization\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Authorization\Domain\Ports\PermissionRepositoryPort;
 use Shared\Application\DTOs\BulkUuidsData;
 
@@ -17,6 +18,6 @@ final readonly class BulkDeletePermissionsHandler
 
     public function handle(BulkUuidsData $data): int
     {
-        return $this->permissions->bulkSoftDeleteByUuid($data->uuids);
+        return DB::transaction(fn () => $this->permissions->bulkSoftDeleteByUuid($data->uuids));
     }
 }

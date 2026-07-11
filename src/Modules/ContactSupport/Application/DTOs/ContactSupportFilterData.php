@@ -17,6 +17,7 @@ use Spatie\LaravelData\Mappers\SnakeCaseMapper;
  *
  * - `status`: active | suspended (soft-deleted).
  * - `read`:   read | unread (the `readed` column).
+ * - `spam`:   spam | ham (the `is_spam` column — flagged vs legitimate).
  */
 #[MapInputName(SnakeCaseMapper::class)]
 #[MapOutputName(SnakeCaseMapper::class)]
@@ -28,6 +29,7 @@ final class ContactSupportFilterData extends SoftDeleteFilterData
         ?string $dateFrom = null,
         ?string $dateTo = null,
         public ?string $read = null,
+        public ?string $spam = null,
     ) {
         parent::__construct($search, $status, $dateFrom, $dateTo);
     }
@@ -41,6 +43,7 @@ final class ContactSupportFilterData extends SoftDeleteFilterData
             ...self::baseRules(),
             'status' => ['nullable', 'string', 'in:active,suspended'],
             'read' => ['nullable', 'string', 'in:read,unread'],
+            'spam' => ['nullable', 'string', 'in:spam,ham'],
         ];
     }
 }

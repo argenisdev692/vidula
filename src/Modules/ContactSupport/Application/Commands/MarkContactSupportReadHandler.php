@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ContactSupport\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\ContactSupport\Domain\Ports\ContactSupportRepositoryPort;
 
 /**
@@ -18,6 +19,6 @@ final readonly class MarkContactSupportReadHandler
 
     public function handle(string $uuid): bool
     {
-        return $this->contactSupports->markAsRead($uuid);
+        return DB::transaction(fn () => $this->contactSupports->markAsRead($uuid));
     }
 }

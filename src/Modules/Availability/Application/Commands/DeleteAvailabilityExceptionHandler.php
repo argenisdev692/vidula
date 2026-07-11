@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Availability\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Availability\Domain\Ports\AvailabilityExceptionRepositoryPort;
 
 /**
@@ -16,6 +17,6 @@ final readonly class DeleteAvailabilityExceptionHandler
 
     public function handle(string $uuid): bool
     {
-        return $this->exceptions->softDelete($uuid);
+        return DB::transaction(fn () => $this->exceptions->softDelete($uuid));
     }
 }

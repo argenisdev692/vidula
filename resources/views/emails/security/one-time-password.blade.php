@@ -1,5 +1,7 @@
 @extends('emails.layout')
 
+@section('preheader'){{ __('Your one-time verification code is inside.') }}@endsection
+
 @section('content')
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
         <tr>
@@ -11,7 +13,7 @@
         </tr>
     </table>
 
-    <h1 style="margin:0 0 16px; color:#0f1730; font-size:22px; font-weight:700;">
+    <h1 class="email-h1" style="margin:0 0 16px; color:#0f1730; font-size:22px; font-weight:700; line-height:1.3;">
         {{ __('Your one-time code') }}
     </h1>
 

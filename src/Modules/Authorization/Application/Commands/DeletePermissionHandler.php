@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Authorization\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Authorization\Domain\Ports\PermissionRepositoryPort;
 
 /**
@@ -17,6 +18,6 @@ final readonly class DeletePermissionHandler
 
     public function handle(string $uuid): bool
     {
-        return $this->permissions->softDelete($uuid);
+        return DB::transaction(fn () => $this->permissions->softDelete($uuid));
     }
 }

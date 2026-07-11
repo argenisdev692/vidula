@@ -23,16 +23,9 @@ final readonly class ContactSupportExportTransformer
     #[\NoDiscard]
     public static function transformForTable(ContactSupportEloquentModel $contactSupport): array
     {
-        return [
-            'Name' => trim("{$contactSupport->first_name} {$contactSupport->last_name}"),
-            'Email' => $contactSupport->email,
-            'Phone' => $contactSupport->phone,
-            'Subject' => $contactSupport->subject,
-            'Read' => $contactSupport->readed ? 'Read' : 'Unread',
-            'SMS Consent' => $contactSupport->sms_consent ? 'Yes' : 'No',
-            'Created' => $contactSupport->created_at?->toDateTimeString() ?? '—',
-            'Status' => $contactSupport->deleted_at !== null ? 'Suspended' : 'Active',
-        ];
+        return $contactSupport
+            |> self::extractBaseData(...)
+            |> self::formatDates(...);
     }
 
     /**
@@ -42,5 +35,38 @@ final readonly class ContactSupportExportTransformer
     public static function transformForPdf(ContactSupportEloquentModel $contactSupport): array
     {
         return self::transformForTable($contactSupport);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function extractBaseData(ContactSupportEloquentModel $contactSupport): array
+    {
+        return [
+            'Name' => trim("{$contactSupport->first_name} {$contactSupport->last_name}"),
+            'Email' => $contactSupport->email,
+            'Phone' => $contactSupport->phone,
+            'Subject' => $contactSupport->subject,
+            'Read' => $contactSupport->readed ? 'Read' : 'Unread',
+            'SMS Consent' => $contactSupport->sms_consent ? 'Yes' : 'No',
+            'Created' => $contactSupport->created_at?->toDateTimeString() ?? '',
+            'Status' => $contactSupport->deleted_at !== null ? 'Suspended' : 'Active',
+        ];
+    }
+
+    /**
+     * Formats `Created` to the mandatory human-readable export format
+     * (BACKEND-PHP §8 — "March 3, 2026", never ISO8601/`Y-m-d H:i:s`).
+     *
+     * @param  array<string, string>  $row
+     * @return array<string, string>
+     */
+    private static function formatDates(array $row): array
+    {
+        if ($row['Created'] === '') {
+            return [...$row, 'Created' => '—'];
+        }
+
+        return [...$row, 'Created' => (new \DateTimeImmutable($row['Created']))->format('F j, Y')];
     }
 }

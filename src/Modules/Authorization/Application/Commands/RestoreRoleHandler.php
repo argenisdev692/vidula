@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Authorization\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Authorization\Domain\Ports\RoleRepositoryPort;
 
 /**
@@ -16,6 +17,6 @@ final readonly class RestoreRoleHandler
 
     public function handle(string $uuid): bool
     {
-        return $this->roles->restore($uuid);
+        return DB::transaction(fn () => $this->roles->restore($uuid));
     }
 }

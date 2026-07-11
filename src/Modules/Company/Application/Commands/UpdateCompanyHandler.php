@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Company\Application\Commands;
 
 use App\Models\CompanyData;
+use Illuminate\Support\Facades\DB;
 use Modules\Company\Application\DTOs\UpdateCompanyData;
 use Modules\Company\Domain\Events\CompanyCountryChanged;
 use Modules\Company\Domain\Ports\CompanyRepositoryPort;
@@ -23,7 +24,7 @@ final readonly class UpdateCompanyHandler
     {
         $previousCountryCode = $company->country_code;
 
-        $updated = $this->companies->update($company, [
+        $updated = DB::transaction(fn () => $this->companies->update($company, [
             'name' => $data->name,
             'company_name' => $data->companyName,
             'email' => $data->email,
@@ -43,7 +44,7 @@ final readonly class UpdateCompanyHandler
             'tiktok_link' => $data->tiktokLink,
             'latitude' => $data->latitude,
             'longitude' => $data->longitude,
-        ]);
+        ]));
 
         if ($updated->country_code !== $previousCountryCode) {
             event(new CompanyCountryChanged($previousCountryCode, $updated->country_code));

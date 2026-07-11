@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ContactSupport\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\ContactSupport\Application\DTOs\ContactSupportData;
 use Modules\ContactSupport\Domain\Ports\ContactSupportRepositoryPort;
 use Modules\ContactSupport\Infrastructure\Persistence\Eloquent\Models\ContactSupportEloquentModel;
@@ -22,7 +23,7 @@ final readonly class UpdateContactSupportHandler
     {
         $email = $data->email |> trim(...) |> strtolower(...);
 
-        return $this->contactSupports->update($contactSupport, [
+        return DB::transaction(fn () => $this->contactSupports->update($contactSupport, [
             'first_name' => $data->firstName,
             'last_name' => $data->lastName,
             'email' => $email,
@@ -30,6 +31,6 @@ final readonly class UpdateContactSupportHandler
             'subject' => $data->subject,
             'message' => $data->message,
             'sms_consent' => $data->smsConsent,
-        ]);
+        ]));
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Availability\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Availability\Domain\Ports\AvailabilityRuleRepositoryPort;
 use Shared\Application\DTOs\BulkUuidsData;
 
@@ -17,6 +18,6 @@ final readonly class BulkDeleteAvailabilityRulesHandler
 
     public function handle(BulkUuidsData $data): int
     {
-        return $this->rules->bulkSoftDeleteByUuid($data->uuids);
+        return DB::transaction(fn () => $this->rules->bulkSoftDeleteByUuid($data->uuids));
     }
 }

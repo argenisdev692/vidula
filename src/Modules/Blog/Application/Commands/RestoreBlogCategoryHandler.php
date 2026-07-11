@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Blog\Application\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Blog\Domain\Ports\BlogCategoryRepositoryPort;
 
 /**
@@ -16,6 +17,6 @@ final readonly class RestoreBlogCategoryHandler
 
     public function handle(string $uuid): bool
     {
-        return $this->blogCategories->restore($uuid);
+        return DB::transaction(fn () => $this->blogCategories->restore($uuid));
     }
 }

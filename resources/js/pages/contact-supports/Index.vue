@@ -29,6 +29,7 @@ import type {
     ContactSupportFilters,
     ContactSupportQuery,
     ContactSupportRead,
+    ContactSupportSpam,
     ContactSupportStatus,
     PaginatedResponse,
 } from '@/modules/contact-support/types';
@@ -55,6 +56,7 @@ const query = reactive<ContactSupportQuery>({
     search: props.filters.search,
     status: props.filters.status,
     read: props.filters.read,
+    spam: props.filters.spam,
     date_from: props.filters.date_from,
     date_to: props.filters.date_to,
     page: props.contactSupports.current_page,
@@ -65,6 +67,7 @@ function applyCriteria(target: ContactSupportQuery, criteria: FilterCriteria): v
     target.search = criteria.search || null;
     target.status = (criteria.status as ContactSupportStatus | undefined) || null;
     target.read = (criteria.read as ContactSupportRead | undefined) || null;
+    target.spam = (criteria.spam as ContactSupportSpam | undefined) || null;
 
     const range = criteria.dateRange as Date[] | undefined;
     target.date_from = range?.[0] ? toLocalIsoDate(range[0]) : null;
@@ -252,6 +255,16 @@ const filterFields: FilterField[] = [
         options: [
             { label: 'Read', value: 'read' },
             { label: 'Unread', value: 'unread' },
+        ],
+    },
+    {
+        key: 'spam',
+        label: 'Spam',
+        type: 'select',
+        placeholder: 'All',
+        options: [
+            { label: 'Legitimate', value: 'ham' },
+            { label: 'Spam', value: 'spam' },
         ],
     },
 ];

@@ -6,6 +6,7 @@ namespace Modules\Users\Application\Commands;
 
 use App\Models\User;
 use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Support\Facades\DB;
 use Modules\Users\Application\DTOs\UpdateUserData;
 use Modules\Users\Domain\Events\UserForcedPasswordChange;
 use Modules\Users\Domain\Ports\UserRepositoryPort;
@@ -19,7 +20,7 @@ final readonly class UpdateUserHandler
 
     public function handle(User $user, UpdateUserData $data): User
     {
-        $updated = $this->users->update($user, [
+        $updated = DB::transaction(fn () => $this->users->update($user, [
             'first_name' => $data->firstName,
             'last_name' => $data->lastName,
             'email' => $data->email,
@@ -37,7 +38,7 @@ final readonly class UpdateUserHandler
             'latitude' => $data->latitude,
             'longitude' => $data->longitude,
             'must_change_password' => $data->forcePasswordChange,
-        ]);
+        ]));
 
         if ($data->forcePasswordChange) {
             $this->events->dispatch(new UserForcedPasswordChange($updated->uuid));
