@@ -45,6 +45,11 @@ final class ContactSupportEloquentModel extends Model
     /** @use HasFactory<ContactSupportFactory> */
     use HasFactory, LogsActivity, SoftDeletes;
 
+    /**
+     * @var list<string>
+     */
+    protected $hidden = ['id'];
+
     protected static function booted(): void
     {
         self::creating(function (ContactSupportEloquentModel $model): void {

@@ -22,7 +22,7 @@ class RolePermissionSeeder extends Seeder
      *
      * @var list<string>
      */
-    private const array MODULES = ['USERS', 'ROLES', 'PERMISSIONS', 'COMPANY_DATA', 'BLOG_CATEGORIES', 'CONTACT_SUPPORTS', 'AVAILABILITY_RULES', 'AVAILABILITY_EXCEPTIONS'];
+    private const array MODULES = ['USERS', 'ROLES', 'PERMISSIONS', 'COMPANY_DATA', 'BLOG_CATEGORIES', 'CONTACT_SUPPORTS', 'AVAILABILITY_RULES', 'AVAILABILITY_EXCEPTIONS', 'APPOINTMENTS'];
 
     /**
      * Modules with the same CRUD shape as {@see self::MODULES} but no export
@@ -67,7 +67,7 @@ class RolePermissionSeeder extends Seeder
      *
      * @var list<string>
      */
-    private const array ADMIN_MODULES = ['AVAILABILITY_RULES', 'AVAILABILITY_EXCEPTIONS'];
+    private const array ADMIN_MODULES = ['AVAILABILITY_RULES', 'AVAILABILITY_EXCEPTIONS', 'APPOINTMENTS'];
 
     /**
      * Access-management permissions on the USERS module. Kept separate from the

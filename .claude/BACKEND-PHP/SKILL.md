@@ -412,6 +412,9 @@ final class {Module}EloquentModel extends Model
     protected $table = '{table_name}';
     protected $fillable = [/* fields */];
 
+    /** @var list<string> */
+    protected $hidden = ['id'];   // uuid is the public identifier — never leak the auto-increment PK
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
@@ -422,6 +425,8 @@ final class {Module}EloquentModel extends Model
     }
 }
 ```
+
+> **`$hidden = ['id']` — MANDATORY on every model serialized to the frontend.** The `uuid` (UUIDv7) is the public identifier; the auto-increment `id` is internal. Hiding it keeps it out of Inertia props / JSON responses and reinforces property-level authorization (OWASP §12 / API3 — never leak internal columns via a raw model). Project convention is the property form `protected $hidden = ['id'];`; add other internal/PII columns to the list as needed. Response DTOs (Spatie `Data` allowlist) remain the primary defense — `$hidden` is defence-in-depth.
 
 ### Eloquent Relationship Rules
 

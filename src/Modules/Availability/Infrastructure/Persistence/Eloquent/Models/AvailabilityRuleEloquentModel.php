@@ -37,6 +37,11 @@ final class AvailabilityRuleEloquentModel extends Model
     /** @use HasFactory<AvailabilityRuleFactory> */
     use HasFactory, LogsActivity, SoftDeletes;
 
+    /**
+     * @var list<string>
+     */
+    protected $hidden = ['id'];
+
     protected static function booted(): void
     {
         self::creating(function (AvailabilityRuleEloquentModel $model): void {

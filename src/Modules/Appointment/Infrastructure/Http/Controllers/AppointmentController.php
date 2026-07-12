@@ -1,0 +1,176 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Appointment\Infrastructure\Http\Controllers;
+
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
+use Modules\Appointment\Application\Commands\AddFollowUpCallHandler;
+use Modules\Appointment\Application\Commands\BulkDeleteAppointmentsHandler;
+use Modules\Appointment\Application\Commands\BulkRestoreAppointmentsHandler;
+use Modules\Appointment\Application\Commands\CancelAppointmentHandler;
+use Modules\Appointment\Application\Commands\ConfirmAppointmentHandler;
+use Modules\Appointment\Application\Commands\CreateAppointmentHandler;
+use Modules\Appointment\Application\Commands\DeleteAppointmentHandler;
+use Modules\Appointment\Application\Commands\MarkAppointmentReadHandler;
+use Modules\Appointment\Application\Commands\RescheduleAppointmentHandler;
+use Modules\Appointment\Application\Commands\RestoreAppointmentHandler;
+use Modules\Appointment\Application\Commands\UpdateAppointmentHandler;
+use Modules\Appointment\Application\DTOs\AddFollowUpCallData;
+use Modules\Appointment\Application\DTOs\AppointmentData;
+use Modules\Appointment\Application\DTOs\AppointmentFilterData;
+use Modules\Appointment\Application\DTOs\CancelAppointmentData;
+use Modules\Appointment\Application\DTOs\ConfirmAppointmentData;
+use Modules\Appointment\Application\DTOs\RescheduleAppointmentData;
+use Modules\Appointment\Application\Queries\GetAppointmentHandler;
+use Modules\Appointment\Application\Queries\ListAppointmentsHandler;
+use Shared\Application\DTOs\BulkUuidsData;
+
+/**
+ * Appointment pipeline management. Every route is authorized via
+ * `permission:*_APPOINTMENTS` middleware (not roles) — see Routes. Controller
+ * stays thin: validate → handler → response, branching Inertia vs JSON
+ * (Controller Fusion Rule).
+ */
+final readonly class AppointmentController
+{
+    public function index(Request $request, ListAppointmentsHandler $list): InertiaResponse|JsonResponse
+    {
+        $filters = AppointmentFilterData::validateAndCreate($request);
+        $appointments = $list->handle($filters, min(max($request->integer('per_page', 15), 1), 100));
+
+        return $request->expectsJson()
+            ? response()->json($appointments)
+            : Inertia::render('appointments/Index', ['appointments' => $appointments, 'filters' => $filters]);
+    }
+
+    public function show(string $uuid, GetAppointmentHandler $get): InertiaResponse|JsonResponse
+    {
+        $appointment = $get->handle($uuid);
+
+        return request()->expectsJson()
+            ? response()->json(['data' => $appointment])
+            : Inertia::render('appointments/Show', ['appointment' => $appointment]);
+    }
+
+    public function create(): InertiaResponse
+    {
+        return Inertia::render('appointments/Create');
+    }
+
+    public function edit(string $uuid, GetAppointmentHandler $get): InertiaResponse
+    {
+        // Project only the editable lead-profile columns (AppointmentData's field
+        // set) — pipeline state (status_lead, meeting_status, scheduled_at, …)
+        // never rides on this form, it changes only through the dedicated actions.
+        return Inertia::render('appointments/Edit', [
+            'appointment' => $get->handle($uuid)->only([
+                'uuid',
+                'first_name',
+                'last_name',
+                'client_type',
+                'company_name',
+                'project_type',
+                'email',
+                'phone',
+                'address',
+                'address_2',
+                'zip_code',
+                'city',
+                'state',
+                'country',
+                'country_code',
+                'latitude',
+                'longitude',
+                'sms_consent',
+                'notes',
+                'owner',
+            ]),
+        ]);
+    }
+
+    public function store(Request $request, AppointmentData $data, CreateAppointmentHandler $create): RedirectResponse
+    {
+        $scheduledAt = $request->validate(['scheduled_at' => ['nullable', 'date']])['scheduled_at'] ?? null;
+
+        $create->handle($data, $scheduledAt);
+
+        // Create is a dedicated page (no modal, mirrors Users): land the admin
+        // on the list rather than `back()` to the now-stale create form.
+        return redirect()->route('appointments.index')->with('success', __('Lead created.'));
+    }
+
+    public function update(string $uuid, AppointmentData $data, GetAppointmentHandler $get, UpdateAppointmentHandler $update): RedirectResponse
+    {
+        $update->handle($get->handle($uuid), $data);
+
+        return redirect()->route('appointments.index')->with('success', __('Lead updated.'));
+    }
+
+    public function markRead(string $uuid, MarkAppointmentReadHandler $markRead): RedirectResponse
+    {
+        $markRead->handle($uuid);
+
+        return back()->with('success', __('Lead marked as read.'));
+    }
+
+    public function confirm(string $uuid, ConfirmAppointmentData $data, GetAppointmentHandler $get, ConfirmAppointmentHandler $confirm): RedirectResponse
+    {
+        $confirm->handle($get->handle($uuid), $data);
+
+        return back()->with('success', __('Appointment confirmed.'));
+    }
+
+    public function reschedule(string $uuid, RescheduleAppointmentData $data, GetAppointmentHandler $get, RescheduleAppointmentHandler $reschedule): RedirectResponse
+    {
+        $reschedule->handle($get->handle($uuid), $data);
+
+        return back()->with('success', __('Appointment rescheduled.'));
+    }
+
+    public function cancel(string $uuid, CancelAppointmentData $data, GetAppointmentHandler $get, CancelAppointmentHandler $cancel): RedirectResponse
+    {
+        $cancel->handle($get->handle($uuid), $data);
+
+        return back()->with('success', __('Appointment cancelled.'));
+    }
+
+    public function addFollowUpCall(string $uuid, AddFollowUpCallData $data, GetAppointmentHandler $get, AddFollowUpCallHandler $handler): RedirectResponse
+    {
+        $handler->handle($get->handle($uuid), $data);
+
+        return back()->with('success', __('Follow-up call logged.'));
+    }
+
+    public function destroy(string $uuid, DeleteAppointmentHandler $delete): RedirectResponse
+    {
+        $delete->handle($uuid);
+
+        return back()->with('success', __('Lead suspended.'));
+    }
+
+    public function restore(string $uuid, RestoreAppointmentHandler $restore): RedirectResponse
+    {
+        $restore->handle($uuid);
+
+        return back()->with('success', __('Lead restored.'));
+    }
+
+    public function bulkDelete(BulkUuidsData $data, BulkDeleteAppointmentsHandler $handler): RedirectResponse
+    {
+        $count = $handler->handle($data);
+
+        return back()->with('success', __(':count leads suspended.', ['count' => $count]));
+    }
+
+    public function bulkRestore(BulkUuidsData $data, BulkRestoreAppointmentsHandler $handler): RedirectResponse
+    {
+        $count = $handler->handle($data);
+
+        return back()->with('success', __(':count leads restored.', ['count' => $count]));
+    }
+}

@@ -40,6 +40,11 @@ final class AvailabilityExceptionEloquentModel extends Model
     /** @use HasFactory<AvailabilityExceptionFactory> */
     use HasFactory, LogsActivity, SoftDeletes;
 
+    /**
+     * @var list<string>
+     */
+    protected $hidden = ['id'];
+
     protected static function booted(): void
     {
         self::creating(function (AvailabilityExceptionEloquentModel $model): void {

@@ -46,6 +46,11 @@ final class BlogCategoryEloquentModel extends Model
     use HasFactory, LogsActivity, SoftDeletes;
 
     /**
+     * @var list<string>
+     */
+    protected $hidden = ['id'];
+
+    /**
      * Resolve the public image URL alongside the raw column so the frontend
      * never concatenates R2 keys by hand.
      *

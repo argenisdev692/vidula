@@ -5,6 +5,7 @@ use App\Providers\FortifyServiceProvider;
 use App\Providers\HorizonServiceProvider;
 use App\Providers\TelescopeServiceProvider;
 use Modules\ActivityLog\Providers\ActivityLogServiceProvider;
+use Modules\Appointment\Providers\AppointmentServiceProvider;
 use Modules\Auth\Providers\AuthServiceProvider;
 use Modules\Authorization\Providers\AuthorizationServiceProvider;
 use Modules\Availability\Providers\AvailabilityServiceProvider;
@@ -34,4 +35,5 @@ return [
     AvailabilityServiceProvider::class,
     PortfolioServiceProvider::class,
     ServicesServiceProvider::class,
+    AppointmentServiceProvider::class,
 ];
