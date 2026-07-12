@@ -349,7 +349,7 @@ function submit(): void {
 .post-form__main {
     display: flex;
     flex-direction: column;
-    gap: var(--space-7);
+    gap: var(--space-8);
     min-width: 0;
 }
 
