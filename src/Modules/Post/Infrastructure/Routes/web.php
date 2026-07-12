@@ -42,6 +42,12 @@ Route::middleware(['web', 'auth', 'throttle:60,1'])->prefix('posts')->name('post
     Route::post('/ai/generate-content', [PostAiAssistController::class, 'generateContent'])
         ->middleware(['permission:CREATE_POSTS', 'throttle:10,1'])->name('ai.generate-content');
 
+    Route::post('/ai/generate-social-copy', [PostAiAssistController::class, 'generateSocialCopy'])
+        ->middleware(['permission:CREATE_POSTS', 'throttle:10,1'])->name('ai.generate-social-copy');
+
+    Route::post('/ai/generate-reel', [PostAiAssistController::class, 'generateReel'])
+        ->middleware(['permission:CREATE_POSTS', 'throttle:5,1'])->name('ai.generate-reel');
+
     Route::get('/{uuid}/edit', [PostController::class, 'edit'])
         ->middleware('permission:VIEW_POSTS')->whereUuid('uuid')->name('edit');
 

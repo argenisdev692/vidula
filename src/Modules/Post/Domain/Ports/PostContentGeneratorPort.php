@@ -14,5 +14,5 @@ use Modules\Post\Application\DTOs\GeneratePostContentData;
  */
 interface PostContentGeneratorPort
 {
-    public function generate(GeneratePostContentData $data): GeneratedPostContentData;
+    public function generate(GeneratePostContentData $data, ?object $causer = null): GeneratedPostContentData;
 }

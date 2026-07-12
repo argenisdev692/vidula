@@ -6,6 +6,8 @@ namespace Shared\Infrastructure\Research;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
+use Shared\Infrastructure\Resilience\CircuitBreaker\CircuitBreakerInterface;
 use Throwable;
 
 /**
@@ -16,6 +18,8 @@ final readonly class TavilyResearchAdapter implements TavilyClientInterface
     private const int MAX_QUERIES = 4;
 
     private const int TIMEOUT_SECONDS = 15;
+
+    public function __construct(private CircuitBreakerInterface $breaker) {}
 
     public function search(array $queries): array
     {
@@ -41,33 +45,37 @@ final readonly class TavilyResearchAdapter implements TavilyClientInterface
      */
     private function searchOne(string $apiKey, string $query): array
     {
-        try {
-            $response = Http::withToken($apiKey)
-                ->timeout(self::TIMEOUT_SECONDS)
-                ->retry(1, 500)
-                ->post((string) config('services.tavily.url'), [
-                    'query' => $query,
-                    'search_depth' => (string) config('services.tavily.search_depth', 'advanced'),
-                    'max_results' => (int) config('services.tavily.max_results', 5),
-                ]);
+        return $this->breaker->call(
+            'tavily',
+            function () use ($apiKey, $query): array {
+                $response = Http::withToken($apiKey)
+                    ->timeout(self::TIMEOUT_SECONDS)
+                    ->retry(1, 500)
+                    ->post((string) config('services.tavily.url'), [
+                        'query' => $query,
+                        'search_depth' => (string) config('services.tavily.search_depth', 'advanced'),
+                        'max_results' => (int) config('services.tavily.max_results', 5),
+                    ]);
 
-            if ($response->failed()) {
+                if ($response->failed()) {
+                    throw new RuntimeException("Tavily search failed with status {$response->status()}.");
+                }
+
+                return array_map(
+                    static fn (array $result): array => [
+                        'title' => (string) ($result['title'] ?? ''),
+                        'url' => (string) ($result['url'] ?? ''),
+                        'content' => (string) ($result['content'] ?? ''),
+                        'score' => (float) ($result['score'] ?? 0),
+                    ],
+                    (array) $response->json('results', []),
+                );
+            },
+            function (Throwable $e) use ($query): array {
+                Log::warning('tavily.search_failed', ['query' => $query, 'error' => $e->getMessage()]);
+
                 return [];
-            }
-
-            return array_map(
-                static fn (array $result): array => [
-                    'title' => (string) ($result['title'] ?? ''),
-                    'url' => (string) ($result['url'] ?? ''),
-                    'content' => (string) ($result['content'] ?? ''),
-                    'score' => (float) ($result['score'] ?? 0),
-                ],
-                (array) $response->json('results', []),
-            );
-        } catch (Throwable $e) {
-            Log::warning('tavily.search_failed', ['query' => $query, 'error' => $e->getMessage()]);
-
-            return [];
-        }
+            },
+        );
     }
 }

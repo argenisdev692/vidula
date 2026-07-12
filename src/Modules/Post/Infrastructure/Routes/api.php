@@ -25,6 +25,16 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])
     ->name('api.posts.')
     ->group(function (): void {
         Route::get('/', [PostApiController::class, 'index'])->name('index');
+
+        Route::post('/ai/suggest-topics', [PostApiController::class, 'suggestTopics'])
+            ->middleware('throttle:10,1')->name('ai.suggest-topics');
+        Route::post('/ai/generate-content', [PostApiController::class, 'generateContent'])
+            ->middleware('throttle:10,1')->name('ai.generate-content');
+        Route::post('/ai/generate-social-copy', [PostApiController::class, 'generateSocialCopy'])
+            ->middleware('throttle:10,1')->name('ai.generate-social-copy');
+        Route::post('/ai/generate-reel', [PostApiController::class, 'generateReel'])
+            ->middleware('throttle:5,1')->name('ai.generate-reel');
+
         Route::get('/{uuid}', [PostApiController::class, 'show'])
             ->whereUuid('uuid')
             ->name('show');

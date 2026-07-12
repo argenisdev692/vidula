@@ -35,6 +35,7 @@ RUN mkdir -p /etc/apt/keyrings \
         php${PHP_VERSION}-zip \
         php${PHP_VERSION}-bcmath \
         php${PHP_VERSION}-intl \
+        supervisor \
     && curl -sLS https://getcomposer.org/installer | php -- --install-dir=/usr/bin/ --filename=composer \
     && apt-get -y autoremove && apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -52,4 +53,8 @@ RUN composer dump-autoload --optimize --no-dev \
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan serve --host=0.0.0.0 --port=${PORT:-8080}"]
+# Single-service Railway deploy: supervisord keeps both the HTTP server and the
+# Horizon queue worker alive in the same container (see docker/supervisord.conf).
+# Horizon requires QUEUE_CONNECTION=redis and a reachable REDIS_URL/REDIS_HOST —
+# without them it exits immediately and supervisord restarts it in a crash loop.
+CMD ["sh", "-c", "php artisan config:cache && php artisan route:cache && php artisan view:cache && exec supervisord -c docker/supervisord.conf"]

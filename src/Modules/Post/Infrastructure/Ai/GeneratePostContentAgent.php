@@ -67,6 +67,11 @@ final class GeneratePostContentAgent implements Agent, Conversational, HasStruct
             Length: 800-1500 words, one H1-equivalent title plus 3-5 H2 sections
             and a closing call-to-action. Score every field honestly — do not
             inflate scores to look successful.
+
+            Cover image concept: you do NOT choose colors or overall visual
+            style — the caller applies the brand palette deterministically.
+            Give only a short 2-5 word title and a one-sentence visual concept
+            (e.g. "a stylized API gateway rendered as a glowing node network").
             INSTRUCTIONS;
     }
 
@@ -90,7 +95,10 @@ final class GeneratePostContentAgent implements Agent, Conversational, HasStruct
             'meta_title' => $schema->string()->required(),
             'meta_description' => $schema->string()->required(),
             'meta_keywords' => $schema->string()->required(),
-            'cover_image_prompt' => $schema->string()->required(),
+            'cover_image_concept' => $schema->object(fn ($schema) => [
+                'title' => $schema->string()->required(),
+                'visual' => $schema->string()->required(),
+            ])->required(),
 
             'scores' => $schema->object(fn ($schema) => [
                 'seo_score' => $schema->integer()->min(0)->max(100)->required(),

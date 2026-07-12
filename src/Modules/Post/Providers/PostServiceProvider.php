@@ -9,6 +9,8 @@ use Illuminate\Support\ServiceProvider;
 use Modules\Post\Domain\Ports\PostContentGeneratorPort;
 use Modules\Post\Domain\Ports\PostRepositoryPort;
 use Modules\Post\Domain\Ports\PostTopicIdeatorPort;
+use Modules\Post\Domain\Ports\ReelPackageGeneratorPort;
+use Modules\Post\Domain\Ports\SocialCopyGeneratorPort;
 use Modules\Post\Infrastructure\Ai\LaravelAiPostAssistantAdapter;
 use Modules\Post\Infrastructure\Persistence\Repositories\EloquentPostRepository;
 
@@ -18,11 +20,14 @@ final class PostServiceProvider extends ServiceProvider
     {
         $this->app->bind(PostRepositoryPort::class, EloquentPostRepository::class);
 
-        // Both AI ports resolve to the same adapter instance per request — one
-        // Tavily research round-trip is shared if a caller ever needs both.
+        // All four AI ports resolve to the same adapter instance per request —
+        // one Tavily research round-trip is shared if a caller ever needs more
+        // than one during the same request.
         $this->app->singleton(LaravelAiPostAssistantAdapter::class);
         $this->app->bind(PostTopicIdeatorPort::class, LaravelAiPostAssistantAdapter::class);
         $this->app->bind(PostContentGeneratorPort::class, LaravelAiPostAssistantAdapter::class);
+        $this->app->bind(SocialCopyGeneratorPort::class, LaravelAiPostAssistantAdapter::class);
+        $this->app->bind(ReelPackageGeneratorPort::class, LaravelAiPostAssistantAdapter::class);
     }
 
     public function boot(): void

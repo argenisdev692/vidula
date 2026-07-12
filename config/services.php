@@ -50,6 +50,14 @@ return [
         'max_results' => env('TAVILY_MAX_RESULTS', 5),
     ],
 
+    'elevenlabs' => [
+        // AI voiceover for the Post module's Reel/TikTok package —
+        // Shared\Infrastructure\Speech\ElevenLabsSpeechAdapter.
+        'api_key' => env('ELEVENLABS_API_KEY'),
+        'voice_id' => env('ELEVENLABS_VOICE_ID'),
+        'model_id' => env('ELEVENLABS_MODEL_ID', 'eleven_multilingual_v2'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Socialite OAuth Providers

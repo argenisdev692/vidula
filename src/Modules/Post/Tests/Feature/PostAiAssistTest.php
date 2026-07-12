@@ -55,10 +55,17 @@ final class PostAiAssistTest extends TestCase
             ],
         ]);
 
-        $this->actingAs($this->superAdmin())
+        $admin = $this->superAdmin();
+
+        $this->actingAs($admin)
             ->postJson('/posts/ai/suggest-topics', ['provider' => 'openai'])
             ->assertOk()
             ->assertJsonCount(10, 'data');
+
+        $this->assertDatabaseHas('activity_log', [
+            'event' => 'post.ai.topics_suggested',
+            'causer_id' => $admin->id,
+        ]);
     }
 
     public function test_generate_content_returns_a_scored_draft_without_an_image(): void
@@ -71,7 +78,10 @@ final class PostAiAssistTest extends TestCase
                 'meta_title' => 'Meta title',
                 'meta_description' => 'Meta description',
                 'meta_keywords' => 'kw1, kw2',
-                'cover_image_prompt' => 'A prompt',
+                'cover_image_concept' => [
+                    'title' => 'Onboarding Automated',
+                    'visual' => 'a stylized workflow node network',
+                ],
                 'scores' => [
                     'seo_score' => 80,
                     'eeat_score' => 75,

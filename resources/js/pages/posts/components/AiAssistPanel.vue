@@ -3,22 +3,32 @@
  * AI assist panel for the post editor. Two-step flow mirroring the backend
  * ports: (1) suggest up to 10 topic ideas from the company profile + Tavily
  * trends, or type a topic directly; (2) generate a full SEO/EEAT-scored draft
- * for the chosen topic. Nothing here touches the Post aggregate — it only
- * emits `apply` with the generated draft; the parent PostForm decides whether
- * to accept it into the editable fields (the user can still edit before
- * saving). Uses `apiFetch` (native fetch + XSRF header) rather than an Inertia
- * visit, since this is a JSON round-trip that must not navigate the page.
+ * for the chosen topic, optionally alongside a social copy (LinkedIn + IG/FB)
+ * and/or a Reel/TikTok package (script + AI voiceover via ElevenLabs) —
+ * toggled independently, so "none/1/2" variants map directly to which
+ * switches are on. Nothing here touches the Post aggregate — it only emits
+ * `apply` with the generated draft; the parent PostForm decides whether to
+ * accept it into the editable fields (the user can still edit before
+ * saving). Uses `apiFetch` (native fetch + XSRF header) rather than an
+ * Inertia visit, since this is a JSON round-trip that must not navigate the
+ * page.
  */
 import { ref } from 'vue';
+import { useToast } from 'primevue/usetoast';
 import { apiFetch, HttpError } from '@/lib/http';
 import SelectField from '@/common/form/SelectField.vue';
 import TextField from '@/common/form/TextField.vue';
 import GradientButton from '@/common/form/GradientButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import ToggleSwitch from '@/volt/ToggleSwitch.vue';
-import type { AiProvider, GeneratedPostContent, PostTopicIdea } from '@/modules/post/types';
+import { useAiGenerationProgress } from '@/modules/post/composables/useAiGenerationProgress';
+import type { AiProvider, GeneratedPostContent, PostTopicIdea, ReelPackage, SocialCopy } from '@/modules/post/types';
+import AiProgressBar from './AiProgressBar.vue';
 
 const emit = defineEmits<{ apply: [draft: GeneratedPostContent] }>();
+
+const toast = useToast();
+const { progress, reset: resetProgress } = useAiGenerationProgress();
 
 const PROVIDERS = [
     { label: 'OpenAI', value: 'openai' },
@@ -29,6 +39,8 @@ const PROVIDERS = [
 const provider = ref<AiProvider>('openai');
 const topicSteer = ref<string>('');
 const generateCoverImage = ref<boolean>(true);
+const generateSocialCopy = ref<boolean>(false);
+const generateReel = ref<boolean>(false);
 
 const ideasLoading = ref<boolean>(false);
 const ideasError = ref<string | null>(null);
@@ -38,6 +50,14 @@ const selectedIdea = ref<PostTopicIdea | null>(null);
 const draftLoading = ref<boolean>(false);
 const draftError = ref<string | null>(null);
 const draft = ref<GeneratedPostContent | null>(null);
+
+const socialLoading = ref<boolean>(false);
+const socialError = ref<string | null>(null);
+const socialCopy = ref<SocialCopy | null>(null);
+
+const reelLoading = ref<boolean>(false);
+const reelError = ref<string | null>(null);
+const reel = ref<ReelPackage | null>(null);
 
 function errorMessage(e: unknown): string {
     if (e instanceof HttpError) {
@@ -52,6 +72,7 @@ async function suggestTopics(): Promise<void> {
     ideasError.value = null;
     ideasLoading.value = true;
     selectedIdea.value = null;
+    resetProgress('topics');
     try {
         const response = await apiFetch<{ data: PostTopicIdea[] }>('POST', '/posts/ai/suggest-topics', {
             provider: provider.value,
@@ -69,21 +90,22 @@ function pickIdea(idea: PostTopicIdea): void {
     selectedIdea.value = idea;
 }
 
-async function generateDraft(): Promise<void> {
-    const topic = selectedIdea.value?.title || topicSteer.value;
-    if (!topic.trim()) {
-        draftError.value = 'Pick a suggested idea or type a topic first.';
-        return;
-    }
+function variantPayload(topic: string): { topic: string; provider: AiProvider; angle: string | null; key_trend: string | null } {
+    return {
+        topic,
+        provider: provider.value,
+        angle: selectedIdea.value?.angle ?? null,
+        key_trend: selectedIdea.value?.key_trend ?? null,
+    };
+}
 
+async function generateBlogDraft(topic: string): Promise<void> {
     draftError.value = null;
     draftLoading.value = true;
+    resetProgress('content');
     try {
         const response = await apiFetch<{ data: GeneratedPostContent }>('POST', '/posts/ai/generate-content', {
-            topic,
-            provider: provider.value,
-            angle: selectedIdea.value?.angle ?? null,
-            key_trend: selectedIdea.value?.key_trend ?? null,
+            ...variantPayload(topic),
             generate_cover_image: generateCoverImage.value,
         });
         draft.value = response.data;
@@ -94,9 +116,67 @@ async function generateDraft(): Promise<void> {
     }
 }
 
+async function generateSocialCopyVariant(topic: string): Promise<void> {
+    socialError.value = null;
+    socialLoading.value = true;
+    resetProgress('social');
+    try {
+        const response = await apiFetch<{ data: SocialCopy }>('POST', '/posts/ai/generate-social-copy', variantPayload(topic));
+        socialCopy.value = response.data;
+    } catch (e) {
+        socialError.value = errorMessage(e);
+    } finally {
+        socialLoading.value = false;
+    }
+}
+
+async function generateReelVariant(topic: string): Promise<void> {
+    reelError.value = null;
+    reelLoading.value = true;
+    resetProgress('reel');
+    try {
+        const response = await apiFetch<{ data: ReelPackage }>('POST', '/posts/ai/generate-reel', variantPayload(topic));
+        reel.value = response.data;
+    } catch (e) {
+        reelError.value = errorMessage(e);
+    } finally {
+        reelLoading.value = false;
+    }
+}
+
+async function generateDraft(): Promise<void> {
+    const topic = selectedIdea.value?.title || topicSteer.value;
+    if (!topic.trim()) {
+        draftError.value = 'Pick a suggested idea or type a topic first.';
+        return;
+    }
+
+    socialCopy.value = null;
+    reel.value = null;
+
+    const requests = [generateBlogDraft(topic)];
+    if (generateSocialCopy.value) {
+        requests.push(generateSocialCopyVariant(topic));
+    }
+    if (generateReel.value) {
+        requests.push(generateReelVariant(topic));
+    }
+
+    await Promise.all(requests);
+}
+
 function applyDraft(): void {
     if (draft.value) {
         emit('apply', draft.value);
+    }
+}
+
+async function copyToClipboard(text: string, label: string): Promise<void> {
+    try {
+        await navigator.clipboard.writeText(text);
+        toast.add({ severity: 'success', summary: `${label} copied`, life: 2000 });
+    } catch {
+        toast.add({ severity: 'error', summary: 'Could not copy to clipboard', life: 3000 });
     }
 }
 
@@ -143,6 +223,11 @@ function scoreTone(score: number): string {
             />
         </div>
 
+        <AiProgressBar
+            v-if="ideasLoading"
+            :message="progress.topics?.message ?? 'Researching current trends…'"
+            :percent="progress.topics?.progress ?? 0"
+        />
         <p v-if="ideasError" class="ai-panel__error">{{ ideasError }}</p>
 
         <ul v-if="ideas.length > 0" class="idea-list">
@@ -166,9 +251,23 @@ function scoreTone(score: number): string {
             </li>
         </ul>
 
-        <div class="ai-panel__toggle">
-            <span>Generate cover image</span>
-            <ToggleSwitch v-model="generateCoverImage" input-id="generate_cover_image" aria-label="Generate cover image" />
+        <div class="ai-panel__variants">
+            <p class="ai-panel__variants-label">Also generate</p>
+
+            <div class="ai-panel__toggle">
+                <span><i class="pi pi-image" aria-hidden="true" /> Cover image</span>
+                <ToggleSwitch v-model="generateCoverImage" input-id="generate_cover_image" aria-label="Generate cover image" />
+            </div>
+
+            <div class="ai-panel__toggle">
+                <span><i class="pi pi-share-alt" aria-hidden="true" /> Social copy (LinkedIn + Instagram/Facebook)</span>
+                <ToggleSwitch v-model="generateSocialCopy" input-id="generate_social_copy" aria-label="Generate social copy" />
+            </div>
+
+            <div class="ai-panel__toggle">
+                <span><i class="pi pi-video" aria-hidden="true" /> Reel/TikTok (script + AI voiceover)</span>
+                <ToggleSwitch v-model="generateReel" input-id="generate_reel" aria-label="Generate Reel/TikTok package" />
+            </div>
         </div>
 
         <GradientButton
@@ -179,6 +278,11 @@ function scoreTone(score: number): string {
             @click="generateDraft"
         />
 
+        <AiProgressBar
+            v-if="draftLoading"
+            :message="progress.content?.message ?? 'Generating the draft…'"
+            :percent="progress.content?.progress ?? 0"
+        />
         <p v-if="draftError" class="ai-panel__error">{{ draftError }}</p>
 
         <div v-if="draft" class="draft-result">
@@ -206,6 +310,107 @@ function scoreTone(score: number): string {
             </div>
 
             <GradientButton type="button" icon="pi pi-check" label="Apply to editor" @click="applyDraft" />
+        </div>
+
+        <AiProgressBar
+            v-if="socialLoading"
+            :message="progress.social?.message ?? 'Writing social copy…'"
+            :percent="progress.social?.progress ?? 0"
+        />
+        <p v-if="socialError" class="ai-panel__error">{{ socialError }}</p>
+
+        <div v-if="socialCopy" class="variant-result">
+            <p class="variant-result__label"><i class="pi pi-share-alt" aria-hidden="true" /> Social copy</p>
+
+            <div class="variant-result__field">
+                <div class="variant-result__field-head">
+                    <span>LinkedIn</span>
+                    <button type="button" class="copy-btn" @click="copyToClipboard(socialCopy.linkedin_post, 'LinkedIn post')">
+                        <i class="pi pi-copy" aria-hidden="true" />
+                    </button>
+                </div>
+                <p class="variant-result__text">{{ socialCopy.linkedin_post }}</p>
+            </div>
+
+            <div class="variant-result__field">
+                <div class="variant-result__field-head">
+                    <span>Instagram / Facebook</span>
+                    <button type="button" class="copy-btn" @click="copyToClipboard(socialCopy.social_caption, 'Caption')">
+                        <i class="pi pi-copy" aria-hidden="true" />
+                    </button>
+                </div>
+                <p class="variant-result__text">{{ socialCopy.social_caption }}</p>
+            </div>
+
+            <div class="hashtag-list">
+                <span v-for="tag in socialCopy.hashtags" :key="tag" class="hashtag-chip">{{ tag }}</span>
+            </div>
+        </div>
+
+        <AiProgressBar
+            v-if="reelLoading"
+            :message="progress.reel?.message ?? 'Building the Reel/TikTok package…'"
+            :percent="progress.reel?.progress ?? 0"
+        />
+        <p v-if="reelError" class="ai-panel__error">{{ reelError }}</p>
+
+        <div v-if="reel" class="variant-result">
+            <p class="variant-result__label"><i class="pi pi-video" aria-hidden="true" /> Reel / TikTok</p>
+
+            <div class="reel-timeline">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Action</th>
+                            <th>On-screen text</th>
+                            <th>Voice-over</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(scene, index) in reel.scenes" :key="index">
+                            <td>{{ scene.time_range }}</td>
+                            <td>{{ scene.action }}</td>
+                            <td>{{ scene.on_screen_text }}</td>
+                            <td>{{ scene.voiceover_line }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="variant-result__field">
+                <div class="variant-result__field-head">
+                    <span>Clean script</span>
+                    <button type="button" class="copy-btn" @click="copyToClipboard(reel.clean_script, 'Script')">
+                        <i class="pi pi-copy" aria-hidden="true" />
+                    </button>
+                </div>
+                <p class="variant-result__text">{{ reel.clean_script }}</p>
+            </div>
+
+            <p class="variant-result__sound"><i class="pi pi-volume-up" aria-hidden="true" /> {{ reel.sound_suggestion }}</p>
+
+            <div v-if="reel.voiceover_audio_url" class="reel-audio">
+                <audio :src="reel.voiceover_audio_url" controls />
+                <a :href="reel.voiceover_audio_url" download class="copy-btn" aria-label="Download voiceover">
+                    <i class="pi pi-download" aria-hidden="true" />
+                </a>
+            </div>
+            <p v-else class="ai-panel__status">Voiceover unavailable — script and timeline are still ready to use.</p>
+
+            <div class="variant-result__field">
+                <div class="variant-result__field-head">
+                    <span>TikTok caption</span>
+                    <button type="button" class="copy-btn" @click="copyToClipboard(reel.tiktok_caption, 'Caption')">
+                        <i class="pi pi-copy" aria-hidden="true" />
+                    </button>
+                </div>
+                <p class="variant-result__text">{{ reel.tiktok_caption }}</p>
+            </div>
+
+            <div class="hashtag-list">
+                <span v-for="tag in reel.tiktok_hashtags" :key="tag" class="hashtag-chip">{{ tag }}</span>
+            </div>
         </div>
     </aside>
 </template>
@@ -254,12 +459,50 @@ function scoreTone(score: number): string {
     display: flex;
 }
 
+.ai-panel__variants {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+}
+
+.ai-panel__variants-label {
+    margin: 0;
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
 .ai-panel__toggle {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: var(--space-3);
     font-size: var(--text-sm);
     color: var(--text-secondary);
+}
+
+.ai-panel__toggle span {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.ai-panel__toggle .pi {
+    color: var(--accent-primary);
+}
+
+.ai-panel__status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--text-muted);
 }
 
 .ai-panel__error {
@@ -398,5 +641,134 @@ function scoreTone(score: number): string {
 .draft-result__tips ul {
     margin: 0;
     padding-left: var(--space-4);
+}
+
+.variant-result {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--border-subtle);
+}
+
+.variant-result__label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
+.variant-result__label .pi {
+    color: var(--accent-primary);
+}
+
+.variant-result__field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.variant-result__field-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    color: var(--text-secondary);
+}
+
+.variant-result__text {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--text-primary);
+    white-space: pre-line;
+}
+
+.variant-result__sound {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    font-size: var(--text-xs);
+    font-style: italic;
+    color: var(--text-muted);
+}
+
+.copy-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: border-color var(--transition), color var(--transition);
+}
+
+.copy-btn:hover {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.hashtag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.hashtag-chip {
+    padding: 2px 10px;
+    border-radius: var(--radius-full, 99px);
+    font-size: var(--text-xs);
+    font-family: var(--font-mono, monospace);
+    color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+}
+
+.reel-timeline {
+    overflow-x: auto;
+}
+
+.reel-timeline table {
+    width: 100%;
+    min-width: 32rem;
+    border-collapse: collapse;
+    font-size: var(--text-xs);
+}
+
+.reel-timeline th,
+.reel-timeline td {
+    padding: var(--space-2);
+    border-bottom: 1px solid var(--border-subtle);
+    text-align: left;
+    vertical-align: top;
+    color: var(--text-secondary);
+}
+
+.reel-timeline th {
+    color: var(--text-muted);
+    font-weight: var(--font-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.reel-audio {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.reel-audio audio {
+    flex: 1;
+    min-width: 0;
+    height: 2.25rem;
 }
 </style>

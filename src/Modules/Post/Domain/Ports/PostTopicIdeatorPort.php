@@ -16,5 +16,5 @@ interface PostTopicIdeatorPort
     /**
      * @return list<PostTopicIdeaData>
      */
-    public function suggestTopics(SuggestPostTopicsData $data): array;
+    public function suggestTopics(SuggestPostTopicsData $data, ?object $causer = null): array;
 }

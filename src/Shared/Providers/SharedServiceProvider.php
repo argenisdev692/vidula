@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\View as ViewFactory;
 use Illuminate\Support\ServiceProvider;
 use Shared\Domain\Ports\AuditPort;
 use Shared\Domain\Ports\ExportPort;
+use Shared\Domain\Ports\SpeechSynthesizerPort;
 use Shared\Domain\Ports\StoragePort;
 use Shared\Infrastructure\AI\AIClientInterface;
 use Shared\Infrastructure\AI\LaravelAIAdapter;
@@ -20,6 +21,7 @@ use Shared\Infrastructure\Research\TavilyClientInterface;
 use Shared\Infrastructure\Research\TavilyResearchAdapter;
 use Shared\Infrastructure\Resilience\CircuitBreaker\CircuitBreaker;
 use Shared\Infrastructure\Resilience\CircuitBreaker\CircuitBreakerInterface;
+use Shared\Infrastructure\Speech\ElevenLabsSpeechAdapter;
 use Shared\Infrastructure\Storage\R2StorageAdapter;
 
 /**
@@ -36,6 +38,7 @@ final class SharedServiceProvider extends ServiceProvider
         $this->app->bind(ExportPort::class, SimpleExcelExportAdapter::class);
         $this->app->bind(AIClientInterface::class, LaravelAIAdapter::class);
         $this->app->bind(TavilyClientInterface::class, TavilyResearchAdapter::class);
+        $this->app->bind(SpeechSynthesizerPort::class, ElevenLabsSpeechAdapter::class);
 
         // Per-request CSP nonce shared between the SecurityHeaders middleware
         // and the Blade root view (`{{ app('csp-nonce') }}`).

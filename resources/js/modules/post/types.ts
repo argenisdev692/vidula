@@ -105,3 +105,40 @@ export interface GeneratedPostContent {
     optimization_suggestions: string[];
     seo_analysis: { primary_keyword: string; lsi_keywords: string[] };
 }
+
+/** LinkedIn + Instagram/Facebook copy for the chosen topic/angle. */
+export interface SocialCopy {
+    linkedin_post: string;
+    social_caption: string;
+    hashtags: string[];
+}
+
+/** One row of the Reel/TikTok timeline table. */
+export interface ReelScene {
+    time_range: string;
+    action: string;
+    on_screen_text: string;
+    voiceover_line: string;
+    visual_prompt: string;
+}
+
+/** Full Reel/TikTok package, including the AI voiceover when synthesis succeeded. */
+export interface ReelPackage {
+    scenes: ReelScene[];
+    clean_script: string;
+    sound_suggestion: string;
+    tiktok_caption: string;
+    tiktok_hashtags: string[];
+    voiceover_audio_url: string | null;
+}
+
+/** One of the 4 independent AI-assist generation flows in the panel. */
+export type PostAiProgressFlow = 'topics' | 'content' | 'social' | 'reel';
+
+/** Real-time tick broadcast on the user's private channel (`post.ai.progress`). */
+export interface PostAiProgressEvent {
+    flow: PostAiProgressFlow;
+    stage: string;
+    message: string;
+    progress: number;
+}
