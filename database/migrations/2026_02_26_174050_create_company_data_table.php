@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('uuid')->unique();
             $table->string('name')->nullable();
             $table->string('company_name');
+            $table->text('description')->nullable();
             $table->string('signature_path')->nullable();
             $table->string('email')->nullable();
             $table->string('phone')->nullable();

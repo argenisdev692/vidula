@@ -22,6 +22,7 @@ import AppHeader from '@/modules/app/components/AppHeader.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import { useAuthorization } from '@/modules/auth/composables/useAuthorization';
 import TextField from '@/common/form/TextField.vue';
+import TextareaField from '@/common/form/TextareaField.vue';
 import PhoneField from '@/common/form/PhoneField.vue';
 import AddressAutocomplete from '@/common/address/AddressAutocomplete.vue';
 import SubmitButton from '@/common/form/SubmitButton.vue';
@@ -51,6 +52,7 @@ const canUpdate = computed<boolean>(() => hasPermission('UPDATE_COMPANY_DATA'));
 const form = useForm<CompanyFormValues>({
     company_name: company.value?.company_name ?? '',
     name: company.value?.name ?? '',
+    description: company.value?.description ?? '',
     email: company.value?.email ?? '',
     phone: company.value?.phone ?? '',
     address: company.value?.address ?? '',
@@ -332,6 +334,16 @@ function removeSignature(): void {
                         :error="form.errors.website"
                     />
                 </div>
+
+                <TextareaField
+                    v-model="form.description"
+                    name="description"
+                    label="Description"
+                    hint="Shown internally to describe what this platform does."
+                    :rows="3"
+                    :disabled="!canUpdate"
+                    :error="form.errors.description"
+                />
 
                 <div class="section-label">Address</div>
                 <AddressAutocomplete

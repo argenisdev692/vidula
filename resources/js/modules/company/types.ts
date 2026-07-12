@@ -10,6 +10,7 @@ export interface CompanyData {
     uuid: string;
     name: string | null;
     company_name: string;
+    description: string | null;
     signature_path: string | null;
     logo_path: string | null;
     logo_white_path: string | null;

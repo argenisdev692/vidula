@@ -30,6 +30,9 @@ class CompanySeeder extends Seeder
             'uuid' => (string) Str::uuid7(), // Se añade el UUID aquí
             'name' => 'Argenis Carrillo Gonzalez',
             'company_name' => 'Vidula',
+            'description' => 'Vidula is an AI-powered workspace for creators and educators: classroom '
+                .'management, AI-assisted content generation, social media management and social media '
+                .'campaign scheduling, all in one platform.',
             'signature_path' => null,
             'email' => 'argenis692@gmail.com',
             'phone' => '+351 963 490 414',

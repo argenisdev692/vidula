@@ -20,6 +20,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string $uuid
  * @property string|null $name
  * @property string $company_name
+ * @property string|null $description
  * @property string|null $signature_path
  * @property string|null $email
  * @property string|null $phone
@@ -92,6 +93,7 @@ class CompanyData extends Model
         'uuid',
         'name',
         'company_name',
+        'description',
         'signature_path',
         'logo_path',
         'logo_white_path',
@@ -164,6 +166,7 @@ class CompanyData extends Model
             ->logOnly([
                 'name',
                 'company_name',
+                'description',
                 'email',
                 'phone',
                 'address',

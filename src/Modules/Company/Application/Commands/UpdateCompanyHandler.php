@@ -27,6 +27,7 @@ final readonly class UpdateCompanyHandler
         $updated = DB::transaction(fn () => $this->companies->update($company, [
             'name' => $data->name,
             'company_name' => $data->companyName,
+            'description' => $data->description,
             'email' => $data->email,
             'phone' => $data->phone,
             'address' => $data->address,

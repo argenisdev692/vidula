@@ -332,9 +332,9 @@
 /* ── Quick cards ── */
 .quick {
   width: 100%;
-  max-width: 480px;
+  max-width: 560px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: var(--space-3);
   margin-top: var(--space-8);
 }

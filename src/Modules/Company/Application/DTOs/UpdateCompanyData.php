@@ -19,6 +19,7 @@ final class UpdateCompanyData extends Data
     public function __construct(
         public string $companyName,
         public ?string $name = null,
+        public ?string $description = null,
         public ?string $email = null,
         public ?string $phone = null,
         public ?string $address = null,
@@ -47,6 +48,7 @@ final class UpdateCompanyData extends Data
         return [
             'company_name' => ['required', 'string', 'max:255'],
             'name' => ['nullable', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:2000'],
             'email' => ['nullable', 'email', 'max:255'],
             // E.164 from the shared PhoneField; accepts any valid international number.
             'phone' => ['nullable', 'string', 'max:20', 'phone:INTERNATIONAL'],

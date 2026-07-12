@@ -29,6 +29,7 @@ const optionalUrl = (max = 255) =>
 export const companyFormSchema = z.object({
     company_name: z.string().trim().min(1, 'Company name is required').max(255),
     name: z.string().trim().max(255),
+    description: z.string().trim().max(2000),
     email: z
         .string()
         .trim()
