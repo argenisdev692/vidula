@@ -41,6 +41,15 @@ return [
         'key' => env('GOOGLE_MAPS_API_KEY'),
     ],
 
+    'tavily' => [
+        // Grounds AI-generated Post content in current web data (Post module —
+        // Shared\Infrastructure\Research\TavilyResearchAdapter).
+        'api_key' => env('TAVILY_API_KEY'),
+        'url' => env('TAVILY_SEARCH_URL', 'https://api.tavily.com/search'),
+        'search_depth' => env('TAVILY_SEARCH_DEPTH', 'advanced'),
+        'max_results' => env('TAVILY_MAX_RESULTS', 5),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Socialite OAuth Providers

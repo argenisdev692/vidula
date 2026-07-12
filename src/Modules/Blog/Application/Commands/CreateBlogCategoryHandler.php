@@ -7,6 +7,7 @@ namespace Modules\Blog\Application\Commands;
 use Illuminate\Support\Facades\DB;
 use Modules\Blog\Application\DTOs\BlogCategoryData;
 use Modules\Blog\Domain\Ports\BlogCategoryRepositoryPort;
+use Modules\Blog\Infrastructure\Cache\BlogCategoryPublicFeedCache;
 use Modules\Blog\Infrastructure\Persistence\Eloquent\Models\BlogCategoryEloquentModel;
 use Shared\Domain\Ports\StoragePort;
 
@@ -32,11 +33,15 @@ final readonly class CreateBlogCategoryHandler
             ? $this->storage->putFile('blog-categories', $data->image, 'public')
             : null;
 
-        return DB::transaction(fn () => $this->blogCategories->create([
+        $category = DB::transaction(fn () => $this->blogCategories->create([
             'blog_category_name' => $data->name,
             'blog_category_description' => $data->description,
             'blog_category_image' => $imagePath,
             'user_id' => $userId,
         ]));
+
+        BlogCategoryPublicFeedCache::flush();
+
+        return $category;
     }
 }

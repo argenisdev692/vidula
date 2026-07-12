@@ -27,6 +27,7 @@ use Modules\Auth\Infrastructure\Persistence\Eloquent\Models\PasswordHistoryEloqu
 use Modules\Auth\Infrastructure\Persistence\Eloquent\Models\TrustedDeviceEloquentModel;
 use Modules\Blog\Infrastructure\Persistence\Eloquent\Models\BlogCategoryEloquentModel;
 use Modules\Portfolio\Infrastructure\Persistence\Eloquent\Models\PortfolioEloquentModel;
+use Modules\Post\Infrastructure\Persistence\Eloquent\Models\PostEloquentModel;
 use Modules\Services\Infrastructure\Persistence\Eloquent\Models\ServiceEloquentModel;
 use Modules\Users\Application\DTOs\UserFilterData;
 use Spatie\Activitylog\Models\Activity;
@@ -303,6 +304,16 @@ class User extends Authenticatable implements MustVerifyEmailContract
     public function blogCategories(): HasMany
     {
         return $this->hasMany(BlogCategoryEloquentModel::class);
+    }
+
+    /**
+     * Blog posts authored by this user.
+     *
+     * @return HasMany<PostEloquentModel, $this>
+     */
+    public function posts(): HasMany
+    {
+        return $this->hasMany(PostEloquentModel::class);
     }
 
     /**

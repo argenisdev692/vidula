@@ -11,9 +11,13 @@ use Illuminate\Support\ServiceProvider;
 use Shared\Domain\Ports\AuditPort;
 use Shared\Domain\Ports\ExportPort;
 use Shared\Domain\Ports\StoragePort;
+use Shared\Infrastructure\AI\AIClientInterface;
+use Shared\Infrastructure\AI\LaravelAIAdapter;
 use Shared\Infrastructure\Audit\SpatieActivityLogAdapter;
 use Shared\Infrastructure\Company\CompanyProfile;
 use Shared\Infrastructure\Export\SimpleExcelExportAdapter;
+use Shared\Infrastructure\Research\TavilyClientInterface;
+use Shared\Infrastructure\Research\TavilyResearchAdapter;
 use Shared\Infrastructure\Resilience\CircuitBreaker\CircuitBreaker;
 use Shared\Infrastructure\Resilience\CircuitBreaker\CircuitBreakerInterface;
 use Shared\Infrastructure\Storage\R2StorageAdapter;
@@ -30,6 +34,8 @@ final class SharedServiceProvider extends ServiceProvider
         $this->app->bind(StoragePort::class, R2StorageAdapter::class);
         // CSV/Excel handled here; PDF delegated to DomPdfExportAdapter (auto-resolved).
         $this->app->bind(ExportPort::class, SimpleExcelExportAdapter::class);
+        $this->app->bind(AIClientInterface::class, LaravelAIAdapter::class);
+        $this->app->bind(TavilyClientInterface::class, TavilyResearchAdapter::class);
 
         // Per-request CSP nonce shared between the SecurityHeaders middleware
         // and the Blade root view (`{{ app('csp-nonce') }}`).

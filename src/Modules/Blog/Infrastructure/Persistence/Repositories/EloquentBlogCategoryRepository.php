@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Blog\Infrastructure\Persistence\Repositories;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Modules\Blog\Application\DTOs\BlogCategoryFilterData;
 use Modules\Blog\Domain\Ports\BlogCategoryRepositoryPort;
 use Modules\Blog\Infrastructure\Persistence\Eloquent\Models\BlogCategoryEloquentModel;
@@ -45,6 +46,19 @@ final class EloquentBlogCategoryRepository implements BlogCategoryRepositoryPort
             ->orderByDesc('created_at')
             ->paginate($perPage)
             ->withQueryString();
+    }
+
+    /**
+     * @return Collection<int, BlogCategoryEloquentModel>
+     */
+    public function listPublic(): Collection
+    {
+        return BlogCategoryEloquentModel::query()
+            ->withCount(['posts' => fn ($q) => $q->where('post_status', 'published')])
+            ->select(['id', 'uuid', 'blog_category_name', 'blog_category_description', 'blog_category_image'])
+            ->orderBy('blog_category_name')
+            ->limit(100)
+            ->get();
     }
 
     public function findByUuid(string $uuid): ?BlogCategoryEloquentModel

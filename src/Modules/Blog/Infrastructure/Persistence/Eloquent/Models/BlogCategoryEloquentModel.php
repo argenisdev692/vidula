@@ -14,10 +14,12 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Modules\Blog\Application\DTOs\BlogCategoryFilterData;
+use Modules\Post\Infrastructure\Persistence\Eloquent\Models\PostEloquentModel;
 use Shared\Domain\Ports\StoragePort;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -73,6 +75,16 @@ final class BlogCategoryEloquentModel extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Posts filed under this category.
+     *
+     * @return HasMany<PostEloquentModel, $this>
+     */
+    public function posts(): HasMany
+    {
+        return $this->hasMany(PostEloquentModel::class, 'category_id');
     }
 
     /**

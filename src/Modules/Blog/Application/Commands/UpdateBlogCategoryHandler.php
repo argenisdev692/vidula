@@ -7,6 +7,7 @@ namespace Modules\Blog\Application\Commands;
 use Illuminate\Support\Facades\DB;
 use Modules\Blog\Application\DTOs\BlogCategoryData;
 use Modules\Blog\Domain\Ports\BlogCategoryRepositoryPort;
+use Modules\Blog\Infrastructure\Cache\BlogCategoryPublicFeedCache;
 use Modules\Blog\Infrastructure\Persistence\Eloquent\Models\BlogCategoryEloquentModel;
 use Shared\Domain\Ports\StoragePort;
 
@@ -47,6 +48,8 @@ final readonly class UpdateBlogCategoryHandler
         if (is_string($previous) && $previous !== '' && $previous !== $updated->blog_category_image) {
             $this->storage->delete($previous);
         }
+
+        BlogCategoryPublicFeedCache::flush();
 
         return $updated;
     }

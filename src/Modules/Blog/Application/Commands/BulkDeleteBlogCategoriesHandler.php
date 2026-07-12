@@ -6,6 +6,7 @@ namespace Modules\Blog\Application\Commands;
 
 use Illuminate\Support\Facades\DB;
 use Modules\Blog\Domain\Ports\BlogCategoryRepositoryPort;
+use Modules\Blog\Infrastructure\Cache\BlogCategoryPublicFeedCache;
 use Shared\Application\DTOs\BulkUuidsData;
 
 /**
@@ -19,6 +20,10 @@ final readonly class BulkDeleteBlogCategoriesHandler
 
     public function handle(BulkUuidsData $data): int
     {
-        return DB::transaction(fn () => $this->blogCategories->bulkSoftDeleteByUuid($data->uuids));
+        $count = DB::transaction(fn () => $this->blogCategories->bulkSoftDeleteByUuid($data->uuids));
+
+        BlogCategoryPublicFeedCache::flush();
+
+        return $count;
     }
 }

@@ -6,6 +6,7 @@ namespace Modules\Blog\Application\Commands;
 
 use Illuminate\Support\Facades\DB;
 use Modules\Blog\Domain\Ports\BlogCategoryRepositoryPort;
+use Modules\Blog\Infrastructure\Cache\BlogCategoryPublicFeedCache;
 
 /**
  * Soft-deletes a single blog category by UUID. The image object is intentionally
@@ -18,6 +19,10 @@ final readonly class DeleteBlogCategoryHandler
 
     public function handle(string $uuid): bool
     {
-        return DB::transaction(fn () => $this->blogCategories->softDelete($uuid));
+        $result = DB::transaction(fn () => $this->blogCategories->softDelete($uuid));
+
+        BlogCategoryPublicFeedCache::flush();
+
+        return $result;
     }
 }

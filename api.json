@@ -224,6 +224,124 @@
                 }
             }
         },
+        "/appointments": {
+            "get": {
+                "operationId": "appointments.index",
+                "description": "Returns a paginated, filterable list of leads/appointments. `per_page` is\ncapped at 100 to bound resource consumption (OWASP API4).",
+                "summary": "List appointments",
+                "tags": [
+                    "AppointmentApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "appointments.book",
+                "description": "Accepts a scheduling request from the public landing page and stores the\nlead, validating the requested date/time against the current\navailability calendar (never in the past, inside an open window, not\nalready taken).",
+                "summary": "Book an appointment",
+                "tags": [
+                    "PublicAppointmentApi"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BookAppointmentData"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Thanks! Your appointment request has been received."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/appointments/{uuid}": {
+            "get": {
+                "operationId": "appointments.show",
+                "description": "Returns a single lead/appointment by UUID.",
+                "summary": "Show an appointment",
+                "tags": [
+                    "AppointmentApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AppointmentEloquentModel"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "operationId": "auth.login",
@@ -1775,6 +1893,182 @@
                 }
             }
         },
+        "/posts": {
+            "get": {
+                "operationId": "posts.index",
+                "description": "Returns a paginated list of posts. `per_page` is capped at 100 to bound\nresource consumption (OWASP API4).",
+                "summary": "List posts",
+                "tags": [
+                    "PostApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/posts/{uuid}": {
+            "get": {
+                "operationId": "posts.show",
+                "description": "Returns a single post by UUID.",
+                "summary": "Show a post",
+                "tags": [
+                    "PostApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PostEloquentModel"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/appointments/honeypot": {
+            "get": {
+                "operationId": "appointments.honeypot",
+                "description": "Returns the field names + encrypted timestamp the landing page must embed\nas hidden inputs and echo back on submit.",
+                "summary": "Get honeypot fields",
+                "tags": [
+                    "PublicAppointmentApi"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {}
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/blog-categories/public": {
+            "get": {
+                "operationId": "blog-categories.public",
+                "description": "Every active category with its published post count, for the landing\npage's category selector. Wrapped in a `data` envelope to match the\nrest of this API's JSON shape.",
+                "summary": "List public blog categories",
+                "tags": [
+                    "PublicBlogCategory"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
         "/contact-supports/honeypot": {
             "get": {
                 "operationId": "contact-supports.honeypot",
@@ -1824,6 +2118,72 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/PaginatedDataCollection"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/posts/public": {
+            "get": {
+                "operationId": "posts.public",
+                "description": "Paginated feed of published posts for the landing page, optionally\nscoped to one category via `?category_uuid=`. `per_page` is capped at\n100 to bound resource consumption (OWASP API4).",
+                "summary": "List public posts",
+                "tags": [
+                    "PublicPost"
+                ],
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`PaginatedDataCollection`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedDataCollection"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/posts/public/{slug}": {
+            "get": {
+                "operationId": "posts.public.show",
+                "description": "Returns a single published post by its slug, including full content \u2014\nfor the landing page's article detail view.",
+                "summary": "Show a public post",
+                "tags": [
+                    "PublicPost"
+                ],
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`PostPublicReadModel`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PostPublicReadModel"
                                 }
                             }
                         }
@@ -2373,6 +2733,230 @@
             }
         },
         "schemas": {
+            "AppointmentEloquentModel": {
+                "type": "object",
+                "properties": {
+                    "uuid": {
+                        "type": "string"
+                    },
+                    "first_name": {
+                        "type": "string"
+                    },
+                    "last_name": {
+                        "type": "string"
+                    },
+                    "client_type": {
+                        "$ref": "#/components/schemas/ClientType"
+                    },
+                    "company_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "project_type": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/ProjectType"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "phone": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "address": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "address_2": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "zip_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "city": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "state": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "country": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "country_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "latitude": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "longitude": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "sms_consent": {
+                        "type": "boolean"
+                    },
+                    "readed": {
+                        "type": "boolean"
+                    },
+                    "is_spam": {
+                        "type": "boolean"
+                    },
+                    "spam_score": {
+                        "type": "integer"
+                    },
+                    "spam_reasons": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {}
+                    },
+                    "status_lead": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/StatusLead"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "meeting_status": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/MeetingStatus"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "scheduled_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "previous_scheduled_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "follow_up_calls": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {}
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "owner": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "deleted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "uuid",
+                    "first_name",
+                    "last_name",
+                    "client_type",
+                    "company_name",
+                    "project_type",
+                    "email",
+                    "phone",
+                    "address",
+                    "address_2",
+                    "zip_code",
+                    "city",
+                    "state",
+                    "country",
+                    "country_code",
+                    "latitude",
+                    "longitude",
+                    "sms_consent",
+                    "readed",
+                    "is_spam",
+                    "spam_score",
+                    "spam_reasons",
+                    "status_lead",
+                    "meeting_status",
+                    "scheduled_at",
+                    "previous_scheduled_at",
+                    "follow_up_calls",
+                    "notes",
+                    "owner",
+                    "deleted_at",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "AppointmentEloquentModel"
+            },
             "AuthUserData": {
                 "type": "object",
                 "additionalProperties": {},
@@ -2381,9 +2965,6 @@
             "AvailabilityExceptionEloquentModel": {
                 "type": "object",
                 "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
                     "uuid": {
                         "type": "string"
                     },
@@ -2438,7 +3019,6 @@
                     }
                 },
                 "required": [
-                    "id",
                     "uuid",
                     "date",
                     "is_available",
@@ -2455,9 +3035,6 @@
             "AvailabilityRuleEloquentModel": {
                 "type": "object",
                 "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
                     "uuid": {
                         "type": "string"
                     },
@@ -2496,7 +3073,6 @@
                     }
                 },
                 "required": [
-                    "id",
                     "uuid",
                     "day_of_week",
                     "start_time",
@@ -2511,9 +3087,6 @@
             "BlogCategoryEloquentModel": {
                 "type": "object",
                 "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
                     "uuid": {
                         "type": "string"
                     },
@@ -2564,7 +3137,6 @@
                     }
                 },
                 "required": [
-                    "id",
                     "uuid",
                     "blog_category_name",
                     "blog_category_description",
@@ -2576,6 +3148,157 @@
                     "image_url"
                 ],
                 "title": "BlogCategoryEloquentModel"
+            },
+            "BookAppointmentData": {
+                "type": "object",
+                "description": "PUBLIC booking payload \u2014 the only surface the Astro landing page posts to\n(`POST /api/appointments`). Unlike the admin {@see AppointmentData}, this DTO\nrequires `scheduled_at`: a first-time booking always requests a specific\ndate/time, validated by {@see AppointmentScheduler}\n(not in the past, inside an open availability window, not already taken).",
+                "properties": {
+                    "first_name": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "last_name": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "client_type": {
+                        "type": "string",
+                        "enum": [
+                            "company",
+                            "individual"
+                        ]
+                    },
+                    "company_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "project_type": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "new_website",
+                            "redesign",
+                            "ecommerce",
+                            "landing_page",
+                            "maintenance",
+                            "other",
+                            null
+                        ]
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "maxLength": 255
+                    },
+                    "phone": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 20
+                    },
+                    "address": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "address_2": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "zip_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 20
+                    },
+                    "city": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 120
+                    },
+                    "state": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 120
+                    },
+                    "country": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 120
+                    },
+                    "country_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "minLength": 2,
+                        "maxLength": 2
+                    },
+                    "latitude": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": -90,
+                        "maximum": 90
+                    },
+                    "longitude": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": -180,
+                        "maximum": 180
+                    },
+                    "scheduled_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "sms_consent": {
+                        "type": "boolean"
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 5000
+                    }
+                },
+                "required": [
+                    "first_name",
+                    "last_name",
+                    "client_type",
+                    "email",
+                    "scheduled_at"
+                ],
+                "title": "BookAppointmentData"
+            },
+            "ClientType": {
+                "type": "string",
+                "enum": [
+                    "company",
+                    "individual"
+                ],
+                "title": "ClientType"
             },
             "ContactSupportData": {
                 "type": "object",
@@ -2623,9 +3346,6 @@
             "ContactSupportEloquentModel": {
                 "type": "object",
                 "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
                     "uuid": {
                         "type": "string"
                     },
@@ -2689,7 +3409,6 @@
                     }
                 },
                 "required": [
-                    "id",
                     "uuid",
                     "first_name",
                     "last_name",
@@ -2833,6 +3552,16 @@
                     "total"
                 ],
                 "title": "LengthAwarePaginator"
+            },
+            "MeetingStatus": {
+                "type": "string",
+                "description": "Lifecycle of a booked meeting. Null (no case) means \"requested, not yet  * confirmed\" \u2014 the three states below are only reached through the dedicated Confirm / Reschedule / Cancel command handlers, never a generic update.\n",
+                "enum": [
+                    "Confirmed",
+                    "Rescheduled",
+                    "Cancelled"
+                ],
+                "title": "MeetingStatus"
             },
             "PaginatedDataCollection": {
                 "type": "object",
@@ -2994,6 +3723,194 @@
                 ],
                 "title": "PortfolioEloquentModel"
             },
+            "PostEloquentModel": {
+                "type": "object",
+                "properties": {
+                    "uuid": {
+                        "type": "string"
+                    },
+                    "post_title": {
+                        "type": "string"
+                    },
+                    "post_title_slug": {
+                        "type": "string"
+                    },
+                    "post_content": {
+                        "type": "string"
+                    },
+                    "post_excerpt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "post_cover_image": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "meta_title": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "meta_description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "meta_keywords": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "post_status": {
+                        "$ref": "#/components/schemas/PostStatus"
+                    },
+                    "scheduled_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "published_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "is_ai_generated": {
+                        "type": "boolean"
+                    },
+                    "ai_provider": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "ai_generated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "seo_score": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "eeat_score": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "human_writing_index": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "ai_detection_risk": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "ai_scores": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {}
+                    },
+                    "deleted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "cover_image_url": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "uuid",
+                    "post_title",
+                    "post_title_slug",
+                    "post_content",
+                    "post_excerpt",
+                    "post_cover_image",
+                    "meta_title",
+                    "meta_description",
+                    "meta_keywords",
+                    "post_status",
+                    "scheduled_at",
+                    "published_at",
+                    "is_ai_generated",
+                    "ai_provider",
+                    "ai_generated_at",
+                    "seo_score",
+                    "eeat_score",
+                    "human_writing_index",
+                    "ai_detection_risk",
+                    "ai_scores",
+                    "deleted_at",
+                    "created_at",
+                    "updated_at",
+                    "cover_image_url"
+                ],
+                "title": "PostEloquentModel"
+            },
+            "PostPublicReadModel": {
+                "type": "object",
+                "additionalProperties": {},
+                "title": "PostPublicReadModel"
+            },
+            "PostStatus": {
+                "type": "string",
+                "enum": [
+                    "draft",
+                    "published",
+                    "scheduled"
+                ],
+                "title": "PostStatus"
+            },
+            "ProjectType": {
+                "type": "string",
+                "enum": [
+                    "new_website",
+                    "redesign",
+                    "ecommerce",
+                    "landing_page",
+                    "maintenance",
+                    "other"
+                ],
+                "title": "ProjectType"
+            },
             "Role": {
                 "type": "object",
                 "properties": {
@@ -3107,6 +4024,17 @@
                     "updated_at"
                 ],
                 "title": "ServiceEloquentModel"
+            },
+            "StatusLead": {
+                "type": "string",
+                "description": "Sales pipeline stage for a captured lead. `New` is the default on capture; {@see AddFollowUpCallHandler} auto -advances a `New` lead to `Called` on the first logged call attempt.\n",
+                "enum": [
+                    "New",
+                    "Called",
+                    "Pending",
+                    "Declined"
+                ],
+                "title": "StatusLead"
             },
             "User": {
                 "type": "object",

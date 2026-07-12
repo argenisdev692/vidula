@@ -14,6 +14,7 @@ use Modules\Blog\Providers\BlogServiceProvider;
 use Modules\Company\Providers\CompanyServiceProvider;
 use Modules\ContactSupport\Providers\ContactSupportServiceProvider;
 use Modules\Portfolio\Providers\PortfolioServiceProvider;
+use Modules\Post\Providers\PostServiceProvider;
 use Modules\Services\Providers\ServicesServiceProvider;
 use Modules\Users\Providers\UsersServiceProvider;
 use Shared\Providers\SharedServiceProvider;
@@ -36,4 +37,5 @@ return [
     PortfolioServiceProvider::class,
     ServicesServiceProvider::class,
     AppointmentServiceProvider::class,
+    PostServiceProvider::class,
 ];

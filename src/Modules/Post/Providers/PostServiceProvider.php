@@ -1,0 +1,33 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Post\Providers;
+
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\ServiceProvider;
+use Modules\Post\Domain\Ports\PostContentGeneratorPort;
+use Modules\Post\Domain\Ports\PostRepositoryPort;
+use Modules\Post\Domain\Ports\PostTopicIdeatorPort;
+use Modules\Post\Infrastructure\Ai\LaravelAiPostAssistantAdapter;
+use Modules\Post\Infrastructure\Persistence\Repositories\EloquentPostRepository;
+
+final class PostServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        $this->app->bind(PostRepositoryPort::class, EloquentPostRepository::class);
+
+        // Both AI ports resolve to the same adapter instance per request — one
+        // Tavily research round-trip is shared if a caller ever needs both.
+        $this->app->singleton(LaravelAiPostAssistantAdapter::class);
+        $this->app->bind(PostTopicIdeatorPort::class, LaravelAiPostAssistantAdapter::class);
+        $this->app->bind(PostContentGeneratorPort::class, LaravelAiPostAssistantAdapter::class);
+    }
+
+    public function boot(): void
+    {
+        Route::middleware('web')->group(__DIR__.'/../Infrastructure/Routes/web.php');
+        Route::middleware('api')->prefix('api')->group(__DIR__.'/../Infrastructure/Routes/api.php');
+    }
+}

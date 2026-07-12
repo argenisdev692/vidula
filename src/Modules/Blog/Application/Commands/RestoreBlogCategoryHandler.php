@@ -6,6 +6,7 @@ namespace Modules\Blog\Application\Commands;
 
 use Illuminate\Support\Facades\DB;
 use Modules\Blog\Domain\Ports\BlogCategoryRepositoryPort;
+use Modules\Blog\Infrastructure\Cache\BlogCategoryPublicFeedCache;
 
 /**
  * Restores a soft-deleted blog category by UUID. Authorization
@@ -17,6 +18,10 @@ final readonly class RestoreBlogCategoryHandler
 
     public function handle(string $uuid): bool
     {
-        return DB::transaction(fn () => $this->blogCategories->restore($uuid));
+        $result = DB::transaction(fn () => $this->blogCategories->restore($uuid));
+
+        BlogCategoryPublicFeedCache::flush();
+
+        return $result;
     }
 }

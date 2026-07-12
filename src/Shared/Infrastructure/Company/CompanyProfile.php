@@ -24,7 +24,7 @@ use Throwable;
  * A null column falls back to the bundled asset served from APP_URL. R2 failures
  * degrade to the bundled asset rather than breaking every render.
  *
- * @phpstan-type CompanyArray array{name: string, url: ?string, logo_url: string, logo_white_url: string, mark_url: string, address: ?string, support_email: ?string, socials: array<string, string>}
+ * @phpstan-type CompanyArray array{name: string, description: ?string, url: ?string, logo_url: string, logo_white_url: string, mark_url: string, address: ?string, support_email: ?string, socials: array<string, string>}
  */
 final class CompanyProfile
 {
@@ -50,6 +50,9 @@ final class CompanyProfile
 
             return [
                 'name' => (string) ($company?->company_name ?: config('app.name')),
+                // AI context for the Post module's topic ideation (never rendered
+                // in emails/hero — only consumed server-side, harmless addition).
+                'description' => $company?->description,
                 'url' => $company?->website ?: config('app.url'),
                 'logo_url' => self::logoUrl($company?->logo_path, self::FALLBACK_LOGO),
                 'logo_white_url' => self::logoUrl($company?->logo_white_path, self::FALLBACK_LOGO_WHITE),
