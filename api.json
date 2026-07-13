@@ -1207,6 +1207,253 @@
                 }
             }
         },
+        "/campaigns": {
+            "get": {
+                "operationId": "campaigns.index",
+                "description": "Returns a paginated list. `per_page` is capped at 100 to bound resource\nconsumption (OWASP API4).",
+                "summary": "List campaigns",
+                "tags": [
+                    "CampaignApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/campaigns/ai/suggest-topics": {
+            "post": {
+                "operationId": "campaigns.ai.suggest-topics",
+                "description": "Returns exactly 10 candidate Meta Ads lead-gen angles classified by\nTOFU/MOFU/BOFU/LOYALTY funnel stage, grounded in the company profile\nand current web trends. Real, billed provider request.",
+                "summary": "Suggest AI campaign angles",
+                "tags": [
+                    "CampaignApi"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SuggestCampaignTopicsData"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/CampaignTopicIdeaData"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/campaigns/ai/generate-campaign": {
+            "post": {
+                "operationId": "campaigns.ai.generate-campaign",
+                "description": "Returns immediately with a `generating` row and kicks off the\nup-to-5-iteration quality loop in the background \u2014 poll `show()` or\nsubscribe to `campaigns.ai.progress` for completion. Real, billed\nprovider request.",
+                "summary": "Generate a Meta Ads campaign",
+                "tags": [
+                    "CampaignApi"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GenerateCampaignData"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "202": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/CampaignEloquentModel"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/campaigns/{uuid}": {
+            "get": {
+                "operationId": "campaigns.show",
+                "description": "Returns a single campaign by UUID, including per-platform Meta Ads copy\nand success-probability scores.",
+                "summary": "Show a campaign",
+                "tags": [
+                    "CampaignApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/CampaignEloquentModel"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/contact-supports": {
             "get": {
                 "operationId": "contact-supports.index",
@@ -3817,6 +4064,88 @@
                 ],
                 "title": "BusinessGoal"
             },
+            "CampaignAdFormat": {
+                "type": "string",
+                "description": "Meta Ads placement/format. `LeadForm` targets Meta's native Instant Forms \u2014 the single highest-intent lead-gen unit on Meta \u2014 and is the format the generation agent leans on when `business_goal` is Leads.\n",
+                "enum": [
+                    "feed",
+                    "story",
+                    "reel",
+                    "carousel",
+                    "lead_form"
+                ],
+                "title": "CampaignAdFormat"
+            },
+            "CampaignBrandVoice": {
+                "type": "string",
+                "enum": [
+                    "professional",
+                    "conversational",
+                    "trendy",
+                    "inspirational",
+                    "humorous"
+                ],
+                "title": "CampaignBrandVoice"
+            },
+            "CampaignBusinessGoal": {
+                "type": "string",
+                "description": "Campaigns is a paid Meta Ads module \u2014 every goal here is acquisition or retention-oriented, unlike SocialMedia's organic set (which also allows 'viral'/'community'). Own Domain enum copy \u2014 modules never cross-import.\n",
+                "enum": [
+                    "awareness",
+                    "engagement",
+                    "leads",
+                    "sales",
+                    "retention"
+                ],
+                "title": "CampaignBusinessGoal"
+            },
+            "CampaignEloquentModel": {
+                "type": "object",
+                "properties": {
+                    "cover_image_url": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "cover_image_url"
+                ],
+                "title": "CampaignEloquentModel"
+            },
+            "CampaignFunnelStage": {
+                "type": "string",
+                "description": "TOFU/MOFU/BOFU/LOYALTY classification the topic-ideation agent assigns to every candidate Meta Ads angle. Drives which CTA and Meta objective rules the generation agent applies \u2014 Loyalty is the 4th stage (retention/ retargeting) real Meta Ads accounts budget separately from acquisition, per 2026 full-funnel playbooks (60-70% TOFU / 20-30% MOFU / 5-10% BOFU / 5-10% Loyalty budget split).\n",
+                "enum": [
+                    "tofu",
+                    "mofu",
+                    "bofu",
+                    "loyalty"
+                ],
+                "title": "CampaignFunnelStage"
+            },
+            "CampaignLanguage": {
+                "type": "string",
+                "description": "Output language the user picks for AI generation \u2014 never inferred, always explicit (the same niche can be worked in either market).\n",
+                "enum": [
+                    "es",
+                    "en"
+                ],
+                "title": "CampaignLanguage"
+            },
+            "CampaignPlatform": {
+                "type": "string",
+                "description": "Meta Ads surface the campaign targets. 'Both' generates adapted copy for Facebook AND Instagram in one attempt (see PlatformCampaignContentData) \u2014 a single angle rarely needs a 3rd Meta surface, unlike SocialMedia's 5-network spread, so this stays a flat enum rather than a multi-select.\n",
+                "enum": [
+                    "facebook",
+                    "instagram",
+                    "both"
+                ],
+                "title": "CampaignPlatform"
+            },
+            "CampaignTopicIdeaData": {
+                "type": "object",
+                "additionalProperties": {},
+                "title": "CampaignTopicIdeaData"
+            },
             "ClientType": {
                 "type": "string",
                 "enum": [
@@ -3979,6 +4308,91 @@
                     "bofu"
                 ],
                 "title": "FunnelStage"
+            },
+            "GenerateCampaignData": {
+                "type": "object",
+                "description": "Input for Step 2 (quality-loop campaign generation). One instance is\nreused across every iteration of\n{@see \\Modules\\Campaigns\\Infrastructure\\Queue\\GenerateCampaignJob}; only\nthe previous-scores/weaknesses feedback (passed separately to the port)\nchanges between iterations.",
+                "properties": {
+                    "topic": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "provider": {
+                        "type": "string",
+                        "enum": [
+                            "openai",
+                            "anthropic",
+                            "gemini"
+                        ]
+                    },
+                    "language": {
+                        "$ref": "#/components/schemas/CampaignLanguage"
+                    },
+                    "business_goal": {
+                        "$ref": "#/components/schemas/CampaignBusinessGoal"
+                    },
+                    "brand_voice": {
+                        "$ref": "#/components/schemas/CampaignBrandVoice"
+                    },
+                    "funnel_stage": {
+                        "$ref": "#/components/schemas/CampaignFunnelStage"
+                    },
+                    "platform": {
+                        "$ref": "#/components/schemas/CampaignPlatform"
+                    },
+                    "ad_format": {
+                        "$ref": "#/components/schemas/CampaignAdFormat"
+                    },
+                    "angle": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 500
+                    },
+                    "hook": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 500
+                    },
+                    "key_trend": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "niche": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "audience": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "generate_images": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "topic",
+                    "provider",
+                    "language",
+                    "business_goal",
+                    "brand_voice",
+                    "funnel_stage",
+                    "platform",
+                    "ad_format"
+                ],
+                "title": "GenerateCampaignData"
             },
             "GenerateContentVariantData": {
                 "type": "object",
@@ -5049,6 +5463,52 @@
                     "Declined"
                 ],
                 "title": "StatusLead"
+            },
+            "SuggestCampaignTopicsData": {
+                "type": "object",
+                "description": "Input for Step 1 (10 Meta Ads lead-gen angle candidates). `niche` is an\noptional steer \u2014 when blank the agent leans entirely on the company\nprofile + Tavily trend research, mirroring\n{@see \\Modules\\SocialMedia\\Application\\DTOs\\SuggestSocialMediaTopicsData}.",
+                "properties": {
+                    "provider": {
+                        "type": "string",
+                        "enum": [
+                            "openai",
+                            "anthropic",
+                            "gemini"
+                        ]
+                    },
+                    "language": {
+                        "$ref": "#/components/schemas/CampaignLanguage"
+                    },
+                    "niche": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "audience": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "business_goal": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/CampaignBusinessGoal"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "provider",
+                    "language"
+                ],
+                "title": "SuggestCampaignTopicsData"
             },
             "SuggestPostTopicsData": {
                 "type": "object",

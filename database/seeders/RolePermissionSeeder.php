@@ -23,7 +23,7 @@ class RolePermissionSeeder extends Seeder
      *
      * @var list<string>
      */
-    private const array MODULES = ['USERS', 'ROLES', 'PERMISSIONS', 'COMPANY_DATA', 'BLOG_CATEGORIES', 'POSTS', 'SOCIAL_MEDIA', 'CONTACT_SUPPORTS', 'AVAILABILITY_RULES', 'AVAILABILITY_EXCEPTIONS', 'APPOINTMENTS'];
+    private const array MODULES = ['USERS', 'ROLES', 'PERMISSIONS', 'COMPANY_DATA', 'BLOG_CATEGORIES', 'POSTS', 'SOCIAL_MEDIA', 'CAMPAIGNS', 'CONTACT_SUPPORTS', 'AVAILABILITY_RULES', 'AVAILABILITY_EXCEPTIONS', 'APPOINTMENTS'];
 
     /**
      * Modules with the same CRUD shape as {@see self::MODULES} but no export
@@ -91,6 +91,15 @@ class RolePermissionSeeder extends Seeder
      * @var list<string>
      */
     private const array SOCIAL_MEDIA_PUBLISH_ACTIONS = ['PUBLISH'];
+
+    /**
+     * Marking a reviewed AI-generated Meta Ads campaign as published is a
+     * distinct, deliberate action from UPDATE_CAMPAIGNS (editing the draft)
+     * — same reasoning as {@see self::SOCIAL_MEDIA_PUBLISH_ACTIONS}.
+     *
+     * @var list<string>
+     */
+    private const array CAMPAIGNS_PUBLISH_ACTIONS = ['PUBLISH'];
 
     /**
      * Read-only modules (immutable audit trail): only browse / view / export.
@@ -164,6 +173,7 @@ class RolePermissionSeeder extends Seeder
             ...$this->matrix(self::NO_EXPORT_MODULES, self::NO_EXPORT_ACTIONS),
             ...$this->matrix(['USERS'], self::USER_ACCESS_ACTIONS),
             ...$this->matrix(['SOCIAL_MEDIA'], self::SOCIAL_MEDIA_PUBLISH_ACTIONS),
+            ...$this->matrix(['CAMPAIGNS'], self::CAMPAIGNS_PUBLISH_ACTIONS),
             ...$this->matrix(self::READ_ONLY_MODULES, self::READ_ONLY_ACTIONS),
             ...$this->matrix(['BACKUPS'], self::BACKUP_ACTIONS),
             ...$this->matrix(self::SYSTEM_MONITORING_MODULES, self::SYSTEM_MONITORING_ACTIONS),

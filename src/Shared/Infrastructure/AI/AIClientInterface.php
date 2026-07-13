@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Shared\Infrastructure\AI;
 
 use Laravel\Ai\Responses\StructuredTextResponse;
+use Shared\Infrastructure\Resilience\CircuitBreaker\CircuitBreaker;
 
 /**
  * Sole LLM bridge for the application (ARCHITECTURE-PHP §"Infrastructure/AI").
@@ -12,12 +13,14 @@ use Laravel\Ai\Responses\StructuredTextResponse;
  * / Gemini) happens entirely via `config('ai.php')` + a runtime override string —
  * callers never touch a provider SDK directly.
  *
- * Scope note: this interface intentionally does NOT bundle a circuit breaker or
- * a bespoke rate limiter (Shared\Infrastructure\Resilience already ships a
- * generic CircuitBreaker for callers that need one; per-route `throttle:` guards
- * cover LLM10 Unbounded Consumption here — see Post module routes). Building a
- * dedicated LLM gateway pipeline is out of scope until a second AI-consuming
- * module needs it (YAGNI).
+ * Resilience: every call is already wrapped in {@see CircuitBreaker}
+ * inside the bound implementation ({@see LaravelAIAdapter}) — callers never
+ * wrap this interface with their own breaker. Per-route `throttle:` guards
+ * cover LLM10 Unbounded Consumption on top of that (see Post/SocialMedia/
+ * Campaigns AI-assist routes). Result caching is a separate, deliberately
+ * NOT-bundled concern: it lives in each module's own `LaravelAi*Adapter`
+ * (business-specific keys/TTL/invalidation), never here — this interface
+ * stays a pure, uncached transport.
  */
 interface AIClientInterface
 {

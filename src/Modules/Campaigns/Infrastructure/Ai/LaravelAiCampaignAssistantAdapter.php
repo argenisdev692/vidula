@@ -2,25 +2,24 @@
 
 declare(strict_types=1);
 
-namespace Modules\SocialMedia\Infrastructure\Ai;
+namespace Modules\Campaigns\Infrastructure\Ai;
 
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
-use Modules\Post\Infrastructure\Ai\LaravelAiPostAssistantAdapter;
-use Modules\SocialMedia\Application\DTOs\GeneratedSocialMediaContentData;
-use Modules\SocialMedia\Application\DTOs\GenerateSocialMediaContentData;
-use Modules\SocialMedia\Application\DTOs\PlatformContentData;
-use Modules\SocialMedia\Application\DTOs\ScoreResultData;
-use Modules\SocialMedia\Application\DTOs\ScoreSetData;
-use Modules\SocialMedia\Application\DTOs\SocialMediaTopicIdeaData;
-use Modules\SocialMedia\Application\DTOs\SuggestSocialMediaTopicsData;
-use Modules\SocialMedia\Domain\Ports\SocialMediaContentGeneratorPort;
-use Modules\SocialMedia\Domain\Ports\SocialMediaTopicIdeatorPort;
-use Modules\SocialMedia\Domain\Services\ContentQualityEvaluator;
-use Modules\SocialMedia\Infrastructure\Broadcasting\SocialMediaAiGenerationProgress;
-use Modules\SocialMedia\Infrastructure\Queue\GenerateSocialMediaContentJob;
-use Shared\Domain\Ports\SpeechSynthesizerPort;
+use Modules\Campaigns\Application\DTOs\CampaignScoreResultData;
+use Modules\Campaigns\Application\DTOs\CampaignScoreSetData;
+use Modules\Campaigns\Application\DTOs\CampaignTopicIdeaData;
+use Modules\Campaigns\Application\DTOs\GenerateCampaignData;
+use Modules\Campaigns\Application\DTOs\GeneratedCampaignData;
+use Modules\Campaigns\Application\DTOs\PlatformCampaignContentData;
+use Modules\Campaigns\Application\DTOs\SuggestCampaignTopicsData;
+use Modules\Campaigns\Domain\Ports\CampaignGeneratorPort;
+use Modules\Campaigns\Domain\Ports\CampaignIdeatorPort;
+use Modules\Campaigns\Domain\Services\CampaignQualityEvaluator;
+use Modules\Campaigns\Infrastructure\Broadcasting\CampaignAiGenerationProgress;
+use Modules\Campaigns\Infrastructure\Queue\GenerateCampaignJob;
+use Modules\SocialMedia\Infrastructure\Ai\LaravelAiSocialMediaAssistantAdapter;
 use Shared\Domain\Ports\StoragePort;
 use Shared\Infrastructure\AI\AIClientInterface;
 use Shared\Infrastructure\Branding\BrandPalette;
@@ -28,14 +27,13 @@ use Shared\Infrastructure\Company\CompanyProfile;
 use Shared\Infrastructure\Research\TavilyClientInterface;
 
 /**
- * Single adapter behind both SocialMedia AI ports — mirrors
- * {@see LaravelAiPostAssistantAdapter}: one
- * class composing the agents so the research/prompt-assembly plumbing is not
- * duplicated, while each port stays small (ISP) for its own consumer. This
- * class performs exactly ONE generation attempt per {@see self::generate()}
- * call — the 5-iteration quality loop is orchestrated by
- * {@see GenerateSocialMediaContentJob},
- * not here.
+ * Single adapter behind both Campaigns AI ports — mirrors
+ * {@see LaravelAiSocialMediaAssistantAdapter}:
+ * one class composing the agents so the research/prompt-assembly plumbing is
+ * not duplicated, while each port stays small (ISP) for its own consumer.
+ * This class performs exactly ONE generation attempt per {@see self::generate()}
+ * call — the up-to-5-iteration quality loop is orchestrated by
+ * {@see GenerateCampaignJob}, not here.
  *
  * Caching lives HERE, in the module adapter — never in the Shared AI/Tavily
  * clients (those stay pure transport + circuit breaker). `suggestTopics()`
@@ -44,7 +42,7 @@ use Shared\Infrastructure\Research\TavilyClientInterface;
  * the quality loop deliberately targets specific failing scores, so those
  * attempts are never safe to reuse from cache.
  */
-final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMediaContentGeneratorPort, SocialMediaTopicIdeatorPort
+final readonly class LaravelAiCampaignAssistantAdapter implements CampaignGeneratorPort, CampaignIdeatorPort
 {
     private const int CACHE_TTL_MINUTES = 15;
 
@@ -52,10 +50,9 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
         private AIClientInterface $ai,
         private TavilyClientInterface $research,
         private StoragePort $storage,
-        private SpeechSynthesizerPort $speech,
     ) {}
 
-    public function suggestTopics(SuggestSocialMediaTopicsData $data, ?object $causer = null): array
+    public function suggestTopics(SuggestCampaignTopicsData $data, ?object $causer = null): array
     {
         return Cache::remember(
             $this->cacheKey('suggest-topics', $data->toArray()),
@@ -65,9 +62,9 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
                 $niche = $data->niche ?? $company['description'] ?? $company['name'];
 
                 $research = $this->research->search([
-                    "{$niche} trends 2026",
-                    "{$niche} viral content",
-                    "{$niche} audience pain points",
+                    "{$niche} Meta Ads lead generation trends 2026",
+                    "{$niche} Facebook Instagram ad examples high ROI",
+                    "{$niche} audience pain points buyers",
                 ]);
 
                 $prompt = implode("\n\n", array_filter([
@@ -76,13 +73,13 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
                     $data->businessGoal !== null ? "Business goal: {$data->businessGoal}" : null,
                     "Output language: {$data->language}",
                     'Web research context:'."\n".$this->formatResearch($research),
-                    'Generate exactly 10 viral topics as specified in your instructions.',
+                    'Generate exactly 10 Meta Ads campaign angles as specified in your instructions.',
                 ]));
 
-                $response = $this->ai->generateStructured(SuggestSocialMediaTopicsAgent::class, $prompt, $data->provider);
+                $response = $this->ai->generateStructured(SuggestCampaignTopicsAgent::class, $prompt, $data->provider);
 
                 return array_map(
-                    static fn (array $topic): SocialMediaTopicIdeaData => new SocialMediaTopicIdeaData(
+                    static fn (array $topic): CampaignTopicIdeaData => new CampaignTopicIdeaData(
                         title: (string) $topic['title'],
                         angle: (string) $topic['angle'],
                         hook: (string) $topic['hook'],
@@ -90,6 +87,7 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
                         estimatedVirality: (int) $topic['estimated_virality'],
                         estimatedEngagement: (string) $topic['estimated_engagement'],
                         estimatedRoi: (int) $topic['estimated_roi'],
+                        estimatedLeadPotential: (int) $topic['estimated_lead_potential'],
                         difficulty: (string) $topic['difficulty'],
                         whyItWorks: (string) $topic['why_it_works'],
                         keyTrend: (string) $topic['key_trend'],
@@ -97,20 +95,20 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
                         contentType: (string) $topic['content_type'],
                         funnelStage: (string) $topic['funnel_stage'],
                     ),
-                    (array) $response['viral_topics'],
+                    (array) $response['campaign_topics'],
                 );
             },
         );
     }
 
     public function generate(
-        string $contentUuid,
-        GenerateSocialMediaContentData $data,
+        string $campaignUuid,
+        GenerateCampaignData $data,
         int $iteration = 1,
         array $previousWeaknesses = [],
         ?object $causer = null,
-    ): GeneratedSocialMediaContentData {
-        $attempt = fn (): GeneratedSocialMediaContentData => $this->generateAttempt($contentUuid, $data, $iteration, $previousWeaknesses, $causer);
+    ): GeneratedCampaignData {
+        $attempt = fn (): GeneratedCampaignData => $this->generateAttempt($campaignUuid, $data, $iteration, $previousWeaknesses, $causer);
 
         if ($iteration !== 1 || $previousWeaknesses !== []) {
             return $attempt();
@@ -127,23 +125,23 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
      * @param  list<array{score: string, current: int, target: int, gap: int, explanation: string}>  $previousWeaknesses
      */
     private function generateAttempt(
-        string $contentUuid,
-        GenerateSocialMediaContentData $data,
+        string $campaignUuid,
+        GenerateCampaignData $data,
         int $iteration,
         array $previousWeaknesses,
         ?object $causer,
-    ): GeneratedSocialMediaContentData {
-        $this->broadcast($causer, $contentUuid, 'researching', "Iteration {$iteration}: researching fresh context…", 15, $iteration);
+    ): GeneratedCampaignData {
+        $this->broadcast($causer, $campaignUuid, 'researching', "Iteration {$iteration}: researching fresh context…", 15, $iteration);
 
         $company = CompanyProfile::data();
         $research = $this->research->search($this->researchQueries($data, $iteration));
         $prompt = $this->buildContentPrompt($data, $company, $research, $iteration, $previousWeaknesses);
 
-        $this->broadcast($causer, $contentUuid, 'writing', "Iteration {$iteration}: writing the 5-platform package…", 45, $iteration);
+        $this->broadcast($causer, $campaignUuid, 'writing', "Iteration {$iteration}: writing the Meta Ads copy…", 45, $iteration);
 
-        $response = $this->ai->generateStructured(GenerateSocialMediaContentAgent::class, $prompt, $data->provider);
+        $response = $this->ai->generateStructured(GenerateCampaignAgent::class, $prompt, $data->provider);
 
-        $this->broadcast($causer, $contentUuid, 'scoring', "Iteration {$iteration}: scoring the attempt…", 70, $iteration);
+        $this->broadcast($causer, $campaignUuid, 'scoring', "Iteration {$iteration}: scoring the attempt…", 70, $iteration);
 
         $scores = $this->mapScores((array) $response['scores']);
 
@@ -151,17 +149,10 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
 
         foreach ((array) $response['platforms'] as $platform => $variation) {
             /** @var array<string, mixed> $variation */
-            $platforms[$platform] = $this->buildPlatformContent(
-                (string) $platform,
-                $variation,
-                $data,
-                $causer,
-                $contentUuid,
-                $iteration,
-            );
+            $platforms[$platform] = $this->buildPlatformContent((string) $platform, $variation, $data);
         }
 
-        $this->broadcast($causer, $contentUuid, 'cover_image', "Iteration {$iteration}: generating the cover image…", 90, $iteration);
+        $this->broadcast($causer, $campaignUuid, 'cover_image', "Iteration {$iteration}: generating the cover image…", 90, $iteration);
 
         /** @var array{title: string, visual: string} $coverConcept */
         $coverConcept = (array) $response['cover_image_concept'];
@@ -170,22 +161,24 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
             : null;
         $coverImageUrl = $coverImagePath !== null ? $this->storage->publicUrl($coverImagePath) : null;
 
-        $this->broadcast($causer, $contentUuid, 'done', "Iteration {$iteration}: attempt ready.", 100, $iteration);
+        $this->broadcast($causer, $campaignUuid, 'done', "Iteration {$iteration}: attempt ready.", 100, $iteration);
 
         /** @var array{content: mixed} $response */
         $content = (array) $response['content'];
 
-        return new GeneratedSocialMediaContentData(
+        return new GeneratedCampaignData(
             headline: (string) $content['headline'],
-            body: (string) $content['body'],
+            primaryText: (string) $content['primary_text'],
+            description: isset($content['description']) ? (string) $content['description'] : null,
             callToAction: (string) $content['call_to_action'],
             hashtags: (array) $content['hashtags'],
+            leadFormQuestions: (array) $content['lead_form_questions'],
+            targetingSuggestions: (array) $content['targeting_suggestions'],
             platforms: $platforms,
             coverImagePath: $coverImagePath,
             coverImageUrl: $coverImageUrl,
             coverImagePrompt: "{$coverConcept['title']} — {$coverConcept['visual']}",
             scores: $scores,
-            eeatAnalysis: (array) $response['eeat_analysis'],
             optimizationSuggestions: (array) $response['optimization_suggestions'],
             researchSources: (array) $response['research_sources'],
             tavilyDataUsed: (array) $response['tavily_data_used'],
@@ -197,14 +190,8 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
     /**
      * @param  array<string, mixed>  $variation
      */
-    private function buildPlatformContent(
-        string $platform,
-        array $variation,
-        GenerateSocialMediaContentData $data,
-        ?object $causer,
-        string $contentUuid,
-        int $iteration,
-    ): PlatformContentData {
+    private function buildPlatformContent(string $platform, array $variation, GenerateCampaignData $data): PlatformCampaignContentData
+    {
         /** @var array{title: string, visual: string} $imageConcept */
         $imageConcept = (array) $variation['image_concept'];
 
@@ -213,41 +200,29 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
             : null;
         $imageUrl = $imagePath !== null ? $this->storage->publicUrl($imagePath) : null;
 
-        $voiceoverPath = null;
-        $voiceoverUrl = null;
-
-        if ($platform === 'tiktok' && $data->generateVoiceover) {
-            $this->broadcast($causer, $contentUuid, 'voiceover', "Iteration {$iteration}: synthesizing the TikTok voiceover…", 95, $iteration);
-            $voiceoverPath = $this->generateAndStoreVoiceover((string) $variation['video_script']);
-            $voiceoverUrl = $voiceoverPath !== null ? $this->storage->publicUrl($voiceoverPath) : null;
-        }
-
-        return new PlatformContentData(
+        return new PlatformCampaignContentData(
             platform: $platform,
-            adaptedContent: (string) $variation['adapted_content'],
+            adaptedPrimaryText: (string) $variation['adapted_primary_text'],
             characterCount: (int) $variation['character_count'],
+            headline: (string) $variation['headline'],
+            description: isset($variation['description']) ? (string) $variation['description'] : null,
             hashtags: (array) $variation['hashtags'],
             imagePrompt: "{$imageConcept['title']} — {$imageConcept['visual']}",
-            isThread: (bool) ($variation['is_thread'] ?? false),
-            threadTweets: (array) ($variation['thread_tweets'] ?? []),
-            videoScript: isset($variation['video_script']) ? (string) $variation['video_script'] : null,
             imagePath: $imagePath,
             imageUrl: $imageUrl,
-            voiceoverAudioPath: $voiceoverPath,
-            voiceoverAudioUrl: $voiceoverUrl,
         );
     }
 
     /**
      * @param  array<string, mixed>  $rawScores
      */
-    private function mapScores(array $rawScores): ScoreSetData
+    private function mapScores(array $rawScores): CampaignScoreSetData
     {
-        $toResult = function (string $key, array $raw): ScoreResultData {
+        $toResult = function (string $key, array $raw): CampaignScoreResultData {
             $value = (int) $raw['value'];
-            $threshold = ContentQualityEvaluator::THRESHOLDS[$key];
+            $threshold = CampaignQualityEvaluator::THRESHOLDS[$key];
 
-            return new ScoreResultData(
+            return new CampaignScoreResultData(
                 value: $value,
                 threshold: $threshold,
                 passes: $value >= $threshold,
@@ -256,28 +231,31 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
             );
         };
 
-        $humanWritingIndex = $toResult('human_writing_index', (array) $rawScores['human_writing_index']);
+        $audienceFitScore = $toResult('audience_fit_score', (array) $rawScores['audience_fit_score']);
         $viralityScore = $toResult('virality_score', (array) $rawScores['virality_score']);
-        $engagementScore = $toResult('engagement_score', (array) $rawScores['engagement_score']);
-        $roiScore = $toResult('roi_score', (array) $rawScores['roi_score']);
-        $trendAlignment = $toResult('trend_alignment', (array) $rawScores['trend_alignment']);
+        $roiPotentialScore = $toResult('roi_potential_score', (array) $rawScores['roi_potential_score']);
+        $leadQualityScore = $toResult('lead_quality_score', (array) $rawScores['lead_quality_score']);
+        $trendRelevanceScore = $toResult('trend_relevance_score', (array) $rawScores['trend_relevance_score']);
 
-        $evaluation = (new ContentQualityEvaluator)->evaluate([
-            'human_writing_index' => $humanWritingIndex->value,
+        $evaluator = new CampaignQualityEvaluator;
+
+        $evaluation = $evaluator->evaluate([
+            'audience_fit_score' => $audienceFitScore->value,
             'virality_score' => $viralityScore->value,
-            'engagement_score' => $engagementScore->value,
-            'roi_score' => $roiScore->value,
-            'trend_alignment' => $trendAlignment->value,
+            'roi_potential_score' => $roiPotentialScore->value,
+            'lead_quality_score' => $leadQualityScore->value,
+            'trend_relevance_score' => $trendRelevanceScore->value,
         ]);
 
-        return new ScoreSetData(
-            humanWritingIndex: $humanWritingIndex,
+        return new CampaignScoreSetData(
+            audienceFitScore: $audienceFitScore,
             viralityScore: $viralityScore,
-            engagementScore: $engagementScore,
-            roiScore: $roiScore,
-            trendAlignment: $trendAlignment,
+            roiPotentialScore: $roiPotentialScore,
+            leadQualityScore: $leadQualityScore,
+            trendRelevanceScore: $trendRelevanceScore,
             allScoresPass: $evaluation->allPass,
             overallAverage: $evaluation->overallAverage,
+            successProbabilityLabel: $evaluator->successProbabilityLabel($evaluation->overallAverage),
         );
     }
 
@@ -287,18 +265,18 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
      *
      * @return list<string>
      */
-    private function researchQueries(GenerateSocialMediaContentData $data, int $iteration): array
+    private function researchQueries(GenerateCampaignData $data, int $iteration): array
     {
         $niche = $data->niche ?? $data->topic;
         $base = array_filter([
-            "{$data->topic} {$niche} 2026",
+            "{$data->topic} {$niche} Meta Ads 2026",
             $data->keyTrend !== null ? "{$data->keyTrend} statistics recent data" : null,
-            "{$niche} audience insights trends",
+            "{$niche} lead generation audience insights",
         ]);
 
         return match (true) {
             $iteration >= 4 => [...$base, "{$niche} authority sources citations", "{$data->topic} best practices"],
-            $iteration >= 2 => [...$base, "{$niche} viral examples social media", "{$data->topic} engagement benchmarks"],
+            $iteration >= 2 => [...$base, "{$niche} viral ad examples Facebook Instagram", "{$data->topic} conversion rate benchmarks"],
             default => $base,
         };
     }
@@ -309,7 +287,7 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
      * @param  list<array{score: string, current: int, target: int, gap: int, explanation: string}>  $previousWeaknesses
      */
     private function buildContentPrompt(
-        GenerateSocialMediaContentData $data,
+        GenerateCampaignData $data,
         array $company,
         array $research,
         int $iteration,
@@ -326,12 +304,14 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
             "Business goal: {$data->businessGoal}",
             "Brand voice: {$data->brandVoice}",
             "Funnel stage: {$data->funnelStage}",
+            "Meta platform: {$data->platform}",
+            "Ad format: {$data->adFormat}",
             "Output language: {$data->language}",
             'Web research context:'."\n".$this->formatResearch($research),
             $iteration === 1
-                ? 'This is the first attempt. Generate the best possible content from the start.'
+                ? 'This is the first attempt. Generate the best possible campaign from the start.'
                 : $this->formatWeaknesses($iteration, $previousWeaknesses),
-            'Write the complete 5-platform package exactly as specified in your instructions.',
+            'Write the complete Facebook + Instagram Meta Ads package exactly as specified in your instructions.',
         ]));
     }
 
@@ -349,7 +329,7 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
             $weaknesses,
         );
 
-        return "Iteration {$iteration} of ".ContentQualityEvaluator::MAX_ITERATIONS.". Previous attempt failed these scores:\n"
+        return "Iteration {$iteration} of ".CampaignQualityEvaluator::MAX_ITERATIONS.". Previous attempt failed these scores:\n"
             .implode("\n", $lines)
             ."\nDo NOT repeat the same content — change the angle, hook, or evidence for each failing score while keeping what worked.";
     }
@@ -373,7 +353,7 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
      * Wraps the agent's short concept in a deterministic template so every
      * image stays on-brand (dark navy + electric purple) regardless of what
      * the model would otherwise invent — see {@see BrandPalette}. Mirrors
-     * Post's `generateAndStoreCoverImage()`.
+     * SocialMedia's `generateAndStoreImage()`.
      */
     private function generateAndStoreImage(string $platform, string $title, string $visual): ?string
     {
@@ -382,7 +362,7 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
         $secondaryAccent = BrandPalette::SECONDARY_ACCENT;
 
         $prompt = <<<PROMPT
-            Premium tech social media graphic, dark mode, minimalist, high-end.
+            Premium tech advertising graphic, dark mode, minimalist, high-end.
             Background: deep navy blue ({$background}) with a subtle gradient
             and soft cinematic lighting from top. Centered composition: {$visual},
             rendered as a glowing 3D glass-and-neon element in electric purple
@@ -397,28 +377,9 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
         $image = $this->ai->generateImage($prompt, provider: null, size: '1:1', quality: 'high');
 
         $extension = str_contains($image['mime'], 'png') ? 'png' : 'jpg';
-        $path = 'social-media/ai/'.$platform.'/'.Str::uuid7().'.'.$extension;
+        $path = 'campaigns/ai/'.$platform.'/'.Str::uuid7().'.'.$extension;
 
         return $this->storage->put($path, base64_decode($image['base64'], true) ?: '', 'public');
-    }
-
-    /**
-     * Best-effort TikTok voiceover. Null on any failure (ElevenLabs
-     * unreachable/misconfigured) — the script remains fully usable without
-     * audio, same contract as Post's Reel package.
-     */
-    private function generateAndStoreVoiceover(string $videoScript): ?string
-    {
-        $audio = $this->speech->synthesize($videoScript);
-
-        if ($audio === null) {
-            return null;
-        }
-
-        $path = 'social-media/ai/tiktok/audio/'.Str::uuid7().'.mp3';
-        $stored = $this->storage->put($path, base64_decode($audio['base64'], true) ?: '', 'public');
-
-        return $stored;
     }
 
     /**
@@ -431,12 +392,12 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
      */
     private function cacheKey(string $operation, array $payload): string
     {
-        return 'social_media:ai:'.$operation.':'.md5(json_encode($payload, JSON_THROW_ON_ERROR));
+        return 'campaigns:ai:'.$operation.':'.md5(json_encode($payload, JSON_THROW_ON_ERROR));
     }
 
     private function broadcast(
         ?object $causer,
-        string $contentUuid,
+        string $campaignUuid,
         string $stage,
         string $message,
         int $progress,
@@ -446,9 +407,9 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
             return;
         }
 
-        broadcast(new SocialMediaAiGenerationProgress(
+        broadcast(new CampaignAiGenerationProgress(
             userId: (int) $causer->getAuthIdentifier(),
-            contentUuid: $contentUuid,
+            campaignUuid: $campaignUuid,
             stage: $stage,
             message: $message,
             progress: $progress,

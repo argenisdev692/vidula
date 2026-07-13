@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Post\Infrastructure\Ai;
 
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Modules\Post\Application\DTOs\GenerateContentVariantData;
 use Modules\Post\Application\DTOs\GeneratedPostContentData;
@@ -31,9 +32,19 @@ use Shared\Infrastructure\Research\TavilyClientInterface;
  * the same underlying `laravel/ai` + Tavily infrastructure, so one class
  * composing the agents avoids duplicating the research/prompt-assembly
  * plumbing while each port stays small (ISP) for its own consumer.
+ *
+ * Caching lives HERE, in the module adapter — never in the Shared AI/Tavily
+ * clients (`LaravelAIAdapter`/`TavilyResearchAdapter` stay pure transport +
+ * circuit breaker, no business/result caching). Each of these four calls is
+ * a real, billed provider request with no internal iteration state, so the
+ * full result is cacheable keyed on its input payload — dedupes accidental
+ * double-submits/rapid retries with identical parameters within the TTL
+ * without ever risking stale content past it.
  */
 final readonly class LaravelAiPostAssistantAdapter implements PostContentGeneratorPort, PostTopicIdeatorPort, ReelPackageGeneratorPort, SocialCopyGeneratorPort
 {
+    private const int CACHE_TTL_MINUTES = 15;
+
     public function __construct(
         private AIClientInterface $ai,
         private TavilyClientInterface $research,
@@ -43,161 +54,185 @@ final readonly class LaravelAiPostAssistantAdapter implements PostContentGenerat
 
     public function suggestTopics(SuggestPostTopicsData $data, ?object $causer = null): array
     {
-        $this->broadcast($causer, 'topics', 'researching', 'Researching current trends…', 20);
+        return Cache::remember(
+            $this->cacheKey('suggest-topics', $data->toArray()),
+            now()->addMinutes(self::CACHE_TTL_MINUTES),
+            function () use ($data, $causer): array {
+                $this->broadcast($causer, 'topics', 'researching', 'Researching current trends…', 20);
 
-        $company = CompanyProfile::data();
-        $niche = $data->topic ?? $company['description'] ?? $company['name'];
+                $company = CompanyProfile::data();
+                $niche = $data->topic ?? $company['description'] ?? $company['name'];
 
-        $research = $this->research->search([
-            "{$niche} trends 2026",
-            "{$niche} viral content ideas",
-            "{$niche} audience pain points",
-        ]);
+                $research = $this->research->search([
+                    "{$niche} trends 2026",
+                    "{$niche} viral content ideas",
+                    "{$niche} audience pain points",
+                ]);
 
-        $prompt = $this->buildTopicsPrompt($data, $company, $research);
+                $prompt = $this->buildTopicsPrompt($data, $company, $research);
 
-        $this->broadcast($causer, 'topics', 'generating', 'Drafting topic ideas…', 60);
+                $this->broadcast($causer, 'topics', 'generating', 'Drafting topic ideas…', 60);
 
-        $response = $this->ai->generateStructured(SuggestPostTopicsAgent::class, $prompt, $data->provider);
+                $response = $this->ai->generateStructured(SuggestPostTopicsAgent::class, $prompt, $data->provider);
 
-        $ideas = array_map(
-            static fn (array $idea): PostTopicIdeaData => new PostTopicIdeaData(
-                title: (string) $idea['title'],
-                angle: (string) $idea['angle'],
-                hook: (string) $idea['hook'],
-                estimatedVirality: (int) $idea['estimated_virality'],
-                estimatedRoi: (int) $idea['estimated_roi'],
-                eeatPotential: (int) $idea['eeat_potential'],
-                whyItWorks: (string) $idea['why_it_works'],
-                keyTrend: (string) $idea['key_trend'],
-            ),
-            (array) $response['content_ideas'],
+                $ideas = array_map(
+                    static fn (array $idea): PostTopicIdeaData => new PostTopicIdeaData(
+                        title: (string) $idea['title'],
+                        angle: (string) $idea['angle'],
+                        hook: (string) $idea['hook'],
+                        estimatedVirality: (int) $idea['estimated_virality'],
+                        estimatedRoi: (int) $idea['estimated_roi'],
+                        eeatPotential: (int) $idea['eeat_potential'],
+                        whyItWorks: (string) $idea['why_it_works'],
+                        keyTrend: (string) $idea['key_trend'],
+                    ),
+                    (array) $response['content_ideas'],
+                );
+
+                $this->broadcast($causer, 'topics', 'done', 'Topic ideas ready.', 100);
+
+                return $ideas;
+            },
         );
-
-        $this->broadcast($causer, 'topics', 'done', 'Topic ideas ready.', 100);
-
-        return $ideas;
     }
 
     public function generate(GeneratePostContentData $data, ?object $causer = null): GeneratedPostContentData
     {
-        $this->broadcast($causer, 'content', 'researching', 'Researching current trends…', 15);
+        return Cache::remember(
+            $this->cacheKey('generate', $data->toArray()),
+            now()->addMinutes(self::CACHE_TTL_MINUTES),
+            function () use ($data, $causer): GeneratedPostContentData {
+                $this->broadcast($causer, 'content', 'researching', 'Researching current trends…', 15);
 
-        $company = CompanyProfile::data();
-        $research = $this->research->search($this->researchQueries($data->topic, $data->keyTrend));
-        $prompt = $this->buildContentPrompt($data, $company, $research);
+                $company = CompanyProfile::data();
+                $research = $this->research->search($this->researchQueries($data->topic, $data->keyTrend));
+                $prompt = $this->buildContentPrompt($data, $company, $research);
 
-        $this->broadcast($causer, 'content', 'writing', 'Writing the blog draft…', 50);
+                $this->broadcast($causer, 'content', 'writing', 'Writing the blog draft…', 50);
 
-        $response = $this->ai->generateStructured(GeneratePostContentAgent::class, $prompt, $data->provider);
+                $response = $this->ai->generateStructured(GeneratePostContentAgent::class, $prompt, $data->provider);
 
-        /** @var array{title: string, visual: string} $concept */
-        $concept = (array) $response['cover_image_concept'];
-        $coverImagePath = null;
+                /** @var array{title: string, visual: string} $concept */
+                $concept = (array) $response['cover_image_concept'];
+                $coverImagePath = null;
 
-        if ($data->generateCoverImage) {
-            $this->broadcast($causer, 'content', 'image', 'Generating the on-brand cover image…', 80);
-            $coverImagePath = $this->generateAndStoreCoverImage((string) $concept['title'], (string) $concept['visual']);
-        }
+                if ($data->generateCoverImage) {
+                    $this->broadcast($causer, 'content', 'image', 'Generating the on-brand cover image…', 80);
+                    $coverImagePath = $this->generateAndStoreCoverImage((string) $concept['title'], (string) $concept['visual']);
+                }
 
-        $coverImageUrl = $coverImagePath !== null ? $this->storage->publicUrl($coverImagePath) : null;
+                $coverImageUrl = $coverImagePath !== null ? $this->storage->publicUrl($coverImagePath) : null;
 
-        /** @var array<string, mixed> $scores */
-        $scores = (array) $response['scores'];
-        /** @var array{primary_keyword: string, lsi_keywords: list<string>} $seoAnalysis */
-        $seoAnalysis = (array) $response['seo_analysis'];
+                /** @var array<string, mixed> $scores */
+                $scores = (array) $response['scores'];
+                /** @var array{primary_keyword: string, lsi_keywords: list<string>} $seoAnalysis */
+                $seoAnalysis = (array) $response['seo_analysis'];
 
-        $this->broadcast($causer, 'content', 'done', 'Draft ready.', 100);
+                $this->broadcast($causer, 'content', 'done', 'Draft ready.', 100);
 
-        return new GeneratedPostContentData(
-            title: (string) $response['title'],
-            content: (string) $response['content'],
-            excerpt: (string) $response['excerpt'],
-            metaTitle: (string) $response['meta_title'],
-            metaDescription: (string) $response['meta_description'],
-            metaKeywords: (string) $response['meta_keywords'],
-            coverImagePath: $coverImagePath,
-            coverImageUrl: $coverImageUrl,
-            provider: $data->provider,
-            seoScore: (int) $scores['seo_score'],
-            eeatScore: (int) $scores['eeat_score'],
-            humanWritingIndex: (int) $scores['human_writing_index'],
-            aiDetectionRisk: (int) $scores['ai_detection_risk'],
-            scores: $scores,
-            optimizationSuggestions: (array) $response['optimization_suggestions'],
-            seoAnalysis: $seoAnalysis,
+                return new GeneratedPostContentData(
+                    title: (string) $response['title'],
+                    content: (string) $response['content'],
+                    excerpt: (string) $response['excerpt'],
+                    metaTitle: (string) $response['meta_title'],
+                    metaDescription: (string) $response['meta_description'],
+                    metaKeywords: (string) $response['meta_keywords'],
+                    coverImagePath: $coverImagePath,
+                    coverImageUrl: $coverImageUrl,
+                    provider: $data->provider,
+                    seoScore: (int) $scores['seo_score'],
+                    eeatScore: (int) $scores['eeat_score'],
+                    humanWritingIndex: (int) $scores['human_writing_index'],
+                    aiDetectionRisk: (int) $scores['ai_detection_risk'],
+                    scores: $scores,
+                    optimizationSuggestions: (array) $response['optimization_suggestions'],
+                    seoAnalysis: $seoAnalysis,
+                );
+            },
         );
     }
 
     public function generateSocialCopy(GenerateContentVariantData $data, ?object $causer = null): SocialCopyData
     {
-        $this->broadcast($causer, 'social', 'researching', 'Researching current trends…', 25);
+        return Cache::remember(
+            $this->cacheKey('generate-social-copy', $data->toArray()),
+            now()->addMinutes(self::CACHE_TTL_MINUTES),
+            function () use ($data, $causer): SocialCopyData {
+                $this->broadcast($causer, 'social', 'researching', 'Researching current trends…', 25);
 
-        $company = CompanyProfile::data();
-        $research = $this->research->search($this->researchQueries($data->topic, $data->keyTrend));
-        $prompt = $this->buildVariantPrompt(
-            $data,
-            $company,
-            $research,
-            'Write the LinkedIn post and the Instagram/Facebook caption exactly as specified in your instructions.',
-        );
+                $company = CompanyProfile::data();
+                $research = $this->research->search($this->researchQueries($data->topic, $data->keyTrend));
+                $prompt = $this->buildVariantPrompt(
+                    $data,
+                    $company,
+                    $research,
+                    'Write the LinkedIn post and the Instagram/Facebook caption exactly as specified in your instructions.',
+                );
 
-        $this->broadcast($causer, 'social', 'writing', 'Writing the social copy…', 70);
+                $this->broadcast($causer, 'social', 'writing', 'Writing the social copy…', 70);
 
-        $response = $this->ai->generateStructured(GenerateSocialCopyAgent::class, $prompt, $data->provider);
+                $response = $this->ai->generateStructured(GenerateSocialCopyAgent::class, $prompt, $data->provider);
 
-        $this->broadcast($causer, 'social', 'done', 'Social copy ready.', 100);
+                $this->broadcast($causer, 'social', 'done', 'Social copy ready.', 100);
 
-        return new SocialCopyData(
-            linkedinPost: (string) $response['linkedin_post'],
-            socialCaption: (string) $response['social_caption'],
-            hashtags: (array) $response['hashtags'],
+                return new SocialCopyData(
+                    linkedinPost: (string) $response['linkedin_post'],
+                    socialCaption: (string) $response['social_caption'],
+                    hashtags: (array) $response['hashtags'],
+                );
+            },
         );
     }
 
     public function generateReelPackage(GenerateContentVariantData $data, ?object $causer = null): ReelPackageData
     {
-        $this->broadcast($causer, 'reel', 'researching', 'Researching current trends…', 15);
+        return Cache::remember(
+            $this->cacheKey('generate-reel-package', $data->toArray()),
+            now()->addMinutes(self::CACHE_TTL_MINUTES),
+            function () use ($data, $causer): ReelPackageData {
+                $this->broadcast($causer, 'reel', 'researching', 'Researching current trends…', 15);
 
-        $company = CompanyProfile::data();
-        $research = $this->research->search($this->researchQueries($data->topic, $data->keyTrend));
-        $prompt = $this->buildVariantPrompt(
-            $data,
-            $company,
-            $research,
-            'Write the complete Reel/TikTok package exactly as specified in your instructions.',
-        );
+                $company = CompanyProfile::data();
+                $research = $this->research->search($this->researchQueries($data->topic, $data->keyTrend));
+                $prompt = $this->buildVariantPrompt(
+                    $data,
+                    $company,
+                    $research,
+                    'Write the complete Reel/TikTok package exactly as specified in your instructions.',
+                );
 
-        $this->broadcast($causer, 'reel', 'writing', 'Writing the Reel/TikTok script…', 45);
+                $this->broadcast($causer, 'reel', 'writing', 'Writing the Reel/TikTok script…', 45);
 
-        $response = $this->ai->generateStructured(GenerateReelPackageAgent::class, $prompt, $data->provider);
+                $response = $this->ai->generateStructured(GenerateReelPackageAgent::class, $prompt, $data->provider);
 
-        $scenes = array_map(
-            static fn (array $scene): ReelSceneData => new ReelSceneData(
-                timeRange: (string) $scene['time_range'],
-                action: (string) $scene['action'],
-                onScreenText: (string) $scene['on_screen_text'],
-                voiceoverLine: (string) $scene['voiceover_line'],
-                visualPrompt: (string) $scene['visual_prompt'],
-            ),
-            (array) $response['scenes'],
-        );
+                $scenes = array_map(
+                    static fn (array $scene): ReelSceneData => new ReelSceneData(
+                        timeRange: (string) $scene['time_range'],
+                        action: (string) $scene['action'],
+                        onScreenText: (string) $scene['on_screen_text'],
+                        voiceoverLine: (string) $scene['voiceover_line'],
+                        visualPrompt: (string) $scene['visual_prompt'],
+                    ),
+                    (array) $response['scenes'],
+                );
 
-        $cleanScript = (string) $response['clean_script'];
+                $cleanScript = (string) $response['clean_script'];
 
-        $this->broadcast($causer, 'reel', 'voiceover', 'Synthesizing the AI voiceover…', 80);
+                $this->broadcast($causer, 'reel', 'voiceover', 'Synthesizing the AI voiceover…', 80);
 
-        $voiceoverAudioUrl = $this->generateAndStoreVoiceover($cleanScript);
+                $voiceoverAudioUrl = $this->generateAndStoreVoiceover($cleanScript);
 
-        $this->broadcast($causer, 'reel', 'done', 'Reel package ready.', 100);
+                $this->broadcast($causer, 'reel', 'done', 'Reel package ready.', 100);
 
-        return new ReelPackageData(
-            scenes: $scenes,
-            cleanScript: $cleanScript,
-            soundSuggestion: (string) $response['sound_suggestion'],
-            tiktokCaption: (string) $response['tiktok_caption'],
-            tiktokHashtags: (array) $response['tiktok_hashtags'],
-            voiceoverAudioUrl: $voiceoverAudioUrl,
+                return new ReelPackageData(
+                    scenes: $scenes,
+                    cleanScript: $cleanScript,
+                    soundSuggestion: (string) $response['sound_suggestion'],
+                    tiktokCaption: (string) $response['tiktok_caption'],
+                    tiktokHashtags: (array) $response['tiktok_hashtags'],
+                    voiceoverAudioUrl: $voiceoverAudioUrl,
+                );
+            },
         );
     }
 
@@ -220,6 +255,20 @@ final readonly class LaravelAiPostAssistantAdapter implements PostContentGenerat
             message: $message,
             progress: $progress,
         ));
+    }
+
+    /**
+     * Deterministic cache key for one AI operation, scoped by every input
+     * field that affects the output (via the DTO's own `toArray()` — stays
+     * correct automatically if a field is ever added). `$causer` is
+     * deliberately excluded: two different users requesting the identical
+     * payload should share the cache entry.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    private function cacheKey(string $operation, array $payload): string
+    {
+        return 'post:ai:'.$operation.':'.md5(json_encode($payload, JSON_THROW_ON_ERROR));
     }
 
     /**

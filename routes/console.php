@@ -31,3 +31,4 @@ Schedule::command('availability:sync-holidays')->cron('0 0 31 12 *')->onOneServe
 // tick is due — no separate "same day vs. future" branch needed.
 Schedule::command('posts:publish-scheduled')->everyMinute()->withoutOverlapping()->onOneServer();
 Schedule::command('social-media:publish-scheduled')->everyMinute()->withoutOverlapping()->onOneServer();
+Schedule::command('campaigns:publish-scheduled')->everyMinute()->withoutOverlapping()->onOneServer();
