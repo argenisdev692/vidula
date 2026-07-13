@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\ContactSupport\Application\DTOs\ContactSupportData;
 use Modules\ContactSupport\Domain\Ports\ContactSupportRepositoryPort;
 use Modules\ContactSupport\Domain\Services\SpamGuard;
+use Modules\ContactSupport\Infrastructure\Broadcasting\ContactSupportSubmitted;
 use Modules\ContactSupport\Infrastructure\Persistence\Eloquent\Models\ContactSupportEloquentModel;
 
 /**
@@ -32,7 +33,7 @@ final readonly class SubmitContactRequestHandler
 
         $email = $data->email |> trim(...) |> strtolower(...);
 
-        return DB::transaction(fn () => $this->contactSupports->create([
+        $contactSupport = DB::transaction(fn () => $this->contactSupports->create([
             'first_name' => $data->firstName,
             'last_name' => $data->lastName,
             'email' => $email,
@@ -44,5 +45,9 @@ final readonly class SubmitContactRequestHandler
             'spam_score' => $assessment->score,
             'spam_reasons' => $assessment->reasons === [] ? null : $assessment->reasons,
         ]));
+
+        broadcast(new ContactSupportSubmitted($contactSupport));
+
+        return $contactSupport;
     }
 }

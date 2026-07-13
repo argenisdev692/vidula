@@ -26,6 +26,7 @@ import SecondaryButton from '@/volt/SecondaryButton.vue';
 import AiAssistPanel from './AiAssistPanel.vue';
 import { postFormSchema, type PostFormValues } from '@/modules/post/schemas/postFormSchema';
 import type { CategoryOption, GeneratedPostContent, PostDetail } from '@/modules/post/types';
+import { toLocalIsoDate } from '@/lib/date';
 
 const props = withDefaults(
     defineProps<{
@@ -95,6 +96,9 @@ const statusOptions = [
 ];
 
 const showScheduling = computed<boolean>(() => form.status === 'scheduled');
+
+/** Scheduling never allows a past date — today onward only. */
+const minScheduledDate = toLocalIsoDate(new Date());
 
 watch([() => form.scheduled_date, () => form.scheduled_time], ([date, time]) => {
     form.scheduled_at = date ? `${date}T${time ?? '09:00'}:00` : null;
@@ -275,6 +279,7 @@ function submit(): void {
                             label="Publish date"
                             placeholder="Select a date"
                             required
+                            :min-date="minScheduledDate"
                             :error="form.errors.scheduled_at"
                         />
                         <TimeField

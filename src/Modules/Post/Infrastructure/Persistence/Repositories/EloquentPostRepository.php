@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Post\Infrastructure\Persistence\Repositories;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Modules\Blog\Infrastructure\Persistence\Eloquent\Models\BlogCategoryEloquentModel;
 use Modules\Post\Application\DTOs\PostFilterData;
 use Modules\Post\Domain\Ports\PostRepositoryPort;
@@ -82,6 +83,15 @@ final class EloquentPostRepository implements PostRepositoryPort
             ->with('category:id,uuid,blog_category_name')
             ->where('post_title_slug', $slug)
             ->first();
+    }
+
+    public function dueForScheduledPublishing(): Collection
+    {
+        return PostEloquentModel::query()
+            ->where('post_status', 'scheduled')
+            ->whereNotNull('scheduled_at')
+            ->where('scheduled_at', '<=', now())
+            ->get();
     }
 
     public function slugExists(string $slug, ?string $ignoreUuid = null): bool

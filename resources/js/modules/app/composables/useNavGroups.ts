@@ -45,7 +45,7 @@ export function useNavGroups(): { navItems: ComputedRef<NavItem[]> } {
             children: [
                 { icon: 'pi pi-tags', label: 'Blog Categories', href: '/blog-categories', permission: 'VIEW_ANY_BLOG_CATEGORIES' },
                 { icon: 'pi pi-file-edit', label: 'Posts', href: '/posts' },
-                { icon: 'pi pi-share-alt', label: 'Social Media', href: '/social-media' },
+                { icon: 'pi pi-share-alt', label: 'Social Media', href: '/social-media', permission: 'VIEW_ANY_SOCIAL_MEDIA' },
                 { icon: 'pi pi-video', label: 'Campaigns', href: '/campaigns' },
             ],
         },

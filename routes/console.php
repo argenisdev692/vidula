@@ -24,3 +24,10 @@ Schedule::command('backup:run')->daily()->at('02:00')->onOneServer();
 Schedule::command('backup:monitor')->daily()->at('03:00')->onOneServer();
 
 Schedule::command('availability:sync-holidays')->cron('0 0 31 12 *')->onOneServer();
+
+// Auto-publish posts / social-media content whose `scheduled_at` has been
+// reached. Runs every minute so a same-day schedule goes live promptly once
+// its time arrives; a later date simply stays `scheduled` until its own
+// tick is due — no separate "same day vs. future" branch needed.
+Schedule::command('posts:publish-scheduled')->everyMinute()->withoutOverlapping()->onOneServer();
+Schedule::command('social-media:publish-scheduled')->everyMinute()->withoutOverlapping()->onOneServer();

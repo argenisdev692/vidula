@@ -34,6 +34,12 @@ Route::middleware(['web', 'auth', 'throttle:60,1'])->prefix('appointments')->nam
     Route::get('/export', AppointmentExportController::class)
         ->middleware(['permission:EXPORT_APPOINTMENTS', 'throttle:10,1'])->name('export');
 
+    Route::get('/notifications', [AppointmentController::class, 'notifications'])
+        ->middleware('permission:VIEW_ANY_APPOINTMENTS')->name('notifications');
+
+    Route::post('/mark-all-read', [AppointmentController::class, 'markAllRead'])
+        ->middleware('permission:UPDATE_APPOINTMENTS')->name('mark-all-read');
+
     Route::get('/{uuid}', [AppointmentController::class, 'show'])
         ->middleware('permission:VIEW_APPOINTMENTS')->whereUuid('uuid')->name('show');
 

@@ -12,6 +12,7 @@ use Modules\Post\Domain\Ports\PostTopicIdeatorPort;
 use Modules\Post\Domain\Ports\ReelPackageGeneratorPort;
 use Modules\Post\Domain\Ports\SocialCopyGeneratorPort;
 use Modules\Post\Infrastructure\Ai\LaravelAiPostAssistantAdapter;
+use Modules\Post\Infrastructure\Console\Commands\PublishScheduledPostsCommand;
 use Modules\Post\Infrastructure\Persistence\Repositories\EloquentPostRepository;
 
 final class PostServiceProvider extends ServiceProvider
@@ -34,5 +35,9 @@ final class PostServiceProvider extends ServiceProvider
     {
         Route::middleware('web')->group(__DIR__.'/../Infrastructure/Routes/web.php');
         Route::middleware('api')->prefix('api')->group(__DIR__.'/../Infrastructure/Routes/api.php');
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([PublishScheduledPostsCommand::class]);
+        }
     }
 }

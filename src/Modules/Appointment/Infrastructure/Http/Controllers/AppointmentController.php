@@ -16,6 +16,7 @@ use Modules\Appointment\Application\Commands\CancelAppointmentHandler;
 use Modules\Appointment\Application\Commands\ConfirmAppointmentHandler;
 use Modules\Appointment\Application\Commands\CreateAppointmentHandler;
 use Modules\Appointment\Application\Commands\DeleteAppointmentHandler;
+use Modules\Appointment\Application\Commands\MarkAllAppointmentsReadHandler;
 use Modules\Appointment\Application\Commands\MarkAppointmentReadHandler;
 use Modules\Appointment\Application\Commands\RescheduleAppointmentHandler;
 use Modules\Appointment\Application\Commands\RestoreAppointmentHandler;
@@ -27,6 +28,7 @@ use Modules\Appointment\Application\DTOs\CancelAppointmentData;
 use Modules\Appointment\Application\DTOs\ConfirmAppointmentData;
 use Modules\Appointment\Application\DTOs\RescheduleAppointmentData;
 use Modules\Appointment\Application\Queries\GetAppointmentHandler;
+use Modules\Appointment\Application\Queries\GetAppointmentNotificationsHandler;
 use Modules\Appointment\Application\Queries\ListAppointmentsHandler;
 use Shared\Application\DTOs\BulkUuidsData;
 
@@ -46,6 +48,28 @@ final readonly class AppointmentController
         return $request->expectsJson()
             ? response()->json($appointments)
             : Inertia::render('appointments/Index', ['appointments' => $appointments, 'filters' => $filters]);
+    }
+
+    /**
+     * Navbar notification-bell feed: unread count + recent leads.
+     */
+    public function notifications(GetAppointmentNotificationsHandler $get): JsonResponse
+    {
+        $feed = $get->handle();
+
+        return response()->json([
+            'unread_count' => $feed['unread_count'],
+            'items' => $feed['items']->map(fn ($appointment) => [
+                'uuid' => $appointment->uuid,
+                'title' => trim("{$appointment->first_name} {$appointment->last_name}"),
+                'message' => $appointment->company_name !== null
+                    ? "{$appointment->company_name} — requested {$appointment->scheduled_at?->format('M j, g:ia')}"
+                    : "Requested {$appointment->scheduled_at?->format('M j, g:ia')}",
+                'time' => $appointment->created_at?->diffForHumans(),
+                'unread' => ! $appointment->readed,
+                'href' => route('appointments.show', $appointment->uuid),
+            ])->values(),
+        ]);
     }
 
     public function show(string $uuid, GetAppointmentHandler $get): InertiaResponse|JsonResponse
@@ -111,11 +135,25 @@ final readonly class AppointmentController
         return redirect()->route('appointments.index')->with('success', __('Lead updated.'));
     }
 
-    public function markRead(string $uuid, MarkAppointmentReadHandler $markRead): RedirectResponse
+    public function markRead(string $uuid, MarkAppointmentReadHandler $markRead): RedirectResponse|JsonResponse
     {
         $markRead->handle($uuid);
 
-        return back()->with('success', __('Lead marked as read.'));
+        return request()->expectsJson()
+            ? response()->json(['success' => true])
+            : back()->with('success', __('Lead marked as read.'));
+    }
+
+    /**
+     * Navbar notification-bell "mark all as read" action.
+     */
+    public function markAllRead(MarkAllAppointmentsReadHandler $markAll): RedirectResponse|JsonResponse
+    {
+        $count = $markAll->handle();
+
+        return request()->expectsJson()
+            ? response()->json(['updated' => $count])
+            : back()->with('success', __(':count leads marked as read.', ['count' => $count]));
     }
 
     public function confirm(string $uuid, ConfirmAppointmentData $data, GetAppointmentHandler $get, ConfirmAppointmentHandler $confirm): RedirectResponse

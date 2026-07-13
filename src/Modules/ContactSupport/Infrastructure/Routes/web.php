@@ -45,6 +45,12 @@ Route::middleware(['web', 'auth', 'throttle:60,1'])->prefix('contact-supports')-
     Route::get('/export', ContactSupportExportController::class)
         ->middleware(['permission:EXPORT_CONTACT_SUPPORTS', 'throttle:10,1'])->name('export');
 
+    Route::get('/notifications', [ContactSupportController::class, 'notifications'])
+        ->middleware('permission:VIEW_ANY_CONTACT_SUPPORTS')->name('notifications');
+
+    Route::post('/mark-all-read', [ContactSupportController::class, 'markAllRead'])
+        ->middleware('permission:UPDATE_CONTACT_SUPPORTS')->name('mark-all-read');
+
     Route::get('/{uuid}', [ContactSupportController::class, 'show'])
         ->middleware('permission:VIEW_CONTACT_SUPPORTS')->whereUuid('uuid')->name('show');
 

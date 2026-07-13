@@ -6,6 +6,7 @@ namespace Modules\Appointment\Domain\Ports;
 
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Modules\Appointment\Application\DTOs\AppointmentFilterData;
 use Modules\Appointment\Infrastructure\Persistence\Eloquent\Models\AppointmentEloquentModel;
 
@@ -17,6 +18,25 @@ interface AppointmentRepositoryPort
     public function paginate(AppointmentFilterData $filters, int $perPage): LengthAwarePaginator;
 
     public function findByUuid(string $uuid): ?AppointmentEloquentModel;
+
+    /**
+     * Unread count for the navbar notification bell.
+     */
+    public function countUnread(): int;
+
+    /**
+     * Most recent leads for the navbar notification bell.
+     *
+     * @return Collection<int, AppointmentEloquentModel>
+     */
+    public function recent(int $limit): Collection;
+
+    /**
+     * Flips every unread row to `readed = true`.
+     *
+     * @return int number of rows updated
+     */
+    public function markAllAsRead(): int;
 
     /**
      * The single active (non-deleted) lead for an email, if any — enforces the

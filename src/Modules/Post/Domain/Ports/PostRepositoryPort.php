@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Post\Domain\Ports;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Modules\Post\Application\DTOs\PostFilterData;
 use Modules\Post\Infrastructure\Persistence\Eloquent\Models\PostEloquentModel;
 
@@ -16,6 +17,13 @@ interface PostRepositoryPort
     public function paginate(PostFilterData $filters, int $perPage): LengthAwarePaginator;
 
     public function findByUuid(string $uuid): ?PostEloquentModel;
+
+    /**
+     * Scheduled posts whose `scheduled_at` has been reached (cron auto-publish).
+     *
+     * @return Collection<int, PostEloquentModel>
+     */
+    public function dueForScheduledPublishing(): Collection;
 
     /**
      * Landing-page feed: `published` posts only, optionally scoped to one

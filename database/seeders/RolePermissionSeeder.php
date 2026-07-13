@@ -22,7 +22,7 @@ class RolePermissionSeeder extends Seeder
      *
      * @var list<string>
      */
-    private const array MODULES = ['USERS', 'ROLES', 'PERMISSIONS', 'COMPANY_DATA', 'BLOG_CATEGORIES', 'POSTS', 'CONTACT_SUPPORTS', 'AVAILABILITY_RULES', 'AVAILABILITY_EXCEPTIONS', 'APPOINTMENTS'];
+    private const array MODULES = ['USERS', 'ROLES', 'PERMISSIONS', 'COMPANY_DATA', 'BLOG_CATEGORIES', 'POSTS', 'SOCIAL_MEDIA', 'CONTACT_SUPPORTS', 'AVAILABILITY_RULES', 'AVAILABILITY_EXCEPTIONS', 'APPOINTMENTS'];
 
     /**
      * Modules with the same CRUD shape as {@see self::MODULES} but no export
@@ -82,6 +82,16 @@ class RolePermissionSeeder extends Seeder
     private const array USER_ACCESS_ACTIONS = ['ASSIGN_ROLES', 'ASSIGN_PERMISSIONS'];
 
     /**
+     * Marking a reviewed AI package as published is a distinct, deliberate
+     * action from UPDATE_SOCIAL_MEDIA (editing the draft) — kept as its own
+     * permission for the same reason USER_ACCESS_ACTIONS stays separate from
+     * standard CRUD.
+     *
+     * @var list<string>
+     */
+    private const array SOCIAL_MEDIA_PUBLISH_ACTIONS = ['PUBLISH'];
+
+    /**
      * Read-only modules (immutable audit trail): only browse / view / export.
      * No create/update/delete — the activity log is trimmed by cron, not the UI.
      *
@@ -135,6 +145,7 @@ class RolePermissionSeeder extends Seeder
             ...$this->matrix(self::MODULES, self::MODULES_ACTIONS),
             ...$this->matrix(self::NO_EXPORT_MODULES, self::NO_EXPORT_ACTIONS),
             ...$this->matrix(['USERS'], self::USER_ACCESS_ACTIONS),
+            ...$this->matrix(['SOCIAL_MEDIA'], self::SOCIAL_MEDIA_PUBLISH_ACTIONS),
             ...$this->matrix(self::READ_ONLY_MODULES, self::READ_ONLY_ACTIONS),
             ...$this->matrix(['BACKUPS'], self::BACKUP_ACTIONS),
         ];

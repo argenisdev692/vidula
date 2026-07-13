@@ -6,6 +6,7 @@ namespace Modules\Appointment\Infrastructure\Persistence\Repositories;
 
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Modules\Appointment\Application\DTOs\AppointmentFilterData;
 use Modules\Appointment\Domain\Ports\AppointmentRepositoryPort;
 use Modules\Appointment\Domain\ValueObjects\MeetingStatus;
@@ -79,6 +80,24 @@ final readonly class EloquentAppointmentRepository implements AppointmentReposit
         $appointment->update($attributes);
 
         return $appointment->refresh();
+    }
+
+    public function countUnread(): int
+    {
+        return AppointmentEloquentModel::query()->where('readed', false)->count();
+    }
+
+    public function recent(int $limit): Collection
+    {
+        return AppointmentEloquentModel::query()
+            ->orderByDesc('created_at')
+            ->limit($limit)
+            ->get();
+    }
+
+    public function markAllAsRead(): int
+    {
+        return AppointmentEloquentModel::query()->where('readed', false)->update(['readed' => true]);
     }
 
     public function markAsRead(string $uuid): bool

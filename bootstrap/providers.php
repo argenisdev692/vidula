@@ -17,6 +17,7 @@ return [
     Modules\Portfolio\Providers\PortfolioServiceProvider::class,
     Modules\Post\Providers\PostServiceProvider::class,
     Modules\Services\Providers\ServicesServiceProvider::class,
+    Modules\SocialMedia\Providers\SocialMediaServiceProvider::class,
     Modules\Users\Providers\UsersServiceProvider::class,
     Shared\Providers\SharedServiceProvider::class,
 ];

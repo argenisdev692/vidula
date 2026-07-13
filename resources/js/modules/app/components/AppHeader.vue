@@ -37,7 +37,7 @@ const theme = useThemeStore();
 const queryCache = useQueryCache();
 const { fullName, initials, profilePhotoUrl } = useCurrentUser();
 const { primaryRole } = useAuthorization();
-const { feeds } = useHeaderNotifications();
+const { feeds, markItemRead, markAllRead } = useHeaderNotifications();
 const company = useCompany();
 
 /* ── Notification dropdowns ── */
@@ -46,6 +46,11 @@ const openFeedKey = ref<string | null>(null);
 function toggleDropdown(key: string): void {
     userMenuOpen.value = false;
     openFeedKey.value = openFeedKey.value === key ? null : key;
+}
+
+function openNotification(feedKey: string, itemId: string): void {
+    markItemRead(feedKey, itemId);
+    openFeedKey.value = null;
 }
 
 /* ── Expandable search ── */
@@ -190,11 +195,11 @@ onClickOutside(userMenuRef, () => {
                                         <Link
                                             v-for="item in feed.items"
                                             :key="item.id"
-                                            :href="feed.route"
+                                            :href="item.href"
                                             class="notif-item"
                                             :class="{ unread: item.unread }"
                                             role="menuitem"
-                                            @click="openFeedKey = null"
+                                            @click="openNotification(feed.key, item.id)"
                                         >
                                             <span
                                                 class="notif-dot"
@@ -210,6 +215,14 @@ onClickOutside(userMenuRef, () => {
                                     </template>
                                     <p v-else class="notif-empty">You're all caught up</p>
                                 </div>
+                                <button
+                                    v-if="feed.unreadCount > 0"
+                                    type="button"
+                                    class="notif-footer"
+                                    @click="markAllRead(feed.key)"
+                                >
+                                    Mark all as read
+                                </button>
                                 <Link
                                     :href="feed.route"
                                     class="notif-footer"

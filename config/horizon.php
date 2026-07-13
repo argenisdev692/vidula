@@ -207,7 +207,11 @@ return [
             'maxJobs' => 0,
             'memory' => 128,
             'tries' => 1,
-            'timeout' => 60,
+            // Bumped from 60s: the Social Media quality-loop job (up to 5
+            // iterations of Tavily + AI + 6 images + 1 voiceover call) needs
+            // more headroom than a typical fast job on this shared 'default'
+            // queue. The job's own #[Timeout(300)] attribute matches this.
+            'timeout' => 300,
             'nice' => 0,
         ],
     ],

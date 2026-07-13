@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ContactSupport\Infrastructure\Persistence\Repositories;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Modules\ContactSupport\Application\DTOs\ContactSupportFilterData;
 use Modules\ContactSupport\Domain\Ports\ContactSupportRepositoryPort;
 use Modules\ContactSupport\Infrastructure\Persistence\Eloquent\Models\ContactSupportEloquentModel;
@@ -69,6 +70,24 @@ final readonly class EloquentContactSupportRepository implements ContactSupportR
         $contactSupport->update($attributes);
 
         return $contactSupport->refresh();
+    }
+
+    public function countUnread(): int
+    {
+        return ContactSupportEloquentModel::query()->where('readed', false)->count();
+    }
+
+    public function recent(int $limit): Collection
+    {
+        return ContactSupportEloquentModel::query()
+            ->orderByDesc('created_at')
+            ->limit($limit)
+            ->get();
+    }
+
+    public function markAllAsRead(): int
+    {
+        return ContactSupportEloquentModel::query()->where('readed', false)->update(['readed' => true]);
     }
 
     public function markAsRead(string $uuid): bool
