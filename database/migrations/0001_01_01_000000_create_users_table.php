@@ -19,7 +19,14 @@ return new class extends Migration
             $table->string('username')->nullable()->unique();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            $table->string('password')->nullable();
+            $table->text('two_factor_secret')->nullable();
+            $table->text('two_factor_recovery_codes')->nullable();
+            $table->timestamp('two_factor_confirmed_at')->nullable();
+            $table->timestamp('password_changed_at')->nullable();
+            $table->boolean('must_change_password')->default(false);
+            $table->timestamp('invited_at')->nullable();
+            $table->string('invited_by')->nullable(); // inviter uuid (audit)
             $table->string('phone')->nullable();
             $table->string('date_of_birth')->nullable();
             $table->string('address')->nullable();

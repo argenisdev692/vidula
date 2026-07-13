@@ -193,7 +193,10 @@ function toggleGroup(label: string): void {
  */
 :global(.app-sidebar-drawer) {
     width: 18rem;
-    background: color-mix(in srgb, var(--bg-void) 90%, transparent);
+    /* 94% (vs. the app-wide 90% glass recipe): the aurora GradientBackground
+       sits behind every panel, but nav labels need more contrast than a
+       decorative surface does — a touch less bleed-through keeps them crisp. */
+    background: color-mix(in srgb, var(--bg-void) 94%, transparent);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-right-color: var(--border-default);

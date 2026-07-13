@@ -42,9 +42,11 @@ final class SecurityHeaders
 
         $response->headers->set(
             'Content-Security-Policy',
-            $this->isApiDocsRequest($request)
-                ? $this->apiDocsContentSecurityPolicy()
-                : $this->contentSecurityPolicy($nonce),
+            match (true) {
+                $this->isApiDocsRequest($request) => $this->apiDocsContentSecurityPolicy(),
+                $this->isMonitoringRequest($request) => $this->monitoringContentSecurityPolicy(),
+                default => $this->contentSecurityPolicy($nonce),
+            },
         );
 
         return $response;
@@ -101,6 +103,25 @@ final class SecurityHeaders
     }
 
     /**
+     * Horizon and Telescope render their dashboards from vendor Blade views
+     * ({@see \Laravel\Horizon\Horizon::css()}/{@see \Laravel\Horizon\Horizon::js()},
+     * {@see \Laravel\Telescope\Telescope::css()}/{@see \Laravel\Telescope\Telescope::js()})
+     * that inline the compiled CSS/JS directly into unscoped `<style>`/`<script>`
+     * tags with no CSP nonce. Under the nonce-strict app policy every one of
+     * those tags is silently dropped, leaving an unstyled, non-interactive
+     * page. Access to both dashboards is already restricted by their own
+     * `viewHorizon`/`viewTelescope` gates, so relaxing the CSP only for these
+     * paths does not weaken the app's public attack surface.
+     */
+    private function isMonitoringRequest(Request $request): bool
+    {
+        $horizonPath = trim((string) config('horizon.path', 'horizon'), '/');
+        $telescopePath = trim((string) config('telescope.path', 'telescope'), '/');
+
+        return $request->is($horizonPath, "{$horizonPath}/*", $telescopePath, "{$telescopePath}/*");
+    }
+
+    /**
      * Scoped CSP for the Scramble docs UI only (see {@see self::isApiDocsRequest()}).
      * Permits exactly what Stoplight Elements needs — its unpkg bundle, the inline
      * boot script/style, `eval`-based syntax highlighting, and CDN webfonts — while
@@ -122,6 +143,32 @@ final class SecurityHeaders
             'script-src' => ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'https://unpkg.com'],
             // Stoplight's "Try It" JSON editor spawns web workers from blob URLs.
             'worker-src' => ["'self'", 'blob:'],
+            'connect-src' => ["'self'"],
+        ];
+
+        return collect($directives)
+            ->map(static fn (array $sources, string $name): string => $name.' '.implode(' ', $sources))
+            ->implode('; ');
+    }
+
+    /**
+     * Scoped CSP for the Horizon/Telescope dashboards only (see
+     * {@see self::isMonitoringRequest()}). Both dashboards inline their CSS/JS
+     * without a nonce, so `'unsafe-inline'` is required here; `fonts.bunny.net`
+     * serves the Figtree webfont both dashboards load.
+     */
+    private function monitoringContentSecurityPolicy(): string
+    {
+        $directives = [
+            'default-src' => ["'self'"],
+            'base-uri' => ["'self'"],
+            'object-src' => ["'none'"],
+            'frame-ancestors' => ["'none'"],
+            'form-action' => ["'self'"],
+            'img-src' => ["'self'", 'data:'],
+            'font-src' => ["'self'", 'data:', 'https://fonts.bunny.net'],
+            'style-src' => ["'self'", "'unsafe-inline'", 'https://fonts.bunny.net'],
+            'script-src' => ["'self'", "'unsafe-inline'"],
             'connect-src' => ["'self'"],
         ];
 

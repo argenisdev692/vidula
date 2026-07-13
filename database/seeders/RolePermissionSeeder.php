@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 use Modules\Authorization\Infrastructure\Persistence\Eloquent\Models\Permission;
 use Modules\Authorization\Infrastructure\Persistence\Eloquent\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -111,6 +112,18 @@ class RolePermissionSeeder extends Seeder
     private const array BACKUP_ACTIONS = ['VIEW_ANY', 'DOWNLOAD', 'CREATE', 'DELETE'];
 
     /**
+     * Ops tooling dashboards (Horizon queue monitor, Telescope request/query
+     * tracer). Binary view access only — mirrors the `viewHorizon` /
+     * `viewTelescope` gates in HorizonServiceProvider / TelescopeServiceProvider.
+     *
+     * @var list<string>
+     */
+    private const array SYSTEM_MONITORING_MODULES = ['HORIZON', 'TELESCOPE'];
+
+    /** @var list<string> */
+    private const array SYSTEM_MONITORING_ACTIONS = ['VIEW'];
+
+    /**
      * Foundation roles + permissions (web guard).
      *
      * Runs BEFORE UserSeeder so roles exist when users are assigned.
@@ -130,7 +143,12 @@ class RolePermissionSeeder extends Seeder
     private function ensureRoles(): void
     {
         foreach (self::ROLES as $role) {
-            Role::firstOrCreate(['name' => $role, 'guard_name' => self::GUARD]);
+            // DatabaseSeeder uses WithoutModelEvents, which skips the model's
+            // `creating` hook that would otherwise generate this — set it explicitly.
+            Role::firstOrCreate(
+                ['name' => $role, 'guard_name' => self::GUARD],
+                ['uuid' => (string) Str::uuid7()],
+            );
         }
     }
 
@@ -148,6 +166,7 @@ class RolePermissionSeeder extends Seeder
             ...$this->matrix(['SOCIAL_MEDIA'], self::SOCIAL_MEDIA_PUBLISH_ACTIONS),
             ...$this->matrix(self::READ_ONLY_MODULES, self::READ_ONLY_ACTIONS),
             ...$this->matrix(['BACKUPS'], self::BACKUP_ACTIONS),
+            ...$this->matrix(self::SYSTEM_MONITORING_MODULES, self::SYSTEM_MONITORING_ACTIONS),
         ];
 
         return array_values(array_unique($names));
@@ -179,7 +198,12 @@ class RolePermissionSeeder extends Seeder
     private function ensurePermissions(array $names): void
     {
         foreach ($names as $name) {
-            Permission::firstOrCreate(['name' => $name, 'guard_name' => self::GUARD]);
+            // DatabaseSeeder uses WithoutModelEvents, which skips the model's
+            // `creating` hook that would otherwise generate this — set it explicitly.
+            Permission::firstOrCreate(
+                ['name' => $name, 'guard_name' => self::GUARD],
+                ['uuid' => (string) Str::uuid7()],
+            );
         }
     }
 
