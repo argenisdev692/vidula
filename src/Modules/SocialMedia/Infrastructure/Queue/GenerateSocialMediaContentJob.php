@@ -166,13 +166,17 @@ final class GenerateSocialMediaContentJob implements ShouldQueue
             return;
         }
 
-        broadcast(new SocialMediaAiGenerationProgress(
-            userId: (int) $causer->getAuthIdentifier(),
-            contentUuid: $this->contentUuid,
-            stage: $stage,
-            message: $message,
-            progress: (int) round(($iteration / ContentQualityEvaluator::MAX_ITERATIONS) * 100),
-            iteration: $iteration,
-        ));
+        try {
+            broadcast(new SocialMediaAiGenerationProgress(
+                userId: (int) $causer->getAuthIdentifier(),
+                contentUuid: $this->contentUuid,
+                stage: $stage,
+                message: $message,
+                progress: (int) round(($iteration / ContentQualityEvaluator::MAX_ITERATIONS) * 100),
+                iteration: $iteration,
+            ));
+        } catch (Throwable $exception) {
+            Log::warning('social_media.generation.broadcast_failed', ['message' => $exception->getMessage()]);
+        }
     }
 }

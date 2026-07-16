@@ -5,6 +5,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Laravel\Ai\Exceptions\AiException;
+use Laravel\Ai\Exceptions\FailoverableException;
 use Modules\Auth\Infrastructure\Http\Middleware\EnsurePasswordNotExpired;
 use Modules\Auth\Infrastructure\Http\Middleware\EnsureTwoFactorEnabled;
 use Shared\Infrastructure\Http\Middleware\SecurityHeaders;
@@ -50,4 +52,21 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );
+
+        // laravel/ai's provider-transient exceptions (overloaded/rate-limited/
+        // out-of-credits) are plain Exceptions, not HttpExceptionInterface, so
+        // the default handler would otherwise mask them behind a generic
+        // "Server Error" 500 in production. Surface the real message as a 503
+        // so the AI-assist panels (Post/Campaigns/SocialMedia) can show it —
+        // they already read `body.message` from the JSON response.
+        $exceptions->render(function (AiException $e, Request $request) {
+            if (! $request->expectsJson()) {
+                return null;
+            }
+
+            return response()->json(
+                ['message' => $e->getMessage()],
+                $e instanceof FailoverableException ? 503 : 500,
+            );
+        });
     })->create();

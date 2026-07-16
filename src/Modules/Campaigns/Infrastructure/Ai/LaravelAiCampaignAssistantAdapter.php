@@ -6,6 +6,7 @@ namespace Modules\Campaigns\Infrastructure\Ai;
 
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Modules\Campaigns\Application\DTOs\CampaignScoreResultData;
 use Modules\Campaigns\Application\DTOs\CampaignScoreSetData;
@@ -25,6 +26,7 @@ use Shared\Infrastructure\AI\AIClientInterface;
 use Shared\Infrastructure\Branding\BrandPalette;
 use Shared\Infrastructure\Company\CompanyProfile;
 use Shared\Infrastructure\Research\TavilyClientInterface;
+use Throwable;
 
 /**
  * Single adapter behind both Campaigns AI ports — mirrors
@@ -407,13 +409,17 @@ final readonly class LaravelAiCampaignAssistantAdapter implements CampaignGenera
             return;
         }
 
-        broadcast(new CampaignAiGenerationProgress(
-            userId: (int) $causer->getAuthIdentifier(),
-            campaignUuid: $campaignUuid,
-            stage: $stage,
-            message: $message,
-            progress: $progress,
-            iteration: $iteration,
-        ));
+        try {
+            broadcast(new CampaignAiGenerationProgress(
+                userId: (int) $causer->getAuthIdentifier(),
+                campaignUuid: $campaignUuid,
+                stage: $stage,
+                message: $message,
+                progress: $progress,
+                iteration: $iteration,
+            ));
+        } catch (Throwable $exception) {
+            Log::warning('campaigns.ai.broadcast_failed', ['message' => $exception->getMessage()]);
+        }
     }
 }

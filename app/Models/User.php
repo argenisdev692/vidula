@@ -27,6 +27,7 @@ use Modules\Auth\Infrastructure\Persistence\Eloquent\Models\PasswordHistoryEloqu
 use Modules\Auth\Infrastructure\Persistence\Eloquent\Models\TrustedDeviceEloquentModel;
 use Modules\Blog\Infrastructure\Persistence\Eloquent\Models\BlogCategoryEloquentModel;
 use Modules\Campaigns\Infrastructure\Persistence\Eloquent\Models\CampaignEloquentModel;
+use Modules\Meeting\Infrastructure\Persistence\Eloquent\Models\MeetingEloquentModel;
 use Modules\Portfolio\Infrastructure\Persistence\Eloquent\Models\PortfolioEloquentModel;
 use Modules\Post\Infrastructure\Persistence\Eloquent\Models\PostEloquentModel;
 use Modules\Services\Infrastructure\Persistence\Eloquent\Models\ServiceEloquentModel;
@@ -386,6 +387,19 @@ class User extends Authenticatable implements MustVerifyEmailContract
     public function passwordHistories(): HasMany
     {
         return $this->hasMany(PasswordHistoryEloquentModel::class);
+    }
+
+    /**
+     * Internal meetings this user organizes (the reciprocal of
+     * `MeetingEloquentModel::organizer()`). Attendance (a user invited to
+     * someone else's meeting) is a separate, polymorphic relation on
+     * `MeetingAttendeeEloquentModel` — not modeled here.
+     *
+     * @return HasMany<MeetingEloquentModel, $this>
+     */
+    public function meetings(): HasMany
+    {
+        return $this->hasMany(MeetingEloquentModel::class, 'organizer_id');
     }
 
     /**

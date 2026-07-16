@@ -6,6 +6,7 @@ namespace Modules\Post\Infrastructure\Ai;
 
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Modules\Post\Application\DTOs\GenerateContentVariantData;
 use Modules\Post\Application\DTOs\GeneratedPostContentData;
@@ -26,6 +27,7 @@ use Shared\Infrastructure\AI\AIClientInterface;
 use Shared\Infrastructure\Branding\BrandPalette;
 use Shared\Infrastructure\Company\CompanyProfile;
 use Shared\Infrastructure\Research\TavilyClientInterface;
+use Throwable;
 
 /**
  * Single adapter behind all four AI ports the Post module needs — they share
@@ -248,13 +250,17 @@ final readonly class LaravelAiPostAssistantAdapter implements PostContentGenerat
             return;
         }
 
-        broadcast(new PostAiGenerationProgress(
-            userId: (int) $causer->getAuthIdentifier(),
-            flow: $flow,
-            stage: $stage,
-            message: $message,
-            progress: $progress,
-        ));
+        try {
+            broadcast(new PostAiGenerationProgress(
+                userId: (int) $causer->getAuthIdentifier(),
+                flow: $flow,
+                stage: $stage,
+                message: $message,
+                progress: $progress,
+            ));
+        } catch (Throwable $exception) {
+            Log::warning('post.ai.broadcast_failed', ['message' => $exception->getMessage()]);
+        }
     }
 
     /**

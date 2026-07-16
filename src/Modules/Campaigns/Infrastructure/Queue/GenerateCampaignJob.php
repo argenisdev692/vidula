@@ -170,13 +170,17 @@ final class GenerateCampaignJob implements ShouldQueue
             return;
         }
 
-        broadcast(new CampaignAiGenerationProgress(
-            userId: (int) $causer->getAuthIdentifier(),
-            campaignUuid: $this->campaignUuid,
-            stage: $stage,
-            message: $message,
-            progress: (int) round(($iteration / CampaignQualityEvaluator::MAX_ITERATIONS) * 100),
-            iteration: $iteration,
-        ));
+        try {
+            broadcast(new CampaignAiGenerationProgress(
+                userId: (int) $causer->getAuthIdentifier(),
+                campaignUuid: $this->campaignUuid,
+                stage: $stage,
+                message: $message,
+                progress: (int) round(($iteration / CampaignQualityEvaluator::MAX_ITERATIONS) * 100),
+                iteration: $iteration,
+            ));
+        } catch (Throwable $exception) {
+            Log::warning('campaigns.generation.broadcast_failed', ['message' => $exception->getMessage()]);
+        }
     }
 }

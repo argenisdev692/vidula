@@ -26,6 +26,7 @@ export function useNavGroups(): { navItems: ComputedRef<NavItem[]> } {
             label: 'Leads & Support',
             children: [
                 { icon: 'pi pi-calendar', label: 'Appointments', href: '/appointments', permission: 'VIEW_ANY_APPOINTMENTS' },
+                { icon: 'pi pi-calendar-plus', label: 'Meetings', href: '/meetings', permission: 'VIEW_ANY_MEETINGS' },
                 { icon: 'pi pi-clock', label: 'Availability Rules', href: '/availability-rules', permission: 'VIEW_ANY_AVAILABILITY_RULES' },
                 { icon: 'pi pi-calendar-times', label: 'Availability Exceptions', href: '/availability-exceptions', permission: 'VIEW_ANY_AVAILABILITY_EXCEPTIONS' },
                 { icon: 'pi pi-envelope', label: 'Contact & Support', href: '/contact-supports', permission: 'VIEW_ANY_CONTACT_SUPPORTS' },

@@ -14,6 +14,7 @@ use Modules\Blog\Providers\BlogServiceProvider;
 use Modules\Campaigns\Providers\CampaignServiceProvider;
 use Modules\Company\Providers\CompanyServiceProvider;
 use Modules\ContactSupport\Providers\ContactSupportServiceProvider;
+use Modules\Meeting\Providers\MeetingServiceProvider;
 use Modules\Portfolio\Providers\PortfolioServiceProvider;
 use Modules\Post\Providers\PostServiceProvider;
 use Modules\Services\Providers\ServicesServiceProvider;
@@ -36,6 +37,7 @@ return [
     CampaignServiceProvider::class,
     CompanyServiceProvider::class,
     ContactSupportServiceProvider::class,
+    MeetingServiceProvider::class,
     PortfolioServiceProvider::class,
     PostServiceProvider::class,
     ServicesServiceProvider::class,

@@ -34,6 +34,7 @@
         "laravel/telescope": "^5.20",
         "laravel/tinker": "^3.0",
         "league/flysystem-aws-s3-v3": "^3.0",
+        "phpoffice/phpword": "^1.4",
         "pragmarx/google2fa-laravel": "^3.0",
         "propaganistas/laravel-phone": "^6.0",
         "ramsey/uuid": "^4.9",
@@ -42,6 +43,7 @@
         "spatie/laravel-backup": "^10.3",
         "spatie/laravel-cookie-consent": "^3.5",
         "spatie/laravel-data": "^4.23",
+        "spatie/laravel-google-calendar": "^3.8",
         "spatie/laravel-honeypot": "^4.7",
         "spatie/laravel-medialibrary": "^11.23",
         "spatie/laravel-one-time-passwords": "^1.1",
@@ -120,6 +122,7 @@
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
+        "process-timeout": 1200,
         "sort-packages": true,
         "allow-plugins": {
             "pestphp/pest-plugin": true,

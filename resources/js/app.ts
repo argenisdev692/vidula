@@ -14,6 +14,13 @@ import './echo';
 
 const appName = 'Vidula';
 
+// PrimeVue's core injects a handful of style elements dynamically (overlay
+// positioning, ripple, etc.) even in unstyled mode; without the matching CSP
+// nonce those are blocked by `style-src`. Copied from the same per-request
+// nonce Vite's own tags already carry — see the `script[nonce]` tag emitted
+// by app.blade.php.
+const cspNonce = document.querySelector<HTMLScriptElement>('script[nonce]')?.nonce ?? '';
+
 // App-wide brand for the document-title suffix — the DB company name shared on
 // every page (`company.name`), falling back to appName before the first page
 // resolves. Captured from the initial page in setup() and refreshed on each
@@ -53,7 +60,7 @@ void createInertiaApp({
             })
             // PrimeVue in UNSTYLED mode — no theme preset, no design-token CSS layer.
             // Volt primitives carry all styling via Tailwind pass-through (§1).
-            .use(PrimeVue, { unstyled: true })
+            .use(PrimeVue, { unstyled: true, csp: { nonce: cspNonce } })
             .use(ToastService) // powers <Toast/> + useToast() (§12)
             .use(ConfirmationService) // powers destructive confirmations (§10)
             .directive('tooltip', Tooltip)

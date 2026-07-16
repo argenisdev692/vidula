@@ -6,6 +6,7 @@ namespace Modules\SocialMedia\Infrastructure\Ai;
 
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Modules\Post\Infrastructure\Ai\LaravelAiPostAssistantAdapter;
 use Modules\SocialMedia\Application\DTOs\GeneratedSocialMediaContentData;
@@ -26,6 +27,7 @@ use Shared\Infrastructure\AI\AIClientInterface;
 use Shared\Infrastructure\Branding\BrandPalette;
 use Shared\Infrastructure\Company\CompanyProfile;
 use Shared\Infrastructure\Research\TavilyClientInterface;
+use Throwable;
 
 /**
  * Single adapter behind both SocialMedia AI ports — mirrors
@@ -446,13 +448,17 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
             return;
         }
 
-        broadcast(new SocialMediaAiGenerationProgress(
-            userId: (int) $causer->getAuthIdentifier(),
-            contentUuid: $contentUuid,
-            stage: $stage,
-            message: $message,
-            progress: $progress,
-            iteration: $iteration,
-        ));
+        try {
+            broadcast(new SocialMediaAiGenerationProgress(
+                userId: (int) $causer->getAuthIdentifier(),
+                contentUuid: $contentUuid,
+                stage: $stage,
+                message: $message,
+                progress: $progress,
+                iteration: $iteration,
+            ));
+        } catch (Throwable $exception) {
+            Log::warning('social_media.ai.broadcast_failed', ['message' => $exception->getMessage()]);
+        }
     }
 }
