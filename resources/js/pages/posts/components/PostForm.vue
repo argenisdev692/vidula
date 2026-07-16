@@ -49,6 +49,11 @@ function splitScheduledAt(value: string | null): { date: string | null; time: st
 
 const initialSchedule = splitScheduledAt(props.post?.scheduled_at ?? null);
 
+interface AiScoresPayload {
+    seo_analysis: { primary_keyword: string; lsi_keywords: string[] };
+    optimization_suggestions: string[];
+}
+
 interface PostFormFields extends PostFormValues {
     category_uuid: string | null;
     cover_image: File | null;
@@ -61,7 +66,7 @@ interface PostFormFields extends PostFormValues {
     eeat_score: number | null;
     human_writing_index: number | null;
     ai_detection_risk: number | null;
-    ai_scores: Record<string, unknown> | null;
+    ai_scores: AiScoresPayload | null;
 }
 
 const form = useForm<PostFormFields>({

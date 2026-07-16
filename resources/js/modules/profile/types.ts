@@ -81,6 +81,7 @@ export interface ProfileFormValues {
     state: string;
     zip_code: string;
     country: string;
+    country_code: string;
     latitude: number | null;
     longitude: number | null;
 }

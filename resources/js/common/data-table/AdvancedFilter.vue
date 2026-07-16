@@ -221,7 +221,7 @@ function clear(): void {
                         :manual-input="false"
                         :placeholder="field.placeholder ?? 'Start — End'"
                         fluid
-                        @update:model-value="(v) => onFieldChange(field.key, v)"
+                        @update:model-value="(v: unknown) => onFieldChange(field.key, v)"
                     />
 
                     <Select
@@ -234,7 +234,7 @@ function clear(): void {
                         :placeholder="field.placeholder ?? 'All'"
                         show-clear
                         fluid
-                        @update:model-value="(v) => onFieldChange(field.key, v)"
+                        @update:model-value="(v: unknown) => onFieldChange(field.key, v)"
                     />
 
                     <InputText
@@ -243,7 +243,7 @@ function clear(): void {
                         :model-value="(getFilterValue(field.key) as string | undefined)"
                         :placeholder="field.placeholder ?? ''"
                         fluid
-                        @update:model-value="(v) => setFilterValue(field.key, v)"
+                        @update:model-value="(v: unknown) => setFilterValue(field.key, v)"
                     />
                 </div>
 

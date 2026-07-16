@@ -14,7 +14,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
 import interactionPlugin from '@fullcalendar/interaction';
-import type { CalendarOptions, EventClickArg, EventInput, EventSourceError } from '@fullcalendar/core';
+import type { CalendarOptions, EventClickArg, EventInput } from '@fullcalendar/core';
 import type { CalendarEvent } from '@/modules/meeting/types';
 
 const STATUS_COLOR: Record<string, string> = {
@@ -60,8 +60,8 @@ const options = computed<CalendarOptions>(() => ({
     // The backend wraps the array as `{ data: [...] }` (project convention,
     // mirrors AvailabilityCalendarController) — unwrap it for FullCalendar,
     // which expects the raw event array (confirmed via context7).
-    eventSourceSuccess: (content: unknown) => (content as { data: unknown[] }).data,
-    eventSourceFailure: (error: EventSourceError) => {
+    eventSourceSuccess: (content: unknown) => (content as { data: unknown[] }).data as EventInput[],
+    eventSourceFailure: (error: Error) => {
         // eslint-disable-next-line no-console
         console.error('Failed to load the meeting calendar feed', error);
     },

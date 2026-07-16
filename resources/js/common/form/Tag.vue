@@ -15,7 +15,7 @@
 <script setup lang="ts">
 import Tag, { type TagPassThroughOptions, type TagProps } from 'primevue/tag';
 import { ref } from 'vue';
-import { ptViewMerge } from './utils';
+import { ptViewMerge } from '@/volt/utils';
 
 interface Props extends /* @vue-ignore */ TagProps {}
 defineProps<Props>();

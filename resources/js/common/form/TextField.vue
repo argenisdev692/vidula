@@ -8,6 +8,8 @@ import { computed } from 'vue';
 import InputText from '@/volt/InputText.vue';
 import FormField from './FormField.vue';
 
+type HtmlInputMode = 'search' | 'text' | 'url' | 'email' | 'none' | 'tel' | 'numeric' | 'decimal';
+
 const model = defineModel<string>({ default: '' });
 
 const props = withDefaults(
@@ -25,7 +27,7 @@ const props = withDefaults(
         type?: string;
         autocomplete?: string;
         maxlength?: number;
-        inputmode?: string;
+        inputmode?: HtmlInputMode;
     }>(),
     { type: 'text' },
 );

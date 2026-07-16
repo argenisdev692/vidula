@@ -16,8 +16,11 @@ export function loadGoogleMaps(apiKey: string): Promise<typeof google> {
     }
 
     loaderPromise = new Promise<typeof google>((resolve, reject) => {
-        if (window.google?.maps?.importLibrary) {
-            resolve(window.google);
+        // `@types/google.maps` declares `Window.google` as always-present; re-type it as
+        // optional here since the script (and thus the global) may not have loaded yet.
+        const win = window as unknown as Omit<typeof window, 'google'> & { google?: typeof google };
+        if (win.google?.maps?.importLibrary) {
+            resolve(win.google);
             return;
         }
 
