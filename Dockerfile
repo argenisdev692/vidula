@@ -6,7 +6,11 @@ ARG VITE_REVERB_APP_KEY
 ARG VITE_REVERB_HOST
 ARG VITE_REVERB_PORT
 ARG VITE_REVERB_SCHEME
+# package.json postinstall → scripts/link-syn-bin.mjs (needs syn.mjs).
+# Copy those BEFORE npm ci; otherwise Railway fails with MODULE_NOT_FOUND.
 COPY package.json package-lock.json ./
+COPY scripts/link-syn-bin.mjs scripts/link-syn-bin.mjs
+COPY syn.mjs ./
 RUN npm ci
 COPY . .
 RUN npm run build
