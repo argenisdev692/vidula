@@ -48,7 +48,7 @@ final readonly class ClientController
 
     public function store(Request $request, ClientData $data, CreateClientHandler $create): RedirectResponse
     {
-        $create->handle($data, (int) $request->user()->id);
+        (void) $create->handle($data, (int) $request->user()->id);
 
         return back()->with('success', __('Client created.'));
     }
