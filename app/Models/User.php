@@ -27,6 +27,7 @@ use Modules\Auth\Infrastructure\Persistence\Eloquent\Models\PasswordHistoryEloqu
 use Modules\Auth\Infrastructure\Persistence\Eloquent\Models\TrustedDeviceEloquentModel;
 use Modules\Blog\Infrastructure\Persistence\Eloquent\Models\BlogCategoryEloquentModel;
 use Modules\Campaigns\Infrastructure\Persistence\Eloquent\Models\CampaignEloquentModel;
+use Modules\Clients\Infrastructure\Persistence\Eloquent\Models\ClientEloquentModel;
 use Modules\Meeting\Infrastructure\Persistence\Eloquent\Models\MeetingEloquentModel;
 use Modules\Portfolio\Infrastructure\Persistence\Eloquent\Models\PortfolioEloquentModel;
 use Modules\Post\Infrastructure\Persistence\Eloquent\Models\PostEloquentModel;
@@ -372,6 +373,16 @@ class User extends Authenticatable implements MustVerifyEmailContract
     public function services(): HasMany
     {
         return $this->hasMany(ServiceEloquentModel::class);
+    }
+
+    /**
+     * CRM clients owned by this user (instructor/creator).
+     *
+     * @return HasMany<ClientEloquentModel, $this>
+     */
+    public function clients(): HasMany
+    {
+        return $this->hasMany(ClientEloquentModel::class);
     }
 
     /**

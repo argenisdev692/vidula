@@ -23,7 +23,7 @@ class RolePermissionSeeder extends Seeder
      *
      * @var list<string>
      */
-    private const array MODULES = ['USERS', 'ROLES', 'PERMISSIONS', 'COMPANY_DATA', 'BLOG_CATEGORIES', 'POSTS', 'SOCIAL_MEDIA', 'CAMPAIGNS', 'CONTACT_SUPPORTS', 'AVAILABILITY_RULES', 'AVAILABILITY_EXCEPTIONS', 'APPOINTMENTS', 'MEETINGS'];
+    private const array MODULES = ['USERS', 'ROLES', 'PERMISSIONS', 'COMPANY_DATA', 'BLOG_CATEGORIES', 'POSTS', 'SOCIAL_MEDIA', 'CAMPAIGNS', 'CONTACT_SUPPORTS', 'AVAILABILITY_RULES', 'AVAILABILITY_EXCEPTIONS', 'APPOINTMENTS', 'MEETINGS', 'CLIENTS'];
 
     /**
      * Modules with the same CRUD shape as {@see self::MODULES} but no export
@@ -32,7 +32,7 @@ class RolePermissionSeeder extends Seeder
      *
      * @var list<string>
      */
-    private const array NO_EXPORT_MODULES = ['PORTFOLIOS', 'SERVICES'];
+    private const array NO_EXPORT_MODULES = ['PORTFOLIOS', 'SERVICES', 'STUDENTS'];
 
     /**
      * @var list<string>

@@ -36,8 +36,8 @@ export function useNavGroups(): { navItems: ComputedRef<NavItem[]> } {
             icon: 'pi pi-id-card',
             label: 'CRM',
             children: [
-                { icon: 'pi pi-briefcase', label: 'Clients', href: '/clients' },
-                { icon: 'pi pi-graduation-cap', label: 'Students', href: '/students' },
+                { icon: 'pi pi-briefcase', label: 'Clients', href: '/clients', permission: 'VIEW_ANY_CLIENTS' },
+                { icon: 'pi pi-graduation-cap', label: 'Students', href: '/students', permission: 'VIEW_ANY_STUDENTS' },
             ],
         },
         {

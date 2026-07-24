@@ -12,6 +12,7 @@ use Modules\Availability\Providers\AvailabilityServiceProvider;
 use Modules\Backup\Providers\BackupServiceProvider;
 use Modules\Blog\Providers\BlogServiceProvider;
 use Modules\Campaigns\Providers\CampaignServiceProvider;
+use Modules\Clients\Providers\ClientsServiceProvider;
 use Modules\Company\Providers\CompanyServiceProvider;
 use Modules\ContactSupport\Providers\ContactSupportServiceProvider;
 use Modules\Meeting\Providers\MeetingServiceProvider;
@@ -19,6 +20,7 @@ use Modules\Portfolio\Providers\PortfolioServiceProvider;
 use Modules\Post\Providers\PostServiceProvider;
 use Modules\Services\Providers\ServicesServiceProvider;
 use Modules\SocialMedia\Providers\SocialMediaServiceProvider;
+use Modules\Students\Providers\StudentsServiceProvider;
 use Modules\Users\Providers\UsersServiceProvider;
 use Shared\Providers\SharedServiceProvider;
 
@@ -35,6 +37,7 @@ return [
     BackupServiceProvider::class,
     BlogServiceProvider::class,
     CampaignServiceProvider::class,
+    ClientsServiceProvider::class,
     CompanyServiceProvider::class,
     ContactSupportServiceProvider::class,
     MeetingServiceProvider::class,
@@ -42,6 +45,7 @@ return [
     PostServiceProvider::class,
     ServicesServiceProvider::class,
     SocialMediaServiceProvider::class,
+    StudentsServiceProvider::class,
     UsersServiceProvider::class,
     SharedServiceProvider::class,
 ];
