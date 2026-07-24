@@ -48,7 +48,7 @@ final readonly class StudentController
 
     public function store(StudentData $data, CreateStudentHandler $create): RedirectResponse
     {
-        $create->handle($data);
+        (void) $create->handle($data);
 
         return back()->with('success', __('Student created.'));
     }
