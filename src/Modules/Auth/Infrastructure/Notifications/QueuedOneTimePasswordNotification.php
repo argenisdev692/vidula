@@ -7,6 +7,7 @@ namespace Modules\Auth\Infrastructure\Notifications;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Carbon;
+use Shared\Infrastructure\Mail\UsesBrevoMailer;
 use Spatie\OneTimePasswords\Notifications\OneTimePasswordNotification;
 
 /**
@@ -24,6 +25,8 @@ use Spatie\OneTimePasswords\Notifications\OneTimePasswordNotification;
  */
 final class QueuedOneTimePasswordNotification extends OneTimePasswordNotification implements ShouldQueue
 {
+    use UsesBrevoMailer;
+
     public function toMail(object $notifiable): MailMessage
     {
         $expiresAt = $this->oneTimePassword->expires_at;
@@ -32,6 +35,7 @@ final class QueuedOneTimePasswordNotification extends OneTimePasswordNotificatio
             : null;
 
         return (new MailMessage)
+            ->mailer($this->brevoMailer())
             ->subject(__('Your verification code: :code', ['code' => $this->oneTimePassword->password]))
             ->view('emails.security.one-time-password', [
                 'code' => $this->oneTimePassword->password,

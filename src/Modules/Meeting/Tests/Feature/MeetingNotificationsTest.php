@@ -85,7 +85,7 @@ final class MeetingNotificationsTest extends TestCase
             'attendees' => [['type' => 'user', 'uuid' => $attendeeUser->uuid]],
         ])->assertRedirect();
 
-        Mail::assertQueued(
+        Mail::assertSent(
             MeetingInvitationMail::class,
             fn (MeetingInvitationMail $mail): bool => $mail->hasTo('ada@example.com'),
         );
@@ -110,7 +110,7 @@ final class MeetingNotificationsTest extends TestCase
             ->patch("/meetings/{$meeting->uuid}/cancel")
             ->assertRedirect();
 
-        Mail::assertQueued(
+        Mail::assertSent(
             MeetingCancelledMail::class,
             fn (MeetingCancelledMail $mail): bool => $mail->hasTo('attendee@example.com'),
         );

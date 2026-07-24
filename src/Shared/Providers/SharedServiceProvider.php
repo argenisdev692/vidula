@@ -17,6 +17,8 @@ use Shared\Infrastructure\AI\LaravelAIAdapter;
 use Shared\Infrastructure\Audit\SpatieActivityLogAdapter;
 use Shared\Infrastructure\Company\CompanyProfile;
 use Shared\Infrastructure\Export\SimpleExcelExportAdapter;
+use Shared\Infrastructure\Mail\BrevoMailAdapter;
+use Shared\Infrastructure\Mail\MailInterface;
 use Shared\Infrastructure\Research\TavilyClientInterface;
 use Shared\Infrastructure\Research\TavilyResearchAdapter;
 use Shared\Infrastructure\Resilience\CircuitBreaker\CircuitBreaker;
@@ -39,6 +41,7 @@ final class SharedServiceProvider extends ServiceProvider
         $this->app->bind(AIClientInterface::class, LaravelAIAdapter::class);
         $this->app->bind(TavilyClientInterface::class, TavilyResearchAdapter::class);
         $this->app->bind(SpeechSynthesizerPort::class, ElevenLabsSpeechAdapter::class);
+        $this->app->bind(MailInterface::class, BrevoMailAdapter::class);
 
         // Per-request CSP nonce shared between the SecurityHeaders middleware
         // and the Blade root view (`{{ app('csp-nonce') }}`).

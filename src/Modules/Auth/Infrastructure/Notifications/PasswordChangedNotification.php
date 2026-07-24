@@ -8,6 +8,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Shared\Infrastructure\Mail\UsesBrevoMailer;
 
 /**
  * Security alert emailed to the user when their password changes (prompt §5).
@@ -15,6 +16,7 @@ use Illuminate\Notifications\Notification;
 final class PasswordChangedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
+    use UsesBrevoMailer;
 
     public function __construct(
         private readonly ?string $ipAddress = null,
@@ -32,6 +34,7 @@ final class PasswordChangedNotification extends Notification implements ShouldQu
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
+            ->mailer($this->brevoMailer())
             ->subject(__('Your password was changed'))
             ->view('emails.security.password-changed', [
                 'ipAddress' => $this->ipAddress,

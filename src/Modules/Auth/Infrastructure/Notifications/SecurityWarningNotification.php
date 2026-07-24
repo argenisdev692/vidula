@@ -8,6 +8,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Shared\Infrastructure\Mail\UsesBrevoMailer;
 
 /**
  * English warning emailed when an account is locked after too many failed
@@ -17,6 +18,7 @@ use Illuminate\Notifications\Notification;
 final class SecurityWarningNotification extends Notification implements ShouldQueue
 {
     use Queueable;
+    use UsesBrevoMailer;
 
     public function __construct(
         private readonly int $attempts,
@@ -36,6 +38,7 @@ final class SecurityWarningNotification extends Notification implements ShouldQu
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
+            ->mailer($this->brevoMailer())
             ->subject(__('Security alert: your account has been temporarily locked'))
             ->view('emails.security.warning', [
                 'attempts' => $this->attempts,

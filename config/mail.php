@@ -14,7 +14,18 @@ return [
     |
     */
 
-    'default' => env('MAIL_MAILER', 'log'),
+    /*
+    |--------------------------------------------------------------------------
+    | Default Mailer
+    |--------------------------------------------------------------------------
+    |
+    | Production default is the dedicated Brevo SMTP mailer. PHPUnit overrides
+    | this to `array` via phpunit.xml. Notifications and MailInterface both
+    | honor this value.
+    |
+    */
+
+    'default' => env('MAIL_MAILER', 'brevo'),
 
     /*
     |--------------------------------------------------------------------------
@@ -36,6 +47,24 @@ return [
     */
 
     'mailers' => [
+
+        /*
+        | Primary transactional provider — Brevo SMTP relay.
+        | Username = Brevo SMTP login (…@smtp-brevo.com).
+        | Password = SMTP key (xsmtpsib-…), NOT the REST API key (xkeysib-…).
+        | Port 587 → leave MAIL_SCHEME empty (STARTTLS). Port 465 → smtps.
+        */
+        'brevo' => [
+            'transport' => 'smtp',
+            'scheme' => env('MAIL_SCHEME'),
+            'url' => env('MAIL_URL'),
+            'host' => env('MAIL_HOST', 'smtp-relay.brevo.com'),
+            'port' => env('MAIL_PORT', 587),
+            'username' => env('MAIL_USERNAME'),
+            'password' => env('MAIL_PASSWORD'),
+            'timeout' => null,
+            'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+        ],
 
         'smtp' => [
             'transport' => 'smtp',
@@ -82,7 +111,7 @@ return [
         'failover' => [
             'transport' => 'failover',
             'mailers' => [
-                'smtp',
+                'brevo',
                 'log',
             ],
             'retry_after' => 60,
@@ -98,6 +127,7 @@ return [
         ],
 
     ],
+
 
     /*
     |--------------------------------------------------------------------------

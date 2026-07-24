@@ -4,18 +4,20 @@ declare(strict_types=1);
 
 namespace Modules\Meeting\Application\Listeners;
 
-use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Modules\Meeting\Application\Queries\GetMeetingHandler;
 use Modules\Meeting\Domain\Events\MeetingCancelled;
 use Modules\Meeting\Infrastructure\Attendees\AttendeeEmailResolver;
 use Modules\Meeting\Infrastructure\Mail\MeetingCancelledMail;
+use Shared\Infrastructure\Mail\MailInterface;
 
 final readonly class SendMeetingCancelledEmailListener implements ShouldQueue
 {
+    public string $queue = 'emails';
+
     public function __construct(
         private GetMeetingHandler $meetings,
-        private Mailer $mailer,
+        private MailInterface $mail,
     ) {}
 
     public function handle(MeetingCancelled $event): void
@@ -26,7 +28,7 @@ final readonly class SendMeetingCancelledEmailListener implements ShouldQueue
             if ($attendee['email'] === '' || $attendee['email'] === null) {
                 continue;
             }
-            $this->mailer->to($attendee['email'])->queue(new MeetingCancelledMail($meeting, $attendee['name']));
+            $this->mail->send($attendee['email'], new MeetingCancelledMail($meeting, $attendee['name']));
         }
     }
 }

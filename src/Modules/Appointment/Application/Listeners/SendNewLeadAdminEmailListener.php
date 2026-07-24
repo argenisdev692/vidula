@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Appointment\Application\Listeners;
 
-use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Modules\Appointment\Application\Listeners\Concerns\ResolvesCompanyRecipient;
 use Modules\Appointment\Application\Queries\GetAppointmentHandler;
 use Modules\Appointment\Domain\Events\AppointmentBooked;
 use Modules\Appointment\Infrastructure\Mail\NewLeadMail;
 use Modules\Company\Domain\Ports\CompanyRepositoryPort;
+use Shared\Infrastructure\Mail\MailInterface;
 
 /**
  * Notifies the company / super-admin inbox as soon as a brand-new lead is
@@ -30,13 +30,13 @@ final class SendNewLeadAdminEmailListener implements ShouldQueue
     public function __construct(
         private GetAppointmentHandler $appointments,
         private CompanyRepositoryPort $companies,
-        private Mailer $mailer,
+        private MailInterface $mail,
     ) {}
 
     public function handle(AppointmentBooked $event): void
     {
         $appointment = $this->appointments->handle($event->uuid);
 
-        $this->mailer->to($this->companyRecipient($this->companies))->send(new NewLeadMail($appointment));
+        $this->mail->send($this->companyRecipient($this->companies), new NewLeadMail($appointment));
     }
 }

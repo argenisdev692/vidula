@@ -22,6 +22,16 @@ return [
         'key' => env('RESEND_API_KEY'),
     ],
 
+    'brevo' => [
+        // SMTP relay credentials (Shared\Infrastructure\Mail\BrevoMailAdapter).
+        // Prefer MAIL_* in config/mail.php — these mirror them for service lookups.
+        'host' => env('MAIL_HOST', 'smtp-relay.brevo.com'),
+        'port' => env('MAIL_PORT', 587),
+        'username' => env('MAIL_USERNAME'),
+        'password' => env('MAIL_PASSWORD'),
+    ],
+
+
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),

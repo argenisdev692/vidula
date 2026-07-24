@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Appointment\Application\Listeners;
 
-use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Modules\Appointment\Application\Queries\GetAppointmentHandler;
 use Modules\Appointment\Domain\Events\AppointmentBooked;
 use Modules\Appointment\Infrastructure\Mail\AppointmentReceivedMail;
+use Shared\Infrastructure\Mail\MailInterface;
 
 /**
  * Acknowledges a brand-new public booking to the CLIENT (their own appointment
@@ -22,13 +22,13 @@ final class SendAppointmentReceivedEmailListener implements ShouldQueue
 
     public function __construct(
         private GetAppointmentHandler $appointments,
-        private Mailer $mailer,
+        private MailInterface $mail,
     ) {}
 
     public function handle(AppointmentBooked $event): void
     {
         $appointment = $this->appointments->handle($event->uuid);
 
-        $this->mailer->to($appointment->email)->send(new AppointmentReceivedMail($appointment));
+        $this->mail->send($appointment->email, new AppointmentReceivedMail($appointment));
     }
 }
