@@ -5,13 +5,11 @@
  * progresses independently through `meeting_status` (see the migration
  * comment on `AppointmentEloquentModel`).
  *
- * The shared list mechanics live in {@see useResourceList}, the confirm
- * dialogs in {@see useConfirmAction}, and the page chrome in
- * {@see CrudIndexShell}. Create / edit are dedicated pages (no modal), so they
- * navigate via `router.visit`. Gated by VIEW_ANY_APPOINTMENTS; every mutating
+ * Create / edit open as modals on this Index (AppointmentFormDialog). Show
+ * remains a dedicated page. Gated by VIEW_ANY_APPOINTMENTS; every mutating
  * control by its own permission.
  */
-import { computed, reactive } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useToast } from 'primevue/usetoast';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
@@ -22,7 +20,9 @@ import ConfirmDialog from '@/common/data-table/ConfirmDialog.vue';
 import { useResourceList } from '@/common/data-table/useResourceList';
 import { useConfirmAction } from '@/common/data-table/useConfirmAction';
 import { toLocalIsoDate } from '@/lib/date';
+import { apiFetch } from '@/lib/http';
 import AppointmentsTable from './components/AppointmentsTable.vue';
+import AppointmentFormDialog from './components/AppointmentFormDialog.vue';
 import {
     CLIENT_TYPE_OPTIONS,
     MEETING_STATUS_OPTIONS,
@@ -32,6 +32,7 @@ import {
 import { buildAppointmentExportUrl, buildAppointmentQueryParams } from '@/modules/appointments/helpers/buildAppointmentQueryParams';
 import type {
     Appointment,
+    AppointmentEditData,
     AppointmentFilters,
     AppointmentQuery,
     AppointmentRead,
@@ -58,6 +59,10 @@ const canCreate = computed<boolean>(() => hasPermission('CREATE_APPOINTMENTS'));
 const canExport = computed<boolean>(() => hasPermission('EXPORT_APPOINTMENTS'));
 const canBulkDelete = computed<boolean>(() => hasPermission('BULK_DELETE_APPOINTMENTS'));
 const canBulkRestore = computed<boolean>(() => hasPermission('BULK_RESTORE_APPOINTMENTS'));
+
+const dialogVisible = ref<boolean>(false);
+const dialogMode = ref<'create' | 'edit'>('create');
+const dialogAppointment = ref<AppointmentEditData | null>(null);
 
 /** The reactive request state — seeded once from the server-echoed props. */
 const query = reactive<AppointmentQuery>({
@@ -109,13 +114,30 @@ const { loading, selection, firstRecord, recordLabel, isSuspendedView, resetSele
 
 const canBulkAct = computed<boolean>(() => (isSuspendedView.value ? canBulkRestore.value : canBulkDelete.value));
 
-/* ── Create / edit — dedicated pages (no modal) ───────────────────────── */
 function openCreate(): void {
-    router.visit('/appointments/create');
+    dialogMode.value = 'create';
+    dialogAppointment.value = null;
+    dialogVisible.value = true;
 }
 
-function openEdit(appointment: Appointment): void {
-    router.visit(`/appointments/${appointment.uuid}/edit`);
+async function openEdit(appointment: Appointment): Promise<void> {
+    try {
+        const response = await apiFetch<{ data: AppointmentEditData }>('GET', `/appointments/${appointment.uuid}/edit`);
+        dialogMode.value = 'edit';
+        dialogAppointment.value = response.data;
+        dialogVisible.value = true;
+    } catch {
+        toast.add({ severity: 'error', summary: 'Could not load lead', life: 3000 });
+    }
+}
+
+function onDialogSaved(): void {
+    toast.add({
+        severity: 'success',
+        summary: dialogMode.value === 'edit' ? 'Lead updated' : 'Lead created',
+        life: 3000,
+    });
+    reload();
 }
 
 /* ── Mark as read ─────────────────────────────────────────────────────── */
@@ -325,6 +347,13 @@ const filterFields: FilterField[] = [
         </template>
 
         <template #dialogs>
+            <AppointmentFormDialog
+                v-model:visible="dialogVisible"
+                :mode="dialogMode"
+                :appointment="dialogAppointment"
+                @saved="onDialogSaved"
+            />
+
             <ConfirmDialog
                 v-model:visible="rowVisible"
                 :title="rowConfirm.title"

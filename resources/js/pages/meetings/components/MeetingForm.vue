@@ -1,11 +1,8 @@
 <script setup lang="ts">
 /**
- * Shared create / edit meeting form — the single source of truth behind the
- * dedicated Create.vue and Edit.vue pages (mirrors AppointmentForm.vue's "no
- * modal" convention). Split date/time inputs are combined into
- * `starts_at`/`ends_at` on submit; the attendee list is resolved server-side
- * from `{type, uuid}` pairs by `AttendeeResolver` — this form never sends a
- * full attendee record, only what `AttendeePicker` already narrowed to.
+ * Shared create / edit meeting form for dedicated Create/Edit pages.
+ * Modal UX lives in MeetingFormDialog — this page form mirrors it: single
+ * date + start time; `ends_at` is derived server-side.
  */
 import { computed } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
@@ -16,15 +13,19 @@ import TimeField from '@/common/form/TimeField.vue';
 import SubmitButton from '@/common/form/SubmitButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import AttendeePicker, { type AttendeeOption } from '@/common/meeting/AttendeePicker.vue';
-import { meetingFormSchema, type MeetingFormValues } from '@/modules/meeting/schemas/meetingFormSchema';
-import type { MeetingEditData } from '@/modules/meeting/types';
+import {
+    MEETING_DURATION_MINUTES,
+    meetingFormSchema,
+} from '@/modules/meeting/schemas/meetingFormSchema';
+import type { MeetingEditData, MeetingPrefill } from '@/modules/meeting/types';
 
 const props = withDefaults(
     defineProps<{
         mode: 'create' | 'edit';
         meeting?: MeetingEditData | null;
+        prefill?: MeetingPrefill | null;
     }>(),
-    { meeting: null },
+    { meeting: null, prefill: null },
 );
 
 const isEdit = computed<boolean>(() => props.mode === 'edit');
@@ -42,21 +43,32 @@ const form = useForm<{
     description: string;
     starts_date: string;
     starts_time: string;
-    ends_date: string;
-    ends_time: string;
     attendees: AttendeeOption[];
 }>({
-    title: props.meeting?.title ?? '',
+    title: props.meeting?.title ?? props.prefill?.title ?? '',
     description: props.meeting?.description ?? '',
-    starts_date: splitDate(props.meeting?.starts_at),
-    starts_time: splitTime(props.meeting?.starts_at) || '09:00',
-    ends_date: splitDate(props.meeting?.ends_at),
-    ends_time: splitTime(props.meeting?.ends_at) || '10:00',
-    attendees: props.meeting?.attendees ?? [],
+    starts_date: splitDate(props.meeting?.starts_at ?? props.prefill?.starts_at),
+    starts_time: splitTime(props.meeting?.starts_at ?? props.prefill?.starts_at) || '09:00',
+    attendees: props.meeting?.attendees ?? props.prefill?.attendees ?? [],
 });
 
 const submitLabel = computed<string>(() => (isEdit.value ? 'Save changes' : 'Create meeting'));
 const submitIcon = computed<string>(() => (isEdit.value ? 'pi pi-check' : 'pi pi-calendar-plus'));
+
+/** Title Case — capitalize the first letter of each word. */
+function toTitleCase(value: string): string {
+    return value.replace(/\S+/gu, (word) => {
+        const lower = word.toLocaleLowerCase();
+        return lower.charAt(0).toLocaleUpperCase() + lower.slice(1);
+    });
+}
+
+const titleModel = computed<string>({
+    get: () => form.title,
+    set: (value) => {
+        form.title = toTitleCase(value);
+    },
+});
 
 function combine(date: string, time: string): string {
     return date && time ? `${date}T${time}:00` : '';
@@ -64,13 +76,11 @@ function combine(date: string, time: string): string {
 
 function submit(): void {
     const startsAt = combine(form.starts_date, form.starts_time);
-    const endsAt = combine(form.ends_date, form.ends_time);
 
     const parsed = meetingFormSchema.safeParse({
         title: form.title,
         description: form.description,
         starts_at: startsAt,
-        ends_at: endsAt,
         attendees: form.attendees,
     });
     if (!parsed.success) {
@@ -79,8 +89,6 @@ function submit(): void {
             const key = issue.path[0];
             if (key === 'starts_at') {
                 form.setError('starts_date' as never, issue.message);
-            } else if (key === 'ends_at') {
-                form.setError('ends_date' as never, issue.message);
             } else if (typeof key === 'string') {
                 form.setError(key as never, issue.message);
             }
@@ -92,11 +100,13 @@ function submit(): void {
         title: data.title.trim(),
         description: data.description.trim() || null,
         starts_at: startsAt,
-        ends_at: endsAt,
         attendees: data.attendees.map((attendee) => ({ type: attendee.type, uuid: attendee.uuid })),
     }));
 
-    const options = { preserveScroll: true };
+    const options = {
+        preserveScroll: true,
+        onSuccess: () => router.visit('/meetings'),
+    };
     if (isEdit.value) {
         form.put(`/meetings/${props.meeting!.uuid}`, options);
     } else {
@@ -113,13 +123,14 @@ function submit(): void {
             </header>
             <div class="meeting-form__grid">
                 <TextField
-                    v-model="form.title"
+                    v-model="titleModel"
                     name="title"
                     label="Title"
-                    placeholder="e.g. Project kickoff"
+                    placeholder="e.g. Project Kickoff"
                     required
                     :maxlength="255"
                     :error="form.errors.title"
+                    hint="Capitalized automatically."
                 />
             </div>
             <TextareaField
@@ -136,24 +147,17 @@ function submit(): void {
         <section class="meeting-form__section">
             <header class="meeting-form__section-head">
                 <h3 class="meeting-form__section-title">When</h3>
+                <p class="meeting-form__section-hint">Duration is fixed at {{ MEETING_DURATION_MINUTES }} minutes.</p>
             </header>
             <div class="meeting-form__grid">
                 <DateField
                     v-model="form.starts_date"
                     name="starts_date"
-                    label="Start date"
+                    label="Date"
                     required
                     :error="form.errors.starts_date"
                 />
                 <TimeField v-model="form.starts_time" name="starts_time" label="Start time" required />
-                <DateField
-                    v-model="form.ends_date"
-                    name="ends_date"
-                    label="End date"
-                    required
-                    :error="form.errors.ends_date"
-                />
-                <TimeField v-model="form.ends_time" name="ends_time" label="End time" required />
             </div>
         </section>
 

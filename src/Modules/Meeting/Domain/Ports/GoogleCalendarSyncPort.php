@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Meeting\Domain\Ports;
 
+use Modules\Meeting\Application\DTOs\GoogleCalendarEventSyncResult;
 use Modules\Meeting\Infrastructure\Persistence\Eloquent\Models\MeetingEloquentModel;
 
 /**
@@ -15,10 +16,10 @@ use Modules\Meeting\Infrastructure\Persistence\Eloquent\Models\MeetingEloquentMo
 interface GoogleCalendarSyncPort
 {
     /**
-     * Creates the Google Calendar event and returns its id, or null if sync
-     * is disabled/not configured or the push failed.
+     * Creates the Google Calendar event and returns its sync result, or null
+     * if sync is disabled/not configured or the push failed.
      */
-    public function createEvent(MeetingEloquentModel $meeting): ?string;
+    public function createEvent(MeetingEloquentModel $meeting): ?GoogleCalendarEventSyncResult;
 
     /**
      * No-ops if the meeting has no `google_event_id` yet (sync was never

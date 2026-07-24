@@ -43,7 +43,6 @@ final class MeetingManagementTest extends TestCase
             'title' => 'Kickoff call',
             'description' => 'Discuss project scope.',
             'starts_at' => '2026-12-11 10:00:00',
-            'ends_at' => '2026-12-11 11:00:00',
             'attendees' => [
                 ['type' => 'user', 'uuid' => $attendeeUser->uuid],
                 ['type' => 'lead', 'uuid' => $lead->uuid],
@@ -60,6 +59,7 @@ final class MeetingManagementTest extends TestCase
         $this->assertDatabaseHas('meetings', ['title' => 'Kickoff call', 'status' => 'Scheduled']);
         $meeting = MeetingEloquentModel::query()->where('title', 'Kickoff call')->firstOrFail();
         $this->assertCount(2, $meeting->attendees);
+        $this->assertSame('2026-12-11 10:30:00', $meeting->ends_at->format('Y-m-d H:i:s'));
     }
 
     public function test_organizer_is_set_from_the_authenticated_user_never_the_payload(): void
@@ -78,14 +78,19 @@ final class MeetingManagementTest extends TestCase
     {
         $this->actingAs($this->superAdmin())
             ->post('/meetings', [])
-            ->assertSessionHasErrors(['title', 'starts_at', 'ends_at']);
+            ->assertSessionHasErrors(['title', 'starts_at']);
     }
 
-    public function test_ends_at_must_be_after_starts_at(): void
+    public function test_ends_at_is_derived_from_config_duration_and_ignored_from_payload(): void
     {
+        config(['meeting.duration_minutes' => 30]);
+
         $this->actingAs($this->superAdmin())
-            ->post('/meetings', [...$this->validPayload(), 'ends_at' => '2026-12-11 09:00:00'])
-            ->assertSessionHasErrors(['ends_at']);
+            ->post('/meetings', [...$this->validPayload(), 'ends_at' => '2026-12-11 18:00:00'])
+            ->assertRedirect();
+
+        $meeting = MeetingEloquentModel::query()->where('title', 'Kickoff call')->firstOrFail();
+        $this->assertSame('2026-12-11 10:30:00', $meeting->ends_at->format('Y-m-d H:i:s'));
     }
 
     public function test_a_dangling_attendee_uuid_is_rejected(): void
@@ -112,7 +117,6 @@ final class MeetingManagementTest extends TestCase
                 'title' => 'Kickoff call (updated)',
                 'description' => null,
                 'starts_at' => '2026-12-11 10:00:00',
-                'ends_at' => '2026-12-11 11:30:00',
                 'attendees' => [['type' => 'contact', 'uuid' => $contact->uuid]],
             ])
             ->assertRedirect();
@@ -121,6 +125,7 @@ final class MeetingManagementTest extends TestCase
         $this->assertSame('Kickoff call (updated)', $meeting->title);
         $this->assertCount(1, $meeting->attendees);
         $this->assertSame('contact', $meeting->attendees->first()->attendable_type);
+        $this->assertSame('2026-12-11 10:30:00', $meeting->ends_at->format('Y-m-d H:i:s'));
     }
 
     public function test_cancel_flips_status_to_cancelled(): void

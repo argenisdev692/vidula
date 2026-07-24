@@ -89,4 +89,82 @@ final class MeetingCalendarFeedTest extends TestCase
         $types = collect($response->json('data'))->pluck('type')->unique()->all();
         $this->assertSame(['lead'], $types);
     }
+
+    public function test_attendee_search_matches_email_across_sources(): void
+    {
+        User::factory()->create([
+            'first_name' => 'Ada',
+            'last_name' => 'Lovelace',
+            'email' => 'ada.unique@example.com',
+        ]);
+        AppointmentEloquentModel::factory()->create([
+            'first_name' => 'Grace',
+            'last_name' => 'Hopper',
+            'email' => 'grace.lead@example.com',
+        ]);
+        ContactSupportEloquentModel::factory()->create([
+            'first_name' => 'Alan',
+            'last_name' => 'Turing',
+            'email' => 'alan.contact@example.com',
+        ]);
+
+        $admin = $this->superAdmin();
+
+        $this->actingAs($admin)
+            ->getJson('/meetings/attendees/search?q=ada.unique@example.com')
+            ->assertOk()
+            ->assertJsonFragment(['type' => 'user']);
+
+        $this->actingAs($admin)
+            ->getJson('/meetings/attendees/search?q=grace.lead@example.com')
+            ->assertOk()
+            ->assertJsonFragment(['type' => 'lead']);
+
+        $this->actingAs($admin)
+            ->getJson('/meetings/attendees/search?q=alan.contact@example.com')
+            ->assertOk()
+            ->assertJsonFragment(['type' => 'contact']);
+    }
+
+    public function test_quick_lead_creates_an_appointment_and_returns_attendee_option(): void
+    {
+        $response = $this->actingAs($this->superAdmin())
+            ->postJson('/meetings/attendees/quick-lead', [
+                'first_name' => 'New',
+                'last_name' => 'Lead',
+                'email' => 'new.lead@example.com',
+                'phone' => '+14155552671',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.type', 'lead')
+            ->assertJsonPath('data.label', 'New Lead · new.lead@example.com');
+
+        $this->assertDatabaseHas('appointments', [
+            'email' => 'new.lead@example.com',
+            'first_name' => 'New',
+            'last_name' => 'Lead',
+            'phone' => '+14155552671',
+        ]);
+        $this->assertNotEmpty($response->json('data.uuid'));
+    }
+
+    public function test_meeting_availability_is_reachable_for_meeting_creators(): void
+    {
+        $response = $this->actingAs($this->superAdmin())
+            ->getJson('/meetings/availability?from=2026-12-01&to=2026-12-07')
+            ->assertOk();
+
+        $this->assertIsArray($response->json('data'));
+        $this->assertSame(30, $response->json('meta.duration_minutes'));
+    }
+
+    public function test_a_user_without_meeting_permission_cannot_access_availability(): void
+    {
+        $plain = User::factory()->create();
+        $plain->assignRole('USER');
+
+        $this->actingAs($plain)
+            ->getJson('/meetings/availability?from=2026-12-01&to=2026-12-07')
+            ->assertForbidden();
+    }
 }

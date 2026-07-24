@@ -8,6 +8,8 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\Meeting\Application\DTOs\CreateMeetingData;
+use Modules\Meeting\Application\DTOs\MeetingAttendeeData;
+use Modules\Meeting\Application\Support\MeetingDuration;
 use Modules\Meeting\Domain\Events\MeetingScheduled;
 use Modules\Meeting\Domain\Exceptions\AttendeeNotEligibleException;
 use Modules\Meeting\Domain\Ports\MeetingRepositoryPort;
@@ -17,7 +19,8 @@ use Modules\Meeting\Infrastructure\Persistence\Eloquent\Models\MeetingEloquentMo
 
 /**
  * `organizer_id` is set here from the authenticated user, never accepted from
- * the request payload (OWASP API3 — research.md §5).
+ * the request payload (OWASP API3 — research.md §5). `ends_at` is derived from
+ * `starts_at` + `config('meeting.duration_minutes')`.
  */
 final readonly class CreateMeetingHandler
 {
@@ -36,11 +39,11 @@ final readonly class CreateMeetingHandler
                 'title' => $data->title,
                 'description' => $data->description,
                 'starts_at' => $data->startsAt,
-                'ends_at' => $data->endsAt,
+                'ends_at' => MeetingDuration::endsAt($data->startsAt),
                 'status' => MeetingStatus::Scheduled,
             ]);
 
-            $this->meetings->syncAttendees($meeting, $this->resolveAttendees($data));
+            $this->meetings->syncAttendees($meeting, $this->resolveAttendees($data->attendees));
 
             return $meeting->refresh();
         });
@@ -53,14 +56,23 @@ final readonly class CreateMeetingHandler
     }
 
     /**
+     * @param  list<MeetingAttendeeData|array{type: string, uuid: string}>  $attendees
      * @return array<int, array{attendable_type: string, attendable_id: int}>
      */
-    private function resolveAttendees(CreateMeetingData $data): array
+    private function resolveAttendees(array $attendees): array
     {
         try {
-            return $data->attendees
-                ->map(fn ($attendee) => $this->resolver->resolve($attendee->type, $attendee->uuid))
-                ->all();
+            $rows = [];
+
+            foreach ($attendees as $attendee) {
+                $dto = $attendee instanceof MeetingAttendeeData
+                    ? $attendee
+                    : MeetingAttendeeData::from($attendee);
+
+                $rows[] = $this->resolver->resolve($dto->type, $dto->uuid);
+            }
+
+            return $rows;
         } catch (AttendeeNotEligibleException $e) {
             throw ValidationException::withMessages(['attendees' => [$e->getMessage()]]);
         }

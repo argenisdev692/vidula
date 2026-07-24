@@ -26,7 +26,7 @@ final readonly class SendMeetingUpdatedEmailListener implements ShouldQueue
             if ($attendee['email'] === '' || $attendee['email'] === null) {
                 continue;
             }
-            $this->mailer->to($attendee['email'])->send(new MeetingUpdatedMail($meeting, $attendee['name']));
+            $this->mailer->to($attendee['email'])->queue(new MeetingUpdatedMail($meeting, $attendee['name']));
         }
     }
 }

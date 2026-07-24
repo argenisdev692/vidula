@@ -38,6 +38,7 @@ export interface Meeting {
     starts_at: string;
     ends_at: string;
     status: MeetingStatus;
+    meet_link?: string | null;
     attendees_count: number;
     organizer: { uuid: string; first_name: string; last_name: string } | null;
     created_at: string | null;
@@ -46,8 +47,17 @@ export interface Meeting {
 
 /** The full record returned by the detail render (GET /meetings/{uuid}). */
 export interface MeetingDetail extends Meeting {
+    meet_link: string | null;
     attendees: MeetingAttendee[];
     updated_at: string | null;
+}
+
+/** Optional seed data for the create form (lead bridge / calendar dateClick). */
+export interface MeetingPrefill {
+    title?: string;
+    starts_at?: string;
+    ends_at?: string;
+    attendees?: MeetingAttendeeOption[];
 }
 
 /** Editable projection for the Create/Edit form payload. */

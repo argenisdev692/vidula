@@ -26,7 +26,7 @@ final readonly class SendMeetingCancelledEmailListener implements ShouldQueue
             if ($attendee['email'] === '' || $attendee['email'] === null) {
                 continue;
             }
-            $this->mailer->to($attendee['email'])->send(new MeetingCancelledMail($meeting, $attendee['name']));
+            $this->mailer->to($attendee['email'])->queue(new MeetingCancelledMail($meeting, $attendee['name']));
         }
     }
 }

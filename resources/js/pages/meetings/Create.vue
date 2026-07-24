@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * Schedule a new meeting — dedicated create page (GET /meetings/create,
- * CREATE_MEETINGS). No modal: mirrors appointments/Create.vue.
+ * CREATE_MEETINGS). Accepts optional `prefill` from lead bridge or calendar
+ * dateClick query params.
  */
 import { Head } from '@inertiajs/vue3';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
@@ -9,8 +10,13 @@ import AppHeader from '@/modules/app/components/AppHeader.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import BackLink from '@/common/ui/BackLink.vue';
 import MeetingForm from './components/MeetingForm.vue';
+import type { MeetingPrefill } from '@/modules/meeting/types';
 
 defineOptions({ layout: AppLayout });
+
+defineProps<{
+    prefill?: MeetingPrefill | null;
+}>();
 </script>
 
 <template>
@@ -30,7 +36,7 @@ defineOptions({ layout: AppLayout });
             <BackLink href="/meetings" label="Back to meetings" />
 
             <article class="card">
-                <MeetingForm mode="create" />
+                <MeetingForm mode="create" :prefill="prefill" />
             </article>
         </div>
     </PermissionGuard>

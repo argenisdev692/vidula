@@ -25,4 +25,6 @@
             </td>
         </tr>
     </table>
+
+    @include('emails.meetings.partials.meet-link', ['meeting' => $meeting])
 @endsection

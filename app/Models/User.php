@@ -147,6 +147,21 @@ use Spatie\Permission\Traits\HasRoles;
  * @method static Builder<static>|User withoutTeam($teams)
  * @method static Builder<static>|User withoutTrashed()
  *
+ * @property-read Collection<int, BlogCategoryEloquentModel> $blogCategories
+ * @property-read int|null $blog_categories_count
+ * @property-read Collection<int, CampaignEloquentModel> $campaigns
+ * @property-read int|null $campaigns_count
+ * @property-read Collection<int, MeetingEloquentModel> $meetings
+ * @property-read int|null $meetings_count
+ * @property-read Collection<int, PortfolioEloquentModel> $portfolios
+ * @property-read int|null $portfolios_count
+ * @property-read Collection<int, PostEloquentModel> $posts
+ * @property-read int|null $posts_count
+ * @property-read Collection<int, ServiceEloquentModel> $services
+ * @property-read int|null $services_count
+ * @property-read Collection<int, SocialMediaContentEloquentModel> $socialMediaContents
+ * @property-read int|null $social_media_contents_count
+ *
  * @mixin \Eloquent
  */
 class User extends Authenticatable implements MustVerifyEmailContract

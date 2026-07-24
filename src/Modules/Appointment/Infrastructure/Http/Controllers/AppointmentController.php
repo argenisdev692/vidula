@@ -86,34 +86,40 @@ final readonly class AppointmentController
         return Inertia::render('appointments/Create');
     }
 
-    public function edit(string $uuid, GetAppointmentHandler $get): InertiaResponse
+    public function edit(Request $request, string $uuid, GetAppointmentHandler $get): InertiaResponse|JsonResponse
     {
         // Project only the editable lead-profile columns (AppointmentData's field
         // set) — pipeline state (status_lead, meeting_status, scheduled_at, …)
         // never rides on this form, it changes only through the dedicated actions.
+        $payload = $get->handle($uuid)->only([
+            'uuid',
+            'first_name',
+            'last_name',
+            'client_type',
+            'company_name',
+            'project_type',
+            'email',
+            'phone',
+            'address',
+            'address_2',
+            'zip_code',
+            'city',
+            'state',
+            'country',
+            'country_code',
+            'latitude',
+            'longitude',
+            'sms_consent',
+            'notes',
+            'owner',
+        ]);
+
+        if ($request->expectsJson()) {
+            return response()->json(['data' => $payload]);
+        }
+
         return Inertia::render('appointments/Edit', [
-            'appointment' => $get->handle($uuid)->only([
-                'uuid',
-                'first_name',
-                'last_name',
-                'client_type',
-                'company_name',
-                'project_type',
-                'email',
-                'phone',
-                'address',
-                'address_2',
-                'zip_code',
-                'city',
-                'state',
-                'country',
-                'country_code',
-                'latitude',
-                'longitude',
-                'sms_consent',
-                'notes',
-                'owner',
-            ]),
+            'appointment' => $payload,
         ]);
     }
 
@@ -123,16 +129,14 @@ final readonly class AppointmentController
 
         $create->handle($data, $scheduledAt);
 
-        // Create is a dedicated page (no modal, mirrors Users): land the admin
-        // on the list rather than `back()` to the now-stale create form.
-        return redirect()->route('appointments.index')->with('success', __('Lead created.'));
+        return back()->with('success', __('Lead created.'));
     }
 
     public function update(string $uuid, AppointmentData $data, GetAppointmentHandler $get, UpdateAppointmentHandler $update): RedirectResponse
     {
         $update->handle($get->handle($uuid), $data);
 
-        return redirect()->route('appointments.index')->with('success', __('Lead updated.'));
+        return back()->with('success', __('Lead updated.'));
     }
 
     public function markRead(string $uuid, MarkAppointmentReadHandler $markRead): RedirectResponse|JsonResponse

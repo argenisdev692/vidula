@@ -8,6 +8,7 @@ use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Modules\Meeting\Application\DTOs\GoogleCalendarEventSyncResult;
 use Modules\Meeting\Domain\Ports\GoogleCalendarSyncPort;
 use Modules\Meeting\Infrastructure\Mail\MeetingCancelledMail;
 use Modules\Meeting\Infrastructure\Mail\MeetingInvitationMail;
@@ -47,11 +48,14 @@ final class MeetingNotificationsTest extends TestCase
 
             public array $deleted = [];
 
-            public function createEvent(MeetingEloquentModel $meeting): ?string
+            public function createEvent(MeetingEloquentModel $meeting): ?GoogleCalendarEventSyncResult
             {
                 $this->created[] = $meeting->uuid;
 
-                return 'fake-google-event-id';
+                return new GoogleCalendarEventSyncResult(
+                    eventId: 'fake-google-event-id',
+                    meetLink: 'https://meet.google.com/fake-test-link',
+                );
             }
 
             public function updateEvent(MeetingEloquentModel $meeting): void
@@ -78,11 +82,10 @@ final class MeetingNotificationsTest extends TestCase
             'title' => 'Kickoff call',
             'description' => null,
             'starts_at' => '2026-12-11 10:00:00',
-            'ends_at' => '2026-12-11 11:00:00',
             'attendees' => [['type' => 'user', 'uuid' => $attendeeUser->uuid]],
         ])->assertRedirect();
 
-        Mail::assertSent(
+        Mail::assertQueued(
             MeetingInvitationMail::class,
             fn (MeetingInvitationMail $mail): bool => $mail->hasTo('ada@example.com'),
         );
@@ -90,6 +93,7 @@ final class MeetingNotificationsTest extends TestCase
         $meeting = MeetingEloquentModel::query()->where('title', 'Kickoff call')->firstOrFail();
         $this->assertContains($meeting->uuid, $fakeCalendar->created);
         $this->assertSame('fake-google-event-id', $meeting->google_event_id);
+        $this->assertSame('https://meet.google.com/fake-test-link', $meeting->meet_link);
     }
 
     public function test_cancelling_a_meeting_emails_attendees_and_deletes_the_google_calendar_event(): void
@@ -106,7 +110,7 @@ final class MeetingNotificationsTest extends TestCase
             ->patch("/meetings/{$meeting->uuid}/cancel")
             ->assertRedirect();
 
-        Mail::assertSent(
+        Mail::assertQueued(
             MeetingCancelledMail::class,
             fn (MeetingCancelledMail $mail): bool => $mail->hasTo('attendee@example.com'),
         );
@@ -137,7 +141,6 @@ final class MeetingNotificationsTest extends TestCase
             'title' => 'Resilience check',
             'description' => null,
             'starts_at' => '2026-12-11 10:00:00',
-            'ends_at' => '2026-12-11 11:00:00',
             'attendees' => [],
         ])->assertRedirect();
 

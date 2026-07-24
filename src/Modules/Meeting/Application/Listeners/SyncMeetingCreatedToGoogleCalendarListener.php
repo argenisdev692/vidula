@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Meeting\Application\Listeners;
 
+use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Modules\Meeting\Application\Queries\GetMeetingHandler;
 use Modules\Meeting\Domain\Events\MeetingScheduled;
@@ -23,6 +24,7 @@ final readonly class SyncMeetingCreatedToGoogleCalendarListener implements Shoul
         private GetMeetingHandler $meetings,
         private MeetingRepositoryPort $repository,
         private GoogleCalendarSyncPort $googleCalendar,
+        private Cache $cache,
     ) {}
 
     public function handle(MeetingScheduled $event): void
@@ -32,7 +34,11 @@ final readonly class SyncMeetingCreatedToGoogleCalendarListener implements Shoul
         $googleEventId = $this->googleCalendar->createEvent($meeting);
 
         if ($googleEventId !== null) {
-            $this->repository->update($meeting, ['google_event_id' => $googleEventId]);
+            $this->repository->update($meeting, [
+                'google_event_id' => $googleEventId->eventId,
+                'meet_link' => $googleEventId->meetLink,
+            ]);
+            $this->cache->forget("meeting_{$event->uuid}");
         }
     }
 }

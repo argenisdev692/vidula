@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace Modules\Meeting\Infrastructure\Mail;
 
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use Modules\Meeting\Infrastructure\Persistence\Eloquent\Models\MeetingEloquentModel;
 
-final class MeetingCancelledMail extends Mailable
+final class MeetingCancelledMail extends Mailable implements ShouldQueue
 {
+    use Queueable;
     use SerializesModels;
 
     public function __construct(

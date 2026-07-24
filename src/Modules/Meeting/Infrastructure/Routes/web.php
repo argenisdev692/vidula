@@ -3,10 +3,13 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Modules\Meeting\Infrastructure\Http\Controllers\GoogleCalendarOAuthController;
 use Modules\Meeting\Infrastructure\Http\Controllers\MeetingAttendeeSearchController;
+use Modules\Meeting\Infrastructure\Http\Controllers\MeetingAvailabilityController;
 use Modules\Meeting\Infrastructure\Http\Controllers\MeetingCalendarController;
 use Modules\Meeting\Infrastructure\Http\Controllers\MeetingController;
 use Modules\Meeting\Infrastructure\Http\Controllers\MeetingExportController;
+use Modules\Meeting\Infrastructure\Http\Controllers\MeetingQuickCreateLeadController;
 
 /*
 | Internal meeting scheduling — web (session + Inertia). Gated by
@@ -40,6 +43,12 @@ Route::middleware(['web', 'auth', 'throttle:60,1'])->prefix('meetings')->name('m
     Route::get('/attendees/search', MeetingAttendeeSearchController::class)
         ->middleware('permission:CREATE_MEETINGS|UPDATE_MEETINGS')->name('attendees.search');
 
+    Route::post('/attendees/quick-lead', MeetingQuickCreateLeadController::class)
+        ->middleware('permission:CREATE_MEETINGS|UPDATE_MEETINGS')->name('attendees.quick-lead');
+
+    Route::get('/availability', MeetingAvailabilityController::class)
+        ->middleware('permission:CREATE_MEETINGS|UPDATE_MEETINGS')->name('availability');
+
     Route::get('/{uuid}', [MeetingController::class, 'show'])
         ->middleware('permission:VIEW_MEETINGS')->whereUuid('uuid')->name('show');
 
@@ -57,4 +66,9 @@ Route::middleware(['web', 'auth', 'throttle:60,1'])->prefix('meetings')->name('m
 
     Route::post('/{uuid}/restore', [MeetingController::class, 'restore'])
         ->middleware('permission:RESTORE_MEETINGS')->whereUuid('uuid')->name('restore');
+});
+
+Route::middleware(['web', 'auth'])->prefix('google-calendar/oauth')->name('google-calendar.oauth.')->group(function (): void {
+    Route::get('/connect', [GoogleCalendarOAuthController::class, 'connect'])->name('connect');
+    Route::get('/callback', [GoogleCalendarOAuthController::class, 'callback'])->name('callback');
 });

@@ -38,6 +38,17 @@ return [
     'calendar_id' => env('GOOGLE_CALENDAR_ID'),
 
     /*
+     *  OAuth redirect URI — must match the value configured in Google Cloud Console.
+     */
+    'oauth_redirect_uri' => env('GOOGLE_CALENDAR_OAUTH_REDIRECT_URI', 'http://localhost/google-calendar/oauth/callback'),
+
+    /*
+     *  When true, new Google Calendar events get a Meet link (requires OAuth profile).
+     */
+    'add_meet_link' => env('REMOTE_ASSISTANCE_MEETING_PROVIDER', 'manual') === 'google_meet'
+        && env('GOOGLE_CALENDAR_AUTH_PROFILE', 'service_account') === 'oauth',
+
+    /*
      *  The email address of the user account to impersonate.
      */
     'user_to_impersonate' => env('GOOGLE_CALENDAR_IMPERSONATE'),

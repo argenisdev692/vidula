@@ -27,6 +27,9 @@ return new class extends Migration
             // is disabled/not configured or the initial push failed — sync
             // degrades gracefully and never blocks meeting CRUD.
             $table->string('google_event_id')->nullable();
+            // Google Meet join URL returned after OAuth push-sync with
+            // `addMeetLink()`. Null when Meet is disabled or sync failed.
+            $table->string('meet_link')->nullable();
             $table->timestamps();
             $table->softDeletes();
 

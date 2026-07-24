@@ -76,6 +76,19 @@ use Spatie\Activitylog\Support\LogOptions;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData withoutTrashed()
  *
+ * @property string|null $zip_code
+ * @property string|null $city
+ * @property string|null $state
+ * @property string|null $country
+ * @property string|null $country_code
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereCity($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereCountry($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereCountryCode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereState($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereZipCode($value)
+ *
  * @mixin \Eloquent
  */
 class CompanyData extends Model

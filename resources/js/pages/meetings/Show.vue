@@ -2,23 +2,20 @@
 /**
  * Read-only meeting detail. Uses the shared DetailCard shell (AppHeader +
  * VIEW_MEETINGS guard + BackLink + glass card), mirrors the other modules'
- * Show pages. Attendees render with just their type tag + id (no name) since
- * this endpoint only returns `attendable_type`/`attendable_id` — resolving a
- * human label per row would mean either an eager N+1 join across three
- * unrelated tables or duplicating `SearchAttendeesHandler`'s minimal-field
- * lookup here; deferred to a fast-follow if operators ask for it.
+ * Show pages.
  */
 import { Head } from '@inertiajs/vue3';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import DetailCard from '@/common/ui/DetailCard.vue';
 import Tag from '@/volt/Tag.vue';
 import { formatDateTime } from '@/modules/meeting/helpers/formatDate';
-import type { MeetingDetail } from '@/modules/meeting/types';
+import type { MeetingAttendeeOption, MeetingDetail } from '@/modules/meeting/types';
 
 defineOptions({ layout: AppLayout });
 
 const props = defineProps<{
     meeting: MeetingDetail;
+    attendeeLabels: MeetingAttendeeOption[];
 }>();
 
 function organizerName(): string {
@@ -29,6 +26,11 @@ function organizerName(): string {
 }
 
 const TYPE_LABEL: Record<string, string> = { user: 'User', lead: 'Lead', contact: 'Contact' };
+const TYPE_SEVERITY: Record<string, 'info' | 'primary' | 'secondary'> = {
+    user: 'info',
+    lead: 'primary',
+    contact: 'secondary',
+};
 </script>
 
 <template>
@@ -66,6 +68,14 @@ const TYPE_LABEL: Record<string, string> = { user: 'User', lead: 'Lead', contact
                 <dt>Ends</dt>
                 <dd class="mono">{{ formatDateTime(meeting.ends_at) }}</dd>
             </div>
+            <div v-if="meeting.meet_link" class="fact fact--wide">
+                <dt>Google Meet</dt>
+                <dd>
+                    <a class="link" :href="meeting.meet_link" target="_blank" rel="noopener noreferrer">
+                        {{ meeting.meet_link }}
+                    </a>
+                </dd>
+            </div>
             <div v-if="meeting.description" class="fact fact--wide">
                 <dt>Description</dt>
                 <dd>{{ meeting.description }}</dd>
@@ -74,13 +84,15 @@ const TYPE_LABEL: Record<string, string> = { user: 'User', lead: 'Lead', contact
                 <dt>Attendee list</dt>
                 <dd>
                     <div class="attendee-list">
-                        <Tag
-                            v-for="attendee in meeting.attendees"
-                            :key="`${attendee.attendable_type}-${attendee.attendable_id}`"
-                            :value="`${TYPE_LABEL[attendee.attendable_type] ?? attendee.attendable_type} #${attendee.attendable_id}`"
-                            severity="secondary"
-                        />
-                        <span v-if="meeting.attendees.length === 0" class="mono">No attendees.</span>
+                        <span
+                            v-for="attendee in attendeeLabels"
+                            :key="`${attendee.type}:${attendee.uuid}`"
+                            class="attendee-list__item"
+                        >
+                            <Tag :value="TYPE_LABEL[attendee.type] ?? attendee.type" :severity="TYPE_SEVERITY[attendee.type] ?? 'secondary'" />
+                            <span>{{ attendee.label }}</span>
+                        </span>
+                        <span v-if="attendeeLabels.length === 0" class="mono">No attendees.</span>
                     </div>
                 </dd>
             </div>
@@ -91,7 +103,13 @@ const TYPE_LABEL: Record<string, string> = { user: 'User', lead: 'Lead', contact
 <style scoped>
 .attendee-list {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.attendee-list__item {
+    display: inline-flex;
+    align-items: center;
     gap: var(--space-2);
 }
 </style>

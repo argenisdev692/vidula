@@ -8,11 +8,13 @@
  * (confirm / reschedule / cancel / follow-up calls / mark read / edit /
  * suspend) happens from the Index list, mirroring Users / Contact & Support.
  */
-import { Head } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import DetailCard from '@/common/ui/DetailCard.vue';
 import StatusBadge from '@/common/ui/StatusBadge.vue';
+import { useAuthorization } from '@/modules/auth/composables/useAuthorization';
+import Button from '@/volt/Button.vue';
 import Tag from '@/volt/Tag.vue';
 import { formatDateTime } from '@/modules/appointments/helpers/formatDate';
 import { CLIENT_TYPE_LABEL, MEETING_STATUS_META, PROJECT_TYPE_LABEL, STATUS_LEAD_META } from '@/modules/appointments/helpers/statusMeta';
@@ -24,8 +26,15 @@ const props = defineProps<{
     appointment: AppointmentDetail;
 }>();
 
+const { hasPermission } = useAuthorization();
+const canScheduleMeeting = computed<boolean>(() => hasPermission('CREATE_MEETINGS'));
+
 const isSuspended = computed<boolean>(() => props.appointment.deleted_at !== null);
 const fullName = computed<string>(() => `${props.appointment.first_name} ${props.appointment.last_name}`.trim() || 'Unknown lead');
+
+function scheduleMeeting(): void {
+    router.visit(`/meetings/create?lead=${props.appointment.uuid}`);
+}
 
 const addressLine = computed<string>(() => {
     const parts = [
@@ -66,6 +75,15 @@ const addressLine = computed<string>(() => {
             <StatusBadge v-if="appointment.is_spam" tone="danger" label="Spam" strong />
             <StatusBadge :tone="isSuspended ? 'danger' : 'success'" :label="isSuspended ? 'Suspended' : 'Active'" />
         </template>
+
+        <div v-if="canScheduleMeeting && !isSuspended" class="lead-actions">
+            <Button
+                label="Schedule Google Meet"
+                icon="pi pi-video"
+                size="small"
+                @click="scheduleMeeting"
+            />
+        </div>
 
         <dl class="facts">
             <div class="fact">
@@ -175,6 +193,12 @@ const addressLine = computed<string>(() => {
 </template>
 
 <style scoped>
+.lead-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: var(--space-5);
+}
+
 .message {
     white-space: pre-wrap;
     word-break: break-word;

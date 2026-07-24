@@ -26,6 +26,8 @@
         </tr>
     </table>
 
+    @include('emails.meetings.partials.meet-link', ['meeting' => $meeting])
+
     <p style="margin:0; color:#6b7280; font-size:13px;">
         {{ __('If you have questions about this meeting, please reach out to the organizer.') }}
     </p>

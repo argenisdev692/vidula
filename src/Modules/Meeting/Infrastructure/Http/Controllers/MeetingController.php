@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Meeting\Infrastructure\Http\Controllers;
 
+use Carbon\CarbonImmutable;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
+use Modules\Appointment\Infrastructure\Persistence\Eloquent\Models\AppointmentEloquentModel;
 use Modules\Meeting\Application\Commands\BulkDeleteMeetingsHandler;
 use Modules\Meeting\Application\Commands\BulkRestoreMeetingsHandler;
 use Modules\Meeting\Application\Commands\CancelMeetingHandler;
@@ -46,36 +49,58 @@ final readonly class MeetingController
         $meeting = $get->handle($uuid);
         $this->authorizeMeetingAccess($request, $meeting);
 
-        return Inertia::render('meetings/Show', ['meeting' => $meeting]);
+        return Inertia::render('meetings/Show', [
+            'meeting' => $meeting,
+            'attendeeLabels' => AttendeeOptionMapper::toOptions($meeting->attendees),
+        ]);
     }
 
-    public function create(): InertiaResponse
+    public function create(Request $request): InertiaResponse
     {
-        return Inertia::render('meetings/Create');
+        $prefill = null;
+
+        if ($request->filled('lead')) {
+            $prefill = $this->buildLeadPrefill((string) $request->string('lead'));
+        }
+
+        if ($request->filled('starts_at')) {
+            $prefill ??= [];
+            $startsAt = CarbonImmutable::parse((string) $request->string('starts_at'));
+            $prefill['starts_at'] = $startsAt->toIso8601String();
+            $prefill['ends_at'] = $startsAt->addMinutes((int) config('meeting.duration_minutes', 30))->toIso8601String();
+        }
+
+        return Inertia::render('meetings/Create', ['prefill' => $prefill]);
     }
 
-    public function edit(Request $request, string $uuid, GetMeetingHandler $get): InertiaResponse
+    public function edit(Request $request, string $uuid, GetMeetingHandler $get): InertiaResponse|JsonResponse
     {
         $meeting = $get->handle($uuid);
         $this->authorizeMeetingAccess($request, $meeting);
 
+        $payload = [
+            'uuid' => $meeting->uuid,
+            'title' => $meeting->title,
+            'description' => $meeting->description,
+            'starts_at' => $meeting->starts_at->toIso8601String(),
+            'ends_at' => $meeting->ends_at->toIso8601String(),
+            'attendees' => AttendeeOptionMapper::toOptions($meeting->attendees),
+        ];
+
+        if ($request->expectsJson()) {
+            return response()->json(['data' => $payload]);
+        }
+
         return Inertia::render('meetings/Edit', [
-            'meeting' => [
-                'uuid' => $meeting->uuid,
-                'title' => $meeting->title,
-                'description' => $meeting->description,
-                'starts_at' => $meeting->starts_at->toIso8601String(),
-                'ends_at' => $meeting->ends_at->toIso8601String(),
-                'attendees' => AttendeeOptionMapper::toOptions($meeting->attendees),
-            ],
+            'meeting' => $payload,
         ]);
     }
 
     public function store(Request $request, CreateMeetingData $data, CreateMeetingHandler $create): RedirectResponse
     {
-        $meeting = $create->handle($data, (int) $request->user()->id);
+        (void) $create->handle($data, (int) $request->user()->id);
 
-        return redirect()->route('meetings.show', $meeting->uuid)->with('success', __('Meeting created.'));
+        return back()->with('success', __('Meeting created.'));
     }
 
     public function update(Request $request, string $uuid, UpdateMeetingData $data, GetMeetingHandler $get, UpdateMeetingHandler $update): RedirectResponse
@@ -83,9 +108,9 @@ final readonly class MeetingController
         $meeting = $get->handle($uuid);
         $this->authorizeMeetingAccess($request, $meeting);
 
-        $update->handle($meeting, $data);
+        (void) $update->handle($meeting, $data);
 
-        return redirect()->route('meetings.show', $uuid)->with('success', __('Meeting updated.'));
+        return back()->with('success', __('Meeting updated.'));
     }
 
     public function cancel(Request $request, string $uuid, GetMeetingHandler $get, CancelMeetingHandler $cancel): RedirectResponse
@@ -93,7 +118,7 @@ final readonly class MeetingController
         $meeting = $get->handle($uuid);
         $this->authorizeMeetingAccess($request, $meeting);
 
-        $cancel->handle($meeting);
+        (void) $cancel->handle($meeting);
 
         return back()->with('success', __('Meeting cancelled.'));
     }
@@ -146,5 +171,42 @@ final readonly class MeetingController
             $user === null || (! $user->hasPermissionTo('VIEW_ANY_MEETINGS') && $meeting->organizer_id !== $user->id),
             403,
         );
+    }
+
+    /**
+     * @return array{title: string, attendees: array<int, array{type: string, uuid: string, label: string}>, starts_at?: string, ends_at?: string}|null
+     */
+    private function buildLeadPrefill(string $leadUuid): ?array
+    {
+        $lead = AppointmentEloquentModel::query()
+            ->where('uuid', $leadUuid)
+            ->first(['uuid', 'first_name', 'last_name', 'company_name', 'scheduled_at']);
+
+        if ($lead === null) {
+            return null;
+        }
+
+        $label = trim("{$lead->first_name} {$lead->last_name}");
+        if ($lead->company_name) {
+            $label .= " ({$lead->company_name})";
+        }
+
+        $prefill = [
+            'title' => 'Meeting with '.trim("{$lead->first_name} {$lead->last_name}"),
+            'attendees' => [[
+                'type' => 'lead',
+                'uuid' => $lead->uuid,
+                'label' => $label,
+            ]],
+        ];
+
+        if ($lead->scheduled_at !== null) {
+            $prefill['starts_at'] = $lead->scheduled_at->toIso8601String();
+            $prefill['ends_at'] = $lead->scheduled_at->copy()
+                ->addMinutes((int) config('meeting.duration_minutes', 30))
+                ->toIso8601String();
+        }
+
+        return $prefill;
     }
 }

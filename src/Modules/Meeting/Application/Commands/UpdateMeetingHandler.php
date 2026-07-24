@@ -8,7 +8,9 @@ use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\Meeting\Application\DTOs\MeetingAttendeeData;
 use Modules\Meeting\Application\DTOs\UpdateMeetingData;
+use Modules\Meeting\Application\Support\MeetingDuration;
 use Modules\Meeting\Domain\Events\MeetingUpdated;
 use Modules\Meeting\Domain\Exceptions\AttendeeNotEligibleException;
 use Modules\Meeting\Domain\Ports\MeetingRepositoryPort;
@@ -18,7 +20,7 @@ use Modules\Meeting\Infrastructure\Persistence\Eloquent\Models\MeetingEloquentMo
 /**
  * `organizer_id` is immutable after creation — never accepted here either.
  * Replaces the full attendee set (simplest correct semantics for a
- * resend-the-whole-list form).
+ * resend-the-whole-list form). `ends_at` is re-derived from the new start.
  */
 final readonly class UpdateMeetingHandler
 {
@@ -37,13 +39,19 @@ final readonly class UpdateMeetingHandler
                 'title' => $data->title,
                 'description' => $data->description,
                 'starts_at' => $data->startsAt,
-                'ends_at' => $data->endsAt,
+                'ends_at' => MeetingDuration::endsAt($data->startsAt),
             ]);
 
             try {
-                $rows = $data->attendees
-                    ->map(fn ($attendee) => $this->resolver->resolve($attendee->type, $attendee->uuid))
-                    ->all();
+                $rows = [];
+
+                foreach ($data->attendees as $attendee) {
+                    $dto = $attendee instanceof MeetingAttendeeData
+                        ? $attendee
+                        : MeetingAttendeeData::from($attendee);
+
+                    $rows[] = $this->resolver->resolve($dto->type, $dto->uuid);
+                }
             } catch (AttendeeNotEligibleException $e) {
                 throw ValidationException::withMessages(['attendees' => [$e->getMessage()]]);
             }

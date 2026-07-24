@@ -1,24 +1,13 @@
 <script setup lang="ts">
 /**
- * Shared create / edit lead form — the single source of truth behind the
- * dedicated Create.vue and Edit.vue pages (no modal, per the module brief).
- * Owns its Inertia `useForm` and submits:
+ * Shared create / edit lead form — used by Create/Edit pages and by
+ * AppointmentFormDialog (modal). Owns its Inertia `useForm` and submits:
  *
- *   · create → POST /appointments        (AppointmentData + an optional
- *                                          top-level `scheduled_at`, see
- *                                          AppointmentController::store)
- *   · edit   → PUT  /appointments/{uuid} (AppointmentData only — pipeline
- *                                          state never rides on this form)
+ *   · create → POST /appointments
+ *   · edit   → PUT  /appointments/{uuid}
  *
- * On success the backend redirects back, so Inertia keeps the admin on the
- * form; the Create/Edit page wrappers navigate to the list on demand. The
- * address block (street + line 2 + managed city/state/zip/country + silent
- * lat/lng, with a managed `country_code`) is delegated to the reusable
- * AddressAutocomplete; the phone number to the reusable PhoneField (E.164).
- *
- * First/last name are sanitised on every keystroke to a single Capitalized,
- * letters-only word of 3–20 characters (no spaces/digits/punctuation) — the
- * module's stricter-than-backend UX rule (see appointmentFormSchema).
+ * When `variant="dialog"`, success/cancel are emitted for the parent modal
+ * instead of navigating away.
  */
 import { computed, watch } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
@@ -42,11 +31,16 @@ const props = withDefaults(
     defineProps<{
         mode: 'create' | 'edit';
         appointment?: AppointmentEditData | null;
+        /** `dialog` hides page actions and emits saved/cancel for AppModal. */
+        variant?: 'page' | 'dialog';
     }>(),
-    { appointment: null },
+    { appointment: null, variant: 'page' },
 );
 
+const emit = defineEmits<{ saved: []; cancel: [] }>();
+
 const isEdit = computed<boolean>(() => props.mode === 'edit');
+const isDialog = computed<boolean>(() => props.variant === 'dialog');
 const page = usePage<SharedProps>();
 
 const form = useForm<AppointmentFormValues & { scheduled_date: string; scheduled_time: string }>({
@@ -70,10 +64,40 @@ const form = useForm<AppointmentFormValues & { scheduled_date: string; scheduled
     notes: props.appointment?.notes ?? '',
     owner: props.appointment?.owner ?? '',
     scheduled_at: '',
-    // Split date/time inputs, combined into `scheduled_at` on submit (create only).
     scheduled_date: '',
     scheduled_time: '',
 });
+
+watch(
+    () => props.appointment,
+    (appointment) => {
+        if (!appointment || !isDialog.value) {
+            return;
+        }
+        form.clearErrors();
+        form.first_name = appointment.first_name ?? '';
+        form.last_name = appointment.last_name ?? '';
+        form.client_type = appointment.client_type ?? 'individual';
+        form.company_name = appointment.company_name ?? '';
+        form.project_type = appointment.project_type ?? '';
+        form.email = appointment.email ?? '';
+        form.phone = appointment.phone ?? '';
+        form.address = appointment.address ?? '';
+        form.address_2 = appointment.address_2 ?? '';
+        form.zip_code = appointment.zip_code ?? '';
+        form.city = appointment.city ?? '';
+        form.state = appointment.state ?? '';
+        form.country = appointment.country ?? '';
+        form.country_code = appointment.country_code ?? '';
+        form.latitude = appointment.latitude ?? null;
+        form.longitude = appointment.longitude ?? null;
+        form.sms_consent = appointment.sms_consent ?? false;
+        form.notes = appointment.notes ?? '';
+        form.owner = appointment.owner ?? '';
+        form.scheduled_date = '';
+        form.scheduled_time = '';
+    },
+);
 
 /* ── Names — letters only, no spaces, 3–20 chars, auto-capitalized ──────── */
 function toNameValue(value: string): string {
@@ -208,13 +232,33 @@ function submit(): void {
         return payload;
     });
 
-    const options = { preserveScroll: true };
+    const options = {
+        preserveScroll: true,
+        onSuccess: () => {
+            if (isDialog.value) {
+                emit('saved');
+            }
+        },
+    };
     if (edit) {
         form.put(`/appointments/${props.appointment!.uuid}`, options);
     } else {
         form.post('/appointments', options);
     }
 }
+
+function onCancel(): void {
+    if (isDialog.value) {
+        emit('cancel');
+        return;
+    }
+    router.visit('/appointments');
+}
+
+defineExpose({
+    submit,
+    processing: computed(() => form.processing),
+});
 </script>
 
 <template>
@@ -376,15 +420,16 @@ function submit(): void {
             />
         </section>
 
-        <div class="appt-form__actions">
+        <div v-if="!isDialog" class="appt-form__actions">
             <SecondaryButton
                 type="button"
                 label="Cancel"
                 :disabled="form.processing"
-                @click="router.visit('/appointments')"
+                @click="onCancel"
             />
             <SubmitButton :label="submitLabel" :icon="submitIcon" :loading="form.processing" />
         </div>
+        <button v-else type="submit" class="appt-form__enter" tabindex="-1" aria-hidden="true" />
     </form>
 </template>
 
@@ -477,6 +522,10 @@ function submit(): void {
     align-items: center;
     gap: var(--space-3);
     margin-top: var(--space-2);
+}
+
+.appt-form__enter {
+    display: none;
 }
 
 @media (max-width: 640px) {

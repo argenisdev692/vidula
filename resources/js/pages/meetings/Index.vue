@@ -25,10 +25,21 @@ import ConfirmDialog from '@/common/data-table/ConfirmDialog.vue';
 import { useResourceList } from '@/common/data-table/useResourceList';
 import { useConfirmAction } from '@/common/data-table/useConfirmAction';
 import { toLocalIsoDate } from '@/lib/date';
+import { apiFetch } from '@/lib/http';
 import MeetingsTable from './components/MeetingsTable.vue';
 import MeetingCalendar from './components/MeetingCalendar.vue';
+import MeetingFormDialog from './components/MeetingFormDialog.vue';
 import { buildMeetingExportUrl, buildMeetingQueryParams } from '@/modules/meeting/helpers/buildMeetingQueryParams';
-import type { Meeting, MeetingFilters, MeetingQuery, MeetingRowStatus, MeetingStatus, PaginatedResponse } from '@/modules/meeting/types';
+import type {
+    Meeting,
+    MeetingEditData,
+    MeetingFilters,
+    MeetingPrefill,
+    MeetingQuery,
+    MeetingRowStatus,
+    MeetingStatus,
+    PaginatedResponse,
+} from '@/modules/meeting/types';
 
 defineOptions({ layout: AppLayout });
 
@@ -46,6 +57,12 @@ const canBulkDelete = computed<boolean>(() => hasPermission('BULK_DELETE_MEETING
 const canBulkRestore = computed<boolean>(() => hasPermission('BULK_RESTORE_MEETINGS'));
 
 const view = ref<'calendar' | 'list'>('calendar');
+const calendarRef = ref<InstanceType<typeof MeetingCalendar> | null>(null);
+
+const dialogVisible = ref<boolean>(false);
+const dialogMode = ref<'create' | 'edit'>('create');
+const dialogMeeting = ref<MeetingEditData | null>(null);
+const dialogPrefill = ref<MeetingPrefill | null>(null);
 
 const query = reactive<MeetingQuery>({
     search: props.filters.search,
@@ -86,12 +103,43 @@ const { loading, selection, firstRecord, recordLabel, isSuspendedView, resetSele
 
 const canBulkAct = computed<boolean>(() => (isSuspendedView.value ? canBulkRestore.value : canBulkDelete.value));
 
-function openCreate(): void {
-    router.visit('/meetings/create');
+function openCreate(prefill: MeetingPrefill | null = null): void {
+    dialogMode.value = 'create';
+    dialogMeeting.value = null;
+    dialogPrefill.value = prefill;
+    dialogVisible.value = true;
+}
+
+function onCalendarSchedule(prefill: { starts_at: string }): void {
+    openCreate({ starts_at: prefill.starts_at });
+}
+
+async function openEditByUuid(uuid: string): Promise<void> {
+    try {
+        const response = await apiFetch<{ data: MeetingEditData }>('GET', `/meetings/${uuid}/edit`);
+        dialogMode.value = 'edit';
+        dialogMeeting.value = response.data;
+        dialogPrefill.value = null;
+        dialogVisible.value = true;
+    } catch {
+        toast.add({ severity: 'error', summary: 'Could not load meeting', life: 3000 });
+    }
 }
 
 function openEdit(meeting: Meeting): void {
-    router.visit(`/meetings/${meeting.uuid}/edit`);
+    void openEditByUuid(meeting.uuid);
+}
+
+function onDialogSaved(): void {
+    toast.add({
+        severity: 'success',
+        summary: dialogMode.value === 'edit' ? 'Meeting updated' : 'Meeting created',
+        life: 3000,
+    });
+    calendarRef.value?.refresh();
+    if (view.value === 'list') {
+        reload();
+    }
 }
 
 /* ── Cancel (distinct from delete — flips status, doesn't soft-delete) ──── */
@@ -258,9 +306,25 @@ const filterFields: FilterField[] = [
                 <div class="view-toggle">
                     <Button label="Calendar" icon="pi pi-calendar" size="small" :aria-pressed="true" @click="view = 'calendar'" />
                     <Button label="List" icon="pi pi-list" size="small" outlined :aria-pressed="false" @click="view = 'list'" />
+                    <Button
+                        v-if="canCreate"
+                        class="view-toggle__create"
+                        label="New meeting"
+                        icon="pi pi-plus"
+                        size="small"
+                        @click="openCreate()"
+                    />
                 </div>
 
-                <MeetingCalendar />
+                <MeetingCalendar ref="calendarRef" @schedule="onCalendarSchedule" @edit="openEditByUuid" />
+
+                <MeetingFormDialog
+                    v-model:visible="dialogVisible"
+                    :mode="dialogMode"
+                    :meeting="dialogMeeting"
+                    :prefill="dialogPrefill"
+                    @saved="onDialogSaved"
+                />
             </div>
         </PermissionGuard>
     </template>
@@ -310,6 +374,14 @@ const filterFields: FilterField[] = [
             </template>
 
             <template #dialogs>
+                <MeetingFormDialog
+                    v-model:visible="dialogVisible"
+                    :mode="dialogMode"
+                    :meeting="dialogMeeting"
+                    :prefill="dialogPrefill"
+                    @saved="onDialogSaved"
+                />
+
                 <ConfirmDialog
                     v-model:visible="rowVisible"
                     :title="rowConfirm.title"
@@ -347,6 +419,11 @@ const filterFields: FilterField[] = [
     display: flex;
     gap: var(--space-2);
     margin-bottom: var(--space-3);
+    align-items: center;
+}
+
+.view-toggle__create {
+    margin-left: auto;
 }
 
 .empty {

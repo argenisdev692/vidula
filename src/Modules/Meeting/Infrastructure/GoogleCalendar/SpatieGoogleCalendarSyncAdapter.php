@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Meeting\Infrastructure\GoogleCalendar;
 
 use Illuminate\Support\Facades\Log;
+use Modules\Meeting\Application\DTOs\GoogleCalendarEventSyncResult;
 use Modules\Meeting\Domain\Ports\GoogleCalendarSyncPort;
 use Modules\Meeting\Infrastructure\Attendees\AttendeeEmailResolver;
 use Modules\Meeting\Infrastructure\Persistence\Eloquent\Models\MeetingEloquentModel;
@@ -23,7 +24,7 @@ use Spatie\GoogleCalendar\Event;
  */
 final readonly class SpatieGoogleCalendarSyncAdapter implements GoogleCalendarSyncPort
 {
-    public function createEvent(MeetingEloquentModel $meeting): ?string
+    public function createEvent(MeetingEloquentModel $meeting): ?GoogleCalendarEventSyncResult
     {
         if (! $this->isConfigured()) {
             return null;
@@ -32,9 +33,17 @@ final readonly class SpatieGoogleCalendarSyncAdapter implements GoogleCalendarSy
         try {
             $event = new Event;
             $this->fill($event, $meeting);
-            $saved = $event->save();
 
-            return $saved->id;
+            if ($this->shouldAddMeetLink()) {
+                $event->addMeetLink();
+            }
+
+            $saved = $event->save(null, ['sendUpdates' => 'all']);
+
+            return new GoogleCalendarEventSyncResult(
+                eventId: (string) $saved->id,
+                meetLink: $this->extractMeetLink($saved),
+            );
         } catch (\Throwable $e) {
             Log::warning('Failed to push meeting to Google Calendar', [
                 'meeting_uuid' => $meeting->uuid,
@@ -54,7 +63,7 @@ final readonly class SpatieGoogleCalendarSyncAdapter implements GoogleCalendarSy
         try {
             $event = Event::find($meeting->google_event_id);
             $this->fill($event, $meeting);
-            $event->save();
+            $event->save('updateEvent', ['sendUpdates' => 'all']);
         } catch (\Throwable $e) {
             Log::warning('Failed to update the Google Calendar event for a meeting', [
                 'meeting_uuid' => $meeting->uuid,
@@ -94,6 +103,18 @@ final readonly class SpatieGoogleCalendarSyncAdapter implements GoogleCalendarSy
             }
             $event->addAttendee(['email' => $attendee['email'], 'name' => $attendee['name']]);
         }
+    }
+
+    private function shouldAddMeetLink(): bool
+    {
+        return (bool) config('google-calendar.add_meet_link', false);
+    }
+
+    private function extractMeetLink(Event $event): ?string
+    {
+        $link = $event->hangoutLink ?? null;
+
+        return is_string($link) && $link !== '' ? $link : null;
     }
 
     /**

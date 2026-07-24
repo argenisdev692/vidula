@@ -32,6 +32,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property Carbon $ends_at
  * @property MeetingStatus $status
  * @property string|null $google_event_id
+ * @property string|null $meet_link
  * @property Carbon|null $deleted_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -39,7 +40,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @mixin \Eloquent
  */
 #[Table('meetings')]
-#[Fillable(['uuid', 'organizer_id', 'title', 'description', 'starts_at', 'ends_at', 'status', 'google_event_id'])]
+#[Fillable(['uuid', 'organizer_id', 'title', 'description', 'starts_at', 'ends_at', 'status', 'google_event_id', 'meet_link'])]
 final class MeetingEloquentModel extends Model
 {
     /** @use HasFactory<MeetingFactory> */

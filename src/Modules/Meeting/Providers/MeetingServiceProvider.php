@@ -24,6 +24,8 @@ use Modules\Meeting\Domain\Ports\AppointmentCalendarFeedPort;
 use Modules\Meeting\Domain\Ports\GoogleCalendarSyncPort;
 use Modules\Meeting\Domain\Ports\MeetingRepositoryPort;
 use Modules\Meeting\Infrastructure\Appointment\AppointmentCalendarFeedAdapter;
+use Modules\Meeting\Infrastructure\Console\Commands\GoogleCalendarTestCommand;
+use Modules\Meeting\Infrastructure\Console\Commands\GoogleOAuthTokenCommand;
 use Modules\Meeting\Infrastructure\GoogleCalendar\SpatieGoogleCalendarSyncAdapter;
 use Modules\Meeting\Infrastructure\Persistence\Repositories\EloquentMeetingRepository;
 
@@ -61,5 +63,12 @@ final class MeetingServiceProvider extends ServiceProvider
         Event::listen(MeetingUpdated::class, [SendMeetingUpdatedEmailListener::class, 'handle']);
         Event::listen(MeetingCancelled::class, [SyncMeetingCancelledToGoogleCalendarListener::class, 'handle']);
         Event::listen(MeetingCancelled::class, [SendMeetingCancelledEmailListener::class, 'handle']);
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                GoogleOAuthTokenCommand::class,
+                GoogleCalendarTestCommand::class,
+            ]);
+        }
     }
 }
