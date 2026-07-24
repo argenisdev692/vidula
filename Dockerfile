@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM node:24-alpine AS frontend
+FROM node:24-bookworm-slim AS frontend
 WORKDIR /app
 ARG VITE_REVERB_APP_KEY
 ARG VITE_REVERB_HOST

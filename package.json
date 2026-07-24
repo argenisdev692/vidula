@@ -1,10 +1,19 @@
 {
     "$schema": "https://www.schemastore.org/package.json",
+    "name": "vidula",
     "private": true,
     "type": "module",
+    "bin": {
+        "syn": "./syn.mjs"
+    },
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "postinstall": "node scripts/link-syn-bin.mjs",
+        "syn": "node syn.mjs",
+        "syn:check": "node syn.mjs --check",
+        "ai:config-sync": "node syn.mjs",
+        "ai:config-check": "node syn.mjs --check"
     },
     "devDependencies": {
         "@pinia/colada-devtools": "^1.1.0",

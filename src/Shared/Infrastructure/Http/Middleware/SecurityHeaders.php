@@ -154,8 +154,10 @@ final class SecurityHeaders
     /**
      * Scoped CSP for the Horizon/Telescope dashboards only (see
      * {@see self::isMonitoringRequest()}). Both dashboards inline their CSS/JS
-     * without a nonce, so `'unsafe-inline'` is required here; `fonts.bunny.net`
-     * serves the Figtree webfont both dashboards load.
+     * without a nonce, so `'unsafe-inline'` is required here; their Vue 3
+     * runtime also compiles templates via `new Function()`, so `'unsafe-eval'`
+     * is required on `script-src`. `fonts.bunny.net` serves the Figtree
+     * webfont both dashboards load.
      */
     private function monitoringContentSecurityPolicy(): string
     {
@@ -168,7 +170,7 @@ final class SecurityHeaders
             'img-src' => ["'self'", 'data:'],
             'font-src' => ["'self'", 'data:', 'https://fonts.bunny.net'],
             'style-src' => ["'self'", "'unsafe-inline'", 'https://fonts.bunny.net'],
-            'script-src' => ["'self'", "'unsafe-inline'"],
+            'script-src' => ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
             'connect-src' => ["'self'"],
         ];
 

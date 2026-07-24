@@ -21,9 +21,20 @@ class HorizonServiceProvider extends HorizonApplicationServiceProvider
     }
 
     /**
+     * Require an authenticated user with {@see VIEW_HORIZON} in every environment.
+     * The package default also bypasses auth when {@see APP_ENV} is `local`.
+     */
+    protected function authorization(): void
+    {
+        $this->gate();
+
+        Horizon::auth(function ($request) {
+            return Gate::check('viewHorizon', [$request->user()]);
+        });
+    }
+
+    /**
      * Register the Horizon gate.
-     *
-     * This gate determines who can access Horizon in non-local environments.
      */
     protected function gate(): void
     {

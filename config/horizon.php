@@ -83,7 +83,7 @@ return [
     |
     */
 
-    'middleware' => ['web'],
+    'middleware' => ['web', 'auth', \Laravel\Horizon\Http\Middleware\Authenticate::class],
 
     /*
     |--------------------------------------------------------------------------

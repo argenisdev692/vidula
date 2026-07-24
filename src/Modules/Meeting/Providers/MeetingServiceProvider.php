@@ -40,11 +40,11 @@ final class MeetingServiceProvider extends ServiceProvider
     {
         Route::middleware('web')->group(__DIR__.'/../Infrastructure/Routes/web.php');
 
-        // First polymorphic relation in this codebase (research.md §3) — an
-        // explicit map decouples `meeting_attendees.attendable_type` from the
-        // models' internal namespaces, matching the {@see AttendeeType} enum
-        // values consumed by `AttendeeResolver`/`SearchAttendeesHandler`.
-        Relation::enforceMorphMap([
+        // Explicit aliases decouple `meeting_attendees.attendable_type` from the
+        // models' internal namespaces (see {@see AttendeeType}). Use morphMap()
+        // — not enforceMorphMap() — so Spatie Permission / Activitylog models
+        // that are not attendable types can still resolve their morph class.
+        Relation::morphMap([
             'user' => User::class,
             'lead' => AppointmentEloquentModel::class,
             'contact' => ContactSupportEloquentModel::class,

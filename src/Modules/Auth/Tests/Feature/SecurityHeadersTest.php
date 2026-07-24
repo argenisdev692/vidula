@@ -50,10 +50,25 @@ final class SecurityHeadersTest extends TestCase
         $csp = $this->actingAs($admin)->get('/horizon')->headers->get('Content-Security-Policy');
 
         $this->assertNotNull($csp);
-        // Horizon inlines its compiled CSS/JS with no nonce, so this page is
-        // deliberately relaxed with 'unsafe-inline' instead of being nonce-gated.
+        // Horizon inlines its compiled CSS/JS with no nonce and its Vue runtime
+        // needs eval — deliberately relaxed instead of being nonce-gated.
         $this->assertStringContainsString("style-src 'self' 'unsafe-inline'", $csp);
-        $this->assertStringContainsString("script-src 'self' 'unsafe-inline'", $csp);
+        $this->assertStringContainsString("script-src 'self' 'unsafe-inline' 'unsafe-eval'", $csp);
+        $this->assertStringNotContainsString("'nonce-", $csp);
+    }
+
+    public function test_telescope_dashboard_receives_a_scoped_csp_that_allows_its_inlined_assets(): void
+    {
+        $this->seed(RolePermissionSeeder::class);
+
+        $admin = User::factory()->create();
+        $admin->assignRole('SUPER_ADMIN');
+
+        $csp = $this->actingAs($admin)->get('/telescope')->headers->get('Content-Security-Policy');
+
+        $this->assertNotNull($csp);
+        $this->assertStringContainsString("style-src 'self' 'unsafe-inline'", $csp);
+        $this->assertStringContainsString("script-src 'self' 'unsafe-inline' 'unsafe-eval'", $csp);
         $this->assertStringNotContainsString("'nonce-", $csp);
     }
 }
