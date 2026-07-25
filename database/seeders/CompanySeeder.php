@@ -10,8 +10,8 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
 /**
- * Seeds the main company record. Only columns that exist in the
- * `company_data` migration are populated.
+ * Seeds the main company record including fiscal identity and bank details
+ * used on invoice PDFs.
  */
 class CompanySeeder extends Seeder
 {
@@ -36,7 +36,15 @@ class CompanySeeder extends Seeder
             'signature_path' => null,
             'email' => 'argenis692@gmail.com',
             'phone' => '+351 963 490 414',
-            'address' => 'Rua da Saudade, Nº 1, R/C Esq., 6200-386 Covilhã, Portugal',
+            'nif_nipc' => '316416584',
+            'nie' => '2175V64V7',
+            'bank_beneficiary' => 'Argenis Jose Carrillo Gonzalez',
+            'bank_iban' => 'PT50 0036 0011 9910 0063 053 49',
+            'bank_bic' => 'MPIOPTPL',
+            'bank_name' => 'Montepio',
+            'invoice_notes' => "VAT - Reverse Charge: International transaction exempt from VAT. Cross-border service provision between Portugal and United States (B2B).\nWeb development services provided remotely.",
+            'address' => 'Rua da Saudade, Nº 1, R/C Esq.',
+            'address_2' => null,
             'zip_code' => '6200-386',
             'city' => 'Covilhã',
             'state' => 'Castelo Branco',

@@ -55,6 +55,13 @@ const form = useForm<CompanyFormValues>({
     description: company.value?.description ?? '',
     email: company.value?.email ?? '',
     phone: company.value?.phone ?? '',
+    nif_nipc: company.value?.nif_nipc ?? '',
+    nie: company.value?.nie ?? '',
+    bank_beneficiary: company.value?.bank_beneficiary ?? '',
+    bank_iban: company.value?.bank_iban ?? '',
+    bank_bic: company.value?.bank_bic ?? '',
+    bank_name: company.value?.bank_name ?? '',
+    invoice_notes: company.value?.invoice_notes ?? '',
     address: company.value?.address ?? '',
     address_2: company.value?.address_2 ?? '',
     zip_code: company.value?.zip_code ?? '',
@@ -343,6 +350,66 @@ function removeSignature(): void {
                     :rows="3"
                     :disabled="!canUpdate"
                     :error="form.errors.description"
+                />
+
+                <div class="section-label">Fiscal Identity</div>
+                <div class="form-grid">
+                    <TextField
+                        v-model="form.nif_nipc"
+                        name="nif_nipc"
+                        label="NIF / NIPC"
+                        :disabled="!canUpdate"
+                        :error="form.errors.nif_nipc"
+                    />
+                    <TextField
+                        v-model="form.nie"
+                        name="nie"
+                        label="NIE"
+                        :disabled="!canUpdate"
+                        :error="form.errors.nie"
+                    />
+                </div>
+
+                <div class="section-label">Bank Details (Invoices)</div>
+                <div class="form-grid">
+                    <TextField
+                        v-model="form.bank_beneficiary"
+                        name="bank_beneficiary"
+                        label="Beneficiary"
+                        :disabled="!canUpdate"
+                        :error="form.errors.bank_beneficiary"
+                    />
+                    <TextField
+                        v-model="form.bank_iban"
+                        name="bank_iban"
+                        label="IBAN"
+                        :disabled="!canUpdate"
+                        :error="form.errors.bank_iban"
+                    />
+                    <TextField
+                        v-model="form.bank_bic"
+                        name="bank_bic"
+                        label="BIC / SWIFT"
+                        :disabled="!canUpdate"
+                        :error="form.errors.bank_bic"
+                    />
+                    <TextField
+                        v-model="form.bank_name"
+                        name="bank_name"
+                        label="Bank"
+                        :disabled="!canUpdate"
+                        :error="form.errors.bank_name"
+                    />
+                </div>
+
+                <TextareaField
+                    v-model="form.invoice_notes"
+                    name="invoice_notes"
+                    label="Default Invoice Notes"
+                    hint="Pre-filled on new invoices (e.g. VAT reverse charge)."
+                    :rows="3"
+                    :disabled="!canUpdate"
+                    :error="form.errors.invoice_notes"
                 />
 
                 <div class="section-label">Address</div>

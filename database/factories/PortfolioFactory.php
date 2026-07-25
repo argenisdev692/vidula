@@ -29,6 +29,10 @@ final class PortfolioFactory extends Factory
             'title' => Str::title($this->faker->unique()->words(3, true)),
             'client_name' => $this->faker->company(),
             'project_type' => $this->faker->randomElement(['web', 'mobile', 'branding', 'ecommerce']),
+            'tech_stack' => $this->faker->randomElements(
+                ['React', 'Next.js', 'Vue', 'Laravel', 'PostgreSQL', 'Stripe', 'TypeScript', 'Tailwind'],
+                $this->faker->numberBetween(2, 4),
+            ),
             'live_url' => $this->faker->url(),
             'published_at' => $this->faker->dateTimeBetween('-1 year'),
             'is_public' => true,

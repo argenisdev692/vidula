@@ -32,7 +32,7 @@ import DateField from '@/common/form/DateField.vue';
 import FileField from '@/common/form/FileField.vue';
 import ToggleSwitch from '@/volt/ToggleSwitch.vue';
 import AppModal from '@/common/ui/AppModal.vue';
-import { portfolioFormSchema, type PortfolioFormValues } from '@/modules/portfolio/schemas/portfolioFormSchema';
+import { portfolioFormSchema, parseTechStack, type PortfolioFormValues } from '@/modules/portfolio/schemas/portfolioFormSchema';
 import type { Portfolio } from '@/modules/portfolio/types';
 
 const visible = defineModel<boolean>('visible', { default: false });
@@ -47,7 +47,8 @@ const props = withDefaults(
 
 const emit = defineEmits<{ saved: [] }>();
 
-interface PortfolioForm extends PortfolioFormValues {
+interface PortfolioForm extends Omit<PortfolioFormValues, 'tech_stack'> {
+    tech_stack_text: string;
     cover: File | null;
     video: File | null;
     remove_cover: boolean;
@@ -58,6 +59,7 @@ const form = useForm<PortfolioForm>({
     title: '',
     client_name: '',
     project_type: '',
+    tech_stack_text: '',
     live_url: '',
     published_at: '',
     is_public: true,
@@ -113,6 +115,7 @@ watch(visible, (open) => {
     form.title = props.portfolio?.title ?? '';
     form.client_name = props.portfolio?.client_name ?? '';
     form.project_type = props.portfolio?.project_type ?? '';
+    form.tech_stack_text = (props.portfolio?.tech_stack ?? []).join(', ');
     form.live_url = props.portfolio?.live_url ?? '';
     form.published_at = props.portfolio?.published_at?.slice(0, 10) ?? '';
     form.is_public = props.portfolio?.is_public ?? true;
@@ -129,10 +132,12 @@ function close(): void {
 }
 
 function submit(): void {
+    const techStack = parseTechStack(form.tech_stack_text);
     const parsed = portfolioFormSchema.safeParse({
         title: form.title,
         client_name: form.client_name,
         project_type: form.project_type,
+        tech_stack: techStack,
         live_url: form.live_url,
         published_at: form.published_at,
         is_public: form.is_public,
@@ -144,8 +149,10 @@ function submit(): void {
         form.clearErrors();
         for (const issue of parsed.error.issues) {
             const key = issue.path[0];
-            if (typeof key === 'string') {
-                form.setError(key as keyof PortfolioFormValues, issue.message);
+            if (key === 'tech_stack') {
+                form.setError('tech_stack_text', issue.message);
+            } else if (typeof key === 'string') {
+                form.setError(key as keyof PortfolioForm, issue.message);
             }
         }
         return;
@@ -159,6 +166,7 @@ function submit(): void {
                 title: data.title,
                 client_name: data.client_name,
                 project_type: data.project_type,
+                tech_stack: parseTechStack(data.tech_stack_text),
                 is_public: data.is_public,
                 description: data.description ?? '',
                 sort_order: data.sort_order === '' ? 0 : Number(data.sort_order),
@@ -257,6 +265,15 @@ function submit(): void {
                     hint="Lower numbers appear first."
                 />
             </div>
+
+            <TextField
+                v-model="form.tech_stack_text"
+                name="tech_stack_text"
+                label="Tech stack"
+                placeholder="e.g. React, Next.js, PostgreSQL, Stripe"
+                :error="form.errors.tech_stack_text"
+                hint="Comma-separated — up to 20 items, 50 characters each. Shown as badges on Astro."
+            />
 
             <div class="pf-form__row">
                 <TextField

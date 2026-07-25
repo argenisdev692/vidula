@@ -15,6 +15,7 @@ use Modules\Campaigns\Providers\CampaignServiceProvider;
 use Modules\Clients\Providers\ClientsServiceProvider;
 use Modules\Company\Providers\CompanyServiceProvider;
 use Modules\ContactSupport\Providers\ContactSupportServiceProvider;
+use Modules\Invoices\Providers\InvoicesServiceProvider;
 use Modules\Meeting\Providers\MeetingServiceProvider;
 use Modules\Portfolio\Providers\PortfolioServiceProvider;
 use Modules\Post\Providers\PostServiceProvider;
@@ -40,6 +41,7 @@ return [
     ClientsServiceProvider::class,
     CompanyServiceProvider::class,
     ContactSupportServiceProvider::class,
+    InvoicesServiceProvider::class,
     MeetingServiceProvider::class,
     PortfolioServiceProvider::class,
     PostServiceProvider::class,

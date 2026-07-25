@@ -40,6 +40,13 @@ export const companyFormSchema = z.object({
         .string()
         .trim()
         .refine((value) => value === '' || isValidPhoneNumber(value), 'Enter a valid phone number'),
+    nif_nipc: z.string().trim().max(50),
+    nie: z.string().trim().max(50),
+    bank_beneficiary: z.string().trim().max(255),
+    bank_iban: z.string().trim().max(64),
+    bank_bic: z.string().trim().max(32),
+    bank_name: z.string().trim().max(255),
+    invoice_notes: z.string().trim().max(5000),
     address: z.string().trim().max(1000),
     address_2: z.string().trim().max(1000),
     zip_code: z.string().trim().max(20),

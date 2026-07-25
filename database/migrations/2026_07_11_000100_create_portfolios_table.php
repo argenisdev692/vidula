@@ -15,6 +15,8 @@ return new class extends Migration
             $table->string('title');
             $table->string('client_name');
             $table->string('project_type', 50);
+            // Tech badges for Astro (e.g. React, Next.js, PostgreSQL, Stripe).
+            $table->json('tech_stack')->nullable();
             $table->string('live_url', 500)->nullable();
             $table->timestamp('published_at')->nullable();
             $table->boolean('is_public')->default(true);

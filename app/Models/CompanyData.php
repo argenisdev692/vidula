@@ -24,6 +24,13 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string|null $signature_path
  * @property string|null $email
  * @property string|null $phone
+ * @property string|null $nif_nipc
+ * @property string|null $nie
+ * @property string|null $bank_beneficiary
+ * @property string|null $bank_iban
+ * @property string|null $bank_bic
+ * @property string|null $bank_name
+ * @property string|null $invoice_notes
  * @property string|null $address
  * @property string|null $address_2
  * @property string|null $website
@@ -44,6 +51,11 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property-read Collection<int, Activity> $activitiesAsSubject
  * @property-read int|null $activities_as_subject_count
  * @property-read User|null $user
+ * @property string|null $zip_code
+ * @property string|null $city
+ * @property string|null $state
+ * @property string|null $country
+ * @property string|null $country_code
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData newQuery()
@@ -51,13 +63,22 @@ use Spatie\Activitylog\Support\LogOptions;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereAddress($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereAddress2($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereBankBeneficiary($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereBankBic($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereBankIban($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereBankName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereCity($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereCompanyName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereCountry($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereCountryCode($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereDeletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereDescription($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereEmail($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereFacebookLink($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereInstagramLink($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereInvoiceNotes($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereLatitude($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereLinkedinLink($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereLogoPath($value)
@@ -65,29 +86,20 @@ use Spatie\Activitylog\Support\LogOptions;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereLongitude($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereMarkPath($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereNie($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereNifNipc($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData wherePhone($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereSignaturePath($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereState($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereTiktokLink($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereTwitterLink($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereUserId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereUuid($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereWebsite($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereZipCode($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData withoutTrashed()
- *
- * @property string|null $zip_code
- * @property string|null $city
- * @property string|null $state
- * @property string|null $country
- * @property string|null $country_code
- *
- * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereCity($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereCountry($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereCountryCode($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereDescription($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereState($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereZipCode($value)
  *
  * @mixin \Eloquent
  */
@@ -113,6 +125,13 @@ class CompanyData extends Model
         'mark_path',
         'email',
         'phone',
+        'nif_nipc',
+        'nie',
+        'bank_beneficiary',
+        'bank_iban',
+        'bank_bic',
+        'bank_name',
+        'invoice_notes',
         'address',
         'address_2',
         'zip_code',
@@ -182,6 +201,13 @@ class CompanyData extends Model
                 'description',
                 'email',
                 'phone',
+                'nif_nipc',
+                'nie',
+                'bank_beneficiary',
+                'bank_iban',
+                'bank_bic',
+                'bank_name',
+                'invoice_notes',
                 'address',
                 'address_2',
                 'zip_code',

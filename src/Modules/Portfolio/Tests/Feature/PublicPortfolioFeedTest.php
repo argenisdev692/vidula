@@ -48,6 +48,7 @@ final class PublicPortfolioFeedTest extends TestCase
         $portfolio = PortfolioEloquentModel::factory()->create([
             'is_public' => true,
             'cover_path' => 'portfolios/cover/x.png',
+            'tech_stack' => ['React', 'Next.js', 'PostgreSQL', 'Stripe'],
         ]);
         $portfolio->gallery()->create(['path' => 'portfolios/gallery/a.jpg', 'sort_order' => 0]);
 
@@ -57,11 +58,12 @@ final class PublicPortfolioFeedTest extends TestCase
         $response->assertJsonStructure([
             'data' => [
                 '*' => [
-                    'uuid', 'title', 'client_name', 'cover_url',
+                    'uuid', 'title', 'client_name', 'cover_url', 'tech_stack',
                     'gallery' => ['*' => ['uuid', 'url', 'sort_order']],
                 ],
             ],
         ]);
+        $response->assertJsonFragment(['tech_stack' => ['React', 'Next.js', 'PostgreSQL', 'Stripe']]);
         // ...never the raw R2 object key, the internal id, or the author relation.
         $response->assertJsonMissingPath('data.0.gallery.0.path');
         $response->assertJsonMissingPath('data.0.user');

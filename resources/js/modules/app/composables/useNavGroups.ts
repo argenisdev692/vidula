@@ -37,6 +37,7 @@ export function useNavGroups(): { navItems: ComputedRef<NavItem[]> } {
             label: 'CRM',
             children: [
                 { icon: 'pi pi-briefcase', label: 'Clients', href: '/clients', permission: 'VIEW_ANY_CLIENTS' },
+                { icon: 'pi pi-file', label: 'Invoices', href: '/invoices', permission: 'VIEW_ANY_INVOICES' },
                 { icon: 'pi pi-graduation-cap', label: 'Students', href: '/students', permission: 'VIEW_ANY_STUDENTS' },
             ],
         },

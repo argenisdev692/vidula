@@ -31,6 +31,7 @@ use Throwable;
  * @property string $title
  * @property string $client_name
  * @property string $project_type
+ * @property list<string>|null $tech_stack
  * @property string|null $live_url
  * @property Carbon|null $published_at
  * @property bool $is_public
@@ -51,7 +52,7 @@ use Throwable;
  */
 #[Table('portfolios')]
 #[Fillable([
-    'uuid', 'title', 'client_name', 'project_type', 'live_url', 'published_at',
+    'uuid', 'title', 'client_name', 'project_type', 'tech_stack', 'live_url', 'published_at',
     'is_public', 'cover_path', 'video_path', 'description', 'sort_order', 'user_id',
 ])]
 final class PortfolioEloquentModel extends Model
@@ -186,6 +187,7 @@ final class PortfolioEloquentModel extends Model
         return [
             'published_at' => 'datetime',
             'is_public' => 'boolean',
+            'tech_stack' => 'array',
             'sort_order' => 'integer',
             'user_id' => 'integer',
         ];
@@ -198,6 +200,7 @@ final class PortfolioEloquentModel extends Model
                 'title',
                 'client_name',
                 'project_type',
+                'tech_stack',
                 'live_url',
                 'published_at',
                 'is_public',

@@ -113,6 +113,26 @@ function rowClass(row: Portfolio): string | undefined {
                 </template>
             </Column>
 
+            <Column header="Stack">
+                <template #body="{ data }">
+                    <div class="pf-stack">
+                        <Tag
+                            v-for="tech in ((data as Portfolio).tech_stack ?? []).slice(0, 3)"
+                            :key="tech"
+                            :value="tech"
+                            severity="secondary"
+                        />
+                        <span
+                            v-if="((data as Portfolio).tech_stack ?? []).length > 3"
+                            class="muted"
+                        >
+                            +{{ ((data as Portfolio).tech_stack ?? []).length - 3 }}
+                        </span>
+                        <span v-if="!((data as Portfolio).tech_stack ?? []).length" class="muted">—</span>
+                    </div>
+                </template>
+            </Column>
+
             <Column header="Visibility">
                 <template #body="{ data }">
                     <StatusBadge
@@ -234,6 +254,13 @@ function rowClass(row: Portfolio): string | undefined {
 .pf-title {
     font-weight: var(--font-medium);
     color: var(--text-primary);
+}
+
+.pf-stack {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1);
 }
 
 .mono {

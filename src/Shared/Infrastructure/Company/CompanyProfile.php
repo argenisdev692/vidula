@@ -84,7 +84,7 @@ final class CompanyProfile
      * white logo sits on the coloured header band; the dark logo is exposed for
      * light-background contexts. Contact fields feed the header/footer blocks.
      *
-     * @return array{name: string, website: ?string, email: ?string, phone: ?string, address: ?string, logo_data_uri: string, logo_dark_data_uri: string, socials: array<string, string>}
+     * @return array{name: string, legal_name: ?string, website: ?string, email: ?string, phone: ?string, address: ?string, nif_nipc: ?string, nie: ?string, bank_beneficiary: ?string, bank_iban: ?string, bank_bic: ?string, bank_name: ?string, invoice_notes: ?string, logo_data_uri: string, logo_dark_data_uri: string, socials: array<string, string>}
      */
     public static function pdfBranding(): array
     {
@@ -97,10 +97,18 @@ final class CompanyProfile
 
             return [
                 'name' => (string) ($company?->company_name ?: config('app.name')),
+                'legal_name' => $company?->name,
                 'website' => $company?->website ?: config('app.url'),
                 'email' => $company?->email ?: config('mail.from.address'),
                 'phone' => $company?->phone,
                 'address' => self::composeAddress($company),
+                'nif_nipc' => $company?->nif_nipc,
+                'nie' => $company?->nie,
+                'bank_beneficiary' => $company?->bank_beneficiary,
+                'bank_iban' => $company?->bank_iban,
+                'bank_bic' => $company?->bank_bic,
+                'bank_name' => $company?->bank_name,
+                'invoice_notes' => $company?->invoice_notes,
                 'logo_data_uri' => self::logoDataUri($company?->logo_white_path, self::FALLBACK_LOGO_WHITE),
                 'logo_dark_data_uri' => self::logoDataUri($company?->logo_path, self::FALLBACK_LOGO),
                 'socials' => array_filter([

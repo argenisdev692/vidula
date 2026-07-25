@@ -19,7 +19,9 @@ final class EloquentCompanyRepository implements CompanyRepositoryPort
     {
         return CompanyData::query()
             ->select([
-                'id', 'uuid', 'name', 'company_name', 'email', 'phone', 'website',
+                'id', 'uuid', 'name', 'company_name', 'description', 'email', 'phone',
+                'nif_nipc', 'nie', 'bank_beneficiary', 'bank_iban', 'bank_bic', 'bank_name',
+                'invoice_notes', 'website',
                 'address', 'address_2', 'zip_code', 'city', 'state', 'country',
                 'country_code', 'latitude', 'longitude',
                 'facebook_link', 'instagram_link', 'linkedin_link', 'twitter_link', 'tiktok_link',

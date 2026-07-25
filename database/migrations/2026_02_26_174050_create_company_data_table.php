@@ -20,6 +20,13 @@ return new class extends Migration
             $table->string('signature_path')->nullable();
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
+            $table->string('nif_nipc')->nullable();
+            $table->string('nie')->nullable();
+            $table->string('bank_beneficiary')->nullable();
+            $table->string('bank_iban')->nullable();
+            $table->string('bank_bic')->nullable();
+            $table->string('bank_name')->nullable();
+            $table->text('invoice_notes')->nullable();
             $table->text('address')->nullable();
             $table->text('address_2')->nullable();
             $table->string('zip_code')->nullable();

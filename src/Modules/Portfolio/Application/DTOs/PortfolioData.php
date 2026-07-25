@@ -23,15 +23,22 @@ use Spatie\LaravelData\Mappers\SnakeCaseMapper;
  * can render them via a permanent URL (BACKEND-PHP §5 public-asset exception —
  * the same convention already used by `BlogCategoryData->image` and the company
  * branding assets — never used for private user uploads).
+ *
+ * `tech_stack` is a JSON string list (e.g. React, Next.js, PostgreSQL) exposed
+ * on the public Scramble feed for Astro badge rendering — max 20 × 50 chars.
  */
 #[MapInputName(SnakeCaseMapper::class)]
 #[MapOutputName(SnakeCaseMapper::class)]
 final class PortfolioData extends Data
 {
+    /**
+     * @param  list<string>  $techStack
+     */
     public function __construct(
         public string $title,
         public string $clientName,
         public string $projectType,
+        public array $techStack = [],
         public ?string $liveUrl = null,
         public ?string $publishedAt = null,
         public bool $isPublic = true,
@@ -52,6 +59,8 @@ final class PortfolioData extends Data
             'title' => ['required', 'string', 'max:255'],
             'client_name' => ['required', 'string', 'max:255'],
             'project_type' => ['required', 'string', 'max:50'],
+            'tech_stack' => ['array', 'max:20'],
+            'tech_stack.*' => ['string', 'max:50'],
             'live_url' => ['nullable', 'url', 'max:500'],
             'published_at' => ['nullable', 'date'],
             'is_public' => ['boolean'],

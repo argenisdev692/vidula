@@ -1,0 +1,234 @@
+<app-sidebar [visible]="drawerVisible()" (visibleChange)="drawerVisible.set($event)"></app-sidebar>
+
+<div class="video-export-page">
+  <app-page-header
+    title="Video Export"
+    subtitle="Merge clips and render exports with optional AI cleaning"
+    (menuToggle)="drawerVisible.set(true)" />
+
+  <!-- ── Request form ── -->
+  <div class="card-modern form-card">
+    <form [formGroup]="form">
+      <div class="form-field">
+        <label>
+          Source videos <span class="required">*</span>
+        </label>
+
+        <label
+          class="dropzone"
+          [class.dropzone--active]="isDragOver()"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave($event)"
+          (drop)="onDrop($event)">
+          <input
+            type="file"
+            accept="video/*"
+            multiple
+            hidden
+            [disabled]="uploading() || submitting() !== null"
+            (change)="onFilesSelected($event)" />
+          <i class="pi pi-cloud-upload dropzone-icon"></i>
+          <span class="dropzone-title">Drag &amp; drop videos here</span>
+          <span class="dropzone-hint">or click to browse — merge order is top to bottom</span>
+        </label>
+
+        @if (hasFiles()) {
+          <ul class="file-list">
+            @for (item of files(); track item.file.name + item.file.size; let i = $index) {
+              <li class="file-item" [attr.data-status]="item.status">
+                <i class="pi file-icon"
+                   [class.pi-video]="item.status !== 'done' && item.status !== 'error'"
+                   [class.pi-check-circle]="item.status === 'done'"
+                   [class.pi-exclamation-circle]="item.status === 'error'"></i>
+                <div class="file-meta">
+                  <span class="file-name">{{ item.file.name }}</span>
+                  @if (item.status === 'uploading') {
+                    <div class="file-progress">
+                      <div class="file-progress-bar" [style.width.%]="item.progress"></div>
+                    </div>
+                  } @else if (item.status === 'error') {
+                    <span class="file-error">{{ item.error ?? 'Upload failed' }}</span>
+                  } @else if (item.status === 'done') {
+                    <span class="file-done">Uploaded</span>
+                  }
+                </div>
+                <button
+                  type="button"
+                  class="file-remove"
+                  title="Remove"
+                  [disabled]="uploading()"
+                  (click)="removeFile(i)">
+                  <i class="pi pi-times"></i>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      @if (showScriptUpload()) {
+        <div class="form-field">
+          <label>
+            Script file <span class="required">*</span>
+          </label>
+
+          <div class="script-upload">
+            <input
+              type="file"
+              accept=".pdf,.md,.markdown"
+              hidden
+              [disabled]="scriptUploading() || submitting() !== null"
+              (change)="onScriptSelected($event)"
+              #scriptInput />
+            <button
+              type="button"
+              class="btn btn--ghost"
+              [disabled]="scriptUploading() || submitting() !== null"
+              (click)="scriptInput.click()">
+              @if (scriptUploading()) {
+                <span class="spinner"></span>
+              }
+              {{ scriptUploading() ? 'Uploading…' : (scriptFile() ? 'Change script' : 'Select script file') }}
+            </button>
+
+            @if (scriptFile()) {
+              <div class="script-info">
+                <span class="script-name">{{ scriptFile()?.name }}</span>
+                @if (scriptUploaded()) {
+                  <span class="script-status script-status--success">Uploaded</span>
+                }
+                <button
+                  type="button"
+                  class="script-remove"
+                  title="Remove script"
+                  [disabled]="scriptUploading()"
+                  (click)="removeScript()">
+                  <i class="pi pi-times"></i>
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="options-grid">
+        <label class="checkbox-field">
+          <input type="checkbox" formControlName="aiCleaning" />
+          <span>AI cleaning (silence / fillers / stutters)</span>
+        </label>
+        <label class="checkbox-field">
+          <input type="checkbox" formControlName="audioEnhance" />
+          <span>Audio enhancement</span>
+        </label>
+        <label class="checkbox-field">
+          <input type="checkbox" formControlName="scriptReview" />
+          <span>Script review (PDF)</span>
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="button"
+          class="btn btn--ghost"
+          [disabled]="submitting() !== null || uploading() || !hasFiles()"
+          (click)="onSubmit('merge')">
+          @if (submitting() === 'merge') {
+            <span class="spinner"></span>
+          }
+          {{ submitting() === 'merge' && uploading() ? 'Uploading…' : 'Merge-only HD' }}
+        </button>
+        <button
+          type="button"
+          class="btn btn--primary"
+          [disabled]="submitting() !== null || uploading() || !hasFiles()"
+          (click)="onSubmit('full')">
+          @if (submitting() === 'full') {
+            <span class="spinner"></span>
+          }
+          {{ submitting() === 'full' && uploading() ? 'Uploading…' : 'Merge + Clean' }}
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ── Job tracker ── -->
+  @if (jobUuid(); as uuid) {
+    <div class="card-modern job-card">
+      <div class="job-header">
+        <div class="job-id">
+          <span class="job-id-label">Job</span>
+          <code>{{ uuid }}</code>
+        </div>
+
+        <div class="job-header-right">
+          @if (status(); as st) {
+            <span class="status-badge" [attr.data-status]="st">
+              @if (polling()) {
+                <span class="spinner spinner--dark"></span>
+              }
+              {{ statusLabel(st) }}
+            </span>
+          }
+          <button
+            type="button"
+            class="btn btn--ghost btn--sm"
+            [disabled]="polling()"
+            (click)="refresh()">
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <!-- Failed -->
+      @if (status() === 'failed') {
+        <div class="job-error">
+          <p>{{ jobError() ?? 'The export job failed.' }}</p>
+        </div>
+      }
+
+      <!-- Completed -->
+      @if (result(); as res) {
+        <div class="job-result">
+          <div class="result-row">
+            <span class="result-label">Duration</span>
+            <span class="result-value">{{ res.duration_seconds }}s</span>
+          </div>
+
+          @if (res.storage_url) {
+            <div class="result-row">
+              <span class="result-label">Output</span>
+              <a class="result-link" [href]="res.storage_url" target="_blank" rel="noopener">
+                Download / view export
+              </a>
+            </div>
+          } @else {
+            <div class="result-row">
+              <span class="result-label">Output</span>
+              <span class="result-value">No storage URL returned</span>
+            </div>
+          }
+
+          @if (diagnosticEntries().length) {
+            <div class="diagnostics">
+              <h3>Diagnostics</h3>
+              <div class="diagnostics-grid">
+                @for (entry of diagnosticEntries(); track entry.key) {
+                  <div class="diag-item">
+                    <span class="diag-key">{{ entry.key }}</span>
+                    <span class="diag-value">{{ entry.value }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      } @else if (status() !== 'failed') {
+        <!-- In progress -->
+        <div class="job-progress">
+          <span class="spinner"></span>
+          <span>Processing your export… this updates automatically.</span>
+        </div>
+      }
+    </div>
+  }
+</div>

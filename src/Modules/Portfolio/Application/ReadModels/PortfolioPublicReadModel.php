@@ -27,6 +27,7 @@ use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 final class PortfolioPublicReadModel extends Data
 {
     /**
+     * @param  list<string>  $techStack
      * @param  array<int, PortfolioGalleryImageReadModel>  $gallery
      */
     public function __construct(
@@ -34,6 +35,7 @@ final class PortfolioPublicReadModel extends Data
         public string $title,
         public string $clientName,
         public string $projectType,
+        public array $techStack,
         public ?string $liveUrl,
         public ?string $publishedAt,
         public ?string $description,
@@ -46,11 +48,18 @@ final class PortfolioPublicReadModel extends Data
 
     public static function fromModel(PortfolioEloquentModel $model): self
     {
+        /** @var list<string> $techStack */
+        $techStack = array_values(array_filter(
+            $model->tech_stack ?? [],
+            static fn (mixed $item): bool => is_string($item) && $item !== '',
+        ));
+
         return new self(
             uuid: $model->uuid,
             title: $model->title,
             clientName: $model->client_name,
             projectType: $model->project_type,
+            techStack: $techStack,
             liveUrl: $model->live_url,
             publishedAt: $model->published_at?->toIso8601String(),
             description: $model->description,

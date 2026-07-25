@@ -17,6 +17,13 @@ export interface CompanyData {
     mark_path: string | null;
     email: string | null;
     phone: string | null;
+    nif_nipc: string | null;
+    nie: string | null;
+    bank_beneficiary: string | null;
+    bank_iban: string | null;
+    bank_bic: string | null;
+    bank_name: string | null;
+    invoice_notes: string | null;
     address: string | null;
     address_2: string | null;
     zip_code: string | null;

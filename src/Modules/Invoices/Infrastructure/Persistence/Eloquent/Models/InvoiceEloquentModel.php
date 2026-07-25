@@ -1,0 +1,225 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Invoices\Infrastructure\Persistence\Eloquent\Models;
+
+use App\Models\User;
+use Carbon\CarbonImmutable;
+use Database\Factories\InvoiceFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
+use Modules\Clients\Infrastructure\Persistence\Eloquent\Models\ClientEloquentModel;
+use Modules\Invoices\Application\DTOs\InvoiceFilterData;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
+
+/**
+ * @property int $id
+ * @property string $uuid
+ * @property int $user_id
+ * @property int $client_id
+ * @property string $invoice_number
+ * @property int $sequence
+ * @property int $year
+ * @property Carbon $issue_date
+ * @property Carbon $due_date
+ * @property string $currency
+ * @property string $tax_mode
+ * @property string|null $tax_rate
+ * @property string $tax_label
+ * @property string $subtotal
+ * @property string $tax_amount
+ * @property string $total
+ * @property bool $is_paid
+ * @property string|null $payment_method
+ * @property string|null $transfer_number
+ * @property Carbon|null $payment_date
+ * @property string|null $amount_received
+ * @property string|null $notes
+ * @property string $client_name
+ * @property string|null $client_tax_id
+ * @property string|null $client_address
+ * @property string|null $client_city
+ * @property string|null $client_country
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read User $user
+ * @property-read ClientEloquentModel $client
+ * @property-read Collection<int, InvoiceItemEloquentModel> $items
+ *
+ * @mixin \Eloquent
+ */
+#[Table('invoices')]
+#[Fillable([
+    'uuid',
+    'user_id',
+    'client_id',
+    'invoice_number',
+    'sequence',
+    'year',
+    'issue_date',
+    'due_date',
+    'currency',
+    'tax_mode',
+    'tax_rate',
+    'tax_label',
+    'subtotal',
+    'tax_amount',
+    'total',
+    'is_paid',
+    'payment_method',
+    'transfer_number',
+    'payment_date',
+    'amount_received',
+    'notes',
+    'client_name',
+    'client_tax_id',
+    'client_address',
+    'client_city',
+    'client_country',
+])]
+final class InvoiceEloquentModel extends Model
+{
+    /** @use HasFactory<InvoiceFactory> */
+    use HasFactory, LogsActivity, SoftDeletes;
+
+    /**
+     * @var list<string>
+     */
+    protected $hidden = ['id'];
+
+    protected static function booted(): void
+    {
+        self::creating(function (InvoiceEloquentModel $model): void {
+            if (empty($model->uuid)) {
+                $model->uuid = (string) Str::uuid7();
+            }
+        });
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * @return BelongsTo<ClientEloquentModel, $this>
+     */
+    public function client(): BelongsTo
+    {
+        return $this->belongsTo(ClientEloquentModel::class, 'client_id');
+    }
+
+    /**
+     * @return HasMany<InvoiceItemEloquentModel, $this>
+     */
+    public function items(): HasMany
+    {
+        return $this->hasMany(InvoiceItemEloquentModel::class, 'invoice_id')->orderBy('sort_order');
+    }
+
+    /**
+     * @param  Builder<InvoiceEloquentModel>  $query
+     * @return Builder<InvoiceEloquentModel>
+     */
+    public function scopeApplyFilters(Builder $query, InvoiceFilterData $filters): Builder
+    {
+        return $query
+            ->when($filters->search !== null, fn ($q) => $q->where(function ($w) use ($filters): void {
+                $term = "%{$filters->search}%";
+                $w->where('invoice_number', 'like', $term)
+                    ->orWhere('client_name', 'like', $term);
+            }))
+            ->when(
+                $filters->year !== null,
+                fn ($q) => $q->where('year', $filters->year),
+            )
+            ->when(
+                $filters->clientUuid !== null,
+                fn ($q) => $q->whereHas('client', fn ($c) => $c->where('uuid', $filters->clientUuid)),
+            )
+            ->when(
+                $filters->dateFrom !== null && $filters->dateTo !== null,
+                fn ($q) => $q->whereBetween('issue_date', [
+                    CarbonImmutable::parse($filters->dateFrom)->startOfDay(),
+                    CarbonImmutable::parse($filters->dateTo)->endOfDay(),
+                ]),
+            )
+            ->when(
+                $filters->dateFrom !== null && $filters->dateTo === null,
+                fn ($q) => $q->where('issue_date', '>=', CarbonImmutable::parse($filters->dateFrom)->startOfDay()),
+            )
+            ->when(
+                $filters->dateTo !== null && $filters->dateFrom === null,
+                fn ($q) => $q->where('issue_date', '<=', CarbonImmutable::parse($filters->dateTo)->endOfDay()),
+            );
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'user_id' => 'integer',
+            'client_id' => 'integer',
+            'sequence' => 'integer',
+            'year' => 'integer',
+            'issue_date' => 'date',
+            'due_date' => 'date',
+            'tax_rate' => 'decimal:4',
+            'subtotal' => 'decimal:2',
+            'tax_amount' => 'decimal:2',
+            'total' => 'decimal:2',
+            'is_paid' => 'boolean',
+            'payment_date' => 'date',
+            'amount_received' => 'decimal:2',
+        ];
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'invoice_number',
+                'client_id',
+                'issue_date',
+                'due_date',
+                'currency',
+                'tax_mode',
+                'tax_rate',
+                'subtotal',
+                'tax_amount',
+                'total',
+                'is_paid',
+                'payment_method',
+                'transfer_number',
+                'payment_date',
+                'amount_received',
+                'notes',
+                'client_name',
+            ])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges()
+            ->useLogName('invoices');
+    }
+
+    protected static function newFactory(): InvoiceFactory
+    {
+        return InvoiceFactory::new();
+    }
+}

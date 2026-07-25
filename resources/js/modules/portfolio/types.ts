@@ -36,6 +36,8 @@ export interface Portfolio {
     title: string;
     client_name: string;
     project_type: string;
+    /** Tech badges for Astro / admin (e.g. React, Next.js, PostgreSQL). */
+    tech_stack: string[] | null;
     live_url: string | null;
     published_at: string | null;
     is_public: boolean;

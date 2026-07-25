@@ -41,6 +41,7 @@ final class PortfolioManagementTest extends TestCase
                 'title' => 'Acme Rebrand',
                 'client_name' => 'Acme Corp',
                 'project_type' => 'branding',
+                'tech_stack' => ['React', 'Next.js', 'PostgreSQL', 'Stripe'],
                 'live_url' => 'https://acme.example.com',
                 'is_public' => true,
                 'cover' => UploadedFile::fake()->image('cover.png', 800, 600),
@@ -51,6 +52,7 @@ final class PortfolioManagementTest extends TestCase
         $portfolio = PortfolioEloquentModel::query()->where('title', 'Acme Rebrand')->firstOrFail();
 
         $this->assertSame($admin->id, $portfolio->user_id);
+        $this->assertSame(['React', 'Next.js', 'PostgreSQL', 'Stripe'], $portfolio->tech_stack);
         $this->assertNotNull($portfolio->cover_path);
         $this->assertNotNull($portfolio->video_path);
         Storage::disk('r2')->assertExists($portfolio->cover_path);
@@ -67,11 +69,33 @@ final class PortfolioManagementTest extends TestCase
             ])
             ->assertRedirect();
 
-        $this->assertDatabaseHas('portfolios', [
-            'title' => 'No Media',
-            'cover_path' => null,
-            'video_path' => null,
+        $portfolio = PortfolioEloquentModel::query()->where('title', 'No Media')->firstOrFail();
+
+        $this->assertNull($portfolio->cover_path);
+        $this->assertNull($portfolio->video_path);
+        $this->assertSame([], $portfolio->tech_stack ?? []);
+    }
+
+    public function test_update_persists_tech_stack(): void
+    {
+        $admin = $this->superAdmin();
+        $portfolio = PortfolioEloquentModel::factory()->create([
+            'user_id' => $admin->id,
+            'tech_stack' => ['Vue'],
         ]);
+
+        $this->actingAs($admin)->put("/portfolios/{$portfolio->uuid}", [
+            'title' => $portfolio->title,
+            'client_name' => $portfolio->client_name,
+            'project_type' => $portfolio->project_type,
+            'tech_stack' => ['React', 'Laravel', 'PostgreSQL'],
+            'is_public' => true,
+        ])->assertRedirect();
+
+        $this->assertSame(
+            ['React', 'Laravel', 'PostgreSQL'],
+            $portfolio->refresh()->tech_stack,
+        );
     }
 
     public function test_update_replaces_the_cover_and_deletes_the_previous_object(): void

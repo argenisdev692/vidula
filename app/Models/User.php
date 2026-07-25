@@ -162,6 +162,8 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read int|null $services_count
  * @property-read Collection<int, SocialMediaContentEloquentModel> $socialMediaContents
  * @property-read int|null $social_media_contents_count
+ * @property-read Collection<int, ClientEloquentModel> $clients
+ * @property-read int|null $clients_count
  *
  * @mixin \Eloquent
  */

@@ -112,6 +112,20 @@ const gallery = computed(() => props.portfolio.gallery ?? []);
                 <dd>{{ formatDate(portfolio.updated_at ?? null) }}</dd>
             </div>
             <div class="fact fact--wide">
+                <dt>Tech stack</dt>
+                <dd>
+                    <div v-if="(portfolio.tech_stack ?? []).length" class="pf-tech">
+                        <Tag
+                            v-for="tech in portfolio.tech_stack"
+                            :key="tech"
+                            :value="tech"
+                            severity="secondary"
+                        />
+                    </div>
+                    <span v-else>—</span>
+                </dd>
+            </div>
+            <div class="fact fact--wide">
                 <dt>Description</dt>
                 <dd>{{ portfolio.description || '—' }}</dd>
             </div>
@@ -176,5 +190,11 @@ const gallery = computed(() => props.portfolio.gallery ?? []);
     text-transform: uppercase;
     letter-spacing: 1px;
     color: var(--text-muted);
+}
+
+.pf-tech {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
 }
 </style>

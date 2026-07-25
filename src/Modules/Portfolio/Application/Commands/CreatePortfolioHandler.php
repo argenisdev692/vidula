@@ -41,6 +41,7 @@ final readonly class CreatePortfolioHandler
             'title' => $data->title,
             'client_name' => $data->clientName,
             'project_type' => $data->projectType,
+            'tech_stack' => $data->techStack,
             'live_url' => $data->liveUrl,
             'published_at' => $data->publishedAt,
             'is_public' => $data->isPublic,
