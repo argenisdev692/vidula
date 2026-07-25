@@ -180,23 +180,30 @@ final class SecurityHeaders
     }
 
     /**
-     * Build the nonce-based CSP. Production stays strict; local development
-     * relaxes just enough for the Vite HMR client (eval-based refresh, inlined
-     * dev styles, and the HMR websocket).
+     * Build the nonce-based CSP. Production stays strict on scripts; styles use
+     * the CSP3 split (`style-src-elem` / `style-src-attr`) because Vue 3 +
+     * PrimeVue Volt inject runtime `<style>` tags and `style=""` attributes
+     * that cannot carry the per-request nonce. Putting a nonce on `style-src`
+     * makes browsers ignore `'unsafe-inline'` (see the console error the SPA
+     * hits otherwise). Local development also relaxes scripts for Vite HMR.
      */
     private function contentSecurityPolicy(string $nonce): string
     {
         $isLocal = app()->environment('local');
 
         $scriptSrc = ["'self'", "'nonce-{$nonce}'", ...(array) config('security.headers.csp.script_src', [])];
-        $styleSrc = ["'self'", "'nonce-{$nonce}'"];
         $connectSrc = ["'self'", ...(array) config('security.headers.csp.connect_src', [])];
         $imgSrc = ["'self'", ...(array) config('security.headers.csp.img_src', [])];
         $fontSrc = ["'self'", ...(array) config('security.headers.csp.font_src', [])];
 
+        // External stylesheets (`@vite` → /build/assets/*.css) + runtime <style>
+        // injection from Volt overlays. No nonce here — nonce would nullify
+        // 'unsafe-inline' and break Dialog/Drawer/Toast positioning.
+        $styleSrcElem = ["'self'", "'unsafe-inline'"];
+        $styleSrcAttr = ["'unsafe-inline'"];
+
         if ($isLocal) {
             $scriptSrc[] = "'unsafe-eval'";
-            $styleSrc[] = "'unsafe-inline'";
             $connectSrc[] = 'ws:';
             $connectSrc[] = 'wss:';
         }
@@ -210,11 +217,8 @@ final class SecurityHeaders
             'img-src' => $imgSrc,
             'font-src' => $fontSrc,
             'script-src' => $scriptSrc,
-            'style-src' => $styleSrc,
-            // Radix/shadcn overlays and Framer Motion write inline style
-            // ATTRIBUTES (style="..."), which nonces cannot authorize. Scope
-            // the allowance to attributes only — never to the main style-src.
-            'style-src-attr' => ["'unsafe-inline'"],
+            'style-src-elem' => $styleSrcElem,
+            'style-src-attr' => $styleSrcAttr,
             'connect-src' => $connectSrc,
         ];
 

@@ -26,7 +26,14 @@ final class SecurityHeadersTest extends TestCase
 
         $this->assertStringContainsString("default-src 'self'", $csp);
         $this->assertStringContainsString("frame-ancestors 'none'", $csp);
-        $this->assertStringContainsString("'nonce-", $csp);
+        // Scripts stay nonce-strict; styles use the CSP3 elem/attr split so
+        // Vue/PrimeVue runtime inline styles are not cancelled by a nonce.
+        $this->assertStringContainsString("script-src 'self' 'nonce-", $csp);
+        $this->assertStringContainsString("style-src-elem 'self' 'unsafe-inline'", $csp);
+        $this->assertStringContainsString("style-src-attr 'unsafe-inline'", $csp);
+        // Must not use the shorthand `style-src` with a nonce (that cancels
+        // 'unsafe-inline'). Match as a full directive name followed by space.
+        $this->assertDoesNotMatchRegularExpression('/(?:^|;\s)style-src /', $csp);
         // Video-export XHR PUT + signed object URLs hit Cloudflare R2 directly.
         $this->assertStringContainsString('https://*.r2.cloudflarestorage.com', $csp);
     }
