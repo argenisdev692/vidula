@@ -22,9 +22,13 @@ final class SecurityHeadersTest extends TestCase
         $response->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->assertHeader('Content-Security-Policy');
 
-        $this->assertStringContainsString("default-src 'self'", $response->headers->get('Content-Security-Policy'));
-        $this->assertStringContainsString("frame-ancestors 'none'", $response->headers->get('Content-Security-Policy'));
-        $this->assertStringContainsString("'nonce-", $response->headers->get('Content-Security-Policy'));
+        $csp = (string) $response->headers->get('Content-Security-Policy');
+
+        $this->assertStringContainsString("default-src 'self'", $csp);
+        $this->assertStringContainsString("frame-ancestors 'none'", $csp);
+        $this->assertStringContainsString("'nonce-", $csp);
+        // Video-export XHR PUT + signed object URLs hit Cloudflare R2 directly.
+        $this->assertStringContainsString('https://*.r2.cloudflarestorage.com', $csp);
     }
 
     public function test_api_docs_page_receives_a_scoped_csp_that_allows_stoplight_assets(): void

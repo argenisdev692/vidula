@@ -2,6 +2,35 @@
 
 declare(strict_types=1);
 
+/*
+|--------------------------------------------------------------------------
+| Cloudflare R2 CSP origins
+|--------------------------------------------------------------------------
+|
+| Video-export uploads XHR PUT directly to signed R2 URLs
+| (https://{bucket}.{account}.r2.cloudflarestorage.com). Profile photos and
+| other private objects also load from those hosts. Custom domains from
+| R2_* env vars are parsed into scheme://host origins.
+|
+*/
+
+$r2OriginFromUrl = static function (string $url): ?string {
+    $parts = parse_url($url);
+    if (! is_string($parts['scheme'] ?? null) || ! is_string($parts['host'] ?? null)) {
+        return null;
+    }
+
+    return $parts['scheme'].'://'.$parts['host'];
+};
+
+/** @var list<string> $r2ObjectOrigins */
+$r2ObjectOrigins = array_values(array_unique(array_filter([
+    'https://*.r2.cloudflarestorage.com',
+    $r2OriginFromUrl((string) env('R2_URL', '')),
+    $r2OriginFromUrl((string) env('R2_ENDPOINT', '')),
+    $r2OriginFromUrl((string) env('R2_PUBLIC_BASE_URL', '')),
+])));
+
 return [
 
     /*
@@ -90,16 +119,25 @@ return [
             // Extra origins appended to the base `'self'` allowlist.
             // Google Maps: bootstrap + JS API script host.
             'script_src' => ['https://maps.googleapis.com'],
-            // Google Maps: attribution + tile/pin imagery.
-            'img_src' => ['data:', 'blob:', 'https://maps.gstatic.com', 'https://maps.googleapis.com'],
+            // Google Maps tiles + R2 signed object URLs (profile photos, etc.).
+            'img_src' => array_values(array_unique(array_filter([
+                'data:',
+                'blob:',
+                'https://maps.gstatic.com',
+                'https://maps.googleapis.com',
+                ...$r2ObjectOrigins,
+                ...explode(',', (string) env('SECURITY_CSP_IMG_SRC', '')),
+            ]))),
             'font_src' => ['data:'],
-            // Google Maps: Places (New) Data API XHR targets, plus any extra
-            // origins (e.g. the Reverb websocket endpoint) from env.
-            'connect_src' => array_filter([
+            // Google Maps Places XHR + R2 presigned PUT/GET (video-export uploads
+            // use XHR PUT directly to the signed URL) + optional env extras
+            // (e.g. Reverb websocket endpoint).
+            'connect_src' => array_values(array_unique(array_filter([
                 'https://maps.googleapis.com',
                 'https://places.googleapis.com',
+                ...$r2ObjectOrigins,
                 ...explode(',', (string) env('SECURITY_CSP_CONNECT_SRC', '')),
-            ]),
+            ]))),
         ],
     ],
 
