@@ -39,10 +39,20 @@ export async function putToR2(
     await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('PUT', uploadUrl, true);
-        Object.entries(headers).forEach(([key, value]) => {
+
+        // Flysystem may echo hop-by-hop headers (Host, Content-Length) that the
+        // browser refuses to set — only forward Content-Type / x-amz-*.
+        const safeHeaders = Object.fromEntries(
+            Object.entries(headers).filter(([key]) => {
+                const lower = key.toLowerCase();
+                return lower === 'content-type' || lower.startsWith('x-amz-');
+            }),
+        );
+
+        Object.entries(safeHeaders).forEach(([key, value]) => {
             xhr.setRequestHeader(key, value);
         });
-        if (!headers['Content-Type'] && !headers['content-type']) {
+        if (!safeHeaders['Content-Type'] && !safeHeaders['content-type']) {
             xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
         }
         xhr.upload.onprogress = (event: ProgressEvent): void => {

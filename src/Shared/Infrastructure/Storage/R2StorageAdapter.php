@@ -57,8 +57,31 @@ final readonly class R2StorageAdapter implements StoragePort
 
         return [
             'upload_url' => $payload['url'],
-            'headers' => $payload['headers'] ?? [],
+            'headers' => $this->browserSafeUploadHeaders($payload['headers'] ?? []),
         ];
+    }
+
+    /**
+     * Flysystem/S3 includes hop-by-hop headers (Host, Content-Length, …) that
+     * browsers refuse to set on XHR. Only forward headers the browser may send
+     * for a direct PUT to a presigned R2 URL.
+     *
+     * @param  array<string, string>  $headers
+     * @return array<string, string>
+     */
+    private function browserSafeUploadHeaders(array $headers): array
+    {
+        $safe = [];
+
+        foreach ($headers as $name => $value) {
+            $lower = strtolower((string) $name);
+
+            if ($lower === 'content-type' || str_starts_with($lower, 'x-amz-')) {
+                $safe[(string) $name] = (string) $value;
+            }
+        }
+
+        return $safe;
     }
 
     public function publicUrl(string $path): string
