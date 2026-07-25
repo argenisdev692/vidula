@@ -63,12 +63,34 @@ class RolePermissionSeeder extends Seeder
 
     /**
      * Modules the ADMIN role manages directly (beyond SUPER_ADMIN, who holds
-     * everything). Availability is delegated to admins so they can run the
-     * booking calendar without the full super-admin reach.
+     * everything). Availability + CRM + video tooling — day-to-day ops without
+     * the full super-admin reach (users, roles, backups, etc.).
      *
      * @var list<string>
      */
-    private const array ADMIN_MODULES = ['AVAILABILITY_RULES', 'AVAILABILITY_EXCEPTIONS', 'APPOINTMENTS', 'MEETINGS'];
+    private const array ADMIN_MODULES = [
+        'AVAILABILITY_RULES',
+        'AVAILABILITY_EXCEPTIONS',
+        'APPOINTMENTS',
+        'MEETINGS',
+        'CLIENTS',
+        'INVOICES',
+    ];
+
+    /**
+     * Pipeline tools the ADMIN role can run (no DB catalog CRUD shape).
+     *
+     * @var list<string>
+     */
+    private const array ADMIN_TOOL_MODULES = ['VIDEO_EXPORTS'];
+
+    /**
+     * CRM modules without an export endpoint yet (same shape as
+     * {@see self::NO_EXPORT_MODULES}).
+     *
+     * @var list<string>
+     */
+    private const array ADMIN_NO_EXPORT_MODULES = ['STUDENTS'];
 
     /**
      * Access-management permissions on the USERS module. Kept separate from the
@@ -243,7 +265,11 @@ class RolePermissionSeeder extends Seeder
      */
     private function grantModulesToAdmin(): void
     {
-        $names = $this->matrix(self::ADMIN_MODULES, self::MODULES_ACTIONS);
+        $names = [
+            ...$this->matrix(self::ADMIN_MODULES, self::MODULES_ACTIONS),
+            ...$this->matrix(self::ADMIN_NO_EXPORT_MODULES, self::NO_EXPORT_ACTIONS),
+            ...$this->matrix(self::ADMIN_TOOL_MODULES, self::VIDEO_EXPORT_ACTIONS),
+        ];
 
         Role::query()
             ->where('name', 'ADMIN')

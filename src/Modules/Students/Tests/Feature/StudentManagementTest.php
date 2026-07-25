@@ -155,4 +155,12 @@ final class StudentManagementTest extends TestCase
             ->post('/students', $this->validPayload())
             ->assertForbidden();
     }
+
+    public function test_admin_role_can_view_students_index(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('ADMIN');
+
+        $this->actingAs($admin)->get('/students')->assertOk();
+    }
 }

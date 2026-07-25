@@ -43,6 +43,14 @@ final class VideoExportAccessTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_admin_role_can_view_panel(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('ADMIN');
+
+        $this->actingAs($admin)->get('/video-export')->assertOk();
+    }
+
     public function test_super_admin_can_view_panel(): void
     {
         $this->actingAs($this->superAdmin())

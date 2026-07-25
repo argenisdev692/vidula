@@ -397,6 +397,14 @@ final class InvoiceManagementTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_admin_role_can_view_invoices_index(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('ADMIN');
+
+        $this->actingAs($admin)->get('/invoices')->assertOk();
+    }
+
     public function test_index_page_renders_for_authorized_user(): void
     {
         $this->actingAs($this->superAdmin())
