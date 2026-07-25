@@ -134,6 +134,14 @@ final class CvManagementTest extends TestCase
         $this->get('/cvs')->assertRedirect('/login');
     }
 
+    public function test_admin_role_can_view_cvs_index(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('ADMIN');
+
+        $this->actingAs($admin)->get('/cvs')->assertOk();
+    }
+
     public function test_export_csv_is_streamed(): void
     {
         $admin = $this->superAdmin();

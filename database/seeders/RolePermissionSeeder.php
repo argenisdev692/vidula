@@ -63,8 +63,8 @@ class RolePermissionSeeder extends Seeder
 
     /**
      * Modules the ADMIN role manages directly (beyond SUPER_ADMIN, who holds
-     * everything). Availability + CRM + video tooling — day-to-day ops without
-     * the full super-admin reach (users, roles, backups, etc.).
+     * everything). Availability + CRM + career + video tooling — day-to-day ops
+     * without the full super-admin reach (users, roles, backups, etc.).
      *
      * @var list<string>
      */
@@ -75,6 +75,7 @@ class RolePermissionSeeder extends Seeder
         'MEETINGS',
         'CLIENTS',
         'INVOICES',
+        'CVS',
     ];
 
     /**
