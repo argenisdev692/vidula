@@ -121,6 +121,13 @@ class RolePermissionSeeder extends Seeder
     private const array BACKUP_ACTIONS = ['VIEW_ANY', 'DOWNLOAD', 'CREATE', 'DELETE'];
 
     /**
+     * Video export pipeline (no DB catalog): view panel, create jobs, download results.
+     *
+     * @var list<string>
+     */
+    private const array VIDEO_EXPORT_ACTIONS = ['VIEW_ANY', 'CREATE', 'DOWNLOAD'];
+
+    /**
      * Ops tooling dashboards (Horizon queue monitor, Telescope request/query
      * tracer). Binary view access only — mirrors the `viewHorizon` /
      * `viewTelescope` gates in HorizonServiceProvider / TelescopeServiceProvider.
@@ -176,6 +183,7 @@ class RolePermissionSeeder extends Seeder
             ...$this->matrix(['CAMPAIGNS'], self::CAMPAIGNS_PUBLISH_ACTIONS),
             ...$this->matrix(self::READ_ONLY_MODULES, self::READ_ONLY_ACTIONS),
             ...$this->matrix(['BACKUPS'], self::BACKUP_ACTIONS),
+            ...$this->matrix(['VIDEO_EXPORTS'], self::VIDEO_EXPORT_ACTIONS),
             ...$this->matrix(self::SYSTEM_MONITORING_MODULES, self::SYSTEM_MONITORING_ACTIONS),
         ];
 

@@ -1454,6 +1454,124 @@
                 }
             }
         },
+        "/clients": {
+            "get": {
+                "operationId": "clients.index",
+                "description": "Returns a paginated, filterable CRM client list. `per_page` is capped at\n100 to bound resource consumption (OWASP API4).",
+                "summary": "List clients",
+                "tags": [
+                    "ClientApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/clients/{uuid}": {
+            "get": {
+                "operationId": "clients.show",
+                "description": "Returns a single CRM client by UUID.",
+                "summary": "Show a client",
+                "tags": [
+                    "ClientApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ClientEloquentModel"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/contact-supports": {
             "get": {
                 "operationId": "contact-supports.index",
@@ -1625,6 +1743,124 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/invoices": {
+            "get": {
+                "operationId": "invoices.index",
+                "description": "Returns a paginated, filterable invoice list. `per_page` is capped at\n100 to bound resource consumption (OWASP API4).",
+                "summary": "List invoices",
+                "tags": [
+                    "InvoiceApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/invoices/{uuid}": {
+            "get": {
+                "operationId": "invoices.show",
+                "description": "Returns a single invoice by UUID, including line items.",
+                "summary": "Show an invoice",
+                "tags": [
+                    "InvoiceApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/InvoiceEloquentModel"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
                                 }
                             }
                         }
@@ -3208,6 +3444,124 @@
                 }
             }
         },
+        "/students": {
+            "get": {
+                "operationId": "students.index",
+                "description": "Returns a paginated, filterable LMS student list. `per_page` is capped at\n100 to bound resource consumption (OWASP API4).",
+                "summary": "List students",
+                "tags": [
+                    "StudentApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/students/{uuid}": {
+            "get": {
+                "operationId": "students.show",
+                "description": "Returns a single LMS student by UUID.",
+                "summary": "Show a student",
+                "tags": [
+                    "StudentApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/StudentEloquentModel"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/auth/sessions": {
             "get": {
                 "operationId": "auth.sessions.index",
@@ -3466,6 +3820,321 @@
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/video-export/uploads/presign": {
+            "post": {
+                "operationId": "video-export.presign",
+                "description": "Returns a short-lived PUT URL so the client uploads video/script bytes\nstraight to object storage (never through the app server).",
+                "summary": "Presign a direct-to-R2 upload",
+                "tags": [
+                    "VideoExportApi"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PresignUploadData"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "upload_url": {
+                                                    "type": "string"
+                                                },
+                                                "public_url": {
+                                                    "type": "string"
+                                                },
+                                                "key": {
+                                                    "type": "string"
+                                                },
+                                                "headers": {
+                                                    "type": "object",
+                                                    "additionalProperties": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "expires_in_seconds": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "upload_url",
+                                                "public_url",
+                                                "key",
+                                                "headers",
+                                                "expires_in_seconds"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/video-export": {
+            "post": {
+                "operationId": "video-export.store",
+                "description": "Modes: `merge` | `clean` | `ai`. Returns 202 with `job_uuid` for polling.\n`ai_provider` selects Gemini/OpenAI/Anthropic for optional script review;\nspeech timestamps always use OpenAI Whisper when AI/script runs.",
+                "summary": "Enqueue a video export job",
+                "tags": [
+                    "VideoExportApi"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EnqueueExportData"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "202": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "job_uuid": {
+                                                            "type": "string"
+                                                        },
+                                                        "status": {
+                                                            "type": "string",
+                                                            "const": "queued"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "job_uuid",
+                                                        "status"
+                                                    ]
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "job_uuid": {
+                                                            "type": "string"
+                                                        },
+                                                        "status": {
+                                                            "type": "string",
+                                                            "const": "duplicate"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "job_uuid",
+                                                        "status"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/video-export/jobs/{job_uuid}": {
+            "get": {
+                "operationId": "video-export.jobs.show",
+                "description": "Owner-scoped: another user's UUID resolves as `not_found`.",
+                "summary": "Poll export job status",
+                "tags": [
+                    "VideoExportApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "job_uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "job_uuid": {
+                                                            "type": "string"
+                                                        },
+                                                        "status": {
+                                                            "type": "string"
+                                                        },
+                                                        "result": {
+                                                            "type": "string"
+                                                        },
+                                                        "error": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "job_uuid",
+                                                        "status",
+                                                        "result",
+                                                        "error"
+                                                    ]
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "job_uuid": {
+                                                            "type": "string"
+                                                        },
+                                                        "status": {
+                                                            "type": "string",
+                                                            "const": "not_found"
+                                                        },
+                                                        "result": {
+                                                            "type": "null"
+                                                        },
+                                                        "error": {
+                                                            "type": "null"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "job_uuid",
+                                                        "status",
+                                                        "result",
+                                                        "error"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -4458,6 +5127,128 @@
                 "additionalProperties": {},
                 "title": "CampaignTopicIdeaData"
             },
+            "ClientEloquentModel": {
+                "type": "object",
+                "properties": {
+                    "uuid": {
+                        "type": "string"
+                    },
+                    "user_id": {
+                        "type": "integer"
+                    },
+                    "client_name": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "phone": {
+                        "type": "string"
+                    },
+                    "address": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "tax_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "nif": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "website": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "facebook_link": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "instagram_link": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "linkedin_link": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "twitter_link": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "deleted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "uuid",
+                    "user_id",
+                    "client_name",
+                    "email",
+                    "status",
+                    "phone",
+                    "address",
+                    "tax_id",
+                    "nif",
+                    "website",
+                    "facebook_link",
+                    "instagram_link",
+                    "linkedin_link",
+                    "twitter_link",
+                    "notes",
+                    "deleted_at",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "ClientEloquentModel"
+            },
             "ClientType": {
                 "type": "string",
                 "enum": [
@@ -4602,6 +5393,75 @@
                 ],
                 "title": "ContentLanguage"
             },
+            "EnqueueExportData": {
+                "type": "object",
+                "properties": {
+                    "job_uuid": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "mode": {
+                        "$ref": "#/components/schemas/ExportMode"
+                    },
+                    "silence_threshold_seconds": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 3
+                    },
+                    "audio_enhancement_enabled": {
+                        "type": "boolean"
+                    },
+                    "sort_by_creation_time": {
+                        "type": "boolean"
+                    },
+                    "language": {
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 8
+                    },
+                    "ai_provider": {
+                        "type": "string",
+                        "enum": [
+                            "openai",
+                            "anthropic",
+                            "gemini"
+                        ]
+                    },
+                    "script_path": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 2048
+                    },
+                    "script_format": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "markdown",
+                            "pdf",
+                            null
+                        ]
+                    },
+                    "video_paths": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "maxLength": 2048
+                        },
+                        "minItems": 1,
+                        "maxItems": 50
+                    }
+                },
+                "required": [
+                    "job_uuid",
+                    "mode",
+                    "video_paths"
+                ],
+                "title": "EnqueueExportData"
+            },
             "ExceptionSource": {
                 "type": "string",
                 "description": "Provenance of a date exception. A `Manual` row is a user-created override and is never touched by the holiday sync; a `Holiday` row is system-materialised from the country provider and is purged/rebuilt on a country change or the yearly sync. This is the single source of truth for the `source` column.\n",
@@ -4610,6 +5470,15 @@
                     "holiday"
                 ],
                 "title": "ExceptionSource"
+            },
+            "ExportMode": {
+                "type": "string",
+                "enum": [
+                    "merge",
+                    "clean",
+                    "ai"
+                ],
+                "title": "ExportMode"
             },
             "FunnelStage": {
                 "type": "string",
@@ -4868,6 +5737,175 @@
                 "additionalProperties": {},
                 "title": "GeneratedPostContentData"
             },
+            "InvoiceEloquentModel": {
+                "type": "object",
+                "properties": {
+                    "uuid": {
+                        "type": "string"
+                    },
+                    "user_id": {
+                        "type": "integer"
+                    },
+                    "client_id": {
+                        "type": "integer"
+                    },
+                    "invoice_number": {
+                        "type": "string"
+                    },
+                    "sequence": {
+                        "type": "integer"
+                    },
+                    "year": {
+                        "type": "integer"
+                    },
+                    "issue_date": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "due_date": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "tax_mode": {
+                        "type": "string"
+                    },
+                    "tax_rate": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "tax_label": {
+                        "type": "string"
+                    },
+                    "subtotal": {
+                        "type": "string"
+                    },
+                    "tax_amount": {
+                        "type": "string"
+                    },
+                    "total": {
+                        "type": "string"
+                    },
+                    "is_paid": {
+                        "type": "boolean"
+                    },
+                    "payment_method": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "transfer_number": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "payment_date": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "amount_received": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "client_name": {
+                        "type": "string"
+                    },
+                    "client_tax_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "client_address": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "client_city": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "client_country": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "deleted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "uuid",
+                    "user_id",
+                    "client_id",
+                    "invoice_number",
+                    "sequence",
+                    "year",
+                    "issue_date",
+                    "due_date",
+                    "currency",
+                    "tax_mode",
+                    "tax_rate",
+                    "tax_label",
+                    "subtotal",
+                    "tax_amount",
+                    "total",
+                    "is_paid",
+                    "payment_method",
+                    "transfer_number",
+                    "payment_date",
+                    "amount_received",
+                    "notes",
+                    "client_name",
+                    "client_tax_id",
+                    "client_address",
+                    "client_city",
+                    "client_country",
+                    "deleted_at",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "InvoiceEloquentModel"
+            },
             "LengthAwarePaginator": {
                 "type": "object",
                 "properties": {
@@ -5063,6 +6101,13 @@
                     "project_type": {
                         "type": "string"
                     },
+                    "tech_stack": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {}
+                    },
                     "live_url": {
                         "type": [
                             "string",
@@ -5136,6 +6181,7 @@
                     "title",
                     "client_name",
                     "project_type",
+                    "tech_stack",
                     "live_url",
                     "published_at",
                     "is_public",
@@ -5332,6 +6378,33 @@
                 "type": "object",
                 "additionalProperties": {},
                 "title": "PostTopicIdeaData"
+            },
+            "PresignUploadData": {
+                "type": "object",
+                "properties": {
+                    "filename": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "content_type": {
+                        "type": "string",
+                        "pattern": "^(video\\/|application\\/pdf|text\\/)",
+                        "maxLength": 128
+                    },
+                    "size_bytes": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1,
+                        "maximum": 2147483648
+                    }
+                },
+                "required": [
+                    "filename",
+                    "content_type"
+                ],
+                "title": "PresignUploadData"
             },
             "ProjectType": {
                 "type": "string",
@@ -5775,6 +6848,96 @@
                     "Declined"
                 ],
                 "title": "StatusLead"
+            },
+            "StudentEloquentModel": {
+                "type": "object",
+                "properties": {
+                    "uuid": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "phone": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "dni": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "address": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "avatar": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "active": {
+                        "type": "boolean"
+                    },
+                    "deleted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "uuid",
+                    "name",
+                    "email",
+                    "phone",
+                    "dni",
+                    "address",
+                    "avatar",
+                    "notes",
+                    "status",
+                    "active",
+                    "deleted_at",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "StudentEloquentModel"
             },
             "SuggestCampaignTopicsData": {
                 "type": "object",

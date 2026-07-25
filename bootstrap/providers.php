@@ -23,6 +23,7 @@ use Modules\Services\Providers\ServicesServiceProvider;
 use Modules\SocialMedia\Providers\SocialMediaServiceProvider;
 use Modules\Students\Providers\StudentsServiceProvider;
 use Modules\Users\Providers\UsersServiceProvider;
+use Modules\VideoExport\Providers\VideoExportServiceProvider;
 use Shared\Providers\SharedServiceProvider;
 
 return [
@@ -49,5 +50,6 @@ return [
     SocialMediaServiceProvider::class,
     StudentsServiceProvider::class,
     UsersServiceProvider::class,
+    VideoExportServiceProvider::class,
     SharedServiceProvider::class,
 ];

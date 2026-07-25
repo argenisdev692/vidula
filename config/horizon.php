@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Str;
+use Laravel\Horizon\Http\Middleware\Authenticate;
 
 return [
 
@@ -83,7 +84,7 @@ return [
     |
     */
 
-    'middleware' => ['web', 'auth', \Laravel\Horizon\Http\Middleware\Authenticate::class],
+    'middleware' => ['web', 'auth', Authenticate::class],
 
     /*
     |--------------------------------------------------------------------------
@@ -214,6 +215,18 @@ return [
             'timeout' => 300,
             'nice' => 0,
         ],
+        'supervisor-video-export' => [
+            'connection' => 'redis',
+            'queue' => ['video-export'],
+            'balance' => 'simple',
+            'maxProcesses' => 1,
+            'maxTime' => 0,
+            'maxJobs' => 0,
+            'memory' => 1024,
+            'tries' => 1,
+            'timeout' => 3600,
+            'nice' => 0,
+        ],
     ],
 
     'environments' => [
@@ -223,11 +236,17 @@ return [
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
             ],
+            'supervisor-video-export' => [
+                'maxProcesses' => 1,
+            ],
         ],
 
         'local' => [
             'supervisor-1' => [
                 'maxProcesses' => 3,
+            ],
+            'supervisor-video-export' => [
+                'maxProcesses' => 1,
             ],
         ],
     ],

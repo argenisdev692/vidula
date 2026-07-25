@@ -51,7 +51,7 @@ export function useNavGroups(): { navItems: ComputedRef<NavItem[]> } {
                 { icon: 'pi pi-video', label: 'Campaigns', href: '/campaigns', permission: 'VIEW_ANY_CAMPAIGNS' },
             ],
         },
-        { icon: 'pi pi-file-export', label: 'Video Export', href: '/video-export' },
+        { icon: 'pi pi-file-export', label: 'Video Export', href: '/video-export', permission: 'VIEW_ANY_VIDEO_EXPORTS' },
         { icon: 'pi pi-building', label: 'Company Data', href: '/company-data' },
         {
             icon: 'pi pi-cog',

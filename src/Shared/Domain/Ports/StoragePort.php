@@ -29,6 +29,13 @@ interface StoragePort
     public function temporaryUrl(string $path, \DateTimeInterface $expiresAt): string;
 
     /**
+     * Time-limited signed PUT URL for direct browser → cloud uploads (S3/R2).
+     *
+     * @return array{upload_url: string, headers: array<string, string>}
+     */
+    public function temporaryUploadUrl(string $path, \DateTimeInterface $expiresAt): array;
+
+    /**
      * Permanent public URL for a PUBLIC object (e.g. brand logos rendered in
      * emails, which cannot use expiring signed URLs). Only valid for objects
      * stored with `public` visibility — never for private user uploads.
