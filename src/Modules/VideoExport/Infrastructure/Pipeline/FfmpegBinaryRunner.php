@@ -244,6 +244,80 @@ final readonly class FfmpegBinaryRunner
         ], 'extract whisper audio');
     }
 
+    /** Extract PCM WAV for AI denoise (48 kHz stereo). */
+    public function extractWav(string $videoPath, string $outPath): void
+    {
+        $rate = (int) config('video-export.render.audio_sample_rate', 48000);
+        $channels = (int) config('video-export.render.audio_channels', 2);
+
+        $this->run([
+            '-y',
+            '-i', $videoPath,
+            '-vn',
+            '-acodec', 'pcm_s16le',
+            '-ar', (string) $rate,
+            '-ac', (string) $channels,
+            $outPath,
+        ], 'extract wav');
+    }
+
+    public function applyAudioFilter(string $inputPath, string $outPath, string $audioFilter): void
+    {
+        $this->run([
+            '-y',
+            '-i', $inputPath,
+            '-af', $audioFilter,
+            $outPath,
+        ], 'apply audio filter');
+    }
+
+    /**
+     * Replace the video's audio track; optional filter on the new audio (e.g. loudnorm).
+     */
+    public function replaceAudioTrack(
+        string $videoPath,
+        string $audioPath,
+        string $outPath,
+        ?string $audioFilter = null,
+    ): void {
+        $r = config('video-export.render');
+
+        if ($audioFilter !== null && $audioFilter !== '') {
+            $this->run([
+                '-y',
+                '-i', $videoPath,
+                '-i', $audioPath,
+                '-filter_complex', sprintf('[1:a]%s[outa]', $audioFilter),
+                '-map', '0:v:0',
+                '-map', '[outa]',
+                '-c:v', 'copy',
+                '-c:a', (string) $r['audio_codec'],
+                '-b:a', (string) $r['audio_bitrate'],
+                '-ar', (string) $r['audio_sample_rate'],
+                '-ac', (string) $r['audio_channels'],
+                '-movflags', '+faststart',
+                $outPath,
+            ], 'replace audio');
+
+            return;
+        }
+
+        $this->run([
+            '-y',
+            '-i', $videoPath,
+            '-i', $audioPath,
+            '-map', '0:v:0',
+            '-map', '1:a:0',
+            '-c:v', 'copy',
+            '-c:a', (string) $r['audio_codec'],
+            '-b:a', (string) $r['audio_bitrate'],
+            '-ar', (string) $r['audio_sample_rate'],
+            '-ac', (string) $r['audio_channels'],
+            '-movflags', '+faststart',
+            $outPath,
+        ], 'replace audio');
+    }
+
     public function detectSilenceStderr(string $videoPath, int $thresholdSeconds): string
     {
         $noise = (string) config('video-export.silence_noise_db', '-30dB');

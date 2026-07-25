@@ -375,13 +375,13 @@ When a model carries a foreign key (e.g. `user_id`), declare BOTH sides — neve
 
 - Child (owns the FK) → `belongsTo`, generic PHPDoc:
   ```php
-  /** @return BelongsTo<User, $this> */
+  /** @return BelongsTo<\App\Models\User, $this> */
   public function user(): BelongsTo
   {
       return $this->belongsTo(User::class);
   }
   ```
-- Parent (`User` / owning aggregate) → inverse `hasMany` / `hasOne`, generic PHPDoc:
+- Parent (`App\Models\User` / owning aggregate) → inverse `hasMany` / `hasOne`, generic PHPDoc:
   ```php
   /** @return HasMany<{YourEntity}EloquentModel, $this> */
   public function {yourEntities}(): HasMany
@@ -389,6 +389,7 @@ When a model carries a foreign key (e.g. `user_id`), declare BOTH sides — neve
       return $this->hasMany({YourEntity}EloquentModel::class);
   }
   ```
+- **`user_id` hard rule:** same PR must also update `App\Models\User` (inverse relation + import + `@property-read` PHPDoc). Child method = `user()`; parent class = `App\Models\User` (never `UserEloquentModel`, never `createdBy()`).
 - Each model documents itself with the standard generated block ending in `@mixin \Eloquent` (regenerate via `./vendor/bin/sail artisan ide-helper:models`), otherwise linters report **"undefined type 'Eloquent'"** (`\Eloquent` lives in the git-ignored `_ide_helper.php`).
 - **Auditors:** a one-directional FK relation (child `belongsTo` present, parent inverse missing) is a **FAIL**.
 

@@ -9,6 +9,7 @@ use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
+use Modules\VideoExport\Domain\Ports\AudioDenoisePort;
 use Modules\VideoExport\Infrastructure\Queue\ProcessVideoExportJob;
 use Tests\TestCase;
 
@@ -103,6 +104,31 @@ final class VideoExportAccessTest extends TestCase
             ->assertJsonPath('data.job_uuid', $jobUuid);
 
         Queue::assertPushed(ProcessVideoExportJob::class);
+    }
+
+    public function test_enqueue_rejects_ai_denoise_when_not_configured(): void
+    {
+        Queue::fake();
+        config([
+            'filesystems.disks.r2.url' => 'https://cdn.example.test',
+            'video-export.ai_denoise.driver' => 'arnndn',
+            'video-export.ai_denoise.arnndn_model' => '',
+        ]);
+        $this->app->forgetInstance(AudioDenoisePort::class);
+
+        $response = $this->actingAs($this->superAdmin())
+            ->postJson('/video-export', [
+                'job_uuid' => (string) Str::uuid(),
+                'mode' => 'clean',
+                'video_paths' => ['https://cdn.example.test/video-exports/_parts/a.mp4'],
+                'audio_enhancement_enabled' => true,
+                'audio_enhance_mode' => 'ai',
+            ]);
+
+        $response->assertUnprocessable();
+        $this->assertStringContainsString('AI audio denoise', (string) $response->json('message'));
+
+        Queue::assertNothingPushed();
     }
 
     public function test_api_enqueue_requires_sanctum(): void

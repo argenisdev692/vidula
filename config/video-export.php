@@ -73,4 +73,19 @@ return [
         'max_gap_seconds' => 0.4,
         'max_token_chars' => 5,
     ],
+
+    /*
+    | AI background-noise denoise (audio_enhance_mode=ai).
+    | Fillers still use Whisper + cut logic — this is waveform denoise only.
+    | driver=arnndn → local FFmpeg RNN model (.rnnn).
+    | driver=http   → external Audio Cleaner API (https URL only).
+    */
+    'ai_denoise' => [
+        'driver' => env('VIDEO_EXPORT_AI_DENOISE_DRIVER', 'arnndn'),
+        'arnndn_model' => env('VIDEO_EXPORT_ARNNDN_MODEL', ''),
+        'arnndn_mix' => (float) env('VIDEO_EXPORT_ARNNDN_MIX', 0.8),
+        'http_url' => env('VIDEO_EXPORT_AI_DENOISE_URL', ''),
+        'http_token' => env('VIDEO_EXPORT_AI_DENOISE_TOKEN', ''),
+        'http_timeout' => (int) env('VIDEO_EXPORT_AI_DENOISE_TIMEOUT', 600),
+    ],
 ];

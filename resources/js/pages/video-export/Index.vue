@@ -12,7 +12,6 @@ import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import Button from '@/volt/Button.vue';
 import Card from '@/volt/Card.vue';
 import Select from '@/volt/Select.vue';
-import ToggleSwitch from '@/volt/ToggleSwitch.vue';
 import Tag from '@/volt/Tag.vue';
 import Message from '@/volt/Message.vue';
 import {
@@ -24,6 +23,7 @@ import {
 } from '@/modules/video-export/api';
 import type {
     AiProvider,
+    AudioEnhanceMode,
     ExportMode,
     JobStatus,
     JobStatusResponse,
@@ -39,7 +39,7 @@ const toast = useToast();
 const mode = ref<ExportMode>('clean');
 const aiProvider = ref<AiProvider>('gemini');
 const silenceThreshold = ref<number>(1);
-const audioEnhance = ref<boolean>(true);
+const audioEnhanceMode = ref<AudioEnhanceMode>('dsp');
 const files = ref<UploadItem[]>([]);
 const scriptFile = ref<File | null>(null);
 const scriptUrl = ref<string | null>(null);
@@ -56,6 +56,12 @@ const silenceOptions = [
     { label: '1 second', value: 1 },
     { label: '2 seconds', value: 2 },
     { label: '3 seconds', value: 3 },
+];
+
+const enhanceOptions = [
+    { label: 'Off', value: 'off' },
+    { label: 'DSP (local FFmpeg)', value: 'dsp' },
+    { label: 'AI denoise', value: 'ai' },
 ];
 
 const providerOptions = [
@@ -237,7 +243,9 @@ async function onSubmit(): Promise<void> {
             mode: mode.value,
             video_paths: videoPaths,
             silence_threshold_seconds: silenceThreshold.value,
-            audio_enhancement_enabled: mode.value === 'merge' ? false : audioEnhance.value,
+            audio_enhancement_enabled:
+                mode.value === 'merge' ? false : audioEnhanceMode.value !== 'off',
+            audio_enhance_mode: mode.value === 'merge' ? 'off' : audioEnhanceMode.value,
         };
         if (mode.value === 'ai') {
             body.ai_provider = aiProvider.value;
@@ -389,9 +397,20 @@ onUnmounted(() => {
                                     class="ve-select"
                                 />
                             </div>
-                            <div class="ve-field ve-field--row">
+                            <div class="ve-field">
                                 <label for="audio-enhance">Audio enhancement</label>
-                                <ToggleSwitch input-id="audio-enhance" v-model="audioEnhance" />
+                                <Select
+                                    input-id="audio-enhance"
+                                    v-model="audioEnhanceMode"
+                                    :options="enhanceOptions"
+                                    option-label="label"
+                                    option-value="value"
+                                    class="ve-select"
+                                />
+                                <span class="ve-hint">
+                                    DSP = local FFmpeg noise polish. AI denoise = neural cleaner
+                                    (arnndn model or HTTP). Fillers need AI integrate mode + Whisper.
+                                </span>
                             </div>
                         </div>
 

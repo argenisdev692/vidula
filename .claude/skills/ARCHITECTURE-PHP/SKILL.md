@@ -641,20 +641,21 @@ When a model carries a foreign key (e.g. `user_id`), BOTH sides of the relations
 
 - Child (owns the FK) → `belongsTo`, with generic PHPDoc:
   ```php
-  /** @return BelongsTo<User, $this> */
+  /** @return BelongsTo<\App\Models\User, $this> */
   public function user(): BelongsTo
   {
       return $this->belongsTo(User::class);
   }
   ```
-- Parent (`User` / owning aggregate) → inverse `hasMany` (or `hasOne`), with generic PHPDoc + the FK import placed in alphabetical order (Pint):
+- Parent (`App\Models\User` / owning aggregate) → inverse `hasMany` (or `hasOne`), with generic PHPDoc + the FK import placed in alphabetical order (Pint):
   ```php
-  /** @return HasMany<BlogCategoryEloquentModel, $this> */
-  public function blogCategories(): HasMany
+  /** @return HasMany<CvEloquentModel, $this> */
+  public function cvs(): HasMany
   {
-      return $this->hasMany(BlogCategoryEloquentModel::class);
+      return $this->hasMany(CvEloquentModel::class);
   }
   ```
+- **`user_id` hard rule:** if the migration / `$fillable` includes `user_id`, the same PR MUST update `App\Models\User` with the inverse `hasMany`/`hasOne`, the Eloquent model import, and `@property-read` PHPDoc (`$cvs`, `$cvs_count`, etc.). Child method name is `user()` — not `createdBy()`. Parent is `App\Models\User` — never `UserEloquentModel`.
 - Every Eloquent model documents itself with the standard generated block ending in `@mixin \Eloquent` (regenerate via `./vendor/bin/sail artisan ide-helper:models`) so `\Eloquent` and the dynamic query methods resolve — otherwise linters report **"undefined type 'Eloquent'"**. `\Eloquent` itself is declared in the git-ignored `_ide_helper.php` (`ide-helper:generate`).
 - **Auditors:** a one-directional FK relation (child `belongsTo` present, parent inverse missing — or vice-versa) is a **FAIL**.
 

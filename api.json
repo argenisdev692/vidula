@@ -1753,6 +1753,187 @@
                 }
             }
         },
+        "/cvs": {
+            "get": {
+                "operationId": "cvs.index",
+                "tags": [
+                    "CvApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/cvs/{uuid}": {
+            "get": {
+                "operationId": "cvs.show",
+                "tags": [
+                    "CvApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "uuid": {
+                                                    "type": "string"
+                                                },
+                                                "user_id": {
+                                                    "type": "integer"
+                                                },
+                                                "title": {
+                                                    "type": "string"
+                                                },
+                                                "niche": {
+                                                    "type": "string"
+                                                },
+                                                "is_primary": {
+                                                    "type": "boolean"
+                                                },
+                                                "file_type": {
+                                                    "type": "string"
+                                                },
+                                                "original_filename": {
+                                                    "type": "string"
+                                                },
+                                                "raw_text": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "deleted_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "format": "date-time"
+                                                },
+                                                "created_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "format": "date-time"
+                                                },
+                                                "download_url": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "uuid",
+                                                "user_id",
+                                                "title",
+                                                "niche",
+                                                "is_primary",
+                                                "file_type",
+                                                "original_filename",
+                                                "raw_text",
+                                                "deleted_at",
+                                                "created_at",
+                                                "updated_at",
+                                                "download_url"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/invoices": {
             "get": {
                 "operationId": "invoices.index",
@@ -4375,6 +4556,15 @@
                 ],
                 "title": "AppointmentEloquentModel"
             },
+            "AudioEnhanceMode": {
+                "type": "string",
+                "enum": [
+                    "off",
+                    "dsp",
+                    "ai"
+                ],
+                "title": "AudioEnhanceMode"
+            },
             "AuthUserData": {
                 "type": "object",
                 "additionalProperties": {},
@@ -5410,6 +5600,9 @@
                     },
                     "audio_enhancement_enabled": {
                         "type": "boolean"
+                    },
+                    "audio_enhance_mode": {
+                        "$ref": "#/components/schemas/AudioEnhanceMode"
                     },
                     "sort_by_creation_time": {
                         "type": "boolean"

@@ -28,6 +28,7 @@ use Modules\Auth\Infrastructure\Persistence\Eloquent\Models\TrustedDeviceEloquen
 use Modules\Blog\Infrastructure\Persistence\Eloquent\Models\BlogCategoryEloquentModel;
 use Modules\Campaigns\Infrastructure\Persistence\Eloquent\Models\CampaignEloquentModel;
 use Modules\Clients\Infrastructure\Persistence\Eloquent\Models\ClientEloquentModel;
+use Modules\Cvs\Infrastructure\Persistence\Eloquent\Models\CvEloquentModel;
 use Modules\Meeting\Infrastructure\Persistence\Eloquent\Models\MeetingEloquentModel;
 use Modules\Portfolio\Infrastructure\Persistence\Eloquent\Models\PortfolioEloquentModel;
 use Modules\Post\Infrastructure\Persistence\Eloquent\Models\PostEloquentModel;
@@ -164,6 +165,8 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read int|null $social_media_contents_count
  * @property-read Collection<int, ClientEloquentModel> $clients
  * @property-read int|null $clients_count
+ * @property-read Collection<int, CvEloquentModel> $cvs
+ * @property-read int|null $cvs_count
  *
  * @mixin \Eloquent
  */
@@ -385,6 +388,16 @@ class User extends Authenticatable implements MustVerifyEmailContract
     public function clients(): HasMany
     {
         return $this->hasMany(ClientEloquentModel::class);
+    }
+
+    /**
+     * Uploaded CVs owned by this user (PDF / Markdown resumes).
+     *
+     * @return HasMany<CvEloquentModel, $this>
+     */
+    public function cvs(): HasMany
+    {
+        return $this->hasMany(CvEloquentModel::class);
     }
 
     /**

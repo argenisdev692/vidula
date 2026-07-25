@@ -1,5 +1,7 @@
 export type ExportMode = 'merge' | 'clean' | 'ai';
 
+export type AudioEnhanceMode = 'off' | 'dsp' | 'ai';
+
 export type AiProvider = 'openai' | 'anthropic' | 'gemini';
 
 export type JobStatus =
@@ -35,6 +37,7 @@ export interface JobDiagnostics {
     ai_cleaning_enabled?: boolean;
     ai_provider?: string;
     audio_enhanced?: boolean;
+    audio_enhance_mode?: AudioEnhanceMode;
     script_reviewed?: boolean;
     leftover_pause_fragments?: number;
     review_error?: string | null;

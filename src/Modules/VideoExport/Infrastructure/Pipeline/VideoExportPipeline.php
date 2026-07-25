@@ -7,7 +7,9 @@ namespace Modules\VideoExport\Infrastructure\Pipeline;
 use Carbon\CarbonImmutable;
 use Modules\VideoExport\Application\DTOs\EnqueueExportData;
 use Modules\VideoExport\Application\Services\VideoExportJobStore;
+use Modules\VideoExport\Domain\Enums\AudioEnhanceMode;
 use Modules\VideoExport\Domain\Enums\ExportMode;
+use Modules\VideoExport\Domain\Ports\AudioDenoisePort;
 use Modules\VideoExport\Domain\Services\CutPlanner;
 use Modules\VideoExport\Domain\Services\FillerCutDetector;
 use Modules\VideoExport\Domain\Services\SilenceCutParser;
@@ -24,6 +26,7 @@ final readonly class VideoExportPipeline
         private SilenceCutParser $silenceParser,
         private CutPlanner $cutPlanner,
         private AudioEnhanceChain $audioEnhance,
+        private AudioDenoisePort $audioDenoise,
         private OpenAiWhisperTranscriber $whisper,
         private ScriptReviewService $scriptReview,
         private StoragePort $storage,
@@ -134,6 +137,7 @@ final readonly class VideoExportPipeline
 
         $mode = $data->exportMode();
         $scriptProvided = filled($data->scriptPath);
+        $enhanceMode = $data->resolveAudioEnhanceMode();
 
         if ($mode->usesSpeechAi() || $scriptProvided) {
             $audioPath = $prepared.DIRECTORY_SEPARATOR.'whisper.mp3';
@@ -182,8 +186,8 @@ final readonly class VideoExportPipeline
         $outDir = $this->workspace->path($jobUuid, 'export');
         $this->workspace->ensureDir($outDir);
         $outPath = $outDir.DIRECTORY_SEPARATOR.'export.mp4';
-        $dsp = $data->audioEnhancementEnabled ? $this->audioEnhance->build() : null;
-        $this->ffmpeg->render($working, $keep, $outPath, $dsp);
+
+        $this->renderWithEnhanceMode($working, $keep, $outPath, $prepared, $enhanceMode);
 
         $finalDuration = $this->cutPlanner->totalDuration($keep);
         $storageUrl = $this->uploadResult($jobUuid, $outPath);
@@ -206,7 +210,8 @@ final readonly class VideoExportPipeline
                 'keep_segments' => count($keep),
                 'ai_cleaning_enabled' => $mode->usesSpeechAi(),
                 'ai_provider' => $data->aiProvider,
-                'audio_enhanced' => $data->audioEnhancementEnabled,
+                'audio_enhanced' => $enhanceMode->isEnabled(),
+                'audio_enhance_mode' => $enhanceMode->value,
                 'script_reviewed' => $scriptProvided && $reviewError === null,
                 'leftover_pause_fragments' => $leftover,
                 'review_error' => $reviewError,
@@ -218,6 +223,38 @@ final readonly class VideoExportPipeline
         }
 
         return $payload;
+    }
+
+    /**
+     * @param  list<TimeRange>  $keep
+     */
+    private function renderWithEnhanceMode(
+        string $working,
+        array $keep,
+        string $outPath,
+        string $preparedDir,
+        AudioEnhanceMode $enhanceMode,
+    ): void {
+        if ($enhanceMode->usesAiDenoise()) {
+            $cutOnly = $preparedDir.DIRECTORY_SEPARATOR.'cut.mp4';
+            $rawWav = $preparedDir.DIRECTORY_SEPARATOR.'raw.wav';
+            $cleanWav = $preparedDir.DIRECTORY_SEPARATOR.'clean.wav';
+
+            $this->ffmpeg->render($working, $keep, $cutOnly, null);
+            $this->ffmpeg->extractWav($cutOnly, $rawWav);
+            $this->audioDenoise->enhance($rawWav, $cleanWav);
+            $this->ffmpeg->replaceAudioTrack(
+                $cutOnly,
+                $cleanWav,
+                $outPath,
+                $this->audioEnhance->buildPostAi(),
+            );
+
+            return;
+        }
+
+        $dsp = $enhanceMode->usesDsp() ? $this->audioEnhance->build() : null;
+        $this->ffmpeg->render($working, $keep, $outPath, $dsp);
     }
 
     private function uploadResult(string $jobUuid, string $localPath): ?string

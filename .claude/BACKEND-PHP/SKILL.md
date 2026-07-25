@@ -431,8 +431,37 @@ final class {Module}EloquentModel extends Model
 ### Eloquent Relationship Rules
 
 - Every FK column (`user_id`, `*_id`) in a migration **must** have a typed `BelongsTo` on the child model and a typed `HasMany`/`HasOne` on the parent — both sides, always, no orphan FKs.
-- When adding or reviewing any `EloquentModel`, check that all FK columns in `$fillable` have their relationship method declared; if `user_id` is present, add `createdBy(): BelongsTo` on the model and the inverse `hasMany` on `UserEloquentModel`.
 - All relationship methods must carry a typed `@return` generic: `@return BelongsTo<ParentModel, $this>` / `@return HasMany<ChildModel, $this>`.
+
+#### `user_id` — MANDATORY bidirectional wiring (User ↔ entity)
+
+Whenever a migration / Eloquent model adds `user_id` (owner / author / creator FK), **both** of the following MUST land in the same PR — shipping only the child `belongsTo` is a **FAIL**:
+
+1. **Child model** (`{Entity}EloquentModel`) → `belongsTo(User::class)` named `user()`:
+   ```php
+   /** @return BelongsTo<\App\Models\User, $this> */
+   public function user(): BelongsTo
+   {
+       return $this->belongsTo(User::class);
+   }
+   ```
+2. **Parent** (`App\Models\User`) → inverse `hasMany({Entity}EloquentModel::class)` (plural method, e.g. `cvs()`, `clients()`, `portfolios()`), plus:
+   - `use Modules\…\{Entity}EloquentModel;` import (Pint alphabetical order)
+   - PHPDoc `@property-read Collection<int, {Entity}EloquentModel> ${relation}` and `@property-read int|null ${relation}_count`
+
+```php
+// ✅ App\Models\User
+/** @return HasMany<CvEloquentModel, $this> */
+public function cvs(): HasMany
+{
+    return $this->hasMany(CvEloquentModel::class);
+}
+
+// ❌ Child has user() but User has no inverse — auditor FAIL
+```
+
+> Method name on the child is **`user()`**, not `createdBy()` / `owner()`. The parent is always `App\Models\User` — never invent a `UserEloquentModel`.
+> Checklist when scaffolding any module with `user_id`: migration FK → child `user()` → `User::{entities}()` → PHPDoc on `User` → eager-load `with('user:id,…')` on list/show.
 
 ---
 

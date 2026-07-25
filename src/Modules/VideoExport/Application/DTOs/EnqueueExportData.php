@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\VideoExport\Application\DTOs;
 
 use Illuminate\Validation\Rule;
+use Modules\VideoExport\Domain\Enums\AudioEnhanceMode;
 use Modules\VideoExport\Domain\Enums\ExportMode;
 use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Data;
@@ -22,6 +23,7 @@ final class EnqueueExportData extends Data
         public array $videoPaths,
         public int $silenceThresholdSeconds = 1,
         public bool $audioEnhancementEnabled = true,
+        public string $audioEnhanceMode = 'dsp',
         public bool $sortByCreationTime = true,
         public string $language = 'es',
         public string $aiProvider = 'gemini',
@@ -43,6 +45,7 @@ final class EnqueueExportData extends Data
             'video_paths.*' => ['required', 'string', 'max:2048'],
             'silence_threshold_seconds' => ['sometimes', 'integer', 'min:1', 'max:3'],
             'audio_enhancement_enabled' => ['sometimes', 'boolean'],
+            'audio_enhance_mode' => ['sometimes', 'string', Rule::enum(AudioEnhanceMode::class)],
             'sort_by_creation_time' => ['sometimes', 'boolean'],
             'language' => ['sometimes', 'string', 'min:2', 'max:8'],
             'ai_provider' => ['sometimes', 'string', Rule::in(['openai', 'anthropic', 'gemini'])],
@@ -54,5 +57,10 @@ final class EnqueueExportData extends Data
     public function exportMode(): ExportMode
     {
         return ExportMode::from($this->mode);
+    }
+
+    public function resolveAudioEnhanceMode(): AudioEnhanceMode
+    {
+        return AudioEnhanceMode::resolve($this->audioEnhancementEnabled, $this->audioEnhanceMode);
     }
 }

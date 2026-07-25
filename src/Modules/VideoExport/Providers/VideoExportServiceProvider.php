@@ -6,10 +6,13 @@ namespace Modules\VideoExport\Providers;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Modules\VideoExport\Domain\Ports\AudioDenoisePort;
 use Modules\VideoExport\Domain\Services\CutPlanner;
 use Modules\VideoExport\Domain\Services\SilenceCutParser;
 use Modules\VideoExport\Infrastructure\Pipeline\AudioEnhanceChain;
+use Modules\VideoExport\Infrastructure\Pipeline\FfmpegArnndnAudioDenoiseAdapter;
 use Modules\VideoExport\Infrastructure\Pipeline\FfmpegBinaryRunner;
+use Modules\VideoExport\Infrastructure\Pipeline\HttpAudioDenoiseAdapter;
 use Modules\VideoExport\Infrastructure\Pipeline\InputResolver;
 use Modules\VideoExport\Infrastructure\Pipeline\OpenAiWhisperTranscriber;
 use Modules\VideoExport\Infrastructure\Pipeline\ScriptReviewService;
@@ -38,6 +41,25 @@ final class VideoExportServiceProvider extends ServiceProvider
         $this->app->singleton(OpenAiWhisperTranscriber::class);
         $this->app->singleton(InputResolver::class);
         $this->app->singleton(ScriptReviewService::class);
+
+        $this->app->singleton(AudioDenoisePort::class, function ($app): AudioDenoisePort {
+            $driver = (string) config('video-export.ai_denoise.driver', 'arnndn');
+
+            if ($driver === 'http') {
+                return new HttpAudioDenoiseAdapter(
+                    endpointUrl: (string) config('video-export.ai_denoise.http_url', ''),
+                    token: (string) config('video-export.ai_denoise.http_token', ''),
+                    timeoutSeconds: (int) config('video-export.ai_denoise.http_timeout', 600),
+                );
+            }
+
+            return new FfmpegArnndnAudioDenoiseAdapter(
+                ffmpeg: $app->make(FfmpegBinaryRunner::class),
+                modelPath: (string) config('video-export.ai_denoise.arnndn_model', ''),
+                mix: (float) config('video-export.ai_denoise.arnndn_mix', 0.8),
+            );
+        });
+
         $this->app->singleton(VideoExportPipeline::class);
     }
 

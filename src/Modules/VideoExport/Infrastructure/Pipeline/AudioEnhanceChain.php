@@ -7,6 +7,17 @@ namespace Modules\VideoExport\Infrastructure\Pipeline;
 /** Nest-parity spoken-voice audio DSP chain for ffmpeg. */
 final readonly class AudioEnhanceChain
 {
+    /**
+     * Light post-pass after AI denoise (loudness only — avoid stacking afftdn).
+     */
+    public function buildPostAi(): string
+    {
+        return implode(',', [
+            'loudnorm=I=-14:TP=-1:LRA=7',
+            'alimiter=level_in=1:level_out=1:limit=1.0:attack=5:release=50:asc=1',
+        ]);
+    }
+
     public function build(): string
     {
         $nrAmount = 12;

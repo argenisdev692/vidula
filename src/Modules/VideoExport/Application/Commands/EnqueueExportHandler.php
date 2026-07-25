@@ -6,7 +6,9 @@ namespace Modules\VideoExport\Application\Commands;
 
 use Modules\VideoExport\Application\DTOs\EnqueueExportData;
 use Modules\VideoExport\Application\Services\VideoExportJobStore;
+use Modules\VideoExport\Domain\Enums\AudioEnhanceMode;
 use Modules\VideoExport\Domain\Enums\ExportMode;
+use Modules\VideoExport\Domain\Ports\AudioDenoisePort;
 use Modules\VideoExport\Infrastructure\Pipeline\InputResolver;
 use Modules\VideoExport\Infrastructure\Pipeline\OpenAiWhisperTranscriber;
 use Modules\VideoExport\Infrastructure\Queue\ProcessVideoExportJob;
@@ -19,6 +21,7 @@ final readonly class EnqueueExportHandler
         private VideoExportJobStore $jobs,
         private InputResolver $resolver,
         private OpenAiWhisperTranscriber $whisper,
+        private AudioDenoisePort $audioDenoise,
         private AuditPort $audit,
     ) {}
 
@@ -44,6 +47,13 @@ final readonly class EnqueueExportHandler
             throw new RuntimeException('AI cleaning requires OPENAI_API_KEY.');
         }
 
+        $enhanceMode = $data->resolveAudioEnhanceMode();
+        if ($enhanceMode === AudioEnhanceMode::Ai && ! $this->audioDenoise->isConfigured()) {
+            throw new RuntimeException(
+                'AI audio denoise is not configured. Set VIDEO_EXPORT_ARNNDN_MODEL (driver=arnndn) or VIDEO_EXPORT_AI_DENOISE_URL (driver=http).',
+            );
+        }
+
         if ($mode === ExportMode::Ai && filled($data->scriptPath) === false) {
             // Script optional — allowed.
         }
@@ -66,6 +76,7 @@ final readonly class EnqueueExportHandler
             [
                 'job_uuid' => $data->jobUuid,
                 'mode' => $data->mode,
+                'audio_enhance_mode' => $enhanceMode->value,
                 'source_count' => count($data->videoPaths),
             ],
             null,

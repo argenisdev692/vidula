@@ -1,5 +1,6 @@
 import { apiFetch } from '@/lib/http';
 import type {
+    AudioEnhanceMode,
     EnqueueResponse,
     ExportMode,
     AiProvider,
@@ -91,6 +92,7 @@ export async function enqueueExport(payload: {
     video_paths: string[];
     silence_threshold_seconds: number;
     audio_enhancement_enabled: boolean;
+    audio_enhance_mode: AudioEnhanceMode;
     ai_provider?: AiProvider;
     script_path?: string;
     script_format?: 'pdf' | 'markdown';
