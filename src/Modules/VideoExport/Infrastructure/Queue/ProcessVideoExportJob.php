@@ -80,6 +80,15 @@ final class ProcessVideoExportJob implements ShouldQueue
         $raw = trim($exception->getMessage());
 
         // Common deploy gaps — surface clearly so the UI is usable without logs.
+        if (
+            str_contains($raw, 'signal "9"')
+            || str_contains($raw, 'signal 9')
+            || str_contains(strtolower($raw), 'sigkill')
+            || str_contains(strtolower($raw), 'processsignaledexception')
+        ) {
+            return 'Export was killed (SIGKILL / signal 9) — usually Railway ran out of RAM during FFmpeg. Raise memory, use shorter clips, or retry Merge with fewer sources. Not an AI-provider issue.';
+        }
+
         if (str_contains(strtolower($raw), 'ffmpeg') || str_contains(strtolower($raw), 'ffprobe')) {
             return 'FFmpeg is missing or failed on the server. Redeploy with ffmpeg installed, then retry.';
         }
