@@ -63,9 +63,37 @@ final class ProcessVideoExportJob implements ShouldQueue
 
     public function failed(?Throwable $exception): void
     {
+        $message = $this->userFacingFailureMessage($exception);
+
         app(VideoExportJobStore::class)->markFailed(
             $this->data->jobUuid,
-            'Export failed. Check logs for details.',
+            $message,
         );
+    }
+
+    private function userFacingFailureMessage(?Throwable $exception): string
+    {
+        if ($exception === null) {
+            return 'Export failed. Check Railway logs for video_export.job_failed.';
+        }
+
+        $raw = trim($exception->getMessage());
+
+        // Common deploy gaps — surface clearly so the UI is usable without logs.
+        if (str_contains(strtolower($raw), 'ffmpeg') || str_contains(strtolower($raw), 'ffprobe')) {
+            return 'FFmpeg is missing or failed on the server. Redeploy with ffmpeg installed, then retry.';
+        }
+
+        if (str_contains(strtolower($raw), 'openai') || str_contains($raw, 'OPENAI_API_KEY')) {
+            return 'AI step failed (OpenAI/Whisper). Check OPENAI_API_KEY on Railway.';
+        }
+
+        // Keep message short and free of paths/stack noise for the UI.
+        $safe = preg_replace('/\s+/', ' ', $raw) ?? $raw;
+        $safe = mb_substr($safe, 0, 240);
+
+        return $safe !== ''
+            ? 'Export failed: '.$safe
+            : 'Export failed. Check Railway logs for video_export.job_failed.';
     }
 }
