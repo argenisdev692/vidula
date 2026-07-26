@@ -7,13 +7,21 @@ namespace Modules\VideoExport\Infrastructure\Pipeline;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Shared\Domain\Ports\StoragePort;
 
 /**
  * Resolves http(s) source URLs into local workspace files (anti-LFI / SSRF).
+ *
+ * Allowlisted R2 public-base URLs are downloaded via StoragePort (credentials /
+ * signed SDK access). Unsigned HTTP GET against private R2 objects returns 403
+ * even when browser CORS + presigned PUT succeeded — that is not a CORS issue.
  */
 final readonly class InputResolver
 {
-    public function __construct(private VideoWorkspace $workspace) {}
+    public function __construct(
+        private VideoWorkspace $workspace,
+        private StoragePort $storage,
+    ) {}
 
     /**
      * @param  list<string>  $videoPaths
@@ -105,15 +113,45 @@ final readonly class InputResolver
 
     private function download(string $url, string $localPath): void
     {
-        $response = Http::timeout(600)->withOptions(['sink' => $localPath])->get($url);
-        if (! $response->successful()) {
-            throw new RuntimeException('Failed to download source video from storage.');
+        $key = $this->objectKeyFromAllowlistedUrl($url);
+        if ($key !== null) {
+            try {
+                $this->storage->copyToLocal($key, $localPath);
+            } catch (\Throwable $e) {
+                throw new RuntimeException(
+                    'Failed to download source video from storage via R2 credentials.',
+                    0,
+                    $e,
+                );
+            }
+        } else {
+            $response = Http::timeout(600)->withOptions(['sink' => $localPath])->get($url);
+            if (! $response->successful()) {
+                throw new RuntimeException('Failed to download source video from storage.');
+            }
         }
+
         $max = (int) config('video-export.max_source_bytes', 2147483648);
         if (is_file($localPath) && filesize($localPath) > $max) {
             @unlink($localPath);
             throw new RuntimeException('Source video exceeds the maximum allowed size.');
         }
+    }
+
+    /**
+     * Map an allowlisted public-base URL back to the R2 object key.
+     */
+    private function objectKeyFromAllowlistedUrl(string $url): ?string
+    {
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+        if ($host === '' || ! in_array($host, $this->allowedHosts(), true)) {
+            return null;
+        }
+
+        $path = (string) parse_url($url, PHP_URL_PATH);
+        $key = ltrim(rawurldecode($path), '/');
+
+        return $key !== '' ? $key : null;
     }
 
     private function extensionFromUrl(string $url): string

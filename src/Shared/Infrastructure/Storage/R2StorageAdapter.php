@@ -89,6 +89,39 @@ final readonly class R2StorageAdapter implements StoragePort
         return $this->disk->url($path);
     }
 
+    public function copyToLocal(string $path, string $localPath): void
+    {
+        $stream = $this->disk->readStream($path);
+        if ($stream === null) {
+            throw new \RuntimeException("Failed to open storage object [{$path}].");
+        }
+
+        try {
+            $directory = dirname($localPath);
+            if (! is_dir($directory) && ! mkdir($directory, 0755, true) && ! is_dir($directory)) {
+                throw new \RuntimeException("Failed to create local directory [{$directory}].");
+            }
+
+            $out = fopen($localPath, 'wb');
+            if ($out === false) {
+                throw new \RuntimeException("Failed to open local path [{$localPath}].");
+            }
+
+            try {
+                $copied = stream_copy_to_stream($stream, $out);
+                if ($copied === false) {
+                    throw new \RuntimeException("Failed to copy storage object [{$path}] to local disk.");
+                }
+            } finally {
+                fclose($out);
+            }
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }
+    }
+
     public function delete(string $path): bool
     {
         return $this->disk->delete($path);

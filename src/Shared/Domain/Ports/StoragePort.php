@@ -42,6 +42,12 @@ interface StoragePort
      */
     public function publicUrl(string $path): string;
 
+    /**
+     * Stream a private object to a local filesystem path (server-side only).
+     * Prefer this over unsigned public URLs when reading private R2 objects.
+     */
+    public function copyToLocal(string $path, string $localPath): void;
+
     public function delete(string $path): bool;
 
     public function exists(string $path): bool;
