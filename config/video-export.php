@@ -32,6 +32,8 @@ return [
         'preset' => env('VIDEO_EXPORT_LOW_MEMORY_PRESET', 'ultrafast'),
         'threads' => (int) env('VIDEO_EXPORT_LOW_MEMORY_THREADS', 1),
         'filter_threads' => (int) env('VIDEO_EXPORT_LOW_MEMORY_FILTER_THREADS', 1),
+        // Above this count, render() extracts each keep-range separately then pairwise-merges.
+        'max_filter_segments' => (int) env('VIDEO_EXPORT_LOW_MEMORY_MAX_FILTER_SEGMENTS', 2),
     ],
 
     'render' => [

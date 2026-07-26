@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Modules\VideoExport\Infrastructure\Pipeline;
 
 use Modules\VideoExport\Domain\ValueObjects\TimeRange;
+use RuntimeException;
 use Symfony\Component\Process\Exception\ProcessFailedException;
+use Symfony\Component\Process\Exception\ProcessSignaledException;
 use Symfony\Component\Process\Process;
 
 /**
@@ -36,7 +38,16 @@ final readonly class FfmpegBinaryRunner
     {
         $process = new Process([$this->ffmpegBin, ...$args]);
         $process->setTimeout((float) config('laravel-ffmpeg.timeout', 3600));
-        $process->run();
+
+        try {
+            $process->run();
+        } catch (ProcessSignaledException $e) {
+            throw new RuntimeException(sprintf(
+                'FFmpeg %s was killed by signal %d (SIGKILL — usually out of memory). Enable low-memory mode, use fewer/shorter clips, or raise container RAM.',
+                $label,
+                $e->getSignal(),
+            ), 0, $e);
+        }
 
         if (! $process->isSuccessful()) {
             throw new ProcessFailedException($process);
@@ -206,6 +217,14 @@ final readonly class FfmpegBinaryRunner
         ?string $audioDspChain = null,
         bool $lowMemory = false,
     ): void {
+        $maxSegments = max(1, (int) config('video-export.low_memory.max_filter_segments', 2));
+
+        if ($lowMemory && count($keepRanges) > $maxSegments) {
+            $this->renderChunked($videoPath, $keepRanges, $outPath, $audioDspChain, $lowMemory);
+
+            return;
+        }
+
         $render = config('video-export.render');
         $filterParts = [];
         $concatLabels = [];
@@ -355,6 +374,76 @@ final readonly class FfmpegBinaryRunner
     }
 
     /**
+     * Extract each keep-range in its own FFmpeg invocation, then pairwise-merge.
+     * Avoids a single filter_complex with dozens of trim+concat nodes (OOM/SIGKILL).
+     *
+     * @param  list<TimeRange>  $keepRanges
+     */
+    private function renderChunked(
+        string $videoPath,
+        array $keepRanges,
+        string $outPath,
+        ?string $audioDspChain,
+        bool $lowMemory,
+    ): void {
+        $dir = dirname($outPath);
+        $segmentPaths = [];
+        $temps = [];
+
+        try {
+            foreach ($keepRanges as $index => $range) {
+                $segmentPath = $dir.DIRECTORY_SEPARATOR.sprintf('seg_%04d.mp4', $index);
+                $this->render($videoPath, [$range], $segmentPath, null, $lowMemory);
+                $segmentPaths[] = $segmentPath;
+                $temps[] = $segmentPath;
+            }
+
+            $mergedPath = count($segmentPaths) === 1
+                ? $segmentPaths[0]
+                : $dir.DIRECTORY_SEPARATOR.'segments_merged.mp4';
+
+            if (count($segmentPaths) > 1) {
+                $this->mergeVideos($segmentPaths, $mergedPath, $lowMemory);
+                $temps[] = $mergedPath;
+            }
+
+            if ($audioDspChain !== null && $audioDspChain !== '') {
+                $this->enhanceVideoAudio($mergedPath, $outPath, $audioDspChain);
+            } elseif ($mergedPath !== $outPath) {
+                if (! @rename($mergedPath, $outPath) && ! @copy($mergedPath, $outPath)) {
+                    throw new RuntimeException('Failed to finalize chunked render output.');
+                }
+            }
+        } finally {
+            foreach ($temps as $temp) {
+                if ($temp !== $outPath && is_file($temp)) {
+                    @unlink($temp);
+                }
+            }
+        }
+    }
+
+    private function enhanceVideoAudio(string $videoPath, string $outPath, string $audioFilter): void
+    {
+        $r = config('video-export.render');
+
+        $this->run([
+            '-y',
+            '-i', $videoPath,
+            '-filter_complex', sprintf('[0:a]%s[outa]', $audioFilter),
+            '-map', '0:v:0',
+            '-map', '[outa]',
+            '-c:v', 'copy',
+            '-c:a', (string) $r['audio_codec'],
+            '-b:a', (string) $r['audio_bitrate'],
+            '-ar', (string) $r['audio_sample_rate'],
+            '-ac', (string) $r['audio_channels'],
+            '-movflags', '+faststart',
+            $outPath,
+        ], 'enhance audio');
+    }
+
+    /**
      * Concat two-at-a-time into temps so peak RAM stays near a 2-input encode.
      *
      * @param  list<string>  $inputs
@@ -390,7 +479,7 @@ final readonly class FfmpegBinaryRunner
 
             if ($current !== $outPath && is_file($current)) {
                 if (! @rename($current, $outPath) && ! @copy($current, $outPath)) {
-                    throw new \RuntimeException('Failed to finalize pairwise merge output.');
+                    throw new RuntimeException('Failed to finalize pairwise merge output.');
                 }
                 @unlink($current);
             }
