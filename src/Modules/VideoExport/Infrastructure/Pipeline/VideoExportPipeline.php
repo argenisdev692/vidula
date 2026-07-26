@@ -57,7 +57,7 @@ final readonly class VideoExportPipeline
             );
 
             $result = match ($data->exportMode()) {
-                ExportMode::Merge => $this->runMerge($jobUuid, $paths),
+                ExportMode::Merge => $this->runMerge($jobUuid, $paths, $data->resolveLowMemory()),
                 ExportMode::Clean, ExportMode::Ai => $this->runClean($jobUuid, $paths, $data),
             };
 
@@ -84,12 +84,12 @@ final readonly class VideoExportPipeline
      * @param  list<string>  $paths
      * @return array<string, mixed>
      */
-    private function runMerge(string $jobUuid, array $paths): array
+    private function runMerge(string $jobUuid, array $paths, bool $lowMemory): array
     {
         $outDir = $this->workspace->path($jobUuid, 'export');
         $this->workspace->ensureDir($outDir);
         $outPath = $outDir.DIRECTORY_SEPARATOR.'export.mp4';
-        $this->ffmpeg->mergeAndRender($paths, $outPath);
+        $this->ffmpeg->mergeAndRender($paths, $outPath, $lowMemory);
         $duration = $this->ffmpeg->probeDurationSeconds($outPath);
         $storageUrl = $this->uploadResult($jobUuid, $outPath);
         $this->deleteSourceParts($paths);
@@ -103,6 +103,7 @@ final readonly class VideoExportPipeline
                 'source_count' => count($paths),
                 'merged' => count($paths) > 1,
                 'mode' => ExportMode::Merge->value,
+                'low_memory' => $lowMemory,
             ],
         ];
     }
@@ -116,11 +117,12 @@ final readonly class VideoExportPipeline
         $prepared = $this->workspace->path($jobUuid, 'prepared');
         $this->workspace->ensureDir($prepared);
         $working = $prepared.DIRECTORY_SEPARATOR.'merged.mp4';
+        $lowMemory = $data->resolveLowMemory();
 
         if (count($paths) === 1) {
             copy(array_first($paths), $working);
         } else {
-            $this->ffmpeg->mergeVideos($paths, $working);
+            $this->ffmpeg->mergeVideos($paths, $working, $lowMemory);
         }
 
         $duration = $this->ffmpeg->probeDurationSeconds($working);
@@ -187,7 +189,7 @@ final readonly class VideoExportPipeline
         $this->workspace->ensureDir($outDir);
         $outPath = $outDir.DIRECTORY_SEPARATOR.'export.mp4';
 
-        $this->renderWithEnhanceMode($working, $keep, $outPath, $prepared, $enhanceMode);
+        $this->renderWithEnhanceMode($working, $keep, $outPath, $prepared, $enhanceMode, $lowMemory);
 
         $finalDuration = $this->cutPlanner->totalDuration($keep);
         $storageUrl = $this->uploadResult($jobUuid, $outPath);
@@ -215,6 +217,7 @@ final readonly class VideoExportPipeline
                 'script_reviewed' => $scriptProvided && $reviewError === null,
                 'leftover_pause_fragments' => $leftover,
                 'review_error' => $reviewError,
+                'low_memory' => $lowMemory,
             ],
         ];
 
@@ -234,13 +237,14 @@ final readonly class VideoExportPipeline
         string $outPath,
         string $preparedDir,
         AudioEnhanceMode $enhanceMode,
+        bool $lowMemory = false,
     ): void {
         if ($enhanceMode->usesAiDenoise()) {
             $cutOnly = $preparedDir.DIRECTORY_SEPARATOR.'cut.mp4';
             $rawWav = $preparedDir.DIRECTORY_SEPARATOR.'raw.wav';
             $cleanWav = $preparedDir.DIRECTORY_SEPARATOR.'clean.wav';
 
-            $this->ffmpeg->render($working, $keep, $cutOnly, null);
+            $this->ffmpeg->render($working, $keep, $cutOnly, null, $lowMemory);
             $this->ffmpeg->extractWav($cutOnly, $rawWav);
             $this->audioDenoise->enhance($rawWav, $cleanWav);
             $this->ffmpeg->replaceAudioTrack(
@@ -254,13 +258,13 @@ final readonly class VideoExportPipeline
         }
 
         $dsp = $enhanceMode->usesDsp() ? $this->audioEnhance->build() : null;
-        $this->ffmpeg->render($working, $keep, $outPath, $dsp);
+        $this->ffmpeg->render($working, $keep, $outPath, $dsp, $lowMemory);
     }
 
     private function uploadResult(string $jobUuid, string $localPath): ?string
     {
         $key = rtrim((string) config('video-export.result_prefix'), '/').'/'.$jobUuid.'/export.mp4';
-        $this->storage->put($key, (string) file_get_contents($localPath), 'private');
+        $this->storage->putFromPath($key, $localPath, 'private');
 
         return $this->storage->temporaryUrl($key, CarbonImmutable::now()->addDay());
     }

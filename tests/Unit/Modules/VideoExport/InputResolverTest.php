@@ -60,6 +60,11 @@ final class InputResolverTest extends TestCase
                 file_put_contents($localPath, 'fake-video-bytes');
             }
 
+            public function putFromPath(string $path, string $localPath, string $visibility = 'private'): string
+            {
+                return $path;
+            }
+
             public function delete(string $path): bool
             {
                 return true;
@@ -121,6 +126,11 @@ final class InputResolverTest extends TestCase
             }
 
             public function copyToLocal(string $path, string $localPath): void {}
+
+            public function putFromPath(string $path, string $localPath, string $visibility = 'private'): string
+            {
+                return $path;
+            }
 
             public function delete(string $path): bool
             {

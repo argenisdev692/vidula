@@ -21,6 +21,19 @@ return [
 
     'workspace_root' => env('VIDEO_EXPORT_WORKSPACE', storage_path('app/video-export')),
 
+    /*
+    | Low-memory encode profile (Railway / small containers).
+    | Caps FFmpeg threads and uses ultrafast + pairwise merge so filter_complex
+    | never opens all sources at once (avoids SIGKILL / OOM).
+    | UI toggle overrides per job; env sets the default when the client omits it.
+    */
+    'low_memory' => [
+        'enabled' => filter_var(env('VIDEO_EXPORT_LOW_MEMORY', true), FILTER_VALIDATE_BOOLEAN),
+        'preset' => env('VIDEO_EXPORT_LOW_MEMORY_PRESET', 'ultrafast'),
+        'threads' => (int) env('VIDEO_EXPORT_LOW_MEMORY_THREADS', 1),
+        'filter_threads' => (int) env('VIDEO_EXPORT_LOW_MEMORY_FILTER_THREADS', 1),
+    ],
+
     'render' => [
         'width' => 1920,
         'height' => 1080,

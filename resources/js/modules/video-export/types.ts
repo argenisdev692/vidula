@@ -43,6 +43,7 @@ export interface JobDiagnostics {
     review_error?: string | null;
     original_duration_seconds?: number;
     mode?: string;
+    low_memory?: boolean;
 }
 
 export interface JobResult {

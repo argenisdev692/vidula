@@ -122,6 +122,31 @@ final readonly class R2StorageAdapter implements StoragePort
         }
     }
 
+    public function putFromPath(string $path, string $localPath, string $visibility = 'private'): string
+    {
+        if (! is_file($localPath)) {
+            throw new \RuntimeException("Local file not found [{$localPath}].");
+        }
+
+        $stream = fopen($localPath, 'rb');
+        if ($stream === false) {
+            throw new \RuntimeException("Failed to open local file [{$localPath}].");
+        }
+
+        try {
+            $ok = $this->disk->put($path, $stream, ['visibility' => $visibility]);
+            if ($ok === false) {
+                throw new \RuntimeException("Failed to stream [{$localPath}] to storage [{$path}].");
+            }
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }
+
+        return $path;
+    }
+
     public function delete(string $path): bool
     {
         return $this->disk->delete($path);

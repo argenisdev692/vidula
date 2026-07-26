@@ -14,6 +14,7 @@ import Card from '@/volt/Card.vue';
 import Select from '@/volt/Select.vue';
 import Tag from '@/volt/Tag.vue';
 import Message from '@/volt/Message.vue';
+import ToggleSwitch from '@/volt/ToggleSwitch.vue';
 import {
     enqueueExport,
     fetchJobStatus,
@@ -40,6 +41,7 @@ const mode = ref<ExportMode>('clean');
 const aiProvider = ref<AiProvider>('gemini');
 const silenceThreshold = ref<number>(1);
 const audioEnhanceMode = ref<AudioEnhanceMode>('dsp');
+const lowMemory = ref<boolean>(true);
 const files = ref<UploadItem[]>([]);
 const scriptFile = ref<File | null>(null);
 const scriptUrl = ref<string | null>(null);
@@ -246,6 +248,7 @@ async function onSubmit(): Promise<void> {
             audio_enhancement_enabled:
                 mode.value === 'merge' ? false : audioEnhanceMode.value !== 'off',
             audio_enhance_mode: mode.value === 'merge' ? 'off' : audioEnhanceMode.value,
+            low_memory: lowMemory.value,
         };
         if (mode.value === 'ai') {
             body.ai_provider = aiProvider.value;
@@ -411,6 +414,23 @@ onUnmounted(() => {
                                     DSP = local FFmpeg noise polish. AI denoise = neural cleaner
                                     (arnndn model or HTTP). Fillers need AI integrate mode + Whisper.
                                 </span>
+                            </div>
+                        </div>
+
+                        <div class="ve-options ve-options--single">
+                            <div class="ve-field ve-field--row">
+                                <div>
+                                    <label for="low-memory">Low memory (Railway)</label>
+                                    <span class="ve-hint">
+                                        Uses less RAM (ultrafast + pairwise merge). Slower encode —
+                                        keep on for small containers to avoid SIGKILL.
+                                    </span>
+                                </div>
+                                <ToggleSwitch
+                                    input-id="low-memory"
+                                    v-model="lowMemory"
+                                    :disabled="submitting"
+                                />
                             </div>
                         </div>
 
@@ -752,6 +772,10 @@ onUnmounted(() => {
     .ve-options {
         grid-template-columns: 1fr 1fr;
         align-items: end;
+    }
+
+    .ve-options--single {
+        grid-template-columns: 1fr;
     }
 }
 

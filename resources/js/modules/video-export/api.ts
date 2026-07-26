@@ -103,6 +103,7 @@ export async function enqueueExport(payload: {
     silence_threshold_seconds: number;
     audio_enhancement_enabled: boolean;
     audio_enhance_mode: AudioEnhanceMode;
+    low_memory: boolean;
     ai_provider?: AiProvider;
     script_path?: string;
     script_format?: 'pdf' | 'markdown';

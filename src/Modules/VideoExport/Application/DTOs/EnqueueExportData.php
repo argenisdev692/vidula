@@ -29,6 +29,7 @@ final class EnqueueExportData extends Data
         public string $aiProvider = 'gemini',
         public ?string $scriptPath = null,
         public ?string $scriptFormat = null,
+        public ?bool $lowMemory = null,
     ) {}
 
     /**
@@ -51,6 +52,7 @@ final class EnqueueExportData extends Data
             'ai_provider' => ['sometimes', 'string', Rule::in(['openai', 'anthropic', 'gemini'])],
             'script_path' => ['nullable', 'string', 'max:2048'],
             'script_format' => ['nullable', 'string', Rule::in(['markdown', 'pdf'])],
+            'low_memory' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -62,5 +64,14 @@ final class EnqueueExportData extends Data
     public function resolveAudioEnhanceMode(): AudioEnhanceMode
     {
         return AudioEnhanceMode::resolve($this->audioEnhancementEnabled, $this->audioEnhanceMode);
+    }
+
+    public function resolveLowMemory(): bool
+    {
+        if ($this->lowMemory !== null) {
+            return $this->lowMemory;
+        }
+
+        return (bool) config('video-export.low_memory.enabled', true);
     }
 }

@@ -48,6 +48,11 @@ interface StoragePort
      */
     public function copyToLocal(string $path, string $localPath): void;
 
+    /**
+     * Stream a local file into cloud storage without loading it into PHP memory.
+     */
+    public function putFromPath(string $path, string $localPath, string $visibility = 'private'): string;
+
     public function delete(string $path): bool;
 
     public function exists(string $path): bool;
