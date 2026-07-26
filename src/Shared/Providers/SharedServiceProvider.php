@@ -24,6 +24,7 @@ use Shared\Infrastructure\Research\TavilyResearchAdapter;
 use Shared\Infrastructure\Resilience\CircuitBreaker\CircuitBreaker;
 use Shared\Infrastructure\Resilience\CircuitBreaker\CircuitBreakerInterface;
 use Shared\Infrastructure\Speech\ElevenLabsSpeechAdapter;
+use Shared\Infrastructure\Console\Commands\SyncR2CorsCommand;
 use Shared\Infrastructure\Storage\R2StorageAdapter;
 
 /**
@@ -55,6 +56,12 @@ final class SharedServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                SyncR2CorsCommand::class,
+            ]);
+        }
+
         // Inject company branding (base64 logos + contact block) into the shared
         // corporate PDF layout so every export controller stays branding-agnostic.
         ViewFactory::composer('exports.pdf.layout', static function (View $view): void {

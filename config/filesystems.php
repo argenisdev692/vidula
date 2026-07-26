@@ -1,5 +1,32 @@
 <?php
 
+declare(strict_types=1);
+
+/**
+ * Extra browser origins for R2 CORS (Vite, alternate hosts, etc.).
+ * The primary origin is always config('app.url') / APP_URL — do not duplicate it here.
+ *
+ * @return list<string>
+ */
+$r2CorsExtraOrigins = static function (): array {
+    return array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env('R2_CORS_EXTRA_ORIGINS', '')),
+    )));
+};
+
+/**
+ * Full AllowedOrigins list: APP_URL (same source as config('app.url')) + extras.
+ *
+ * @return list<string>
+ */
+$r2CorsAllowedOrigins = static function () use ($r2CorsExtraOrigins): array {
+    return array_values(array_unique(array_filter([
+        rtrim((string) env('APP_URL', 'http://localhost'), '/'),
+        ...$r2CorsExtraOrigins(),
+    ])));
+};
+
 return [
 
     /*
@@ -27,6 +54,26 @@ return [
     */
 
     'cloud' => env('FILESYSTEM_CLOUD', 'r2'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cloudflare R2 CORS (browser presigned PUT uploads)
+    |--------------------------------------------------------------------------
+    |
+    | Video-export uploads XHR PUT directly from the browser to signed R2 URLs.
+    | Primary origin = config('app.url') (APP_URL). Extras = R2_CORS_EXTRA_ORIGINS.
+    | Apply with: ./vendor/bin/sail artisan r2:sync-cors
+    |
+    */
+
+    'r2_cors' => [
+        'allowed_origins' => $r2CorsAllowedOrigins(),
+        'extra_origins' => $r2CorsExtraOrigins(),
+        'allowed_methods' => ['GET', 'PUT', 'HEAD'],
+        'allowed_headers' => ['*'],
+        'expose_headers' => ['ETag', 'Content-Type'],
+        'max_age_seconds' => 3600,
+    ],
 
     /*
     |--------------------------------------------------------------------------
