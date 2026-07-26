@@ -49,8 +49,11 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Web module XHR (e.g. /video-export) sends Accept: application/json but
+        // is not under /api/*. Keep api/* + expectsJson so throttle/validation
+        // errors return JSON instead of an HTML error page.
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*'),
+            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
 
         // laravel/ai's provider-transient exceptions (overloaded/rate-limited/

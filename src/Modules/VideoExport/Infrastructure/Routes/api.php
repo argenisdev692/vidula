@@ -16,7 +16,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->prefix('video-export')->na
         ->name('presign');
 
     Route::post('/', [VideoExportApiController::class, 'store'])
-        ->middleware('throttle:5,1')
+        ->middleware('throttle:20,1')
         ->name('store');
 
     Route::get('/jobs/{job_uuid}', [VideoExportApiController::class, 'jobStatus'])

@@ -46,7 +46,22 @@ export async function apiFetch<T = unknown>(
   });
 
   const text = await response.text();
-  const parsed: unknown = text ? JSON.parse(text) : undefined;
+  let parsed: unknown;
+
+  if (text) {
+    try {
+      parsed = JSON.parse(text) as unknown;
+    } catch {
+      const snippet = text.trimStart().slice(0, 48);
+      const hint =
+        response.status === 429
+          ? 'Too many requests — wait a minute and try again.'
+          : `Server returned non-JSON (${response.status}).`;
+      throw new HttpError(response.status, {
+        message: `${hint} Got: ${snippet}${text.length > 48 ? '…' : ''}`,
+      });
+    }
+  }
 
   if (!response.ok) {
     throw new HttpError(response.status, parsed);
