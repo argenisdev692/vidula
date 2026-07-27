@@ -7,6 +7,7 @@ import Column from 'primevue/column';
 import DataTable from '@/volt/DataTable.vue';
 import ActionButton from '@/common/data-table/ActionButton.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
+import StatusBadge from '@/common/ui/StatusBadge.vue';
 import { formatDate, formatMoney } from '@/modules/invoices/helpers/formatDate';
 import type { Invoice } from '@/modules/invoices/types';
 
@@ -92,7 +93,10 @@ function rowClass(row: Invoice): string | undefined {
 
             <Column field="is_paid" header="Status">
                 <template #body="{ data }">
-                    <span class="muted">{{ (data as Invoice).is_paid ? 'Paid' : 'Unpaid' }}</span>
+                    <StatusBadge
+                        :tone="(data as Invoice).is_paid ? 'success' : 'danger'"
+                        :label="(data as Invoice).is_paid ? 'Paid' : 'Pending'"
+                    />
                 </template>
             </Column>
 

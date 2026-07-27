@@ -34,9 +34,37 @@
             margin: 0;
             letter-spacing: 0.5px;
         }
+        h1.title-pending {
+            color: #c62828;
+        }
+        h1.title-paid {
+            color: #2e7d32;
+        }
+        .status-badge {
+            display: inline-block;
+            margin-top: 6px;
+            padding: 3px 10px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+        }
+        .status-badge--pending {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
+        .status-badge--paid {
+            background: #e8f5e9;
+            color: #1b5e20;
+            border: 1px solid #a5d6a7;
+        }
         .meta { margin-bottom: 18px; }
         .meta p { margin: 2px 0; font-size: 12px; }
         .meta strong { color: #333; }
+        .meta .estado-pending { color: #c62828; font-weight: bold; }
+        .meta .estado-paid { color: #1b5e20; font-weight: bold; }
         .parties {
             width: 100%;
             border-collapse: collapse;
@@ -155,13 +183,26 @@
                 @endif
             </td>
             <td class="header-title">
-                <h1>FACTURA / FATURA</h1>
+                <h1 class="{{ $invoice->is_paid ? 'title-paid' : 'title-pending' }}">FACTURA / FATURA</h1>
+                @if ($invoice->is_paid)
+                    <div class="status-badge status-badge--paid">Paid</div>
+                @else
+                    <div class="status-badge status-badge--pending">Pending</div>
+                @endif
             </td>
         </tr>
     </table>
 
     <div class="meta">
         <p><strong>Nº Factura:</strong> {{ $invoice->invoice_number }}</p>
+        <p>
+            <strong>Estado / Status:</strong>
+            @if ($invoice->is_paid)
+                <span class="estado-paid">PAID</span>
+            @else
+                <span class="estado-pending">PENDING</span>
+            @endif
+        </p>
         <p><strong>Fecha de emisión:</strong> {{ $issue }}</p>
         <p><strong>Fecha de vencimiento:</strong> {{ $due }}</p>
     </div>
@@ -283,7 +324,7 @@
         </div>
     @elseif (! empty($company['bank_iban']) || ! empty($company['bank_beneficiary']))
         <div class="bank">
-            <h3>Datos Bancarios / Dados Bancários</h3>
+            <h3>Datos Bancarios / Dados Bancários — PENDING</h3>
             @if (! empty($company['bank_beneficiary']))
                 <p><strong>Beneficiario:</strong> {{ $company['bank_beneficiary'] }}</p>
             @endif

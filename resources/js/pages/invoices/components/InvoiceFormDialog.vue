@@ -500,7 +500,7 @@ function submit(): void {
                 <div class="paid-toggle__copy">
                     <span class="paid-toggle__label">Mark as paid</span>
                     <span class="paid-toggle__hint">
-                        When enabled, the PDF shows ✓ PAYMENT RECEIVED instead of bank details.
+                        Off = PDF status Pending (red) + bank/IBAN. On = Paid (green) + ✓ PAYMENT RECEIVED.
                     </span>
                 </div>
                 <ToggleSwitch
