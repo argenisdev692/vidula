@@ -7,17 +7,22 @@
  *   · edit   → PUT  /clients/{uuid}
  *
  * PhoneField emits E.164; empty optional strings are mapped to null on submit.
+ * Address uses Google Places autocomplete; only a single `address` string is
+ * persisted (clients table has no city/state/zip columns).
  */
-import { computed, watch } from 'vue';
-import { useForm } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
+import { useForm, usePage } from '@inertiajs/vue3';
 import TextField from '@/common/form/TextField.vue';
 import TextareaField from '@/common/form/TextareaField.vue';
 import PhoneField from '@/common/form/PhoneField.vue';
 import SelectField from '@/common/form/SelectField.vue';
 import AppModal from '@/common/ui/AppModal.vue';
+import AddressAutocomplete from '@/common/address/AddressAutocomplete.vue';
+import { EMPTY_ADDRESS, type AddressValue } from '@/common/address/types';
 import { clientFormSchema, type ClientFormValues } from '@/modules/clients/schemas/clientFormSchema';
 import type { Client } from '@/modules/clients/types';
 import type { SelectOption } from '@/common/form/types';
+import type { SharedProps } from '@/types/inertia';
 
 const visible = defineModel<boolean>('visible', { default: false });
 
@@ -30,6 +35,8 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{ saved: [] }>();
+
+const page = usePage<SharedProps>();
 
 const form = useForm<ClientFormValues>({
     client_name: '',
@@ -46,6 +53,9 @@ const form = useForm<ClientFormValues>({
     twitter_link: '',
     notes: '',
 });
+
+/** Local Places value — flattened into `form.address` on submit. */
+const addressValue = ref<AddressValue>({ ...EMPTY_ADDRESS });
 
 const isEdit = computed<boolean>(() => props.mode === 'edit');
 const dialogTitle = computed<string>(() => (isEdit.value ? 'Edit client' : 'New client'));
@@ -70,6 +80,21 @@ const lifecycleOptions: SelectOption[] = [
     { label: 'Archived', value: 'ARCHIVED' },
 ];
 
+function formatAddress(value: AddressValue): string {
+    return [value.address, value.address_2, value.city, value.state, value.zip_code, value.country]
+        .map((part) => part?.trim())
+        .filter((part): part is string => !!part)
+        .join(', ');
+}
+
+function seedAddress(raw: string | null | undefined): AddressValue {
+    const trimmed = raw?.trim() ?? '';
+    return {
+        ...EMPTY_ADDRESS,
+        address: trimmed === '' ? null : trimmed,
+    };
+}
+
 watch(visible, (open) => {
     if (!open) {
         return;
@@ -88,6 +113,7 @@ watch(visible, (open) => {
     form.linkedin_link = props.client?.linkedin_link ?? '';
     form.twitter_link = props.client?.twitter_link ?? '';
     form.notes = props.client?.notes ?? '';
+    addressValue.value = seedAddress(props.client?.address);
 });
 
 function close(): void {
@@ -100,12 +126,15 @@ function emptyToNull(value: string): string | null {
 }
 
 function submit(): void {
+    const address = formatAddress(addressValue.value);
+    form.address = address;
+
     const parsed = clientFormSchema.safeParse({
         client_name: form.client_name,
         email: form.email,
         status: form.status,
         phone: form.phone,
-        address: form.address,
+        address,
         tax_id: form.tax_id,
         nif: form.nif,
         website: form.website,
@@ -140,7 +169,7 @@ function submit(): void {
         email: emptyToNull(data.email),
         status: data.status,
         phone: data.phone.trim(),
-        address: emptyToNull(data.address),
+        address: emptyToNull(address),
         tax_id: emptyToNull(data.tax_id),
         nif: emptyToNull(data.nif),
         website: emptyToNull(data.website),
@@ -213,13 +242,10 @@ function submit(): void {
                 :error="form.errors.email"
             />
 
-            <TextField
-                v-model="form.address"
-                name="address"
-                label="Address"
-                placeholder="Street address"
-                :maxlength="255"
-                :error="form.errors.address"
+            <AddressAutocomplete
+                v-model="addressValue"
+                :api-key="page.props.config.google_maps_api_key"
+                :errors="{ address: form.errors.address }"
             />
 
             <div class="client-form__row">

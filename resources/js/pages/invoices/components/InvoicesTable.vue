@@ -5,6 +5,7 @@
 import type { DataTablePageEvent } from 'primevue/datatable';
 import Column from 'primevue/column';
 import DataTable from '@/volt/DataTable.vue';
+import ActionButton from '@/common/data-table/ActionButton.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import { formatDate, formatMoney } from '@/modules/invoices/helpers/formatDate';
 import type { Invoice } from '@/modules/invoices/types';
@@ -111,48 +112,36 @@ function rowClass(row: Invoice): string | undefined {
                 <template #body="{ data }">
                     <div class="row-actions">
                         <PermissionGuard v-if="!(data as Invoice).deleted_at" permission="EXPORT_INVOICES">
-                            <button
-                                type="button"
-                                class="icon-btn"
-                                title="Download PDF"
-                                aria-label="Download PDF"
+                            <ActionButton
+                                icon="pi pi-file-pdf"
+                                tone="view"
+                                label="Download PDF"
                                 @click="emit('pdf', data as Invoice)"
-                            >
-                                <i class="pi pi-file-pdf" aria-hidden="true" />
-                            </button>
+                            />
                         </PermissionGuard>
                         <PermissionGuard v-if="!(data as Invoice).deleted_at" permission="UPDATE_INVOICES">
-                            <button
-                                type="button"
-                                class="icon-btn"
-                                title="Edit"
-                                aria-label="Edit"
+                            <ActionButton
+                                icon="pi pi-pencil"
+                                tone="edit"
+                                label="Edit"
                                 @click="emit('edit', data as Invoice)"
-                            >
-                                <i class="pi pi-pencil" aria-hidden="true" />
-                            </button>
+                            />
                         </PermissionGuard>
                         <PermissionGuard v-if="!(data as Invoice).deleted_at" permission="DELETE_INVOICES">
-                            <button
-                                type="button"
-                                class="icon-btn icon-btn--danger"
-                                title="Delete"
-                                aria-label="Delete"
+                            <ActionButton
+                                icon="pi pi-trash"
+                                tone="delete"
+                                label="Delete"
                                 @click="emit('delete', data as Invoice)"
-                            >
-                                <i class="pi pi-trash" aria-hidden="true" />
-                            </button>
+                            />
                         </PermissionGuard>
                         <PermissionGuard v-if="!!(data as Invoice).deleted_at" permission="RESTORE_INVOICES">
-                            <button
-                                type="button"
-                                class="icon-btn icon-btn--success"
-                                title="Restore"
-                                aria-label="Restore"
+                            <ActionButton
+                                icon="pi pi-replay"
+                                tone="restore"
+                                label="Restore"
                                 @click="emit('restore', data as Invoice)"
-                            >
-                                <i class="pi pi-replay" aria-hidden="true" />
-                            </button>
+                            />
                         </PermissionGuard>
                     </div>
                 </template>
@@ -184,32 +173,6 @@ function rowClass(row: Invoice): string | undefined {
     display: flex;
     align-items: center;
     gap: 0.25rem;
-}
-
-.icon-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 2rem;
-    height: 2rem;
-    border: none;
-    border-radius: var(--radius-md, 0.375rem);
-    background: transparent;
-    color: var(--text-secondary);
-    cursor: pointer;
-}
-
-.icon-btn:hover {
-    background: var(--surface-hover);
-    color: var(--text-primary);
-}
-
-.icon-btn--danger:hover {
-    color: var(--danger, #b91c1c);
-}
-
-.icon-btn--success:hover {
-    color: var(--success, #15803d);
 }
 
 :deep(.deleted-row) {

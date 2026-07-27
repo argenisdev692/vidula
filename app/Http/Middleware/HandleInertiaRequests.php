@@ -7,6 +7,7 @@ namespace App\Http\Middleware;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Inertia\Middleware;
 use Shared\Domain\Ports\StoragePort;
 use Shared\Infrastructure\Company\CompanyProfile;
@@ -41,10 +42,13 @@ class HandleInertiaRequests extends Middleware
                 'permissions' => $user ? $user->getAllPermissions()->pluck('name')->all() : [],
                 'roles' => $user ? $user->getRoleNames()->all() : [],
             ],
-            'flash' => [
-                'success' => fn (): ?string => $request->session()->get('success'),
-                'error' => fn (): ?string => $request->session()->get('error'),
-            ],
+            // Always include flash on partial reloads (`only: […]`). Closures are
+            // lazy and get skipped, so preserveState would keep a stale success
+            // toast (e.g. "Client created") when filtering the list.
+            'flash' => Inertia::always([
+                'success' => $request->session()->get('success'),
+                'error' => $request->session()->get('error'),
+            ]),
             'company' => $this->companyBranding(),
             'config' => [
                 'google_maps_api_key' => (string) config('services.googlemaps.key'),

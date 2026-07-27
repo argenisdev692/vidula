@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
  * Row-action icon button for CRUD tables — the single owner of the action-pill
- * look (bordered, token-tinted per `tone`, glow on hover). Renders an Inertia
- * <Link> when `href` is set (navigation: view / edit page / permissions), a
- * non-interactive <span> when `disabled` (e.g. a locked system role), otherwise
- * a <button> that emits `click`.
+ * look (bordered, token-tinted per `tone`, glow on hover — size stays fixed).
+ * Renders an Inertia <Link> when `href` is set (navigation: view / edit page /
+ * permissions), a non-interactive <span> when `disabled` (e.g. a locked system
+ * role), otherwise a <button> that emits `click`.
  *
  * Authorization stays at the call site via <PermissionGuard> — this component
  * only renders the control. Replaces the ~100-line `.btn-crud-action` block that
@@ -84,7 +84,7 @@ defineEmits<{ click: [] }>();
     background: color-mix(in srgb, var(--bg-elevated) 50%, transparent);
     color: var(--text-secondary);
     cursor: pointer;
-    transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+    transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
     overflow: hidden;
 }
 
@@ -99,7 +99,6 @@ defineEmits<{ click: [] }>();
 }
 
 .crud-action:hover {
-    transform: scale(1.15);
     border-color: currentColor;
 }
 
@@ -108,7 +107,7 @@ defineEmits<{ click: [] }>();
 }
 
 .crud-action:active {
-    transform: scale(0.95);
+    background: color-mix(in srgb, currentColor 12%, transparent);
 }
 
 .crud-action:focus-visible {
@@ -173,7 +172,6 @@ defineEmits<{ click: [] }>();
 }
 
 .crud-action--disabled:hover {
-    transform: none;
     border-color: var(--border-subtle);
     box-shadow: none;
 }

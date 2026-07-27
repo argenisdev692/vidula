@@ -5,7 +5,6 @@
  */
 import { computed, reactive } from 'vue';
 import { router } from '@inertiajs/vue3';
-import { useToast } from 'primevue/usetoast';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import { useAuthorization } from '@/modules/auth/composables/useAuthorization';
 import type { FilterCriteria, FilterField } from '@/common/data-table/AdvancedFilter.vue';
@@ -40,7 +39,6 @@ const props = defineProps<{
     defaultNotes: string | null;
 }>();
 
-const toast = useToast();
 const { hasPermission } = useAuthorization();
 
 const canCreate = computed<boolean>(() => hasPermission('CREATE_INVOICES'));
@@ -84,14 +82,6 @@ const canBulkAct = computed<boolean>(() => (isSuspendedView.value ? canBulkResto
 
 const { visible: formVisible, mode: formMode, entity: formInvoice, openCreate, openEdit } = useFormDialog<Invoice>();
 
-function onSaved(): void {
-    toast.add({
-        severity: 'success',
-        summary: formMode.value === 'edit' ? 'Invoice updated' : 'Invoice created',
-        life: 4000,
-    });
-}
-
 type RowAction = { kind: 'delete' | 'restore'; invoice: Invoice };
 
 const {
@@ -127,11 +117,6 @@ function confirmRowAction(): void {
             preserveState: true,
             onSuccess: () => {
                 resetSelection();
-                toast.add({
-                    severity: 'success',
-                    summary: action.kind === 'restore' ? 'Invoice restored' : 'Invoice deleted',
-                    life: 4000,
-                });
             },
             onFinish: finish,
         };
@@ -190,11 +175,6 @@ function confirmBulk(): void {
                 preserveState: true,
                 onSuccess: () => {
                     resetSelection();
-                    toast.add({
-                        severity: 'success',
-                        summary: isSuspendedView.value ? 'Selected invoices restored' : 'Selected invoices deleted',
-                        life: 4000,
-                    });
                 },
                 onFinish: finish,
             },
@@ -276,7 +256,6 @@ const filterFields = computed<FilterField[]>(() => [
                 :services="services"
                 :next-invoice-number="nextInvoiceNumber"
                 :default-notes="defaultNotes"
-                @saved="onSaved"
             />
 
             <ConfirmDialog

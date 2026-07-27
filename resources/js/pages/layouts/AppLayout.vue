@@ -21,16 +21,18 @@ import { onUnmounted, watch } from 'vue';
 useThemeStore();
 
 // Surface server flash messages as app-wide toasts on load and every visit.
+// Only toast when the message *newly appears* — partial reloads / preserveState
+// must not re-fire the same flash, and clearing to null must not toast.
 const page = usePage<SharedProps>();
 const toast = useToast();
 
 watch(
     () => page.props.flash,
-    (flash): void => {
-        if (flash?.success) {
+    (flash, previous): void => {
+        if (flash?.success && flash.success !== previous?.success) {
             toast.add({ severity: 'success', summary: flash.success, life: 4000 });
         }
-        if (flash?.error) {
+        if (flash?.error && flash.error !== previous?.error) {
             toast.add({ severity: 'error', summary: flash.error, life: 6000 });
         }
     },

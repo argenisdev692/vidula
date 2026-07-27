@@ -8,7 +8,6 @@
  */
 import { computed, reactive } from 'vue';
 import { router } from '@inertiajs/vue3';
-import { useToast } from 'primevue/usetoast';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import { useAuthorization } from '@/modules/auth/composables/useAuthorization';
 import type { FilterCriteria, FilterField } from '@/common/data-table/AdvancedFilter.vue';
@@ -37,7 +36,6 @@ const props = defineProps<{
     filters: ClientFilters;
 }>();
 
-const toast = useToast();
 const { hasPermission } = useAuthorization();
 
 const canCreate = computed<boolean>(() => hasPermission('CREATE_CLIENTS'));
@@ -80,14 +78,6 @@ const canBulkAct = computed<boolean>(() => (isSuspendedView.value ? canBulkResto
 
 const { visible: formVisible, mode: formMode, entity: formClient, openCreate, openEdit } = useFormDialog<Client>();
 
-function onSaved(): void {
-    toast.add({
-        severity: 'success',
-        summary: formMode.value === 'edit' ? 'Client updated' : 'Client created',
-        life: 4000,
-    });
-}
-
 type RowAction = { kind: 'delete' | 'restore'; client: Client };
 
 const {
@@ -123,11 +113,6 @@ function confirmRowAction(): void {
             preserveState: true,
             onSuccess: () => {
                 resetSelection();
-                toast.add({
-                    severity: 'success',
-                    summary: action.kind === 'restore' ? 'Client restored' : 'Client suspended',
-                    life: 4000,
-                });
             },
             onFinish: finish,
         };
@@ -186,11 +171,6 @@ function confirmBulk(): void {
                 preserveState: true,
                 onSuccess: () => {
                     resetSelection();
-                    toast.add({
-                        severity: 'success',
-                        summary: isSuspendedView.value ? 'Selected clients restored' : 'Selected clients suspended',
-                        life: 4000,
-                    });
                 },
                 onFinish: finish,
             },
@@ -266,7 +246,6 @@ const filterFields: FilterField[] = [
                 v-model:visible="formVisible"
                 :mode="formMode"
                 :client="formClient"
-                @saved="onSaved"
             />
 
             <ConfirmDialog
