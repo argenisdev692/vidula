@@ -190,12 +190,17 @@ class RolePermissionSeeder extends Seeder
     private function ensureRoles(): void
     {
         foreach (self::ROLES as $role) {
-            // DatabaseSeeder uses WithoutModelEvents, which skips the model's
-            // `creating` hook that would otherwise generate this — set it explicitly.
-            Role::firstOrCreate(
+            // SoftDeletes + unique(name, guard_name): a suspended role is invisible
+            // to firstOrCreate, which then fails on insert. Restore instead of
+            // aborting the seeder before grantAllToSuperAdmin runs.
+            $model = Role::withTrashed()->firstOrCreate(
                 ['name' => $role, 'guard_name' => self::GUARD],
                 ['uuid' => (string) Str::uuid7()],
             );
+
+            if ($model->trashed()) {
+                $model->restore();
+            }
         }
     }
 
@@ -248,25 +253,33 @@ class RolePermissionSeeder extends Seeder
     private function ensurePermissions(array $names): void
     {
         foreach ($names as $name) {
-            // DatabaseSeeder uses WithoutModelEvents, which skips the model's
-            // `creating` hook that would otherwise generate this — set it explicitly.
-            Permission::firstOrCreate(
+            // Same SoftDeletes/unique footgun as roles — restore suspended rows
+            // so syncPermissions can grant them (trashed perms are excluded from
+            // Spatie runtime checks and from Permission::query()).
+            $permission = Permission::withTrashed()->firstOrCreate(
                 ['name' => $name, 'guard_name' => self::GUARD],
                 ['uuid' => (string) Str::uuid7()],
             );
+
+            if ($permission->trashed()) {
+                $permission->restore();
+            }
         }
     }
 
     /**
-     * SUPER_ADMIN holds every permission.
+     * SUPER_ADMIN holds every active permission.
      */
     private function grantAllToSuperAdmin(): void
     {
-        Role::query()
+        $role = Role::query()
             ->where('name', 'SUPER_ADMIN')
             ->where('guard_name', self::GUARD)
-            ->first()
-            ?->syncPermissions(Permission::where('guard_name', self::GUARD)->get());
+            ->first();
+
+        $role?->syncPermissions(
+            Permission::query()->where('guard_name', self::GUARD)->get(),
+        );
     }
 
     /**

@@ -25,6 +25,8 @@ const ACTION_PREFIXES: readonly string[] = [
     'RESTORE',
     'EXPORT',
     'DOWNLOAD',
+    'PUBLISH',
+    'RUN',
 ];
 
 /** A single permission split into its human-facing action + full name. */
