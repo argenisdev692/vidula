@@ -25,10 +25,10 @@ import ConfirmDialog from '@/common/data-table/ConfirmDialog.vue';
 import { useResourceList } from '@/common/data-table/useResourceList';
 import { useConfirmAction } from '@/common/data-table/useConfirmAction';
 import { toLocalIsoDate } from '@/lib/date';
-import { apiFetch } from '@/lib/http';
 import MeetingsTable from './components/MeetingsTable.vue';
 import MeetingCalendar from './components/MeetingCalendar.vue';
 import MeetingFormDialog from './components/MeetingFormDialog.vue';
+import { useMeetingEditMutation } from '@/modules/meeting/composables/useMeetingEditMutation';
 import { buildMeetingExportUrl, buildMeetingQueryParams } from '@/modules/meeting/helpers/buildMeetingQueryParams';
 import type {
     Meeting,
@@ -50,6 +50,7 @@ const props = defineProps<{
 
 const toast = useToast();
 const { hasPermission } = useAuthorization();
+const { mutateAsync: fetchMeetingEdit } = useMeetingEditMutation();
 
 const canCreate = computed<boolean>(() => hasPermission('CREATE_MEETINGS'));
 const canExport = computed<boolean>(() => hasPermission('EXPORT_MEETINGS'));
@@ -116,7 +117,7 @@ function onCalendarSchedule(prefill: { starts_at: string }): void {
 
 async function openEditByUuid(uuid: string): Promise<void> {
     try {
-        const response = await apiFetch<{ data: MeetingEditData }>('GET', `/meetings/${uuid}/edit`);
+        const response = await fetchMeetingEdit(uuid);
         dialogMode.value = 'edit';
         dialogMeeting.value = response.data;
         dialogPrefill.value = null;

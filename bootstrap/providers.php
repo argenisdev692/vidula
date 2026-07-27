@@ -5,6 +5,7 @@ use App\Providers\FortifyServiceProvider;
 use App\Providers\HorizonServiceProvider;
 use App\Providers\TelescopeServiceProvider;
 use Modules\ActivityLog\Providers\ActivityLogServiceProvider;
+use Modules\AiResumeStudio\Providers\AiResumeStudioServiceProvider;
 use Modules\Appointment\Providers\AppointmentServiceProvider;
 use Modules\Auth\Providers\AuthServiceProvider;
 use Modules\Authorization\Providers\AuthorizationServiceProvider;
@@ -33,6 +34,7 @@ return [
     HorizonServiceProvider::class,
     TelescopeServiceProvider::class,
     ActivityLogServiceProvider::class,
+    AiResumeStudioServiceProvider::class,
     AppointmentServiceProvider::class,
     AuthServiceProvider::class,
     AuthorizationServiceProvider::class,

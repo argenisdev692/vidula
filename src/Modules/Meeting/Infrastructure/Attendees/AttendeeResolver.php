@@ -8,6 +8,7 @@ use App\Models\User;
 use Modules\Appointment\Infrastructure\Persistence\Eloquent\Models\AppointmentEloquentModel;
 use Modules\ContactSupport\Infrastructure\Persistence\Eloquent\Models\ContactSupportEloquentModel;
 use Modules\Meeting\Domain\Exceptions\AttendeeNotEligibleException;
+use Modules\Meeting\Domain\Ports\AttendeeResolverPort;
 use Modules\Meeting\Domain\ValueObjects\AttendeeType;
 
 /**
@@ -18,7 +19,7 @@ use Modules\Meeting\Domain\ValueObjects\AttendeeType;
  * Infrastructure (not Domain) since it queries Eloquent directly, same
  * pragmatic boundary as the existing `AppointmentCalendarFeedAdapter`.
  */
-final readonly class AttendeeResolver
+final readonly class AttendeeResolver implements AttendeeResolverPort
 {
     /**
      * @return array{attendable_type: string, attendable_id: int}

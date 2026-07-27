@@ -95,9 +95,22 @@ final readonly class EloquentAppointmentRepository implements AppointmentReposit
             ->get();
     }
 
-    public function markAllAsRead(): int
+    public function markAllAsRead(): array
     {
-        return AppointmentEloquentModel::query()->where('readed', false)->update(['readed' => true]);
+        $uuids = AppointmentEloquentModel::query()
+            ->where('readed', false)
+            ->pluck('uuid')
+            ->all();
+
+        if ($uuids === []) {
+            return [];
+        }
+
+        AppointmentEloquentModel::query()
+            ->whereIn('uuid', $uuids)
+            ->update(['readed' => true]);
+
+        return array_values(array_map(static fn (mixed $uuid): string => (string) $uuid, $uuids));
     }
 
     public function markAsRead(string $uuid): bool

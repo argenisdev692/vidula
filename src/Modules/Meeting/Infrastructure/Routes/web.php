@@ -68,7 +68,10 @@ Route::middleware(['web', 'auth', 'throttle:60,1'])->prefix('meetings')->name('m
         ->middleware('permission:RESTORE_MEETINGS')->whereUuid('uuid')->name('restore');
 });
 
-Route::middleware(['web', 'auth'])->prefix('google-calendar/oauth')->name('google-calendar.oauth.')->group(function (): void {
-    Route::get('/connect', [GoogleCalendarOAuthController::class, 'connect'])->name('connect');
-    Route::get('/callback', [GoogleCalendarOAuthController::class, 'callback'])->name('callback');
-});
+Route::middleware(['web', 'auth', 'throttle:10,1', 'permission:VIEW_ANY_MEETINGS'])
+    ->prefix('google-calendar/oauth')
+    ->name('google-calendar.oauth.')
+    ->group(function (): void {
+        Route::get('/connect', [GoogleCalendarOAuthController::class, 'connect'])->name('connect');
+        Route::get('/callback', [GoogleCalendarOAuthController::class, 'callback'])->name('callback');
+    });

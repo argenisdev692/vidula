@@ -13,8 +13,8 @@ use Modules\Meeting\Application\DTOs\UpdateMeetingData;
 use Modules\Meeting\Application\Support\MeetingDuration;
 use Modules\Meeting\Domain\Events\MeetingUpdated;
 use Modules\Meeting\Domain\Exceptions\AttendeeNotEligibleException;
+use Modules\Meeting\Domain\Ports\AttendeeResolverPort;
 use Modules\Meeting\Domain\Ports\MeetingRepositoryPort;
-use Modules\Meeting\Infrastructure\Attendees\AttendeeResolver;
 use Modules\Meeting\Infrastructure\Persistence\Eloquent\Models\MeetingEloquentModel;
 
 /**
@@ -26,7 +26,7 @@ final readonly class UpdateMeetingHandler
 {
     public function __construct(
         private MeetingRepositoryPort $meetings,
-        private AttendeeResolver $resolver,
+        private AttendeeResolverPort $resolver,
         private Cache $cache,
         private Dispatcher $events,
     ) {}

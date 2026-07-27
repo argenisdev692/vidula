@@ -84,4 +84,20 @@ final class EloquentCvRepository implements CvRepositoryPort
             ->when($exceptUuid !== null, fn ($q) => $q->where('uuid', '!=', $exceptUuid))
             ->update(['is_primary' => false]);
     }
+
+    public function listSelectOptionsForUser(int $userId): array
+    {
+        return CvEloquentModel::query()
+            ->where('user_id', $userId)
+            ->orderByDesc('is_primary')
+            ->orderByDesc('created_at')
+            ->get(['uuid', 'title', 'niche', 'is_primary'])
+            ->map(static fn (CvEloquentModel $cv): array => [
+                'uuid' => $cv->uuid,
+                'title' => $cv->title,
+                'niche' => $cv->niche,
+                'is_primary' => (bool) $cv->is_primary,
+            ])
+            ->all();
+    }
 }

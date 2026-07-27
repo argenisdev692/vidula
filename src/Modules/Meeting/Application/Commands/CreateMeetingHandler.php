@@ -12,9 +12,9 @@ use Modules\Meeting\Application\DTOs\MeetingAttendeeData;
 use Modules\Meeting\Application\Support\MeetingDuration;
 use Modules\Meeting\Domain\Events\MeetingScheduled;
 use Modules\Meeting\Domain\Exceptions\AttendeeNotEligibleException;
+use Modules\Meeting\Domain\Ports\AttendeeResolverPort;
 use Modules\Meeting\Domain\Ports\MeetingRepositoryPort;
 use Modules\Meeting\Domain\ValueObjects\MeetingStatus;
-use Modules\Meeting\Infrastructure\Attendees\AttendeeResolver;
 use Modules\Meeting\Infrastructure\Persistence\Eloquent\Models\MeetingEloquentModel;
 
 /**
@@ -26,7 +26,7 @@ final readonly class CreateMeetingHandler
 {
     public function __construct(
         private MeetingRepositoryPort $meetings,
-        private AttendeeResolver $resolver,
+        private AttendeeResolverPort $resolver,
         private Dispatcher $events,
     ) {}
 

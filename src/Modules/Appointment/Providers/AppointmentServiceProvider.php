@@ -20,6 +20,7 @@ use Modules\Appointment\Domain\Ports\AppointmentRepositoryPort;
 use Modules\Appointment\Domain\Ports\AvailabilityPort;
 use Modules\Appointment\Domain\Services\SpamGuard;
 use Modules\Appointment\Infrastructure\Availability\AvailabilityResolverAdapter;
+use Modules\Appointment\Infrastructure\Listeners\BroadcastAppointmentSubmittedListener;
 use Modules\Appointment\Infrastructure\Persistence\Repositories\EloquentAppointmentRepository;
 
 final class AppointmentServiceProvider extends ServiceProvider
@@ -48,6 +49,7 @@ final class AppointmentServiceProvider extends ServiceProvider
         // A new booking notifies BOTH the company inbox and the client.
         Event::listen(AppointmentBooked::class, [SendNewLeadAdminEmailListener::class, 'handle']);
         Event::listen(AppointmentBooked::class, [SendAppointmentReceivedEmailListener::class, 'handle']);
+        Event::listen(AppointmentBooked::class, [BroadcastAppointmentSubmittedListener::class, 'handle']);
         Event::listen(AppointmentConfirmed::class, [SendAppointmentConfirmedEmailListener::class, 'handle']);
         Event::listen(AppointmentRescheduled::class, [SendAppointmentRescheduledEmailListener::class, 'handle']);
         Event::listen(AppointmentCancelled::class, [SendAppointmentCancelledEmailListener::class, 'handle']);

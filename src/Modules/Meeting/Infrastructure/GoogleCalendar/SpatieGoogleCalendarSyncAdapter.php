@@ -9,7 +9,9 @@ use Modules\Meeting\Application\DTOs\GoogleCalendarEventSyncResult;
 use Modules\Meeting\Domain\Ports\GoogleCalendarSyncPort;
 use Modules\Meeting\Infrastructure\Attendees\AttendeeEmailResolver;
 use Modules\Meeting\Infrastructure\Persistence\Eloquent\Models\MeetingEloquentModel;
+use Shared\Infrastructure\Resilience\CircuitBreaker\CircuitBreakerInterface;
 use Spatie\GoogleCalendar\Event;
+use Throwable;
 
 /**
  * Pushes a Meeting to the single shared calendar configured in
@@ -18,40 +20,49 @@ use Spatie\GoogleCalendar\Event;
  * OAuth2 mode is not natively multi-tenant per staff member, confirmed during
  * research; per-organizer personal calendars would need a custom multi-account
  * token store and are out of scope). Every method swallows and logs failures
- * (missing token, API outage, disabled config) rather than throwing — this
- * adapter is only ever invoked from a queued listener, so a failure here must
- * not retry-storm or surface to the user (spec.md NFR-Availability).
+ * (missing token, API outage, disabled config, open circuit) rather than
+ * throwing — this adapter is only ever invoked from a queued listener, so a
+ * failure here must not retry-storm or surface to the user (spec.md
+ * NFR-Availability).
  */
 final readonly class SpatieGoogleCalendarSyncAdapter implements GoogleCalendarSyncPort
 {
+    private const string SERVICE_KEY = 'google-calendar';
+
+    public function __construct(private CircuitBreakerInterface $breaker) {}
+
     public function createEvent(MeetingEloquentModel $meeting): ?GoogleCalendarEventSyncResult
     {
         if (! $this->isConfigured()) {
             return null;
         }
 
-        try {
-            $event = new Event;
-            $this->fill($event, $meeting);
+        return $this->breaker->call(
+            self::SERVICE_KEY,
+            function () use ($meeting): GoogleCalendarEventSyncResult {
+                $event = new Event;
+                $this->fill($event, $meeting);
 
-            if ($this->shouldAddMeetLink()) {
-                $event->addMeetLink();
-            }
+                if ($this->shouldAddMeetLink()) {
+                    $event->addMeetLink();
+                }
 
-            $saved = $event->save(null, ['sendUpdates' => 'all']);
+                $saved = $event->save(null, ['sendUpdates' => 'all']);
 
-            return new GoogleCalendarEventSyncResult(
-                eventId: (string) $saved->id,
-                meetLink: $this->extractMeetLink($saved),
-            );
-        } catch (\Throwable $e) {
-            Log::warning('Failed to push meeting to Google Calendar', [
-                'meeting_uuid' => $meeting->uuid,
-                'error' => $e->getMessage(),
-            ]);
+                return new GoogleCalendarEventSyncResult(
+                    eventId: (string) $saved->id,
+                    meetLink: $this->extractMeetLink($saved),
+                );
+            },
+            function (Throwable $e) use ($meeting): null {
+                Log::warning('meeting.google_calendar.create_failed', [
+                    'meeting_uuid' => $meeting->uuid,
+                    'error' => $e->getMessage(),
+                ]);
 
-            return null;
-        }
+                return null;
+            },
+        );
     }
 
     public function updateEvent(MeetingEloquentModel $meeting): void
@@ -60,17 +71,25 @@ final readonly class SpatieGoogleCalendarSyncAdapter implements GoogleCalendarSy
             return;
         }
 
-        try {
-            $event = Event::find($meeting->google_event_id);
-            $this->fill($event, $meeting);
-            $event->save('updateEvent', ['sendUpdates' => 'all']);
-        } catch (\Throwable $e) {
-            Log::warning('Failed to update the Google Calendar event for a meeting', [
-                'meeting_uuid' => $meeting->uuid,
-                'google_event_id' => $meeting->google_event_id,
-                'error' => $e->getMessage(),
-            ]);
-        }
+        $this->breaker->call(
+            self::SERVICE_KEY,
+            function () use ($meeting): true {
+                $event = Event::find($meeting->google_event_id);
+                $this->fill($event, $meeting);
+                $event->save('updateEvent', ['sendUpdates' => 'all']);
+
+                return true;
+            },
+            function (Throwable $e) use ($meeting): true {
+                Log::warning('meeting.google_calendar.update_failed', [
+                    'meeting_uuid' => $meeting->uuid,
+                    'google_event_id' => $meeting->google_event_id,
+                    'error' => $e->getMessage(),
+                ]);
+
+                return true;
+            },
+        );
     }
 
     public function deleteEvent(MeetingEloquentModel $meeting): void
@@ -79,15 +98,23 @@ final readonly class SpatieGoogleCalendarSyncAdapter implements GoogleCalendarSy
             return;
         }
 
-        try {
-            Event::find($meeting->google_event_id)->delete();
-        } catch (\Throwable $e) {
-            Log::warning('Failed to delete the Google Calendar event for a meeting', [
-                'meeting_uuid' => $meeting->uuid,
-                'google_event_id' => $meeting->google_event_id,
-                'error' => $e->getMessage(),
-            ]);
-        }
+        $this->breaker->call(
+            self::SERVICE_KEY,
+            function () use ($meeting): true {
+                Event::find($meeting->google_event_id)->delete();
+
+                return true;
+            },
+            function (Throwable $e) use ($meeting): true {
+                Log::warning('meeting.google_calendar.delete_failed', [
+                    'meeting_uuid' => $meeting->uuid,
+                    'google_event_id' => $meeting->google_event_id,
+                    'error' => $e->getMessage(),
+                ]);
+
+                return true;
+            },
+        );
     }
 
     private function fill(Event $event, MeetingEloquentModel $meeting): void

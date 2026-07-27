@@ -9,9 +9,10 @@ use Illuminate\Http\Request;
 use Modules\Meeting\Infrastructure\GoogleCalendar\GoogleCalendarOAuthService;
 
 /**
- * OAuth connect/callback for the shared Google Calendar account. Requires an
- * authenticated staff session — visit `/google-calendar/oauth/connect` while
- * logged in as admin to generate `storage/app/google-calendar/oauth-token.json`.
+ * OAuth connect/callback for the shared Google Calendar account. Gated by
+ * `auth` + `permission:VIEW_ANY_MEETINGS` + throttle (see Routes) — visit
+ * `/google-calendar/oauth/connect` while logged in as elevated staff to
+ * generate `storage/app/google-calendar/oauth-token.json`.
  */
 final readonly class GoogleCalendarOAuthController
 {

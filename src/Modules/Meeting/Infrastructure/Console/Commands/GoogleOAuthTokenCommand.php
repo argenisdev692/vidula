@@ -6,6 +6,7 @@ namespace Modules\Meeting\Infrastructure\Console\Commands;
 
 use Illuminate\Console\Command;
 use Modules\Meeting\Infrastructure\GoogleCalendar\GoogleCalendarOAuthService;
+use Uri\Rfc3986\Uri;
 
 final class GoogleOAuthTokenCommand extends Command
 {
@@ -34,8 +35,16 @@ final class GoogleOAuthTokenCommand extends Command
         }
 
         $redirectUrl = (string) $this->ask('Paste the full redirect URL');
+        $uri = Uri::parse($redirectUrl);
+        $queryString = $uri?->getQuery() ?? '';
 
-        parse_str((string) parse_url($redirectUrl, PHP_URL_QUERY), $query);
+        if ($queryString === '') {
+            $this->error('No authorization code found in that URL.');
+
+            return self::FAILURE;
+        }
+
+        parse_str($queryString, $query);
 
         if (! isset($query['code']) || ! is_string($query['code'])) {
             $this->error('No authorization code found in that URL.');

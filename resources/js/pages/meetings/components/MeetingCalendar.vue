@@ -25,8 +25,10 @@ const emit = defineEmits<{
 const { hasPermission } = useAuthorization();
 const canCreate = computed<boolean>(() => hasPermission('CREATE_MEETINGS'));
 const calendarKey = ref(0);
+const feedError = ref<string | null>(null);
 
 function refresh(): void {
+    feedError.value = null;
     calendarKey.value += 1;
 }
 
@@ -107,10 +109,12 @@ const options = computed<CalendarOptions>(() => ({
         url: '/meetings/calendar-feed',
         method: 'GET',
     },
-    eventSourceSuccess: (content: unknown) => (content as { data: unknown[] }).data as EventInput[],
-    eventSourceFailure: (error: Error) => {
-        // eslint-disable-next-line no-console
-        console.error('Failed to load the meeting calendar feed', error);
+    eventSourceSuccess: (content: unknown) => {
+        feedError.value = null;
+        return (content as { data: unknown[] }).data as EventInput[];
+    },
+    eventSourceFailure: () => {
+        feedError.value = 'Could not load the calendar feed. Try refreshing.';
     },
     eventDataTransform: toEventInput,
     eventClick: onEventClick,
@@ -131,6 +135,7 @@ const options = computed<CalendarOptions>(() => ({
             </span>
             <span v-if="canCreate" class="meeting-calendar__hint">Click or drag to schedule ({{ MEETING_DURATION_MINUTES }} min).</span>
         </div>
+        <p v-if="feedError" class="meeting-calendar__error" role="alert">{{ feedError }}</p>
         <FullCalendar :key="calendarKey" :options="options" />
     </div>
 </template>
@@ -176,6 +181,16 @@ const options = computed<CalendarOptions>(() => ({
 .meeting-calendar__hint {
     margin-left: auto;
     color: var(--text-muted);
+}
+
+.meeting-calendar__error {
+    margin: 0 0 var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid color-mix(in srgb, var(--accent-error) 35%, transparent);
+    background: color-mix(in srgb, var(--accent-error) 10%, transparent);
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
 }
 
 /* ── Base ─────────────────────────────────────────────────────────────── */

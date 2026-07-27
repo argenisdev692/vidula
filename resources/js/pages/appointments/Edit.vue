@@ -12,6 +12,7 @@ import AppHeader from '@/modules/app/components/AppHeader.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import BackLink from '@/common/ui/BackLink.vue';
 import AppointmentForm from './components/AppointmentForm.vue';
+import { appointmentDisplayName } from '@/modules/appointments/helpers/displayName';
 import type { AppointmentEditData } from '@/modules/appointments/types';
 
 defineOptions({ layout: AppLayout });
@@ -20,7 +21,7 @@ const props = defineProps<{
     appointment: AppointmentEditData;
 }>();
 
-const fullName = computed<string>(() => `${props.appointment.first_name} ${props.appointment.last_name}`.trim());
+const fullName = computed<string>(() => appointmentDisplayName(props.appointment));
 </script>
 
 <template>

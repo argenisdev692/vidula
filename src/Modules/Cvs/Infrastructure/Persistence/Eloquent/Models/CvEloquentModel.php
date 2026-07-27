@@ -10,12 +10,18 @@ use Database\Factories\CvFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\GithubEnrichmentEloquentModel;
+use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\JobSearchConfigEloquentModel;
+use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\RefinedCvEloquentModel;
+use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\StudioRunEloquentModel;
 use Modules\Cvs\Application\DTOs\CvFilterData;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -35,6 +41,10 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User $user
+ * @property-read Collection<int, GithubEnrichmentEloquentModel> $githubEnrichments
+ * @property-read Collection<int, JobSearchConfigEloquentModel> $jobSearchConfigs
+ * @property-read Collection<int, StudioRunEloquentModel> $studioRuns
+ * @property-read Collection<int, RefinedCvEloquentModel> $refinedCvs
  *
  * @mixin \Eloquent
  */
@@ -75,6 +85,38 @@ final class CvEloquentModel extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * @return HasMany<GithubEnrichmentEloquentModel, $this>
+     */
+    public function githubEnrichments(): HasMany
+    {
+        return $this->hasMany(GithubEnrichmentEloquentModel::class, 'cv_id');
+    }
+
+    /**
+     * @return HasMany<JobSearchConfigEloquentModel, $this>
+     */
+    public function jobSearchConfigs(): HasMany
+    {
+        return $this->hasMany(JobSearchConfigEloquentModel::class, 'cv_id');
+    }
+
+    /**
+     * @return HasMany<StudioRunEloquentModel, $this>
+     */
+    public function studioRuns(): HasMany
+    {
+        return $this->hasMany(StudioRunEloquentModel::class, 'cv_id');
+    }
+
+    /**
+     * @return HasMany<RefinedCvEloquentModel, $this>
+     */
+    public function refinedCvs(): HasMany
+    {
+        return $this->hasMany(RefinedCvEloquentModel::class, 'cv_id');
     }
 
     /**

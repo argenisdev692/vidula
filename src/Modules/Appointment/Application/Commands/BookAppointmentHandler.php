@@ -16,7 +16,6 @@ use Modules\Appointment\Domain\Ports\AppointmentRepositoryPort;
 use Modules\Appointment\Domain\Services\AppointmentScheduler;
 use Modules\Appointment\Domain\Services\SpamGuard;
 use Modules\Appointment\Domain\ValueObjects\StatusLead;
-use Modules\Appointment\Infrastructure\Broadcasting\AppointmentSubmitted;
 use Modules\Appointment\Infrastructure\Persistence\Eloquent\Models\AppointmentEloquentModel;
 
 /**
@@ -101,8 +100,9 @@ final readonly class BookAppointmentHandler
 
         $this->cache->forget("appointment_{$appointment->uuid}");
 
+        // Queued email listeners + sync Reverb broadcast listener — see
+        // AppointmentServiceProvider (never broadcast from this handler).
         event(new AppointmentBooked($appointment->uuid));
-        broadcast(new AppointmentSubmitted($appointment));
 
         return $appointment;
     }

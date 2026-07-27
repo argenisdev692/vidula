@@ -17,6 +17,7 @@ import Tag from '@/volt/Tag.vue';
 import ActionButton from '@/common/data-table/ActionButton.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import { formatDate, formatDateTime } from '@/modules/appointments/helpers/formatDate';
+import { appointmentDisplayName } from '@/modules/appointments/helpers/displayName';
 import { CLIENT_TYPE_LABEL, MEETING_STATUS_META, STATUS_LEAD_META } from '@/modules/appointments/helpers/statusMeta';
 import type { Appointment } from '@/modules/appointments/types';
 
@@ -37,10 +38,6 @@ const emit = defineEmits<{
     page: [event: DataTablePageEvent];
     'update:selection': [rows: Appointment[]];
 }>();
-
-function fullName(row: Appointment): string {
-    return `${row.first_name} ${row.last_name}`.trim() || '—';
-}
 
 function rowClass(row: Appointment): string | undefined {
     return row.deleted_at ? 'deleted-row' : undefined;
@@ -79,7 +76,7 @@ function rowClass(row: Appointment): string | undefined {
                     <div class="lead-name">
                         <i class="pi pi-user" aria-hidden="true" />
                         <span class="lead-name__block">
-                            <span class="lead-name__text">{{ fullName(data as Appointment) }}</span>
+                            <span class="lead-name__text">{{ appointmentDisplayName(data as Appointment) }}</span>
                             <span class="lead-name__handle">
                                 {{ CLIENT_TYPE_LABEL[(data as Appointment).client_type] }}
                                 <template v-if="(data as Appointment).company_name">

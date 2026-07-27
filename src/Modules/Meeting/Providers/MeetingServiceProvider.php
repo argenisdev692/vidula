@@ -21,9 +21,11 @@ use Modules\Meeting\Domain\Events\MeetingCancelled;
 use Modules\Meeting\Domain\Events\MeetingScheduled;
 use Modules\Meeting\Domain\Events\MeetingUpdated;
 use Modules\Meeting\Domain\Ports\AppointmentCalendarFeedPort;
+use Modules\Meeting\Domain\Ports\AttendeeResolverPort;
 use Modules\Meeting\Domain\Ports\GoogleCalendarSyncPort;
 use Modules\Meeting\Domain\Ports\MeetingRepositoryPort;
 use Modules\Meeting\Infrastructure\Appointment\AppointmentCalendarFeedAdapter;
+use Modules\Meeting\Infrastructure\Attendees\AttendeeResolver;
 use Modules\Meeting\Infrastructure\Console\Commands\GoogleCalendarTestCommand;
 use Modules\Meeting\Infrastructure\Console\Commands\GoogleOAuthTokenCommand;
 use Modules\Meeting\Infrastructure\GoogleCalendar\SpatieGoogleCalendarSyncAdapter;
@@ -35,6 +37,7 @@ final class MeetingServiceProvider extends ServiceProvider
     {
         $this->app->bind(MeetingRepositoryPort::class, EloquentMeetingRepository::class);
         $this->app->bind(AppointmentCalendarFeedPort::class, AppointmentCalendarFeedAdapter::class);
+        $this->app->bind(AttendeeResolverPort::class, AttendeeResolver::class);
         $this->app->bind(GoogleCalendarSyncPort::class, SpatieGoogleCalendarSyncAdapter::class);
     }
 

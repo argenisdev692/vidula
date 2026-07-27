@@ -20,10 +20,14 @@ import ConfirmDialog from '@/common/data-table/ConfirmDialog.vue';
 import { useResourceList } from '@/common/data-table/useResourceList';
 import { useConfirmAction } from '@/common/data-table/useConfirmAction';
 import { toLocalIsoDate } from '@/lib/date';
-import { apiFetch } from '@/lib/http';
 import AppointmentsTable from './components/AppointmentsTable.vue';
 import AppointmentFormDialog from './components/AppointmentFormDialog.vue';
+import { useAppointmentEditMutation } from '@/modules/appointments/composables/useAppointmentEditMutation';
+import { appointmentDisplayName } from '@/modules/appointments/helpers/displayName';
 import {
+    APPOINTMENT_READ_OPTIONS,
+    APPOINTMENT_SPAM_OPTIONS,
+    APPOINTMENT_STATUS_OPTIONS,
     CLIENT_TYPE_OPTIONS,
     MEETING_STATUS_OPTIONS,
     PROJECT_TYPE_OPTIONS,
@@ -54,6 +58,7 @@ const props = defineProps<{
 
 const toast = useToast();
 const { hasPermission } = useAuthorization();
+const { mutateAsync: fetchAppointmentEdit } = useAppointmentEditMutation();
 
 const canCreate = computed<boolean>(() => hasPermission('CREATE_APPOINTMENTS'));
 const canExport = computed<boolean>(() => hasPermission('EXPORT_APPOINTMENTS'));
@@ -122,7 +127,7 @@ function openCreate(): void {
 
 async function openEdit(appointment: Appointment): Promise<void> {
     try {
-        const response = await apiFetch<{ data: AppointmentEditData }>('GET', `/appointments/${appointment.uuid}/edit`);
+        const response = await fetchAppointmentEdit(appointment.uuid);
         dialogMode.value = 'edit';
         dialogAppointment.value = response.data;
         dialogVisible.value = true;
@@ -155,10 +160,6 @@ function markRead(appointment: Appointment): void {
 /* ── Single-row suspend / restore ─────────────────────────────────────── */
 type RowAction = { kind: 'delete' | 'restore'; appointment: Appointment };
 
-function displayName(appointment: Appointment): string {
-    return `${appointment.first_name} ${appointment.last_name}`.trim() || appointment.email;
-}
-
 const {
     visible: rowVisible,
     loading: rowLoading,
@@ -166,7 +167,7 @@ const {
     ask: askRow,
     run: runRow,
 } = useConfirmAction<RowAction>((action) => {
-    const name = displayName(action.appointment);
+    const name = appointmentDisplayName(action.appointment);
     if (action.kind === 'restore') {
         return {
             title: 'Restore lead',
@@ -276,10 +277,7 @@ const filterFields: FilterField[] = [
         label: 'Status',
         type: 'select',
         placeholder: 'Active',
-        options: [
-            { label: 'Active', value: 'active' },
-            { label: 'Suspended', value: 'suspended' },
-        ],
+        options: APPOINTMENT_STATUS_OPTIONS,
     },
     { key: 'statusLead', label: 'Lead status', type: 'select', placeholder: 'All', options: STATUS_LEAD_OPTIONS },
     { key: 'meetingStatus', label: 'Meeting status', type: 'select', placeholder: 'All', options: MEETING_STATUS_OPTIONS },
@@ -290,20 +288,14 @@ const filterFields: FilterField[] = [
         label: 'Read state',
         type: 'select',
         placeholder: 'All',
-        options: [
-            { label: 'Read', value: 'read' },
-            { label: 'Unread', value: 'unread' },
-        ],
+        options: APPOINTMENT_READ_OPTIONS,
     },
     {
         key: 'spam',
         label: 'Spam',
         type: 'select',
         placeholder: 'All',
-        options: [
-            { label: 'Legitimate', value: 'ham' },
-            { label: 'Spam', value: 'spam' },
-        ],
+        options: APPOINTMENT_SPAM_OPTIONS,
     },
 ];
 </script>

@@ -42,4 +42,11 @@ interface CvRepositoryPort
      * Clears is_primary for every CV owned by $userId except an optional UUID.
      */
     public function clearPrimaryForUser(int $userId, ?string $exceptUuid = null): void;
+
+    /**
+     * Lightweight CV options for studio run start forms.
+     *
+     * @return list<array{uuid: string, title: string, niche: string, is_primary: bool}>
+     */
+    public function listSelectOptionsForUser(int $userId): array;
 }

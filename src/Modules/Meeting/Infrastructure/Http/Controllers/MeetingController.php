@@ -87,13 +87,12 @@ final readonly class MeetingController
             'attendees' => AttendeeOptionMapper::toOptions($meeting->attendees),
         ];
 
-        if ($request->expectsJson()) {
-            return response()->json(['data' => $payload]);
-        }
-
-        return Inertia::render('meetings/Edit', [
-            'meeting' => $payload,
-        ]);
+        return match ($request->expectsJson()) {
+            true => response()->json(['data' => $payload]),
+            false => Inertia::render('meetings/Edit', [
+                'meeting' => $payload,
+            ]),
+        };
     }
 
     public function store(Request $request, CreateMeetingData $data, CreateMeetingHandler $create): RedirectResponse

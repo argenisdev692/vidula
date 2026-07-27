@@ -32,3 +32,8 @@ Schedule::command('availability:sync-holidays')->cron('0 0 31 12 *')->onOneServe
 Schedule::command('posts:publish-scheduled')->everyMinute()->withoutOverlapping()->onOneServer();
 Schedule::command('social-media:publish-scheduled')->everyMinute()->withoutOverlapping()->onOneServer();
 Schedule::command('campaigns:publish-scheduled')->everyMinute()->withoutOverlapping()->onOneServer();
+
+Schedule::command('resume-studio:run-daily')
+    ->dailyAt(config('cv_studio.schedule.time'))
+    ->timezone(config('cv_studio.schedule.timezone'))
+    ->onOneServer();

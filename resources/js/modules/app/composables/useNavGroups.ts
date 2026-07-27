@@ -57,6 +57,12 @@ export function useNavGroups(): { navItems: ComputedRef<NavItem[]> } {
             label: 'Career',
             children: [
                 { icon: 'pi pi-file', label: 'CVs', href: '/cvs', permission: 'VIEW_ANY_CVS' },
+                {
+                    icon: 'pi pi-sparkles',
+                    label: 'Resume Studio',
+                    href: '/resume-studio',
+                    permission: 'VIEW_ANY_RESUME_STUDIOS',
+                },
             ],
         },
         { icon: 'pi pi-building', label: 'Company Data', href: '/company-data' },

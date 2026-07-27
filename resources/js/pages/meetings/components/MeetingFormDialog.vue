@@ -16,19 +16,15 @@ import DateField from '@/common/form/DateField.vue';
 import SelectField from '@/common/form/SelectField.vue';
 import AppModal from '@/common/ui/AppModal.vue';
 import AttendeePicker, { type AttendeeOption } from '@/common/meeting/AttendeePicker.vue';
-import { apiFetch } from '@/lib/http';
+import {
+    useMeetingAvailabilityMutation,
+    type MeetingAvailabilityDay,
+} from '@/modules/meeting/composables/useMeetingAvailabilityMutation';
 import {
     MEETING_DURATION_MINUTES,
     meetingFormSchema,
 } from '@/modules/meeting/schemas/meetingFormSchema';
 import type { MeetingEditData, MeetingPrefill } from '@/modules/meeting/types';
-
-interface ResolvedDay {
-    date: string;
-    is_open: boolean;
-    slots: Array<{ start: string; end: string }>;
-    reason: string | null;
-}
 
 interface TimeOption {
     label: string;
@@ -48,6 +44,8 @@ const props = withDefaults(
 
 const emit = defineEmits<{ saved: [] }>();
 
+const { mutateAsync: fetchAvailability } = useMeetingAvailabilityMutation();
+
 const form = useForm<{
     title: string;
     description: string;
@@ -62,7 +60,7 @@ const form = useForm<{
     attendees: [],
 });
 
-const availability = ref<ResolvedDay | null>(null);
+const availability = ref<MeetingAvailabilityDay | null>(null);
 const availabilityLoading = ref<boolean>(false);
 const availabilityError = ref<string>('');
 const durationMinutes = ref<number>(MEETING_DURATION_MINUTES);
@@ -158,10 +156,7 @@ const loadAvailability = useDebounceFn(async (date: string): Promise<void> => {
     availabilityLoading.value = true;
     availabilityError.value = '';
     try {
-        const response = await apiFetch<{ data: ResolvedDay[]; meta?: { duration_minutes?: number } }>(
-            'GET',
-            `/meetings/availability?from=${encodeURIComponent(date)}&to=${encodeURIComponent(date)}`,
-        );
+        const response = await fetchAvailability({ from: date, to: date });
         if (response.meta?.duration_minutes) {
             durationMinutes.value = response.meta.duration_minutes;
         }

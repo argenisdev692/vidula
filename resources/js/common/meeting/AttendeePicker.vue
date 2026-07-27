@@ -17,24 +17,20 @@ import Button from '@/volt/Button.vue';
 import TextField from '@/common/form/TextField.vue';
 import PhoneField from '@/common/form/PhoneField.vue';
 import { apiFetch, HttpError } from '@/lib/http';
+import {
+    ATTENDEE_TYPE_LABEL,
+    ATTENDEE_TYPE_SEVERITY,
+    type MeetingAttendeeType,
+} from '@/common/meeting/attendeeMeta';
 
 export interface AttendeeOption {
-    type: 'user' | 'lead' | 'contact';
+    type: MeetingAttendeeType;
     uuid: string;
     label: string;
 }
 
-const TYPE_LABEL: Record<AttendeeOption['type'], string> = {
-    user: 'User',
-    lead: 'Lead',
-    contact: 'Contact',
-};
-
-const TYPE_SEVERITY: Record<AttendeeOption['type'], 'info' | 'primary' | 'secondary'> = {
-    user: 'info',
-    lead: 'primary',
-    contact: 'secondary',
-};
+const TYPE_LABEL = ATTENDEE_TYPE_LABEL;
+const TYPE_SEVERITY = ATTENDEE_TYPE_SEVERITY;
 
 const model = defineModel<AttendeeOption[]>({ default: () => [] });
 

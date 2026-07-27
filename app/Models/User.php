@@ -22,6 +22,12 @@ use Illuminate\Support\Carbon;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Laravel\Sanctum\PersonalAccessToken;
+use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\GithubEnrichmentEloquentModel;
+use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\JobMatchEloquentModel;
+use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\JobSearchConfigEloquentModel;
+use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\OutreachDraftEloquentModel;
+use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\RefinedCvEloquentModel;
+use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\StudioRunEloquentModel;
 use Modules\Auth\Infrastructure\Persistence\Eloquent\Models\LinkedSocialAccountEloquentModel;
 use Modules\Auth\Infrastructure\Persistence\Eloquent\Models\PasswordHistoryEloquentModel;
 use Modules\Auth\Infrastructure\Persistence\Eloquent\Models\TrustedDeviceEloquentModel;
@@ -167,6 +173,18 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read int|null $clients_count
  * @property-read Collection<int, CvEloquentModel> $cvs
  * @property-read int|null $cvs_count
+ * @property-read Collection<int, GithubEnrichmentEloquentModel> $githubEnrichments
+ * @property-read int|null $github_enrichments_count
+ * @property-read Collection<int, JobSearchConfigEloquentModel> $jobSearchConfigs
+ * @property-read int|null $job_search_configs_count
+ * @property-read Collection<int, StudioRunEloquentModel> $studioRuns
+ * @property-read int|null $studio_runs_count
+ * @property-read Collection<int, RefinedCvEloquentModel> $refinedCvs
+ * @property-read int|null $refined_cvs_count
+ * @property-read Collection<int, JobMatchEloquentModel> $jobMatches
+ * @property-read int|null $job_matches_count
+ * @property-read Collection<int, OutreachDraftEloquentModel> $outreachDrafts
+ * @property-read int|null $outreach_drafts_count
  *
  * @mixin \Eloquent
  */
@@ -398,6 +416,66 @@ class User extends Authenticatable implements MustVerifyEmailContract
     public function cvs(): HasMany
     {
         return $this->hasMany(CvEloquentModel::class);
+    }
+
+    /**
+     * GitHub portfolio enrichments for Resume Studio runs.
+     *
+     * @return HasMany<GithubEnrichmentEloquentModel, $this>
+     */
+    public function githubEnrichments(): HasMany
+    {
+        return $this->hasMany(GithubEnrichmentEloquentModel::class);
+    }
+
+    /**
+     * Job-search configs owned by this user (Resume Studio).
+     *
+     * @return HasMany<JobSearchConfigEloquentModel, $this>
+     */
+    public function jobSearchConfigs(): HasMany
+    {
+        return $this->hasMany(JobSearchConfigEloquentModel::class);
+    }
+
+    /**
+     * Resume Studio pipeline runs owned by this user.
+     *
+     * @return HasMany<StudioRunEloquentModel, $this>
+     */
+    public function studioRuns(): HasMany
+    {
+        return $this->hasMany(StudioRunEloquentModel::class);
+    }
+
+    /**
+     * ATS-refined CV versions produced for this user.
+     *
+     * @return HasMany<RefinedCvEloquentModel, $this>
+     */
+    public function refinedCvs(): HasMany
+    {
+        return $this->hasMany(RefinedCvEloquentModel::class);
+    }
+
+    /**
+     * Job matches discovered for this user.
+     *
+     * @return HasMany<JobMatchEloquentModel, $this>
+     */
+    public function jobMatches(): HasMany
+    {
+        return $this->hasMany(JobMatchEloquentModel::class);
+    }
+
+    /**
+     * Outreach drafts generated for this user's job matches.
+     *
+     * @return HasMany<OutreachDraftEloquentModel, $this>
+     */
+    public function outreachDrafts(): HasMany
+    {
+        return $this->hasMany(OutreachDraftEloquentModel::class);
     }
 
     /**

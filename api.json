@@ -5638,6 +5638,9 @@
                             null
                         ]
                     },
+                    "low_memory": {
+                        "type": "boolean"
+                    },
                     "video_paths": {
                         "type": "array",
                         "items": {

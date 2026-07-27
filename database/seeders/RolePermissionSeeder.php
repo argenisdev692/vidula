@@ -23,7 +23,7 @@ class RolePermissionSeeder extends Seeder
      *
      * @var list<string>
      */
-    private const array MODULES = ['USERS', 'ROLES', 'PERMISSIONS', 'COMPANY_DATA', 'BLOG_CATEGORIES', 'POSTS', 'SOCIAL_MEDIA', 'CAMPAIGNS', 'CONTACT_SUPPORTS', 'AVAILABILITY_RULES', 'AVAILABILITY_EXCEPTIONS', 'APPOINTMENTS', 'MEETINGS', 'CLIENTS', 'INVOICES', 'CVS'];
+    private const array MODULES = ['USERS', 'ROLES', 'PERMISSIONS', 'COMPANY_DATA', 'BLOG_CATEGORIES', 'POSTS', 'SOCIAL_MEDIA', 'CAMPAIGNS', 'CONTACT_SUPPORTS', 'AVAILABILITY_RULES', 'AVAILABILITY_EXCEPTIONS', 'APPOINTMENTS', 'MEETINGS', 'CLIENTS', 'INVOICES', 'CVS', 'RESUME_STUDIOS'];
 
     /**
      * Modules with the same CRUD shape as {@see self::MODULES} but no export
@@ -76,6 +76,7 @@ class RolePermissionSeeder extends Seeder
         'CLIENTS',
         'INVOICES',
         'CVS',
+        'RESUME_STUDIOS',
     ];
 
     /**
@@ -123,6 +124,13 @@ class RolePermissionSeeder extends Seeder
      * @var list<string>
      */
     private const array CAMPAIGNS_PUBLISH_ACTIONS = ['PUBLISH'];
+
+    /**
+     * Starting an AI studio pipeline is distinct from editing configs or matches.
+     *
+     * @var list<string>
+     */
+    private const array RESUME_STUDIOS_RUN_ACTIONS = ['RUN'];
 
     /**
      * Read-only modules (immutable audit trail): only browse / view / export.
@@ -204,6 +212,7 @@ class RolePermissionSeeder extends Seeder
             ...$this->matrix(['USERS'], self::USER_ACCESS_ACTIONS),
             ...$this->matrix(['SOCIAL_MEDIA'], self::SOCIAL_MEDIA_PUBLISH_ACTIONS),
             ...$this->matrix(['CAMPAIGNS'], self::CAMPAIGNS_PUBLISH_ACTIONS),
+            ...$this->matrix(['RESUME_STUDIOS'], self::RESUME_STUDIOS_RUN_ACTIONS),
             ...$this->matrix(self::READ_ONLY_MODULES, self::READ_ONLY_ACTIONS),
             ...$this->matrix(['BACKUPS'], self::BACKUP_ACTIONS),
             ...$this->matrix(['VIDEO_EXPORTS'], self::VIDEO_EXPORT_ACTIONS),

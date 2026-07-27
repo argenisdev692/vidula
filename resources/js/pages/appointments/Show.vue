@@ -17,6 +17,7 @@ import { useAuthorization } from '@/modules/auth/composables/useAuthorization';
 import Button from '@/volt/Button.vue';
 import Tag from '@/volt/Tag.vue';
 import { formatDateTime } from '@/modules/appointments/helpers/formatDate';
+import { appointmentDisplayName } from '@/modules/appointments/helpers/displayName';
 import { CLIENT_TYPE_LABEL, MEETING_STATUS_META, PROJECT_TYPE_LABEL, STATUS_LEAD_META } from '@/modules/appointments/helpers/statusMeta';
 import type { AppointmentDetail } from '@/modules/appointments/types';
 
@@ -30,7 +31,7 @@ const { hasPermission } = useAuthorization();
 const canScheduleMeeting = computed<boolean>(() => hasPermission('CREATE_MEETINGS'));
 
 const isSuspended = computed<boolean>(() => props.appointment.deleted_at !== null);
-const fullName = computed<string>(() => `${props.appointment.first_name} ${props.appointment.last_name}`.trim() || 'Unknown lead');
+const fullName = computed<string>(() => appointmentDisplayName(props.appointment, 'Unknown lead'));
 
 function scheduleMeeting(): void {
     router.visit(`/meetings/create?lead=${props.appointment.uuid}`);

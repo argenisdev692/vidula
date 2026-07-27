@@ -45,9 +45,13 @@ final readonly class AppointmentController
         $filters = AppointmentFilterData::validateAndCreate($request);
         $appointments = $list->handle($filters, min(max($request->integer('per_page', 15), 1), 100));
 
-        return $request->expectsJson()
-            ? response()->json($appointments)
-            : Inertia::render('appointments/Index', ['appointments' => $appointments, 'filters' => $filters]);
+        return match ($request->expectsJson()) {
+            true => response()->json($appointments),
+            false => Inertia::render('appointments/Index', [
+                'appointments' => $appointments,
+                'filters' => $filters,
+            ]),
+        };
     }
 
     /**
@@ -76,9 +80,10 @@ final readonly class AppointmentController
     {
         $appointment = $get->handle($uuid);
 
-        return request()->expectsJson()
-            ? response()->json(['data' => $appointment])
-            : Inertia::render('appointments/Show', ['appointment' => $appointment]);
+        return match (request()->expectsJson()) {
+            true => response()->json(['data' => $appointment]),
+            false => Inertia::render('appointments/Show', ['appointment' => $appointment]),
+        };
     }
 
     public function create(): InertiaResponse
@@ -114,13 +119,12 @@ final readonly class AppointmentController
             'owner',
         ]);
 
-        if ($request->expectsJson()) {
-            return response()->json(['data' => $payload]);
-        }
-
-        return Inertia::render('appointments/Edit', [
-            'appointment' => $payload,
-        ]);
+        return match ($request->expectsJson()) {
+            true => response()->json(['data' => $payload]),
+            false => Inertia::render('appointments/Edit', [
+                'appointment' => $payload,
+            ]),
+        };
     }
 
     public function store(Request $request, AppointmentData $data, CreateAppointmentHandler $create): RedirectResponse
@@ -143,9 +147,10 @@ final readonly class AppointmentController
     {
         $markRead->handle($uuid);
 
-        return request()->expectsJson()
-            ? response()->json(['success' => true])
-            : back()->with('success', __('Lead marked as read.'));
+        return match (request()->expectsJson()) {
+            true => response()->json(['success' => true]),
+            false => back()->with('success', __('Lead marked as read.')),
+        };
     }
 
     /**
@@ -155,9 +160,10 @@ final readonly class AppointmentController
     {
         $count = $markAll->handle();
 
-        return request()->expectsJson()
-            ? response()->json(['updated' => $count])
-            : back()->with('success', __(':count leads marked as read.', ['count' => $count]));
+        return match (request()->expectsJson()) {
+            true => response()->json(['updated' => $count]),
+            false => back()->with('success', __(':count leads marked as read.', ['count' => $count])),
+        };
     }
 
     public function confirm(string $uuid, ConfirmAppointmentData $data, GetAppointmentHandler $get, ConfirmAppointmentHandler $confirm): RedirectResponse

@@ -8,6 +8,10 @@ import { Head } from '@inertiajs/vue3';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import DetailCard from '@/common/ui/DetailCard.vue';
 import Tag from '@/volt/Tag.vue';
+import {
+    ATTENDEE_TYPE_LABEL,
+    ATTENDEE_TYPE_SEVERITY,
+} from '@/common/meeting/attendeeMeta';
 import { formatDateTime } from '@/modules/meeting/helpers/formatDate';
 import type { MeetingAttendeeOption, MeetingDetail } from '@/modules/meeting/types';
 
@@ -24,13 +28,6 @@ function organizerName(): string {
     }
     return `${props.meeting.organizer.first_name} ${props.meeting.organizer.last_name}`.trim() || '—';
 }
-
-const TYPE_LABEL: Record<string, string> = { user: 'User', lead: 'Lead', contact: 'Contact' };
-const TYPE_SEVERITY: Record<string, 'info' | 'primary' | 'secondary'> = {
-    user: 'info',
-    lead: 'primary',
-    contact: 'secondary',
-};
 </script>
 
 <template>
@@ -89,7 +86,7 @@ const TYPE_SEVERITY: Record<string, 'info' | 'primary' | 'secondary'> = {
                             :key="`${attendee.type}:${attendee.uuid}`"
                             class="attendee-list__item"
                         >
-                            <Tag :value="TYPE_LABEL[attendee.type] ?? attendee.type" :severity="TYPE_SEVERITY[attendee.type] ?? 'secondary'" />
+                            <Tag :value="ATTENDEE_TYPE_LABEL[attendee.type] ?? attendee.type" :severity="ATTENDEE_TYPE_SEVERITY[attendee.type] ?? 'secondary'" />
                             <span>{{ attendee.label }}</span>
                         </span>
                         <span v-if="attendeeLabels.length === 0" class="mono">No attendees.</span>

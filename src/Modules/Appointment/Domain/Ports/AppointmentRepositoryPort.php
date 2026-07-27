@@ -34,9 +34,9 @@ interface AppointmentRepositoryPort
     /**
      * Flips every unread row to `readed = true`.
      *
-     * @return int number of rows updated
+     * @return list<string> UUIDs that were marked read (for cache invalidation)
      */
-    public function markAllAsRead(): int;
+    public function markAllAsRead(): array;
 
     /**
      * The single active (non-deleted) lead for an email, if any — enforces the

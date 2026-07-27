@@ -1,35 +1,60 @@
 /**
- * Fixed domain-vocabulary options for the appointment form + filters. These
- * mirror the backend enums (`ClientType`, `ProjectType`, `StatusLead`,
- * `MeetingStatus`) — stable values that never need a server round-trip, so
- * they are hardcoded here rather than passed as Inertia props (mirrors
- * `modules/profile/helpers/genderOptions`).
+ * Fixed domain-vocabulary options for the appointment form + filters. Labels
+ * are derived from {@link ./statusMeta} so the table Tags and the Select
+ * options can never drift. Values mirror the backend enums (`ClientType`,
+ * `ProjectType`, `StatusLead`, `MeetingStatus`).
  */
 import type { SelectOption } from '@/common/form/types';
+import type { ClientType, ProjectType } from '../types';
+import {
+  CLIENT_TYPE_LABEL,
+  MEETING_STATUS_META,
+  PROJECT_TYPE_LABEL,
+  STATUS_LEAD_META,
+} from './statusMeta';
 
-export const CLIENT_TYPE_OPTIONS: SelectOption[] = [
-    { label: 'Individual', value: 'individual' },
-    { label: 'Company', value: 'company' },
+function optionsFromRecord<T extends string>(
+  record: Record<T, string | { label: string }>,
+): SelectOption[] {
+  return (Object.entries(record) as Array<[T, string | { label: string }]>).map(
+    ([value, entry]) => ({
+      value,
+      label: typeof entry === 'string' ? entry : entry.label,
+    }),
+  );
+}
+
+export const CLIENT_TYPE_OPTIONS: SelectOption[] = optionsFromRecord(CLIENT_TYPE_LABEL);
+
+export const PROJECT_TYPE_OPTIONS: SelectOption[] = optionsFromRecord(PROJECT_TYPE_LABEL);
+
+export const STATUS_LEAD_OPTIONS: SelectOption[] = optionsFromRecord(STATUS_LEAD_META);
+
+export const MEETING_STATUS_OPTIONS: SelectOption[] = optionsFromRecord(MEETING_STATUS_META);
+
+/** Soft-delete list filter (Active / Suspended). */
+export const APPOINTMENT_STATUS_OPTIONS: SelectOption[] = [
+  { label: 'Active', value: 'active' },
+  { label: 'Suspended', value: 'suspended' },
 ];
 
-export const PROJECT_TYPE_OPTIONS: SelectOption[] = [
-    { label: 'New website', value: 'new_website' },
-    { label: 'Redesign', value: 'redesign' },
-    { label: 'E-commerce', value: 'ecommerce' },
-    { label: 'Landing page', value: 'landing_page' },
-    { label: 'Maintenance', value: 'maintenance' },
-    { label: 'Other', value: 'other' },
+/** Inbox read filter. */
+export const APPOINTMENT_READ_OPTIONS: SelectOption[] = [
+  { label: 'Read', value: 'read' },
+  { label: 'Unread', value: 'unread' },
 ];
 
-export const STATUS_LEAD_OPTIONS: SelectOption[] = [
-    { label: 'New', value: 'New' },
-    { label: 'Called', value: 'Called' },
-    { label: 'Pending', value: 'Pending' },
-    { label: 'Declined', value: 'Declined' },
+/** Anti-spam filter. */
+export const APPOINTMENT_SPAM_OPTIONS: SelectOption[] = [
+  { label: 'Legitimate', value: 'ham' },
+  { label: 'Spam', value: 'spam' },
 ];
 
-export const MEETING_STATUS_OPTIONS: SelectOption[] = [
-    { label: 'Confirmed', value: 'Confirmed' },
-    { label: 'Rescheduled', value: 'Rescheduled' },
-    { label: 'Cancelled', value: 'Cancelled' },
-];
+/** Stable enum values for Zod (DRY with PROJECT_TYPE_OPTIONS / CLIENT_TYPE_OPTIONS). */
+export const PROJECT_TYPE_VALUES = PROJECT_TYPE_OPTIONS.map(
+  (option) => option.value as ProjectType,
+) as [ProjectType, ...ProjectType[]];
+
+export const CLIENT_TYPE_VALUES = CLIENT_TYPE_OPTIONS.map(
+  (option) => option.value as ClientType,
+) as [ClientType, ...ClientType[]];
