@@ -272,6 +272,7 @@ class RolePermissionSeeder extends Seeder
     /**
      * ADMIN manages the availability modules directly (full CRUD + export).
      * Additive and idempotent — never wipes grants the role accrues elsewhere.
+     * Resume Studio also needs RUN (pipeline start) beyond the standard CRUD set.
      */
     private function grantModulesToAdmin(): void
     {
@@ -279,6 +280,7 @@ class RolePermissionSeeder extends Seeder
             ...$this->matrix(self::ADMIN_MODULES, self::MODULES_ACTIONS),
             ...$this->matrix(self::ADMIN_NO_EXPORT_MODULES, self::NO_EXPORT_ACTIONS),
             ...$this->matrix(self::ADMIN_TOOL_MODULES, self::VIDEO_EXPORT_ACTIONS),
+            ...$this->matrix(['RESUME_STUDIOS'], self::RESUME_STUDIOS_RUN_ACTIONS),
         ];
 
         Role::query()
