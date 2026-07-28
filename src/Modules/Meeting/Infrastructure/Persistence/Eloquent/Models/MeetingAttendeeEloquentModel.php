@@ -39,6 +39,9 @@ final class MeetingAttendeeEloquentModel extends Model
         return $this->belongsTo(MeetingEloquentModel::class, 'meeting_id');
     }
 
+    /**
+     * @return MorphTo<Model, $this>
+     */
     public function attendable(): MorphTo
     {
         return $this->morphTo();

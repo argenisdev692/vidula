@@ -16,7 +16,7 @@ final readonly class InvoiceExportTransformer
      * @return array{Number: string, Client: string, Issue date: string, Due date: string, Total: string, Paid: string, Status: string}
      */
     #[\NoDiscard]
-    public static function transformForTable(InvoiceEloquentModel $invoice): array
+    public static function transformForExcel(InvoiceEloquentModel $invoice): array
     {
         return $invoice
             |> self::extractBaseData(...)
@@ -30,7 +30,7 @@ final readonly class InvoiceExportTransformer
     #[\NoDiscard]
     public static function transformForPdf(InvoiceEloquentModel $invoice): array
     {
-        return self::transformForTable($invoice);
+        return self::transformForExcel($invoice);
     }
 
     /**

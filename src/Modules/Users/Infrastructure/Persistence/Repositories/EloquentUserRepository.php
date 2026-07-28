@@ -33,7 +33,7 @@ final readonly class EloquentUserRepository implements UserRepositoryPort
             ->applyFilters($filters)
             ->with(['roles:id,name'])
             ->select(['id', 'uuid', 'first_name', 'last_name', 'username', 'email', 'phone', 'address_2', 'email_verified_at', 'password', 'must_change_password', 'created_at', 'deleted_at'])
-            ->orderByDesc('created_at')
+            ->orderBy($filters->resolvedSortField(), $filters->resolvedSortDirection())
             ->paginate($perPage)
             ->withQueryString();
     }

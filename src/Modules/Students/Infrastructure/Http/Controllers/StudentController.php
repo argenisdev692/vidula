@@ -32,18 +32,20 @@ final readonly class StudentController
         $filters = StudentFilterData::validateAndCreate($request);
         $students = $list->handle($filters, min(max($request->integer('per_page', 15), 1), 100));
 
-        return $request->expectsJson()
-            ? response()->json($students)
-            : Inertia::render('students/Index', ['students' => $students, 'filters' => $filters]);
+        return match ($request->expectsJson()) {
+            true => response()->json($students),
+            false => Inertia::render('students/Index', ['students' => $students, 'filters' => $filters]),
+        };
     }
 
-    public function show(string $uuid, GetStudentHandler $get): InertiaResponse|JsonResponse
+    public function show(Request $request, string $uuid, GetStudentHandler $get): InertiaResponse|JsonResponse
     {
         $student = $get->handle($uuid);
 
-        return request()->expectsJson()
-            ? response()->json(['data' => $student])
-            : Inertia::render('students/Show', ['student' => $student]);
+        return match ($request->expectsJson()) {
+            true => response()->json(['data' => $student]),
+            false => Inertia::render('students/Show', ['student' => $student]),
+        };
     }
 
     public function store(StudentData $data, CreateStudentHandler $create): RedirectResponse
@@ -55,21 +57,21 @@ final readonly class StudentController
 
     public function update(string $uuid, StudentData $data, GetStudentHandler $get, UpdateStudentHandler $update): RedirectResponse
     {
-        $update->handle($get->handle($uuid), $data);
+        (void) $update->handle($get->handle($uuid), $data);
 
         return back()->with('success', __('Student updated.'));
     }
 
     public function destroy(string $uuid, DeleteStudentHandler $delete): RedirectResponse
     {
-        $delete->handle($uuid);
+        (void) $delete->handle($uuid);
 
         return back()->with('success', __('Student suspended.'));
     }
 
     public function restore(string $uuid, RestoreStudentHandler $restore): RedirectResponse
     {
-        $restore->handle($uuid);
+        (void) $restore->handle($uuid);
 
         return back()->with('success', __('Student restored.'));
     }

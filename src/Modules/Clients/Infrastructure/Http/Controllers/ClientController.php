@@ -32,18 +32,20 @@ final readonly class ClientController
         $filters = ClientFilterData::validateAndCreate($request);
         $clients = $list->handle($filters, min(max($request->integer('per_page', 15), 1), 100));
 
-        return $request->expectsJson()
-            ? response()->json($clients)
-            : Inertia::render('clients/Index', ['clients' => $clients, 'filters' => $filters]);
+        return match ($request->expectsJson()) {
+            true => response()->json($clients),
+            false => Inertia::render('clients/Index', ['clients' => $clients, 'filters' => $filters]),
+        };
     }
 
-    public function show(string $uuid, GetClientHandler $get): InertiaResponse|JsonResponse
+    public function show(Request $request, string $uuid, GetClientHandler $get): InertiaResponse|JsonResponse
     {
         $client = $get->handle($uuid);
 
-        return request()->expectsJson()
-            ? response()->json(['data' => $client])
-            : Inertia::render('clients/Show', ['client' => $client]);
+        return match ($request->expectsJson()) {
+            true => response()->json(['data' => $client]),
+            false => Inertia::render('clients/Show', ['client' => $client]),
+        };
     }
 
     public function store(Request $request, ClientData $data, CreateClientHandler $create): RedirectResponse
@@ -55,21 +57,21 @@ final readonly class ClientController
 
     public function update(string $uuid, ClientData $data, GetClientHandler $get, UpdateClientHandler $update): RedirectResponse
     {
-        $update->handle($get->handle($uuid), $data);
+        (void) $update->handle($get->handle($uuid), $data);
 
         return back()->with('success', __('Client updated.'));
     }
 
     public function destroy(string $uuid, DeleteClientHandler $delete): RedirectResponse
     {
-        $delete->handle($uuid);
+        (void) $delete->handle($uuid);
 
         return back()->with('success', __('Client suspended.'));
     }
 
     public function restore(string $uuid, RestoreClientHandler $restore): RedirectResponse
     {
-        $restore->handle($uuid);
+        (void) $restore->handle($uuid);
 
         return back()->with('success', __('Client restored.'));
     }

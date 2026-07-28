@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\Students\Infrastructure\Http\Controllers\StudentController;
+use Modules\Students\Infrastructure\Http\Controllers\StudentExportController;
 
 /*
 | Students module — web (session + Inertia).
 |
-| Static segments BEFORE `{uuid}` so bulk actions are never captured as UUIDs.
+| Static segments BEFORE `{uuid}` so bulk/export are never captured as UUIDs.
 */
 Route::middleware(['web', 'auth', 'throttle:60,1'])->prefix('students')->name('students.')->group(function (): void {
     Route::get('/', [StudentController::class, 'index'])
@@ -22,6 +23,9 @@ Route::middleware(['web', 'auth', 'throttle:60,1'])->prefix('students')->name('s
 
     Route::post('/bulk-restore', [StudentController::class, 'bulkRestore'])
         ->middleware('permission:BULK_RESTORE_STUDENTS')->name('bulk-restore');
+
+    Route::get('/export', StudentExportController::class)
+        ->middleware(['permission:EXPORT_STUDENTS', 'throttle:10,1'])->name('export');
 
     Route::get('/{uuid}', [StudentController::class, 'show'])
         ->middleware('permission:VIEW_STUDENTS')->whereUuid('uuid')->name('show');

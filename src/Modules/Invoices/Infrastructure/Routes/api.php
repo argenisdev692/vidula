@@ -13,8 +13,11 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])
     ->prefix('invoices')
     ->name('api.invoices.')
     ->group(function (): void {
-        Route::get('/', [InvoiceApiController::class, 'index'])->name('index');
+        Route::get('/', [InvoiceApiController::class, 'index'])
+            ->middleware('permission:VIEW_ANY_INVOICES')
+            ->name('index');
         Route::get('/{uuid}', [InvoiceApiController::class, 'show'])
+            ->middleware('permission:VIEW_INVOICES')
             ->whereUuid('uuid')
             ->name('show');
     });

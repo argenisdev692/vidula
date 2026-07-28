@@ -53,4 +53,13 @@ final class ClientApiTest extends TestCase
     {
         $this->getJson('/api/clients')->assertUnauthorized();
     }
+
+    public function test_user_role_cannot_list_clients_via_api(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('USER');
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/clients')->assertForbidden();
+    }
 }

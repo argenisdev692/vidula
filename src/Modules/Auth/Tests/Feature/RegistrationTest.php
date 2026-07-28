@@ -49,4 +49,25 @@ final class RegistrationTest extends TestCase
         $this->assertTrue($user->hasRole('USER'));
         $this->assertNull($user->email_verified_at, 'Email must require verification.');
     }
+
+    public function test_registration_is_throttled_to_three_attempts_per_ip_per_hour(): void
+    {
+        for ($i = 1; $i <= 3; $i++) {
+            $this->postJson('/register', [
+                'first_name' => 'Jane',
+                'email' => "jane{$i}@example.com",
+                'password' => 'Sup3rS3cret!2026',
+                'password_confirmation' => 'Sup3rS3cret!2026',
+                'terms_and_conditions' => true,
+            ])->assertSuccessful();
+        }
+
+        $this->postJson('/register', [
+            'first_name' => 'Jane',
+            'email' => 'jane4@example.com',
+            'password' => 'Sup3rS3cret!2026',
+            'password_confirmation' => 'Sup3rS3cret!2026',
+            'terms_and_conditions' => true,
+        ])->assertStatus(429);
+    }
 }

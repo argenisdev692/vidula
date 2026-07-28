@@ -23,6 +23,7 @@ final readonly class QuickCreateMeetingLeadHandler
     /**
      * @return array{type: string, uuid: string, label: string}
      */
+    #[\NoDiscard]
     public function handle(QuickCreateMeetingLeadData $data): array
     {
         $appointment = $this->createAppointment->handle(new AppointmentData(

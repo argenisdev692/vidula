@@ -16,6 +16,7 @@ final readonly class InvoiceTotalsCalculator
      * @param  array<string, int>  $serviceIdsByUuid
      * @return array{subtotal: float, tax_amount: float, total: float, items: list<array<string, mixed>>}
      */
+    #[\NoDiscard]
     public static function compute(InvoiceData $data, array $serviceIdsByUuid = []): array
     {
         $items = [];
@@ -99,6 +100,7 @@ final readonly class InvoiceTotalsCalculator
         ];
     }
 
+    #[\NoDiscard]
     public static function formatInvoiceNumber(int $sequence, int $year): string
     {
         return sprintf('%03d/%d', $sequence, $year);

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /**
  * Invoices server-side DataTable. Parent owns query + router.get.
+ * Active rows: View · PDF · Edit · Delete; Suspended: View · Restore.
  */
 import type { DataTablePageEvent } from 'primevue/datatable';
 import Column from 'primevue/column';
@@ -63,7 +64,7 @@ function rowClass(row: Invoice): string | undefined {
 
             <Column field="invoice_number" header="Number">
                 <template #body="{ data }">
-                    <span class="mono">{{ (data as Invoice).invoice_number }}</span>
+                    <span class="mono invoice-number">{{ (data as Invoice).invoice_number }}</span>
                 </template>
             </Column>
 
@@ -91,7 +92,7 @@ function rowClass(row: Invoice): string | undefined {
                 </template>
             </Column>
 
-            <Column field="is_paid" header="Status">
+            <Column field="is_paid" header="Payment">
                 <template #body="{ data }">
                     <StatusBadge
                         :tone="(data as Invoice).is_paid ? 'success' : 'danger'"
@@ -112,41 +113,55 @@ function rowClass(row: Invoice): string | undefined {
                 </template>
             </Column>
 
-            <Column header="Actions" :pt="{ bodyCell: 'w-40' }">
+            <Column header="Actions" :pt="{ bodyCell: 'w-44' }">
                 <template #body="{ data }">
                     <div class="row-actions">
-                        <PermissionGuard v-if="!(data as Invoice).deleted_at" permission="EXPORT_INVOICES">
+                        <PermissionGuard permission="VIEW_INVOICES">
                             <ActionButton
-                                icon="pi pi-file-pdf"
+                                icon="pi pi-eye"
                                 tone="view"
-                                label="Download PDF"
-                                @click="emit('pdf', data as Invoice)"
+                                label="View invoice"
+                                :href="`/invoices/${(data as Invoice).uuid}`"
                             />
                         </PermissionGuard>
-                        <PermissionGuard v-if="!(data as Invoice).deleted_at" permission="UPDATE_INVOICES">
-                            <ActionButton
-                                icon="pi pi-pencil"
-                                tone="edit"
-                                label="Edit"
-                                @click="emit('edit', data as Invoice)"
-                            />
-                        </PermissionGuard>
-                        <PermissionGuard v-if="!(data as Invoice).deleted_at" permission="DELETE_INVOICES">
-                            <ActionButton
-                                icon="pi pi-trash"
-                                tone="delete"
-                                label="Delete"
-                                @click="emit('delete', data as Invoice)"
-                            />
-                        </PermissionGuard>
-                        <PermissionGuard v-if="!!(data as Invoice).deleted_at" permission="RESTORE_INVOICES">
-                            <ActionButton
-                                icon="pi pi-replay"
-                                tone="restore"
-                                label="Restore"
-                                @click="emit('restore', data as Invoice)"
-                            />
-                        </PermissionGuard>
+
+                        <template v-if="(data as Invoice).deleted_at">
+                            <PermissionGuard permission="RESTORE_INVOICES">
+                                <ActionButton
+                                    icon="pi pi-check-circle"
+                                    tone="restore"
+                                    label="Restore invoice"
+                                    @click="emit('restore', data as Invoice)"
+                                />
+                            </PermissionGuard>
+                        </template>
+
+                        <template v-else>
+                            <PermissionGuard permission="EXPORT_INVOICES">
+                                <ActionButton
+                                    icon="pi pi-file-pdf"
+                                    tone="view"
+                                    label="Download PDF"
+                                    @click="emit('pdf', data as Invoice)"
+                                />
+                            </PermissionGuard>
+                            <PermissionGuard permission="UPDATE_INVOICES">
+                                <ActionButton
+                                    icon="pi pi-pencil"
+                                    tone="edit"
+                                    label="Edit invoice"
+                                    @click="emit('edit', data as Invoice)"
+                                />
+                            </PermissionGuard>
+                            <PermissionGuard permission="DELETE_INVOICES">
+                                <ActionButton
+                                    icon="pi pi-trash"
+                                    tone="delete"
+                                    label="Delete invoice"
+                                    @click="emit('delete', data as Invoice)"
+                                />
+                            </PermissionGuard>
+                        </template>
                     </div>
                 </template>
             </Column>
@@ -159,27 +174,86 @@ function rowClass(row: Invoice): string | undefined {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
-    padding: 2rem 1rem;
+    gap: var(--space-3);
+    padding: var(--space-10) var(--space-6);
     color: var(--text-muted);
+}
+
+.table-empty .pi {
+    font-size: var(--text-2xl);
 }
 
 .mono {
     font-variant-numeric: tabular-nums;
     font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: var(--text-sm);
+}
+
+.invoice-number {
+    color: var(--accent-error);
+    font-weight: var(--font-semibold, 600);
 }
 
 .muted {
     color: var(--text-muted);
+    font-size: var(--text-sm);
 }
 
 .row-actions {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    justify-content: center;
+    gap: var(--space-2);
+    white-space: nowrap;
 }
 
-:deep(.deleted-row) {
-    opacity: 0.65;
+.crud-table-wrap :deep(table) {
+    background: transparent;
+}
+
+.crud-table-wrap :deep(thead th) {
+    background: transparent;
+    border-bottom: 1px solid var(--border-default);
+    color: var(--text-secondary);
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: center;
+}
+
+.crud-table-wrap :deep(thead th > div) {
+    justify-content: center;
+}
+
+.crud-table-wrap :deep(tbody tr) {
+    background: transparent;
+    transition: background var(--transition);
+}
+
+.crud-table-wrap :deep(tbody tr:hover) {
+    background: color-mix(in srgb, var(--bg-overlay) 40%, transparent);
+}
+
+.crud-table-wrap :deep(tbody td) {
+    background: transparent;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    text-align: center;
+    vertical-align: middle;
+}
+
+.crud-table-wrap :deep(tbody tr.deleted-row) {
+    background: var(--deleted-row-bg);
+    opacity: var(--deleted-row-opacity, 0.7);
+}
+
+.crud-table-wrap :deep(tbody tr.deleted-row td) {
+    border-bottom-color: var(--deleted-row-border);
+}
+
+.crud-table-wrap :deep([data-pc-name='paginator']),
+.crud-table-wrap :deep([data-pc-name='pcpaginator']) {
+    background: transparent;
 }
 </style>

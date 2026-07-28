@@ -17,8 +17,6 @@ use Modules\Availability\Domain\ValueObjects\ResolvedDay;
  */
 final readonly class MeetingAvailabilityController
 {
-    private const int MAX_DAYS = 92;
-
     public function __invoke(Request $request, AvailabilityResolver $resolver): JsonResponse
     {
         $validated = $request->validate([
@@ -28,9 +26,10 @@ final readonly class MeetingAvailabilityController
 
         $from = CarbonImmutable::parse($validated['from'] ?? CarbonImmutable::now()->startOfMonth()->format('Y-m-d'));
         $to = CarbonImmutable::parse($validated['to'] ?? $from->endOfMonth()->format('Y-m-d'));
+        $maxDays = max(1, (int) config('meeting.calendar_max_days', 92));
 
-        if ($from->diffInDays($to) > self::MAX_DAYS) {
-            $to = $from->addDays(self::MAX_DAYS);
+        if ($from->diffInDays($to) > $maxDays) {
+            $to = $from->addDays($maxDays);
         }
 
         $days = array_map(

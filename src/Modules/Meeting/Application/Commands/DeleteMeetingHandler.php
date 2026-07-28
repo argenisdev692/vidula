@@ -19,6 +19,7 @@ final readonly class DeleteMeetingHandler
         private Cache $cache,
     ) {}
 
+    #[\NoDiscard]
     public function handle(string $uuid): bool
     {
         $result = DB::transaction(fn () => $this->meetings->softDelete($uuid));

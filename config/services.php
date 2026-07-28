@@ -31,7 +31,6 @@ return [
         'password' => env('MAIL_PASSWORD'),
     ],
 
-
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
@@ -58,6 +57,15 @@ return [
         'url' => env('TAVILY_SEARCH_URL', 'https://api.tavily.com/search'),
         'search_depth' => env('TAVILY_SEARCH_DEPTH', 'advanced'),
         'max_results' => env('TAVILY_MAX_RESULTS', 5),
+    ],
+
+    'context7' => [
+        // Version-specific library documentation used to fact-check AI-generated
+        // technical content (Products module — Shared\Infrastructure\Docs\Context7DocsAdapter).
+        // Optional: with no key the adapter returns no snippets and generation continues.
+        'api_key' => env('CONTEXT7_API_KEY'),
+        'url' => env('CONTEXT7_API_URL', 'https://context7.com'),
+        'max_snippets' => env('CONTEXT7_MAX_SNIPPETS', 5),
     ],
 
     'elevenlabs' => [

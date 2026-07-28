@@ -1,5 +1,13 @@
+import { buildExportUrl, type ExportFormat } from '@/lib/queryParams';
 import type { InvoiceQuery } from '../types';
 
+/** Export formats accepted by GET /invoices/export. */
+export type InvoiceExportFormat = ExportFormat;
+
+/**
+ * Single source of truth for invoice request params — consumed by BOTH the
+ * server-side DataTable reload AND the export URL (no drift).
+ */
 export function buildInvoiceQueryParams(query: InvoiceQuery): Record<string, string | number> {
     const params: Record<string, string | number> = {
         page: query.page,
@@ -26,4 +34,9 @@ export function buildInvoiceQueryParams(query: InvoiceQuery): Record<string, str
     }
 
     return params;
+}
+
+/** Builds the export download URL for the given format, reusing the same filters. */
+export function buildInvoiceExportUrl(query: InvoiceQuery, format: InvoiceExportFormat): string {
+    return buildExportUrl('/invoices/export', buildInvoiceQueryParams(query), format);
 }

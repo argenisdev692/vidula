@@ -8,9 +8,9 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Laravel\Socialite\Facades\Socialite;
 use Modules\Auth\Domain\Exceptions\SocialAuthException;
 use Modules\Auth\Infrastructure\Auth\Social\SocialAccountResolver;
+use Modules\Auth\Infrastructure\Auth\Social\SocialiteAuthAdapter;
 use Modules\Auth\Infrastructure\Auth\Social\SocialiteUserMapper;
 use Shared\Domain\Ports\AuditPort;
 use Throwable;
@@ -27,6 +27,7 @@ final readonly class SocialAuthController
     public function __construct(
         private SocialiteUserMapper $mapper,
         private SocialAccountResolver $resolver,
+        private SocialiteAuthAdapter $socialite,
         private AuditPort $audit,
     ) {}
 
@@ -34,7 +35,7 @@ final readonly class SocialAuthController
     {
         $this->assertSupported($provider);
 
-        return Socialite::driver($provider)->redirect();
+        return $this->socialite->redirect($provider);
     }
 
     public function callback(Request $request, string $provider): RedirectResponse
@@ -42,7 +43,7 @@ final readonly class SocialAuthController
         $this->assertSupported($provider);
 
         try {
-            $socialiteUser = Socialite::driver($provider)->user();
+            $socialiteUser = $this->socialite->userFromCallback($provider);
         } catch (Throwable) {
             return redirect()->route('login')
                 ->withErrors(['social' => __('Could not authenticate with :provider.', ['provider' => $provider])]);

@@ -24,12 +24,13 @@ const emit = defineEmits<{
 
 const { hasPermission } = useAuthorization();
 const canCreate = computed<boolean>(() => hasPermission('CREATE_MEETINGS'));
-const calendarKey = ref(0);
+const canUpdate = computed<boolean>(() => hasPermission('UPDATE_MEETINGS'));
+const calendarRef = ref<InstanceType<typeof FullCalendar> | null>(null);
 const feedError = ref<string | null>(null);
 
 function refresh(): void {
     feedError.value = null;
-    calendarKey.value += 1;
+    calendarRef.value?.getApi().refetchEvents();
 }
 
 defineExpose({ refresh });
@@ -59,7 +60,11 @@ function onEventClick(info: EventClickArg): void {
     const uuid = info.event.extendedProps.uuid as string | undefined;
 
     if (source === 'meeting' && uuid) {
-        emit('edit', uuid);
+        if (canUpdate.value) {
+            emit('edit', uuid);
+            return;
+        }
+        router.visit(`/meetings/${uuid}`);
         return;
     }
 
@@ -136,7 +141,7 @@ const options = computed<CalendarOptions>(() => ({
             <span v-if="canCreate" class="meeting-calendar__hint">Click or drag to schedule ({{ MEETING_DURATION_MINUTES }} min).</span>
         </div>
         <p v-if="feedError" class="meeting-calendar__error" role="alert">{{ feedError }}</p>
-        <FullCalendar :key="calendarKey" :options="options" />
+        <FullCalendar ref="calendarRef" :options="options" />
     </div>
 </template>
 

@@ -63,6 +63,7 @@
         .meta { margin-bottom: 18px; }
         .meta p { margin: 2px 0; font-size: 12px; }
         .meta strong { color: #333; }
+        .meta .invoice-number { color: #c62828; font-weight: bold; font-size: 13px; }
         .meta .estado-pending { color: #c62828; font-weight: bold; }
         .meta .estado-paid { color: #1b5e20; font-weight: bold; }
         .parties {
@@ -194,7 +195,7 @@
     </table>
 
     <div class="meta">
-        <p><strong>Nº Factura:</strong> {{ $invoice->invoice_number }}</p>
+        <p><strong>Nº Factura:</strong> <span class="invoice-number">{{ $invoice->invoice_number }}</span></p>
         <p>
             <strong>Estado / Status:</strong>
             @if ($invoice->is_paid)

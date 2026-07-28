@@ -1,5 +1,19 @@
 <?php
 
+use PragmaRX\Google2FALaravel\Support\Constants;
+
+/*
+|--------------------------------------------------------------------------
+| pragmarx/google2fa-laravel (published config — unused by app code)
+|--------------------------------------------------------------------------
+|
+| TOTP / QR / recovery codes are owned by Laravel Fortify
+| (TwoFactorAuthenticatable + /user/two-factor-* routes). This package remains
+| installed as a transitive/compat dependency; do not point app code at these
+| settings or the google2fa_secret column — users use two_factor_secret.
+|
+*/
+
 return [
 
     /*
@@ -63,9 +77,9 @@ return [
      * One Time Password error message.
      */
     'error_messages' => [
-        'wrong_otp'       => "The 'One Time Password' typed was wrong.",
+        'wrong_otp' => "The 'One Time Password' typed was wrong.",
         'cannot_be_empty' => 'One Time Password cannot be empty.',
-        'unknown'         => 'An unknown error has occurred. Please try again.',
+        'unknown' => 'An unknown error has occurred. Please try again.',
     ],
 
     /*
@@ -78,6 +92,6 @@ return [
      *
      * Supports imagemagick, svg and eps
      */
-    'qrcode_image_backend' => \PragmaRX\Google2FALaravel\Support\Constants::QRCODE_IMAGE_BACKEND_SVG,
+    'qrcode_image_backend' => Constants::QRCODE_IMAGE_BACKEND_SVG,
 
 ];

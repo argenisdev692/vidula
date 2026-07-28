@@ -24,6 +24,7 @@ import { toLocalIsoDate } from '@/lib/date';
 import type {
     Invoice,
     InvoiceClientOption,
+    InvoiceProductOption,
     InvoiceServiceOption,
     NextInvoiceNumber,
 } from '@/modules/invoices/types';
@@ -37,10 +38,11 @@ const props = withDefaults(
         invoice?: Invoice | null;
         clients: InvoiceClientOption[];
         services: InvoiceServiceOption[];
+        products: InvoiceProductOption[];
         nextInvoiceNumber: NextInvoiceNumber;
         defaultNotes?: string | null;
     }>(),
-    { mode: 'create', invoice: null, defaultNotes: null },
+    { mode: 'create', invoice: null, defaultNotes: null, products: () => [] },
 );
 
 const emit = defineEmits<{ saved: [] }>();
@@ -59,10 +61,11 @@ function plusDaysIso(days: number): string {
 
 const form = useForm<InvoiceFormValues>({
     client_uuid: '',
+    product_uuid: null,
     invoice_number: '',
     issue_date: todayIso(),
     due_date: plusDaysIso(5),
-    currency: 'USD',
+    currency: 'EUR',
     tax_mode: 'EXEMPT',
     tax_rate: 0,
     tax_label: 'IVA',
@@ -86,6 +89,13 @@ const serviceOptions = computed<SelectOption[]>(() =>
     props.services.map((service) => ({ label: service.name, value: service.uuid })),
 );
 
+const productOptions = computed<SelectOption[]>(() =>
+    props.products.map((product) => ({
+        label: `${product.title} (${product.type})`,
+        value: product.uuid,
+    })),
+);
+
 const taxModeOptions: SelectOption[] = [
     { label: 'Exento (0% / Reverse Charge)', value: 'EXEMPT' },
     { label: 'Percentage (IVA)', value: 'PERCENT' },
@@ -95,6 +105,27 @@ const clientModel = computed<string | null>({
     get: () => form.client_uuid || null,
     set: (value) => {
         form.client_uuid = value ?? '';
+    },
+});
+
+const productModel = computed<string | null>({
+    get: () => form.product_uuid,
+    set: (value) => {
+        form.product_uuid = value;
+        if (!value) {
+            return;
+        }
+        const product = props.products.find((row) => row.uuid === value);
+        if (!product) {
+            return;
+        }
+        form.currency = product.currency.toUpperCase();
+        const first = form.items[0];
+        if (first && (!first.title.trim() || first.unit_price === 0)) {
+            first.title = product.title;
+            first.description = product.description ?? '';
+            first.unit_price = Number(product.price);
+        }
     },
 });
 
@@ -184,6 +215,7 @@ function mapItemsFromInvoice(invoice: Invoice): InvoiceItemFormValues[] {
 
 function fillFromInvoice(invoice: Invoice): void {
     form.client_uuid = invoice.client?.uuid ?? '';
+    form.product_uuid = invoice.product?.uuid ?? null;
     form.invoice_number = invoice.invoice_number;
     form.issue_date = parseIsoDate(invoice.issue_date);
     form.due_date = parseIsoDate(invoice.due_date);
@@ -201,6 +233,15 @@ function fillFromInvoice(invoice: Invoice): void {
             : null;
     form.notes = invoice.notes ?? '';
     form.items = mapItemsFromInvoice(invoice);
+}
+
+async function resolveNextInvoiceNumber(): Promise<string> {
+    try {
+        const payload = await apiFetch<NextInvoiceNumber>('GET', '/invoices/next-number');
+        return payload.invoice_number;
+    } catch {
+        return props.nextInvoiceNumber.invoice_number;
+    }
 }
 
 watch(visible, async (open) => {
@@ -222,21 +263,27 @@ watch(visible, async (open) => {
         return;
     }
 
-    form.client_uuid = '';
-    form.invoice_number = props.nextInvoiceNumber.invoice_number;
-    form.issue_date = todayIso();
-    form.due_date = plusDaysIso(5);
-    form.currency = 'USD';
-    form.tax_mode = 'EXEMPT';
-    form.tax_rate = 0;
-    form.tax_label = 'IVA';
-    form.is_paid = false;
-    form.payment_method = '';
-    form.transfer_number = '';
-    form.payment_date = '';
-    form.amount_received = null;
-    form.notes = props.defaultNotes ?? '';
-    form.items = [emptyInvoiceItem(0)];
+    loadingInvoice.value = true;
+    try {
+        form.client_uuid = '';
+        form.product_uuid = null;
+        form.invoice_number = await resolveNextInvoiceNumber();
+        form.issue_date = todayIso();
+        form.due_date = plusDaysIso(5);
+        form.currency = 'EUR';
+        form.tax_mode = 'EXEMPT';
+        form.tax_rate = 0;
+        form.tax_label = 'IVA';
+        form.is_paid = false;
+        form.payment_method = '';
+        form.transfer_number = '';
+        form.payment_date = '';
+        form.amount_received = null;
+        form.notes = props.defaultNotes ?? '';
+        form.items = [emptyInvoiceItem(0)];
+    } finally {
+        loadingInvoice.value = false;
+    }
 });
 
 function close(): void {
@@ -317,6 +364,7 @@ function submit(): void {
 
     form.transform((data) => ({
         client_uuid: data.client_uuid,
+        product_uuid: data.product_uuid || null,
         invoice_number: data.invoice_number.trim(),
         issue_date: data.issue_date,
         due_date: data.due_date,
@@ -373,14 +421,24 @@ function submit(): void {
                     placeholder="Select client"
                     :error="form.errors.client_uuid"
                 />
-                <TextField
-                    v-model="form.invoice_number"
-                    name="invoice_number"
-                    label="Invoice number"
-                    required
-                    hint="Format NNN/YYYY"
-                    :error="form.errors.invoice_number"
+                <SelectField
+                    v-model="productModel"
+                    name="product_uuid"
+                    label="Product (classroom / video)"
+                    :options="productOptions"
+                    placeholder="Optional product"
+                    :error="form.errors.product_uuid"
                 />
+                <div class="invoice-number-field">
+                    <TextField
+                        v-model="form.invoice_number"
+                        name="invoice_number"
+                        label="Invoice number"
+                        required
+                        hint="Auto sequence from last invoice (NNN/YYYY)"
+                        :error="form.errors.invoice_number"
+                    />
+                </div>
                 <DateField
                     v-model="issueDateModel"
                     name="issue_date"
@@ -599,7 +657,7 @@ function submit(): void {
     padding: 0.75rem;
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md, 0.5rem);
-    background: var(--surface-raised);
+    background: var(--bg-elevated);
 }
 
 .line-item__footer {
@@ -619,7 +677,7 @@ function submit(): void {
     gap: 0.35rem;
     border: none;
     background: transparent;
-    color: var(--primary);
+    color: var(--accent-primary);
     cursor: pointer;
     font-family: var(--font-sans);
     font-size: 0.875rem;
@@ -631,7 +689,7 @@ function submit(): void {
 }
 
 .link-btn--danger {
-    color: var(--danger, #b91c1c);
+    color: var(--accent-error);
 }
 
 .totals {
@@ -664,7 +722,7 @@ function submit(): void {
     padding: 0.75rem;
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md, 0.5rem);
-    background: var(--surface-raised);
+    background: var(--bg-elevated);
 }
 
 .paid-toggle__copy {
@@ -691,7 +749,13 @@ function submit(): void {
 
 .field-error {
     margin: 0;
-    color: var(--danger, #b91c1c);
+    color: var(--accent-error);
     font-size: 0.875rem;
+}
+
+.invoice-number-field :deep(input) {
+    color: var(--accent-error);
+    font-weight: var(--font-semibold, 600);
+    font-variant-numeric: tabular-nums;
 }
 </style>

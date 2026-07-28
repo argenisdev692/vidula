@@ -18,6 +18,7 @@ final readonly class BulkDeleteServicesHandler
 {
     public function __construct(private ServiceRepositoryPort $services) {}
 
+    #[\NoDiscard]
     public function handle(BulkUuidsData $data): int
     {
         $count = DB::transaction(fn () => $this->services->bulkSoftDeleteByUuid($data->uuids));

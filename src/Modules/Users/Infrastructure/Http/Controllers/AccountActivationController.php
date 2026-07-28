@@ -31,9 +31,10 @@ final readonly class AccountActivationController
         // Single-use: an already-activated account cannot reuse the link.
         abort_unless($user->isPending(), 410, __('This invitation has already been used.'));
 
-        return $request->isMethod('post')
-            ? $this->store($request, $user)
-            : $this->show($request, $user);
+        return match ($request->method()) {
+            'POST' => $this->store($request, $user),
+            default => $this->show($request, $user),
+        };
     }
 
     private function show(Request $request, User $user): InertiaResponse

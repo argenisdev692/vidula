@@ -7,13 +7,10 @@ namespace Modules\Meeting\Application\Commands;
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
-use Modules\Meeting\Application\DTOs\MeetingAttendeeData;
 use Modules\Meeting\Application\DTOs\UpdateMeetingData;
 use Modules\Meeting\Application\Support\MeetingDuration;
+use Modules\Meeting\Application\Support\ResolveMeetingAttendees;
 use Modules\Meeting\Domain\Events\MeetingUpdated;
-use Modules\Meeting\Domain\Exceptions\AttendeeNotEligibleException;
-use Modules\Meeting\Domain\Ports\AttendeeResolverPort;
 use Modules\Meeting\Domain\Ports\MeetingRepositoryPort;
 use Modules\Meeting\Infrastructure\Persistence\Eloquent\Models\MeetingEloquentModel;
 
@@ -26,7 +23,7 @@ final readonly class UpdateMeetingHandler
 {
     public function __construct(
         private MeetingRepositoryPort $meetings,
-        private AttendeeResolverPort $resolver,
+        private ResolveMeetingAttendees $resolveAttendees,
         private Cache $cache,
         private Dispatcher $events,
     ) {}
@@ -42,21 +39,7 @@ final readonly class UpdateMeetingHandler
                 'ends_at' => MeetingDuration::endsAt($data->startsAt),
             ]);
 
-            try {
-                $rows = [];
-
-                foreach ($data->attendees as $attendee) {
-                    $dto = $attendee instanceof MeetingAttendeeData
-                        ? $attendee
-                        : MeetingAttendeeData::from($attendee);
-
-                    $rows[] = $this->resolver->resolve($dto->type, $dto->uuid);
-                }
-            } catch (AttendeeNotEligibleException $e) {
-                throw ValidationException::withMessages(['attendees' => [$e->getMessage()]]);
-            }
-
-            $this->meetings->syncAttendees($meeting, $rows);
+            $this->meetings->syncAttendees($meeting, $this->resolveAttendees->handle($data->attendees));
 
             return $meeting->refresh();
         });

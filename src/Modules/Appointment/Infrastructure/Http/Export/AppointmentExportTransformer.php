@@ -24,7 +24,8 @@ final readonly class AppointmentExportTransformer
     {
         return $appointment
             |> self::extractBaseData(...)
-            |> self::formatDates(...);
+            |> self::formatDates(...)
+            |> self::sanitizeOutput(...);
     }
 
     /**
@@ -70,5 +71,17 @@ final readonly class AppointmentExportTransformer
         }
 
         return $row;
+    }
+
+    /**
+     * @param  array<string, string>  $row
+     * @return array<string, string>
+     */
+    private static function sanitizeOutput(array $row): array
+    {
+        return array_map(
+            static fn (string $value): string => $value === '' ? '—' : $value,
+            $row,
+        );
     }
 }

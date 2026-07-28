@@ -26,6 +26,7 @@ final readonly class GetMeetingCalendarFeedHandler
     /**
      * @return Collection<int, CalendarEventData>
      */
+    #[\NoDiscard]
     public function handle(CarbonInterface $from, CarbonInterface $to): Collection
     {
         $ownEvents = $this->meetings->between($from, $to)->map(self::toCalendarEvent(...));

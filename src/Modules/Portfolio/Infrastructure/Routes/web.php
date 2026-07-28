@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\Portfolio\Infrastructure\Http\Controllers\PortfolioController;
+use Modules\Portfolio\Infrastructure\Http\Controllers\PortfolioExportController;
 use Modules\Portfolio\Infrastructure\Http\Controllers\PortfolioGalleryController;
 
 /*
@@ -11,8 +12,8 @@ use Modules\Portfolio\Infrastructure\Http\Controllers\PortfolioGalleryController
 |
 | Management routes are gated by `permission:*_PORTFOLIOS` (UI authz uses
 | permissions, never roles). Static segments are declared BEFORE the `{uuid}`
-| wildcard so `/bulk-delete` and `/bulk-restore` are never captured as a UUID.
-| Gallery routes are nested under `/{uuid}/gallery` and share
+| wildcard so `/bulk-delete`, `/bulk-restore`, and `/export` are never captured
+| as a UUID. Gallery routes are nested under `/{uuid}/gallery` and share
 | `permission:UPDATE_PORTFOLIOS` with the parent aggregate.
 */
 Route::middleware(['web', 'auth', 'throttle:60,1'])->prefix('portfolios')->name('portfolios.')->group(function (): void {
@@ -27,6 +28,9 @@ Route::middleware(['web', 'auth', 'throttle:60,1'])->prefix('portfolios')->name(
 
     Route::post('/bulk-restore', [PortfolioController::class, 'bulkRestore'])
         ->middleware('permission:BULK_RESTORE_PORTFOLIOS')->name('bulk-restore');
+
+    Route::get('/export', PortfolioExportController::class)
+        ->middleware(['permission:EXPORT_PORTFOLIOS', 'throttle:10,1'])->name('export');
 
     Route::get('/{uuid}', [PortfolioController::class, 'show'])
         ->middleware('permission:VIEW_PORTFOLIOS')->whereUuid('uuid')->name('show');

@@ -13,6 +13,7 @@ use Modules\Invoices\Application\Queries\ListInvoicesHandler;
 /**
  * Sanctum-authenticated Invoices API (secondary). Primary UI remains Inertia/web.
  * Scramble documents via return types + `auth:sanctum` — no manual annotations.
+ * Authorization is route middleware (`permission:*_INVOICES`).
  */
 final readonly class InvoiceApiController
 {
@@ -24,8 +25,6 @@ final readonly class InvoiceApiController
      */
     public function index(Request $request, ListInvoicesHandler $list): JsonResponse
     {
-        abort_unless((bool) $request->user()?->hasPermissionTo('VIEW_ANY_INVOICES'), 403);
-
         $filters = InvoiceFilterData::validateAndCreate($request);
 
         return response()->json($list->handle($filters, min(max($request->integer('per_page', 15), 1), 100)));
@@ -36,10 +35,8 @@ final readonly class InvoiceApiController
      *
      * Returns a single invoice by UUID, including line items.
      */
-    public function show(Request $request, string $uuid, GetInvoiceHandler $get): JsonResponse
+    public function show(string $uuid, GetInvoiceHandler $get): JsonResponse
     {
-        abort_unless((bool) $request->user()?->hasPermissionTo('VIEW_INVOICES'), 403);
-
         return response()->json(['data' => $get->handle($uuid)]);
     }
 }

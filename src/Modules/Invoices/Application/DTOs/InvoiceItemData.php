@@ -32,7 +32,7 @@ final class InvoiceItemData extends Data
             'description' => ['nullable', 'string', 'max:500'],
             'quantity' => ['required', 'numeric', 'min:0.01', 'max:999999'],
             'unit_price' => ['required', 'numeric', 'min:0', 'max:9999999.99'],
-            'service_uuid' => ['nullable', 'uuid'],
+            'service_uuid' => ['nullable', 'uuid', 'exists:services,uuid'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:65535'],
         ];
     }

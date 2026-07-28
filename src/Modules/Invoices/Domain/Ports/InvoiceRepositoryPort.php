@@ -54,4 +54,18 @@ interface InvoiceRepositoryPort
      * @return array<string, int>
      */
     public function mapServiceIdsByUuid(array $serviceUuids): array;
+
+    public function findProductIdByUuid(?string $productUuid): ?int;
+
+    /**
+     * @return list<array{uuid: string, client_name: string, tax_id: string|null, nif: string|null, address: string|null, email: string|null}>
+     */
+    public function listActiveClientsForForm(int $limit = 200): array;
+
+    /**
+     * @return list<array{uuid: string, title: string, description: string|null, price: mixed, currency: string, type: string}>
+     */
+    public function listPublishedProductsForForm(int $limit = 200): array;
+
+    public function defaultInvoiceNotes(): ?string;
 }

@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\Invoices\Infrastructure\Persistence\Repositories;
 
+use App\Models\CompanyData;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Modules\Clients\Infrastructure\Persistence\Eloquent\Models\ClientEloquentModel;
 use Modules\Invoices\Application\DTOs\InvoiceFilterData;
 use Modules\Invoices\Domain\Ports\InvoiceRepositoryPort;
 use Modules\Invoices\Infrastructure\Persistence\Eloquent\Models\InvoiceEloquentModel;
+use Modules\Products\Domain\Enums\ProductStatus;
+use Modules\Products\Infrastructure\Persistence\Eloquent\Models\ProductEloquentModel;
 use Modules\Services\Infrastructure\Persistence\Eloquent\Models\ServiceEloquentModel;
 use Shared\Infrastructure\Persistence\Concerns\BulkSoftDeletesByUuid;
 
@@ -28,12 +32,14 @@ final class EloquentInvoiceRepository implements InvoiceRepositoryPort
             ->with([
                 'client:id,uuid,client_name',
                 'user:id,first_name,last_name',
+                'product:id,uuid,title,type,currency',
             ])
             ->select([
                 'id',
                 'uuid',
                 'user_id',
                 'client_id',
+                'product_id',
                 'invoice_number',
                 'sequence',
                 'year',
@@ -63,6 +69,7 @@ final class EloquentInvoiceRepository implements InvoiceRepositoryPort
             ->with([
                 'client:id,uuid,client_name,email,tax_id,nif,address',
                 'user:id,first_name,last_name',
+                'product:id,uuid,title,description,price,currency,type',
                 'items.service:id,uuid,name,description',
             ])
             ->where('uuid', $uuid)
@@ -74,7 +81,7 @@ final class EloquentInvoiceRepository implements InvoiceRepositoryPort
         $invoice = InvoiceEloquentModel::query()->create($attributes);
         $invoice->items()->createMany($items);
 
-        return $invoice->load(['client:id,uuid,client_name', 'items']);
+        return $invoice->load(['client:id,uuid,client_name', 'product:id,uuid,title,type', 'items']);
     }
 
     public function updateWithItems(InvoiceEloquentModel $invoice, array $attributes, array $items): InvoiceEloquentModel
@@ -83,7 +90,7 @@ final class EloquentInvoiceRepository implements InvoiceRepositoryPort
         $invoice->items()->delete();
         $invoice->items()->createMany($items);
 
-        return $invoice->refresh()->load(['client:id,uuid,client_name', 'items']);
+        return $invoice->refresh()->load(['client:id,uuid,client_name', 'product:id,uuid,title,type', 'items']);
     }
 
     public function softDelete(string $uuid): bool
@@ -133,5 +140,67 @@ final class EloquentInvoiceRepository implements InvoiceRepositoryPort
             ->whereIn('uuid', array_values(array_unique($serviceUuids)))
             ->pluck('id', 'uuid')
             ->all();
+    }
+
+    public function findProductIdByUuid(?string $productUuid): ?int
+    {
+        if ($productUuid === null || $productUuid === '') {
+            return null;
+        }
+
+        $id = ProductEloquentModel::query()
+            ->where('uuid', $productUuid)
+            ->value('id');
+
+        return $id !== null ? (int) $id : null;
+    }
+
+    public function listActiveClientsForForm(int $limit = 200): array
+    {
+        return ClientEloquentModel::query()
+            ->where('status', 'ACTIVE')
+            ->orderBy('client_name')
+            ->select(['uuid', 'client_name', 'tax_id', 'nif', 'address', 'email'])
+            ->limit($limit)
+            ->get()
+            ->map(static fn (ClientEloquentModel $client): array => [
+                'uuid' => $client->uuid,
+                'client_name' => $client->client_name,
+                'tax_id' => $client->tax_id,
+                'nif' => $client->nif,
+                'address' => $client->address,
+                'email' => $client->email,
+            ])
+            ->values()
+            ->all();
+    }
+
+    public function listPublishedProductsForForm(int $limit = 200): array
+    {
+        return ProductEloquentModel::query()
+            ->where('status', ProductStatus::Published)
+            ->orderBy('title')
+            ->select(['uuid', 'title', 'description', 'price', 'currency', 'type'])
+            ->limit($limit)
+            ->get()
+            ->map(static fn (ProductEloquentModel $product): array => [
+                'uuid' => $product->uuid,
+                'title' => $product->title,
+                'description' => $product->description,
+                'price' => $product->price,
+                'currency' => $product->currency,
+                'type' => $product->type instanceof \BackedEnum
+                    ? $product->type->value
+                    : (string) $product->type,
+            ])
+            ->values()
+            ->all();
+    }
+
+    public function defaultInvoiceNotes(): ?string
+    {
+        $notes = CompanyData::query()->orderBy('id')->value('invoice_notes');
+
+        return is_string($notes) ? $notes : null;
     }
 }

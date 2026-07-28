@@ -17,6 +17,7 @@ final readonly class BulkRestoreServicesHandler
 {
     public function __construct(private ServiceRepositoryPort $services) {}
 
+    #[\NoDiscard]
     public function handle(BulkUuidsData $data): int
     {
         $count = DB::transaction(fn () => $this->services->bulkRestoreByUuid($data->uuids));

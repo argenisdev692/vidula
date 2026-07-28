@@ -17,7 +17,7 @@ use Throwable;
  * Tag-based flush degrades silently when the cache store doesn't support tags
  * (BACKEND-PHP §5 Cache Management) — the entry still expires via its TTL.
  */
-final class ServicePublicFeedCache
+final readonly class ServicePublicFeedCache
 {
     public static function flush(): void
     {

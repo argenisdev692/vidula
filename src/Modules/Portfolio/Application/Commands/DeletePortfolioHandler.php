@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Modules\Portfolio\Application\Commands;
 
 use Illuminate\Support\Facades\DB;
+use Modules\Portfolio\Application\Support\PortfolioPublicFeedCache;
 use Modules\Portfolio\Domain\Ports\PortfolioRepositoryPort;
-use Modules\Portfolio\Infrastructure\Cache\PortfolioPublicFeedCache;
 
 /**
  * Soft-deletes a single portfolio by UUID. Assets (cover/video/gallery) are

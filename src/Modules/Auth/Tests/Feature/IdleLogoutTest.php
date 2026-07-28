@@ -47,6 +47,16 @@ final class IdleLogoutTest extends TestCase
             ->assertSessionMissing('url.intended');
     }
 
+    public function test_idle_logout_keeps_a_local_path_with_query_string(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post('/session/idle-logout', ['intended' => '/dashboard?tab=security'])
+            ->assertRedirect(route('login'))
+            ->assertSessionHas('url.intended', '/dashboard?tab=security');
+    }
+
     public function test_sign_out_everywhere_logs_the_current_user_out(): void
     {
         $user = User::factory()->create();

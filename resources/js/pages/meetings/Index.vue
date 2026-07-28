@@ -28,7 +28,7 @@ import { toLocalIsoDate } from '@/lib/date';
 import MeetingsTable from './components/MeetingsTable.vue';
 import MeetingCalendar from './components/MeetingCalendar.vue';
 import MeetingFormDialog from './components/MeetingFormDialog.vue';
-import { useMeetingEditMutation } from '@/modules/meeting/composables/useMeetingEditMutation';
+import { fetchMeetingEdit } from '@/modules/meeting/helpers/fetchMeetingEdit';
 import { buildMeetingExportUrl, buildMeetingQueryParams } from '@/modules/meeting/helpers/buildMeetingQueryParams';
 import type {
     Meeting,
@@ -50,7 +50,6 @@ const props = defineProps<{
 
 const toast = useToast();
 const { hasPermission } = useAuthorization();
-const { mutateAsync: fetchMeetingEdit } = useMeetingEditMutation();
 
 const canCreate = computed<boolean>(() => hasPermission('CREATE_MEETINGS'));
 const canExport = computed<boolean>(() => hasPermission('EXPORT_MEETINGS'));
@@ -143,20 +142,8 @@ function onDialogSaved(): void {
     }
 }
 
-/* ── Cancel (distinct from delete — flips status, doesn't soft-delete) ──── */
-function cancelMeeting(meeting: Meeting): void {
-    router.patch(`/meetings/${meeting.uuid}/cancel`, {}, {
-        preserveScroll: true,
-        preserveState: true,
-        onSuccess: () => {
-            toast.add({ severity: 'success', summary: 'Meeting cancelled', life: 3000 });
-            reload();
-        },
-    });
-}
-
-/* ── Single-row delete / restore ─────────────────────────────────────── */
-type RowAction = { kind: 'delete' | 'restore'; meeting: Meeting };
+/* ── Single-row cancel / delete / restore ────────────────────────────── */
+type RowAction = { kind: 'cancel' | 'delete' | 'restore'; meeting: Meeting };
 
 const {
     visible: rowVisible,
@@ -172,6 +159,15 @@ const {
             confirmLabel: 'Restore',
             confirmIcon: 'pi pi-check-circle',
             tone: 'success',
+        };
+    }
+    if (action.kind === 'cancel') {
+        return {
+            title: 'Cancel meeting',
+            message: `Cancel “${action.meeting.title}”? Attendees will be notified and the Google Calendar event removed if synced.`,
+            confirmLabel: 'Cancel meeting',
+            confirmIcon: 'pi pi-ban',
+            tone: 'danger',
         };
     }
     return {
@@ -192,16 +188,28 @@ function confirmRowAction(): void {
                 resetSelection();
                 toast.add({
                     severity: 'success',
-                    summary: action.kind === 'restore' ? 'Meeting restored' : 'Meeting deleted',
+                    summary:
+                        action.kind === 'restore'
+                            ? 'Meeting restored'
+                            : action.kind === 'cancel'
+                              ? 'Meeting cancelled'
+                              : 'Meeting deleted',
                     life: 4000,
                 });
+                if (view.value === 'calendar') {
+                    calendarRef.value?.refresh();
+                } else {
+                    reload();
+                }
             },
             onFinish: finish,
         };
         if (action.kind === 'delete') {
             router.delete(`/meetings/${action.meeting.uuid}`, options);
-        } else {
+        } else if (action.kind === 'restore') {
             router.post(`/meetings/${action.meeting.uuid}/restore`, {}, options);
+        } else {
+            router.patch(`/meetings/${action.meeting.uuid}/cancel`, {}, options);
         }
     });
 }
@@ -368,7 +376,7 @@ const filterFields: FilterField[] = [
                     :loading="loading"
                     @page="onPage"
                     @edit="openEdit"
-                    @cancel="cancelMeeting"
+                    @cancel="(meeting: Meeting) => askRow({ kind: 'cancel', meeting })"
                     @delete="(meeting: Meeting) => askRow({ kind: 'delete', meeting })"
                     @restore="(meeting: Meeting) => askRow({ kind: 'restore', meeting })"
                 />

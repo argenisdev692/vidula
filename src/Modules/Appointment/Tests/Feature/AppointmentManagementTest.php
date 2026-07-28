@@ -16,6 +16,7 @@ use Modules\Appointment\Infrastructure\Mail\AppointmentRescheduledMail;
 use Modules\Appointment\Infrastructure\Mail\NewLeadMail;
 use Modules\Appointment\Infrastructure\Persistence\Eloquent\Models\AppointmentEloquentModel;
 use Modules\Availability\Infrastructure\Persistence\Eloquent\Models\AvailabilityRuleEloquentModel;
+use Modules\Meeting\Infrastructure\Persistence\Eloquent\Models\MeetingEloquentModel;
 use Tests\TestCase;
 
 final class AppointmentManagementTest extends TestCase
@@ -296,6 +297,15 @@ final class AppointmentManagementTest extends TestCase
             ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     }
 
+    public function test_exports_the_pipeline_as_csv(): void
+    {
+        AppointmentEloquentModel::factory()->count(2)->create();
+
+        $this->actingAs($this->superAdmin())
+            ->get('/appointments/export?format=csv')
+            ->assertOk();
+    }
+
     public function test_exports_the_pipeline_as_pdf(): void
     {
         AppointmentEloquentModel::factory()->count(2)->create();
@@ -304,6 +314,34 @@ final class AppointmentManagementTest extends TestCase
             ->get('/appointments/export?format=pdf')
             ->assertOk()
             ->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_lead_and_meeting_share_polymorphic_attendee_relations(): void
+    {
+        $admin = $this->superAdmin();
+        $lead = AppointmentEloquentModel::factory()->create();
+
+        $this->actingAs($admin)
+            ->post('/meetings', [
+                'title' => 'Lead discovery call',
+                'description' => null,
+                'starts_at' => '2026-12-11 10:00:00',
+                'attendees' => [
+                    ['type' => 'lead', 'uuid' => $lead->uuid],
+                ],
+            ])
+            ->assertRedirect();
+
+        $attendances = $lead->fresh()->meetingAttendances()->with('meeting:id,uuid,title')->get();
+
+        $this->assertCount(1, $attendances);
+        $this->assertSame('lead', $attendances->first()?->attendable_type);
+        $this->assertSame('Lead discovery call', $attendances->first()?->meeting?->title);
+
+        $meeting = MeetingEloquentModel::query()->where('title', 'Lead discovery call')->firstOrFail();
+        $this->assertTrue(
+            $meeting->appointments->contains(static fn (AppointmentEloquentModel $row): bool => $row->uuid === $lead->uuid),
+        );
     }
 
     public function test_a_user_without_permission_cannot_manage_appointments(): void

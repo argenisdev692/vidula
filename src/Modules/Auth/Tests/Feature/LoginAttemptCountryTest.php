@@ -32,6 +32,10 @@ final class LoginAttemptCountryTest extends TestCase
             'successful' => true,
             'country' => 'ES',
         ]);
+
+        $attempt = $user->loginAttempts()->where('successful', true)->first();
+        $this->assertNotNull($attempt);
+        $this->assertTrue($attempt->user->is($user));
     }
 
     public function test_failed_login_records_the_country_and_leaves_it_null_without_the_header(): void

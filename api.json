@@ -1483,26 +1483,6 @@
                             }
                         }
                     },
-                    "403": {
-                        "description": "An error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "description": "Error overview.",
-                                            "example": ""
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
                     }
@@ -1512,7 +1492,7 @@
         "/clients/{uuid}": {
             "get": {
                 "operationId": "clients.show",
-                "description": "Returns a single CRM client by UUID.",
+                "description": "Returns a single CRM client by UUID, including invoice/product counts.",
                 "summary": "Show a client",
                 "tags": [
                     "ClientApi"
@@ -1541,26 +1521,6 @@
                                     },
                                     "required": [
                                         "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "An error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "description": "Error overview.",
-                                            "example": ""
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
                                     ]
                                 }
                             }
@@ -1756,6 +1716,8 @@
         "/cvs": {
             "get": {
                 "operationId": "cvs.index",
+                "description": "Returns a paginated, filterable CV list. `per_page` is capped at 100\nto bound resource consumption (OWASP API4).",
+                "summary": "List CVs",
                 "tags": [
                     "CvApi"
                 ],
@@ -1780,26 +1742,6 @@
                             }
                         }
                     },
-                    "403": {
-                        "description": "An error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "description": "Error overview.",
-                                            "example": ""
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
                     }
@@ -1809,6 +1751,8 @@
         "/cvs/{uuid}": {
             "get": {
                 "operationId": "cvs.show",
+                "description": "Returns a single CV by UUID, including a short-lived signed download URL.",
+                "summary": "Show a CV",
                 "tags": [
                     "CvApi"
                 ],
@@ -1908,6 +1852,191 @@
                             }
                         }
                     },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/enrollments": {
+            "get": {
+                "operationId": "enrollments.index",
+                "description": "Returns a paginated, filterable classroom enrollment list. `per_page` is\ncapped at 100 to bound resource consumption (OWASP API4).",
+                "summary": "List enrollments",
+                "tags": [
+                    "EnrollmentApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/enrollments/attendance/{classroomUuid}": {
+            "get": {
+                "operationId": "enrollments.attendance",
+                "description": "Returns sessions, enrollments, and attendance marks for Lista Asistencia.",
+                "summary": "Attendance sheet for a classroom",
+                "tags": [
+                    "EnrollmentApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "classroomUuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "classroom": {
+                                            "$ref": "#/components/schemas/ClassroomEloquentModel"
+                                        },
+                                        "sessions": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "additionalProperties": {}
+                                            }
+                                        },
+                                        "enrollments": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "additionalProperties": {}
+                                            }
+                                        },
+                                        "marks": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "additionalProperties": {}
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "classroom",
+                                        "sessions",
+                                        "enrollments",
+                                        "marks"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": ""
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/enrollments/{uuid}": {
+            "get": {
+                "operationId": "enrollments.show",
+                "description": "Returns a single classroom enrollment by UUID, including attendances.",
+                "summary": "Show an enrollment",
+                "tags": [
+                    "EnrollmentApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ClassroomEnrollmentEloquentModel"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
                     "403": {
                         "description": "An error",
                         "content": {
@@ -1963,26 +2092,6 @@
                             }
                         }
                     },
-                    "403": {
-                        "description": "An error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "description": "Error overview.",
-                                            "example": ""
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
                     }
@@ -2021,26 +2130,6 @@
                                     },
                                     "required": [
                                         "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "An error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "description": "Error overview.",
-                                            "example": ""
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
                                     ]
                                 }
                             }
@@ -2930,6 +3019,84 @@
                 }
             }
         },
+        "/products": {
+            "get": {
+                "operationId": "products.index",
+                "description": "Returns a paginated, filterable catalog list. `per_page` is capped at 100\nto bound resource consumption (OWASP API4).",
+                "summary": "List products",
+                "tags": [
+                    "ProductApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/products/{uuid}": {
+            "get": {
+                "operationId": "products.show",
+                "description": "Returns a single catalog product by UUID, with its classroom or video\ncourse detail.",
+                "summary": "Show a product",
+                "tags": [
+                    "ProductApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ProductEloquentModel"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/appointments/honeypot": {
             "get": {
                 "operationId": "appointments.honeypot",
@@ -3281,24 +3448,6 @@
                         }
                     }
                 ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "access_token": {
-                                        "type": "string"
-                                    }
-                                },
-                                "required": [
-                                    "access_token"
-                                ]
-                            }
-                        }
-                    }
-                },
                 "responses": {
                     "200": {
                         "description": "",
@@ -3372,7 +3521,23 @@
                         }
                     },
                     "422": {
-                        "$ref": "#/components/responses/ValidationException"
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Unsupported social provider."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
                     }
                 },
                 "security": []
@@ -5317,6 +5482,141 @@
                 "additionalProperties": {},
                 "title": "CampaignTopicIdeaData"
             },
+            "ClassroomEloquentModel": {
+                "type": "object",
+                "properties": {
+                    "uuid": {
+                        "type": "string"
+                    },
+                    "product_id": {
+                        "type": "integer"
+                    },
+                    "max_students": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "meet_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "objectives": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "requirements": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "deleted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "uuid",
+                    "product_id",
+                    "max_students",
+                    "meet_url",
+                    "objectives",
+                    "requirements",
+                    "deleted_at",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "ClassroomEloquentModel"
+            },
+            "ClassroomEnrollmentEloquentModel": {
+                "type": "object",
+                "properties": {
+                    "uuid": {
+                        "type": "string"
+                    },
+                    "student_id": {
+                        "type": "integer"
+                    },
+                    "classroom_id": {
+                        "type": "integer"
+                    },
+                    "enrolled_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "enrollment_status": {
+                        "$ref": "#/components/schemas/EnrollmentStatus"
+                    },
+                    "final_grade": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "deleted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "uuid",
+                    "student_id",
+                    "classroom_id",
+                    "enrolled_at",
+                    "enrollment_status",
+                    "final_grade",
+                    "notes",
+                    "deleted_at",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "ClassroomEnrollmentEloquentModel"
+            },
             "ClientEloquentModel": {
                 "type": "object",
                 "properties": {
@@ -5657,6 +5957,16 @@
                     "video_paths"
                 ],
                 "title": "EnqueueExportData"
+            },
+            "EnrollmentStatus": {
+                "type": "string",
+                "enum": [
+                    "active",
+                    "suspended",
+                    "completed",
+                    "dropped"
+                ],
+                "title": "EnrollmentStatus"
             },
             "ExceptionSource": {
                 "type": "string",
@@ -6067,6 +6377,12 @@
                             "null"
                         ],
                         "format": "date-time"
+                    },
+                    "product_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     }
                 },
                 "required": [
@@ -6098,7 +6414,8 @@
                     "client_country",
                     "deleted_at",
                     "created_at",
-                    "updated_at"
+                    "updated_at",
+                    "product_id"
                 ],
                 "title": "InvoiceEloquentModel"
             },
@@ -6601,6 +6918,177 @@
                     "content_type"
                 ],
                 "title": "PresignUploadData"
+            },
+            "ProductEloquentModel": {
+                "type": "object",
+                "properties": {
+                    "uuid": {
+                        "type": "string"
+                    },
+                    "user_id": {
+                        "type": "integer"
+                    },
+                    "client_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "type": {
+                        "$ref": "#/components/schemas/ProductType"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "price": {
+                        "type": "string"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/ProductStatus"
+                    },
+                    "thumbnail": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "level": {
+                        "type": "string"
+                    },
+                    "language": {
+                        "type": "string"
+                    },
+                    "start_date": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "end_date": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "total_hours": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "total_sessions": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "modality": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/ProductModality"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "deleted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "uuid",
+                    "user_id",
+                    "client_id",
+                    "type",
+                    "title",
+                    "slug",
+                    "description",
+                    "price",
+                    "currency",
+                    "status",
+                    "thumbnail",
+                    "level",
+                    "language",
+                    "start_date",
+                    "end_date",
+                    "total_hours",
+                    "total_sessions",
+                    "modality",
+                    "notes",
+                    "deleted_at",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "ProductEloquentModel"
+            },
+            "ProductModality": {
+                "type": "string",
+                "description": "How a classroom product is delivered. Null on video products.\n",
+                "enum": [
+                    "online",
+                    "presential",
+                    "hybrid"
+                ],
+                "title": "ProductModality"
+            },
+            "ProductStatus": {
+                "type": "string",
+                "description": "Catalog lifecycle of a product. Independent from the soft-delete state, which the list filters expose as active|suspended.\n",
+                "enum": [
+                    "draft",
+                    "published",
+                    "archived"
+                ],
+                "title": "ProductStatus"
+            },
+            "ProductType": {
+                "type": "string",
+                "description": "Billable catalog shape. Drives BOTH the seed markdown parser (classroom indexes and video indexes use different heading conventions) and the AI agent selected per topic (lesson notes vs recording script).\n",
+                "enum": [
+                    "classroom",
+                    "video_tutorial",
+                    "video_pill"
+                ],
+                "title": "ProductType"
             },
             "ProjectType": {
                 "type": "string",

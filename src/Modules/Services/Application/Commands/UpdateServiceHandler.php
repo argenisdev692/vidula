@@ -18,6 +18,7 @@ final readonly class UpdateServiceHandler
 {
     public function __construct(private ServiceRepositoryPort $services) {}
 
+    #[\NoDiscard]
     public function handle(ServiceEloquentModel $service, ServiceData $data): ServiceEloquentModel
     {
         $updated = DB::transaction(fn () => $this->services->update($service, [

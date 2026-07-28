@@ -15,7 +15,7 @@ use Shared\Infrastructure\Persistence\Concerns\BulkSoftDeletesByUuid;
  * Eloquent adapter for {@see ServiceRepositoryPort}. Bulk soft-delete/restore
  * are inherited from the Shared {@see BulkSoftDeletesByUuid} trait (DRY).
  */
-final class EloquentServiceRepository implements ServiceRepositoryPort
+final readonly class EloquentServiceRepository implements ServiceRepositoryPort
 {
     use BulkSoftDeletesByUuid;
 

@@ -6,12 +6,13 @@ namespace Modules\Auth\Infrastructure\Http\Controllers\Api;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Laravel\Socialite\Facades\Socialite;
 use Modules\Auth\Application\Commands\RecordLoginAttemptHandler;
 use Modules\Auth\Application\DTOs\AuthUserData;
+use Modules\Auth\Application\DTOs\SocialTokenExchangeData;
 use Modules\Auth\Domain\Exceptions\SocialAuthException;
 use Modules\Auth\Infrastructure\Auth\SanctumTokenService;
 use Modules\Auth\Infrastructure\Auth\Social\SocialAccountResolver;
+use Modules\Auth\Infrastructure\Auth\Social\SocialiteAuthAdapter;
 use Modules\Auth\Infrastructure\Auth\Social\SocialiteUserMapper;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
@@ -28,6 +29,7 @@ final readonly class SocialAuthController
     public function __construct(
         private SocialiteUserMapper $mapper,
         private SocialAccountResolver $resolver,
+        private SocialiteAuthAdapter $socialite,
         private SanctumTokenService $tokens,
         private RecordLoginAttemptHandler $attempts,
     ) {}
@@ -38,16 +40,14 @@ final readonly class SocialAuthController
      * Returns 401 on an invalid provider token and 409 when the email is already
      * registered to a different account.
      */
-    public function __invoke(Request $request, string $provider): JsonResponse
+    public function __invoke(SocialTokenExchangeData $data, Request $request, string $provider): JsonResponse
     {
         if (! in_array($provider, self::PROVIDERS, true)) {
             return response()->json(['message' => __('Unsupported social provider.')], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $validated = $request->validate(['access_token' => ['required', 'string']]);
-
         try {
-            $socialiteUser = Socialite::driver($provider)->stateless()->userFromToken($validated['access_token']);
+            $socialiteUser = $this->socialite->userFromToken($provider, $data->accessToken);
         } catch (Throwable) {
             return response()->json(['message' => __('Invalid provider token.')], Response::HTTP_UNAUTHORIZED);
         }

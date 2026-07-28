@@ -16,7 +16,7 @@ import DataTable from '@/volt/DataTable.vue';
 import Tag from '@/volt/Tag.vue';
 import ActionButton from '@/common/data-table/ActionButton.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
-import { formatDate, formatDateTime } from '@/modules/appointments/helpers/formatDate';
+import { formatDateShort, formatDateTime } from '@/modules/appointments/helpers/formatDate';
 import { appointmentDisplayName } from '@/modules/appointments/helpers/displayName';
 import { CLIENT_TYPE_LABEL, MEETING_STATUS_META, STATUS_LEAD_META } from '@/modules/appointments/helpers/statusMeta';
 import type { Appointment } from '@/modules/appointments/types';
@@ -138,7 +138,7 @@ function rowClass(row: Appointment): string | undefined {
 
             <Column field="created_at" header="Created">
                 <template #body="{ data }">
-                    <span class="mono">{{ formatDate((data as Appointment).created_at) }}</span>
+                    <span class="mono">{{ formatDateShort((data as Appointment).created_at) }}</span>
                 </template>
             </Column>
 

@@ -11,10 +11,11 @@ use Modules\Meeting\Infrastructure\Attendees\AttendeeEmailResolver;
 use Modules\Meeting\Infrastructure\Mail\MeetingUpdatedMail;
 use Shared\Infrastructure\Mail\MailInterface;
 
+/**
+ * Lands on Horizon's `default` queue — see SendMeetingInvitationEmailListener.
+ */
 final readonly class SendMeetingUpdatedEmailListener implements ShouldQueue
 {
-    public string $queue = 'emails';
-
     public function __construct(
         private GetMeetingHandler $meetings,
         private MailInterface $mail,

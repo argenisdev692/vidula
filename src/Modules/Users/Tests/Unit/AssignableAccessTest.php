@@ -7,6 +7,7 @@ namespace Modules\Users\Tests\Unit;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\Authorization\Domain\SystemRoles;
 use Modules\Users\Domain\AssignableAccess;
 use Modules\Users\Domain\Exceptions\PrivilegeEscalationException;
 use Spatie\Permission\Models\Role;
@@ -31,7 +32,7 @@ final class AssignableAccessTest extends TestCase
     private function superAdmin(): User
     {
         $admin = User::factory()->create();
-        $admin->assignRole('SUPER_ADMIN');
+        $admin->assignRole(SystemRoles::SUPER_ADMIN);
 
         return $admin;
     }
@@ -52,6 +53,30 @@ final class AssignableAccessTest extends TestCase
         return $user;
     }
 
+    /**
+     * @param  list<string>  $roleNames
+     */
+    private function assertRoles(User $actor, array $roleNames): void
+    {
+        AssignableAccess::assertRolesAllowed(
+            $actor->hasRole(SystemRoles::SUPER_ADMIN),
+            array_values($actor->getRoleNames()->all()),
+            $roleNames,
+        );
+    }
+
+    /**
+     * @param  list<string>  $permissionNames
+     */
+    private function assertPermissions(User $actor, array $permissionNames): void
+    {
+        AssignableAccess::assertPermissionsAllowed(
+            $actor->hasRole(SystemRoles::SUPER_ADMIN),
+            array_values($actor->getAllPermissions()->pluck('name')->all()),
+            $permissionNames,
+        );
+    }
+
     /* ── Roles ─────────────────────────────────────────────────────────────── */
 
     public function test_an_empty_role_set_is_always_allowed(): void
@@ -59,14 +84,14 @@ final class AssignableAccessTest extends TestCase
         $plain = User::factory()->create();
         $plain->assignRole('USER');
 
-        AssignableAccess::assertRolesAllowed($plain, []);
+        $this->assertRoles($plain, []);
 
         $this->expectNotToPerformAssertions();
     }
 
     public function test_super_admin_may_assign_any_role(): void
     {
-        AssignableAccess::assertRolesAllowed($this->superAdmin(), ['SUPER_ADMIN', 'ADMIN', 'USER']);
+        $this->assertRoles($this->superAdmin(), ['SUPER_ADMIN', 'ADMIN', 'USER']);
 
         $this->expectNotToPerformAssertions();
     }
@@ -76,7 +101,7 @@ final class AssignableAccessTest extends TestCase
         $delegate = User::factory()->create();
         $delegate->assignRole('ADMIN');
 
-        AssignableAccess::assertRolesAllowed($delegate, ['ADMIN']);
+        $this->assertRoles($delegate, ['ADMIN']);
 
         $this->expectNotToPerformAssertions();
     }
@@ -89,7 +114,7 @@ final class AssignableAccessTest extends TestCase
         $this->expectException(PrivilegeEscalationException::class);
         $this->expectExceptionMessage('SUPER_ADMIN');
 
-        AssignableAccess::assertRolesAllowed($delegate, ['SUPER_ADMIN']);
+        $this->assertRoles($delegate, ['SUPER_ADMIN']);
     }
 
     /* ── Permissions ───────────────────────────────────────────────────────── */
@@ -99,14 +124,14 @@ final class AssignableAccessTest extends TestCase
         $plain = User::factory()->create();
         $plain->assignRole('USER');
 
-        AssignableAccess::assertPermissionsAllowed($plain, []);
+        $this->assertPermissions($plain, []);
 
         $this->expectNotToPerformAssertions();
     }
 
     public function test_super_admin_may_grant_any_permission(): void
     {
-        AssignableAccess::assertPermissionsAllowed($this->superAdmin(), ['DELETE_USERS', 'EXPORT_USERS']);
+        $this->assertPermissions($this->superAdmin(), ['DELETE_USERS', 'EXPORT_USERS']);
 
         $this->expectNotToPerformAssertions();
     }
@@ -115,7 +140,7 @@ final class AssignableAccessTest extends TestCase
     {
         $delegate = $this->delegateWith(['VIEW_USERS']);
 
-        AssignableAccess::assertPermissionsAllowed($delegate, ['VIEW_USERS']);
+        $this->assertPermissions($delegate, ['VIEW_USERS']);
 
         $this->expectNotToPerformAssertions();
     }
@@ -127,6 +152,6 @@ final class AssignableAccessTest extends TestCase
         $this->expectException(PrivilegeEscalationException::class);
         $this->expectExceptionMessage('DELETE_USERS');
 
-        AssignableAccess::assertPermissionsAllowed($delegate, ['DELETE_USERS']);
+        $this->assertPermissions($delegate, ['DELETE_USERS']);
     }
 }

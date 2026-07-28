@@ -10,14 +10,18 @@ use Spatie\LaravelData\Attributes\MapOutputName;
 use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 
 /**
- * List filter for `GET /meetings` — mirrors `AppointmentFilterData` shape:
- * `status` (active|suspended, soft-delete) is inherited; `meeting_status` and
- * the `starts_from`/`starts_to` window are Meeting-specific.
+ * List/export filter for meetings. Soft-delete `status` is active|suspended
+ * (applied via `onlyTrashed()` at the repository); the domain lifecycle lives
+ * on `meeting_status`. Sort follows BACKEND-PHP §5.2 (Products pattern);
+ * `page`/`per_page` stay on the request (capped in the controller).
  */
 #[MapInputName(SnakeCaseMapper::class)]
 #[MapOutputName(SnakeCaseMapper::class)]
 final class MeetingFilterData extends SoftDeleteFilterData
 {
+    /** @var list<string> */
+    public const array SORTABLE = ['starts_at', 'created_at', 'title', 'status'];
+
     public function __construct(
         ?string $search = null,
         ?string $status = null,
@@ -26,6 +30,8 @@ final class MeetingFilterData extends SoftDeleteFilterData
         public ?string $meetingStatus = null,
         public ?string $startsFrom = null,
         public ?string $startsTo = null,
+        public string $sortField = 'starts_at',
+        public int $sortOrder = -1,
     ) {
         parent::__construct($search, $status, $dateFrom, $dateTo);
     }
@@ -41,6 +47,20 @@ final class MeetingFilterData extends SoftDeleteFilterData
             'meeting_status' => ['nullable', 'string', 'in:Scheduled,Cancelled'],
             'starts_from' => ['nullable', 'date'],
             'starts_to' => ['nullable', 'date', 'after_or_equal:starts_from'],
+            'sort_field' => ['nullable', 'string', 'in:starts_at,created_at,title,status'],
+            'sort_order' => ['nullable', 'integer', 'in:1,-1'],
         ];
+    }
+
+    public function resolvedSortField(): string
+    {
+        return in_array($this->sortField, self::SORTABLE, true)
+            ? $this->sortField
+            : 'starts_at';
+    }
+
+    public function resolvedSortDirection(): string
+    {
+        return $this->sortOrder === 1 ? 'asc' : 'desc';
     }
 }

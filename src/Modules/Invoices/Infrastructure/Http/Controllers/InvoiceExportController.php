@@ -46,7 +46,7 @@ final readonly class InvoiceExportController
             default => $this->export->tabular(
                 "invoices.{$format}",
                 ['Number', 'Client', 'Issue date', 'Due date', 'Total', 'Paid', 'Status'],
-                $rows->map(InvoiceExportTransformer::transformForTable(...)),
+                $rows->map(InvoiceExportTransformer::transformForExcel(...)),
             ),
         };
     }

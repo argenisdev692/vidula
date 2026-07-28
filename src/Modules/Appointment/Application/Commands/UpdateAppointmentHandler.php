@@ -23,6 +23,7 @@ final readonly class UpdateAppointmentHandler
         private Cache $cache,
     ) {}
 
+    #[\NoDiscard]
     public function handle(AppointmentEloquentModel $appointment, AppointmentData $data): AppointmentEloquentModel
     {
         $email = $data->email |> trim(...) |> strtolower(...);

@@ -11,9 +11,11 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Modules\Enrollments\Infrastructure\Persistence\Eloquent\Models\ClassroomEnrollmentEloquentModel;
 use Modules\Students\Application\DTOs\StudentFilterData;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -71,7 +73,18 @@ final class StudentEloquentModel extends Model
     }
 
     /**
-     * Shared list filter (BACKEND-PHP §5.2). Soft-delete `suspended` is
+     * @return HasMany<ClassroomEnrollmentEloquentModel, $this>
+     */
+    public function enrollments(): HasMany
+    {
+        return $this->hasMany(
+            ClassroomEnrollmentEloquentModel::class,
+            'student_id',
+        );
+    }
+
+    /**
+     * Shared list/export filter (BACKEND-PHP §5.2). Soft-delete `suspended` is
      * applied at the repository via `onlyTrashed()`.
      *
      * @param  Builder<StudentEloquentModel>  $query

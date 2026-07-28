@@ -11,18 +11,23 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Modules\Appointment\Application\DTOs\AppointmentFilterData;
+use Modules\Appointment\Domain\Ports\AppointmentRepositoryPort;
 use Modules\Appointment\Domain\ValueObjects\ClientType;
 use Modules\Appointment\Domain\ValueObjects\MeetingStatus;
 use Modules\Appointment\Domain\ValueObjects\ProjectType;
 use Modules\Appointment\Domain\ValueObjects\StatusLead;
+use Modules\Meeting\Infrastructure\Persistence\Eloquent\Models\MeetingAttendeeEloquentModel;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
 /**
+ * @internal Application must depend on {@see AppointmentRepositoryPort}, not this model.
+ *
  * @property int $id
  * @property string $uuid
  * @property string $first_name
@@ -84,6 +89,18 @@ final class AppointmentEloquentModel extends Model
                 $model->uuid = (string) Str::uuid7();
             }
         });
+    }
+
+    /**
+     * Inverse of Meeting's polymorphic attendee morphMap key `lead`
+     * ({@see MeetingAttendeeEloquentModel::attendable()}). Eager-load with
+     * `meetingAttendances.meeting` to avoid N+1 when listing a lead's meetings.
+     *
+     * @return MorphMany<MeetingAttendeeEloquentModel, $this>
+     */
+    public function meetingAttendances(): MorphMany
+    {
+        return $this->morphMany(MeetingAttendeeEloquentModel::class, 'attendable');
     }
 
     /**

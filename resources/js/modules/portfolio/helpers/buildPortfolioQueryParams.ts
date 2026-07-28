@@ -1,12 +1,12 @@
+import { buildExportUrl, type ExportFormat } from '@/lib/queryParams';
 import type { PortfolioQuery } from '../types';
 
+/** Export formats accepted by GET /portfolios/export. */
+export type PortfolioExportFormat = ExportFormat;
+
 /**
- * Single source of truth for the portfolio request params, consumed by the
- * server-side DataTable reload. Empty filters are omitted so the query string
- * stays clean. The backend `PortfolioFilterData` reads `search`, `status`,
- * `date_from`, `date_to`; pagination reads `page` + `per_page`. Portfolio has
- * no export endpoint (see RolePermissionSeeder::NO_EXPORT_MODULES), so there is
- * no companion `buildPortfolioExportUrl`.
+ * Single source of truth for portfolio request params — consumed by BOTH the
+ * server-side DataTable reload AND the export URL (no drift).
  */
 export function buildPortfolioQueryParams(query: PortfolioQuery): Record<string, string | number> {
     const params: Record<string, string | number> = {
@@ -28,4 +28,9 @@ export function buildPortfolioQueryParams(query: PortfolioQuery): Record<string,
     }
 
     return params;
+}
+
+/** Builds the export download URL for the given format, reusing the same filters. */
+export function buildPortfolioExportUrl(query: PortfolioQuery, format: PortfolioExportFormat): string {
+    return buildExportUrl('/portfolios/export', buildPortfolioQueryParams(query), format);
 }

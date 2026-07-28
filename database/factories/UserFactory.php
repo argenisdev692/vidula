@@ -44,4 +44,19 @@ class UserFactory extends Factory
             'email_verified_at' => null,
         ]);
     }
+
+    /**
+     * Confirm Fortify TOTP two-factor authentication (encrypted secret + confirmed_at).
+     */
+    public function withTwoFactor(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'two_factor_secret' => encrypt('test-two-factor-secret-key'),
+            'two_factor_recovery_codes' => encrypt(json_encode([
+                'recovery-code-1',
+                'recovery-code-2',
+            ])),
+            'two_factor_confirmed_at' => now(),
+        ]);
+    }
 }

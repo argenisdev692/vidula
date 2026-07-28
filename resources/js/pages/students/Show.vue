@@ -8,7 +8,7 @@ import { computed } from 'vue';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import DetailCard from '@/common/ui/DetailCard.vue';
 import StatusBadge from '@/common/ui/StatusBadge.vue';
-import { formatDate } from '@/modules/students/helpers/formatDate';
+import { formatDateShort } from '@/modules/students/helpers/formatDate';
 import type { Student } from '@/modules/students/types';
 
 defineOptions({ layout: AppLayout });
@@ -84,11 +84,11 @@ const lifecycleTone = computed<'success' | 'primary' | 'muted'>(() => {
             </div>
             <div class="fact">
                 <dt>Created</dt>
-                <dd>{{ formatDate(student.created_at) }}</dd>
+                <dd>{{ formatDateShort(student.created_at) }}</dd>
             </div>
             <div class="fact">
                 <dt>Last updated</dt>
-                <dd>{{ formatDate(student.updated_at ?? null) }}</dd>
+                <dd>{{ formatDateShort(student.updated_at ?? null) }}</dd>
             </div>
         </dl>
     </DetailCard>

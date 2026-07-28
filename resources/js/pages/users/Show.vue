@@ -11,7 +11,7 @@ import { computed } from 'vue';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import DetailCard from '@/common/ui/DetailCard.vue';
 import Tag from '@/volt/Tag.vue';
-import { formatDate } from '@/modules/users/helpers/formatDate';
+import { formatDateShort } from '@/modules/users/helpers/formatDate';
 import { resolveUserStatus, USER_STATUS_META } from '@/modules/users/helpers/userStatus';
 import { groupPermissions } from '@/modules/authorization/helpers/groupPermissions';
 import type { UserAccessProps, UserDetail } from '@/modules/users/types';
@@ -78,7 +78,7 @@ function isDirect(name: string): boolean {
             </div>
             <div class="fact">
                 <dt>Email verified</dt>
-                <dd>{{ formatDate(user.email_verified_at) }}</dd>
+                <dd>{{ formatDateShort(user.email_verified_at) }}</dd>
             </div>
             <div class="fact">
                 <dt>Must change password</dt>
@@ -86,11 +86,11 @@ function isDirect(name: string): boolean {
             </div>
             <div class="fact">
                 <dt>Invited</dt>
-                <dd>{{ formatDate(user.invited_at ?? null) }}</dd>
+                <dd>{{ formatDateShort(user.invited_at ?? null) }}</dd>
             </div>
             <div class="fact">
                 <dt>Created</dt>
-                <dd>{{ formatDate(user.created_at) }}</dd>
+                <dd>{{ formatDateShort(user.created_at) }}</dd>
             </div>
             <div class="fact fact--wide">
                 <dt>Role</dt>

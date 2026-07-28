@@ -11,10 +11,14 @@ use Modules\Meeting\Infrastructure\Attendees\AttendeeEmailResolver;
 use Modules\Meeting\Infrastructure\Mail\MeetingInvitationMail;
 use Shared\Infrastructure\Mail\MailInterface;
 
+/**
+ * Lands on Horizon's `default` queue on purpose — `config/horizon.php` only
+ * watches `default`, so a custom `emails` queue would silently never run
+ * (see SSD-SUMMARY §0 for Meeting; Appointment's `emails` queue is a known
+ * sibling discrepancy left untouched as out of scope).
+ */
 final readonly class SendMeetingInvitationEmailListener implements ShouldQueue
 {
-    public string $queue = 'emails';
-
     public function __construct(
         private MeetingRepositoryPort $meetings,
         private MailInterface $mail,

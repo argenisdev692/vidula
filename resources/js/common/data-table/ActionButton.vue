@@ -23,10 +23,15 @@ withDefaults(
         tone?: Tone;
         /** When set, renders an Inertia <Link> instead of a <button>. */
         href?: string;
+        /**
+         * Inertia Link prefetch (hover by default). Only applies when `href` is set.
+         * @see https://inertiajs.com/docs/v3/data-props/prefetching
+         */
+        prefetch?: boolean | 'hover' | 'mount' | 'click' | Array<'hover' | 'mount' | 'click'>;
         /** Non-interactive locked state (no navigation, no emit). */
         disabled?: boolean;
     }>(),
-    { tone: 'neutral', href: undefined, disabled: false },
+    { tone: 'neutral', href: undefined, prefetch: true, disabled: false },
 );
 
 defineEmits<{ click: [] }>();
@@ -37,6 +42,7 @@ defineEmits<{ click: [] }>();
         v-if="href && !disabled"
         v-tooltip.top="label"
         :href="href"
+        :prefetch="prefetch"
         class="crud-action"
         :data-tone="tone"
         :aria-label="label"

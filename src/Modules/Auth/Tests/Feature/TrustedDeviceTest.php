@@ -97,4 +97,36 @@ final class TrustedDeviceTest extends TestCase
 
         $this->assertSoftDeleted('trusted_devices', ['uuid' => $device->uuid]);
     }
+
+    public function test_login_with_two_factor_redirects_to_challenge(): void
+    {
+        $user = User::factory()->withTwoFactor()->create();
+
+        $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ])->assertRedirect(route('two-factor.login'));
+
+        $this->assertGuest();
+    }
+
+    public function test_login_on_trusted_device_skips_two_factor_challenge(): void
+    {
+        $user = User::factory()->withTwoFactor()->create();
+        $token = 'trusted-device-raw-token';
+
+        $user->trustedDevices()->create([
+            'token_hash' => hash('sha256', $token),
+            'expires_at' => now()->addDays(30),
+        ]);
+
+        $this->withUnencryptedCookie('two_factor_trust_'.$user->getKey(), $token)
+            ->post('/login', [
+                'email' => $user->email,
+                'password' => 'password',
+            ])
+            ->assertRedirect('/');
+
+        $this->assertAuthenticatedAs($user);
+    }
 }

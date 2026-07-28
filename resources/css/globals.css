@@ -109,6 +109,10 @@
     --signature-surface: #ffffff;
     --signature-ink: #1a1a2e;
 
+    /* 2FA QR canvas — theme-INDEPENDENT white paper so authenticator apps can
+       scan the SVG in both light and dark UI (NOT overridden under .dark). */
+    --qr-canvas: #ffffff;
+
     /* photo overlay scrim — theme-INDEPENDENT on purpose: position badges and
        hover controls sit on top of arbitrary uploaded photos (e.g. the
        Portfolio gallery grid), so the scrim must stay dark and its text white

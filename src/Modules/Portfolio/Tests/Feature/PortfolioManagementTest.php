@@ -237,4 +237,41 @@ final class PortfolioManagementTest extends TestCase
         $this->actingAs($plain)->get('/portfolios')->assertForbidden();
         $this->actingAs($plain)->post('/portfolios', ['title' => 'X'])->assertForbidden();
     }
+
+    public function test_export_csv_streams_successfully(): void
+    {
+        PortfolioEloquentModel::factory()->create(['title' => 'Exportable Portfolio']);
+
+        $this->actingAs($this->superAdmin())
+            ->get('/portfolios/export?format=csv')
+            ->assertOk();
+    }
+
+    public function test_export_xlsx_streams_successfully(): void
+    {
+        PortfolioEloquentModel::factory()->create(['title' => 'Xlsx Portfolio']);
+
+        $this->actingAs($this->superAdmin())
+            ->get('/portfolios/export?format=xlsx')
+            ->assertOk();
+    }
+
+    public function test_export_pdf_renders_successfully(): void
+    {
+        PortfolioEloquentModel::factory()->create(['title' => 'Pdf Portfolio']);
+
+        $this->actingAs($this->superAdmin())
+            ->get('/portfolios/export?format=pdf')
+            ->assertOk();
+    }
+
+    public function test_user_without_export_permission_cannot_export(): void
+    {
+        $plain = User::factory()->create();
+        $plain->assignRole('USER');
+
+        $this->actingAs($plain)
+            ->get('/portfolios/export?format=csv')
+            ->assertForbidden();
+    }
 }

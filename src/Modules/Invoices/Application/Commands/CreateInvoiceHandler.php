@@ -35,6 +35,7 @@ final readonly class CreateInvoiceHandler
         $serviceIds = $this->invoices->mapServiceIdsByUuid(
             InvoiceTotalsCalculator::collectServiceUuids($data->items),
         );
+        $productId = $this->invoices->findProductIdByUuid($data->productUuid);
         $totals = InvoiceTotalsCalculator::compute($data, $serviceIds);
 
         if ($this->invoices->numberExists($data->invoiceNumber, $parsed['year'], $parsed['sequence'])) {
@@ -46,6 +47,7 @@ final readonly class CreateInvoiceHandler
         $invoice = DB::transaction(fn () => $this->invoices->createWithItems([
             'user_id' => $userId,
             'client_id' => $client->id,
+            'product_id' => $productId,
             'invoice_number' => $data->invoiceNumber,
             'sequence' => $parsed['sequence'],
             'year' => $parsed['year'],

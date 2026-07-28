@@ -158,4 +158,34 @@ final class ClientManagementTest extends TestCase
             ->get('/clients/export?format=csv')
             ->assertOk();
     }
+
+    public function test_export_xlsx_streams_successfully(): void
+    {
+        ClientEloquentModel::factory()->create(['client_name' => 'Xlsx Client']);
+
+        $this->actingAs($this->superAdmin())
+            ->get('/clients/export?format=xlsx')
+            ->assertOk();
+    }
+
+    public function test_export_pdf_renders_successfully(): void
+    {
+        ClientEloquentModel::factory()->create(['client_name' => 'Pdf Client']);
+
+        $this->actingAs($this->superAdmin())
+            ->get('/clients/export?format=pdf')
+            ->assertOk();
+    }
+
+    public function test_show_includes_relation_counts(): void
+    {
+        $client = ClientEloquentModel::factory()->create(['client_name' => 'Counted Client']);
+
+        $this->actingAs($this->superAdmin())
+            ->getJson("/clients/{$client->uuid}")
+            ->assertOk()
+            ->assertJsonPath('data.client_name', 'Counted Client')
+            ->assertJsonPath('data.invoices_count', 0)
+            ->assertJsonPath('data.products_count', 0);
+    }
 }

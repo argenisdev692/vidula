@@ -10,7 +10,7 @@ use Spatie\LaravelData\Attributes\MapOutputName;
 use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 
 /**
- * List filter. Soft-delete `status` is active|suspended; optional
+ * List/export filter. Soft-delete `status` is active|suspended; optional
  * `student_status` filters the domain lifecycle column (DRAFT|ACTIVE|ARCHIVED).
  */
 #[MapInputName(SnakeCaseMapper::class)]

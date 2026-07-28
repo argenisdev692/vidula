@@ -45,9 +45,10 @@ final readonly class TrustedDeviceController
 
         // The two-factor challenge page trusts the device with a JSON XHR right
         // after sign-in (no navigation); the settings page uses the Inertia flow.
-        return $request->expectsJson()
-            ? response()->json(['status' => 'trusted-device-added'])
-            : back()->with('status', 'trusted-device-added');
+        return match ($request->expectsJson()) {
+            true => response()->json(['status' => 'trusted-device-added']),
+            false => back()->with('status', 'trusted-device-added'),
+        };
     }
 
     public function revoke(Request $request, string $uuid): RedirectResponse

@@ -39,9 +39,10 @@ final readonly class SessionController
         $user = $request->user();
         $list = $this->sessions->listForUser($user, $request->session()->getId());
 
-        return $request->expectsJson()
-            ? response()->json(['data' => $list])
-            : Inertia::render('Auth/Sessions', ['sessions' => $list]);
+        return match ($request->expectsJson()) {
+            true => response()->json(['data' => $list]),
+            false => Inertia::render('Auth/Sessions', ['sessions' => $list]),
+        };
     }
 
     public function destroy(Request $request, string $session): RedirectResponse
@@ -130,11 +131,10 @@ final readonly class SessionController
             return null;
         }
 
-        $path = parse_url($intended, PHP_URL_PATH);
-
-        if (! is_string($path)) {
-            return null;
-        }
+        // Local path only — strip query/fragment without parse_url() (PHP 8.5).
+        $path = $intended
+            |> (fn (string $s): string => explode('#', $s, 2)[0])
+            |> (fn (string $s): string => explode('?', $s, 2)[0]);
 
         foreach (self::DENIED_INTENDED_PREFIXES as $denied) {
             if (str_starts_with($path, $denied)) {

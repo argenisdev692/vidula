@@ -9,16 +9,12 @@ import { Head, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import AppHeader from '@/modules/app/components/AppHeader.vue';
+import { deviceLabel } from '@/modules/auth/helpers/deviceLabel';
+import { formatSessionDate } from '@/modules/auth/helpers/formatSessionDate';
+import type { ActiveSession } from '@/modules/profile/types';
+import Button from '@/volt/Button.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
-
-interface ActiveSession {
-  id: string;
-  ip_address: string | null;
-  user_agent: string | null;
-  last_active_at: string;
-  is_current: boolean;
-}
 
 const props = defineProps<{ sessions: ActiveSession[] }>();
 
@@ -26,34 +22,6 @@ defineOptions({ layout: AppLayout });
 
 const hasOthers = computed<boolean>(() => props.sessions.some((s) => !s.is_current));
 const confirmAllOpen = ref<boolean>(false);
-
-function deviceLabel(userAgent: string | null): string {
-  if (!userAgent) {
-    return 'Unknown device';
-  }
-  const browser =
-    /Edg/.test(userAgent) ? 'Edge'
-    : /OPR|Opera/.test(userAgent) ? 'Opera'
-    : /Chrome/.test(userAgent) ? 'Chrome'
-    : /Firefox/.test(userAgent) ? 'Firefox'
-    : /Safari/.test(userAgent) ? 'Safari'
-    : 'Browser';
-  const os =
-    /Windows/.test(userAgent) ? 'Windows'
-    : /Macintosh|Mac OS/.test(userAgent) ? 'macOS'
-    : /Android/.test(userAgent) ? 'Android'
-    : /iPhone|iPad|iOS/.test(userAgent) ? 'iOS'
-    : /Linux/.test(userAgent) ? 'Linux'
-    : 'Unknown OS';
-  return `${browser} · ${os}`;
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
-}
 
 function revoke(id: string): void {
   router.delete(`/sessions/${id}`, { preserveScroll: true });
@@ -91,7 +59,7 @@ function signOutEverywhere(): void {
           <div class="session-card__meta">
             <span>{{ session.ip_address ?? 'Unknown IP' }}</span>
             <span aria-hidden="true">•</span>
-            <span>Last active {{ formatDate(session.last_active_at) }}</span>
+            <span>Last active {{ formatSessionDate(session.last_active_at) }}</span>
           </div>
         </div>
         <div v-if="!session.is_current" class="session-card__action">
@@ -106,9 +74,11 @@ function signOutEverywhere(): void {
         :disabled="!hasOthers"
         @click="signOutOthers"
       />
-      <button type="button" class="btn-danger" @click="confirmAllOpen = true">
-        Sign out everywhere
-      </button>
+      <Button
+        label="Sign out everywhere"
+        severity="danger"
+        @click="confirmAllOpen = true"
+      />
     </div>
   </section>
 
@@ -122,9 +92,12 @@ function signOutEverywhere(): void {
     </p>
     <template #footer>
       <SecondaryButton label="Cancel" @click="confirmAllOpen = false" />
-      <button type="button" class="btn-danger" @click="signOutEverywhere">
-        Sign out everywhere
-      </button>
+      <Button
+        label="Sign out everywhere"
+        severity="danger"
+        autofocus
+        @click="signOutEverywhere"
+      />
     </template>
   </Dialog>
 </template>
@@ -214,30 +187,6 @@ function signOutEverywhere(): void {
   color: var(--text-secondary);
   font-size: var(--text-sm);
   width: min(24rem, calc(100vw - 4rem));
-}
-
-.btn-danger {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--accent-error);
-  background: var(--accent-error);
-  color: var(--text-on-accent);
-  font-weight: var(--font-medium);
-  font-size: var(--text-sm);
-  cursor: pointer;
-  transition: opacity var(--transition-fast);
-}
-
-.btn-danger:hover {
-  opacity: 0.9;
-}
-
-.btn-danger:disabled {
-  opacity: 0.6;
-  pointer-events: none;
 }
 
 @media (max-width: 600px) {

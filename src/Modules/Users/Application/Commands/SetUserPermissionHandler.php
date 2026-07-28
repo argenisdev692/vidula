@@ -6,6 +6,7 @@ namespace Modules\Users\Application\Commands;
 
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Modules\Authorization\Domain\SystemRoles;
 use Modules\Users\Domain\AssignableAccess;
 use Shared\Domain\Ports\AuditPort;
 
@@ -22,7 +23,11 @@ final readonly class SetUserPermissionHandler
 
     public function handle(User $actor, User $target, string $permission, bool $granted): User
     {
-        AssignableAccess::assertPermissionsAllowed($actor, [$permission]);
+        AssignableAccess::assertPermissionsAllowed(
+            $actor->hasRole(SystemRoles::SUPER_ADMIN),
+            array_values($actor->getAllPermissions()->pluck('name')->all()),
+            [$permission],
+        );
 
         DB::transaction(function () use ($target, $permission, $granted): void {
             if ($granted) {

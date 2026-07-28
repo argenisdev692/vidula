@@ -24,6 +24,7 @@ final readonly class AddFollowUpCallHandler
         private Cache $cache,
     ) {}
 
+    #[\NoDiscard]
     public function handle(AppointmentEloquentModel $appointment, AddFollowUpCallData $data): AppointmentEloquentModel
     {
         $calls = [

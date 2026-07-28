@@ -11,7 +11,7 @@ use Carbon\CarbonInterface;
  * Single place that turns a meeting start into an end using
  * `config('meeting.duration_minutes')` (default 30).
  */
-final class MeetingDuration
+final readonly class MeetingDuration
 {
     public static function minutes(): int
     {

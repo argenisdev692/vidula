@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 /**
  * A device the user chose to trust for 30 days, so 2FA is skipped on it.
@@ -23,7 +25,7 @@ use Illuminate\Support\Str;
 #[Fillable(['uuid', 'user_id', 'token_hash', 'user_agent', 'ip_address', 'last_used_at', 'expires_at'])]
 final class TrustedDeviceEloquentModel extends Model
 {
-    use SoftDeletes;
+    use LogsActivity, SoftDeletes;
 
     protected static function booted(): void
     {
@@ -51,5 +53,24 @@ final class TrustedDeviceEloquentModel extends Model
             'last_used_at' => 'datetime',
             'expires_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Allowlist only — NEVER log token_hash (secret-equivalent).
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'uuid',
+                'user_id',
+                'user_agent',
+                'ip_address',
+                'last_used_at',
+                'expires_at',
+            ])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges()
+            ->useLogName('auth.trusted_device');
     }
 }

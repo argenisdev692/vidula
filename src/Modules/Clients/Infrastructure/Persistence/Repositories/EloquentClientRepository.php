@@ -57,6 +57,7 @@ final class EloquentClientRepository implements ClientRepositoryPort
     {
         return ClientEloquentModel::withTrashed()
             ->with('user:id,first_name,last_name')
+            ->withCount(['invoices', 'products'])
             ->where('uuid', $uuid)
             ->first();
     }

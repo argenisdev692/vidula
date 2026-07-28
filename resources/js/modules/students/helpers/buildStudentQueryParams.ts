@@ -1,8 +1,12 @@
+import { buildExportUrl, type ExportFormat } from '@/lib/queryParams';
 import type { StudentQuery } from '../types';
 
+/** Export formats accepted by GET /students/export. */
+export type StudentExportFormat = ExportFormat;
+
 /**
- * Single source of truth for student request params — consumed by the
- * server-side DataTable reload (no export endpoint for this module).
+ * Single source of truth for student request params — consumed by BOTH the
+ * server-side DataTable reload AND the export URL (no drift).
  */
 export function buildStudentQueryParams(query: StudentQuery): Record<string, string | number> {
     const params: Record<string, string | number> = {
@@ -30,4 +34,9 @@ export function buildStudentQueryParams(query: StudentQuery): Record<string, str
     }
 
     return params;
+}
+
+/** Builds the export download URL for the given format, reusing the same filters. */
+export function buildStudentExportUrl(query: StudentQuery, format: StudentExportFormat): string {
+    return buildExportUrl('/students/export', buildStudentQueryParams(query), format);
 }

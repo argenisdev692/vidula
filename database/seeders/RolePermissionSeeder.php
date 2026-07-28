@@ -23,7 +23,7 @@ class RolePermissionSeeder extends Seeder
      *
      * @var list<string>
      */
-    private const array MODULES = ['USERS', 'ROLES', 'PERMISSIONS', 'COMPANY_DATA', 'BLOG_CATEGORIES', 'POSTS', 'SOCIAL_MEDIA', 'CAMPAIGNS', 'CONTACT_SUPPORTS', 'AVAILABILITY_RULES', 'AVAILABILITY_EXCEPTIONS', 'APPOINTMENTS', 'MEETINGS', 'CLIENTS', 'INVOICES', 'CVS', 'RESUME_STUDIOS'];
+    private const array MODULES = ['USERS', 'ROLES', 'PERMISSIONS', 'COMPANY_DATA', 'BLOG_CATEGORIES', 'POSTS', 'SOCIAL_MEDIA', 'CAMPAIGNS', 'CONTACT_SUPPORTS', 'AVAILABILITY_RULES', 'AVAILABILITY_EXCEPTIONS', 'APPOINTMENTS', 'MEETINGS', 'CLIENTS', 'INVOICES', 'CVS', 'RESUME_STUDIOS', 'PRODUCTS', 'ENROLLMENTS', 'STUDENTS', 'PORTFOLIOS'];
 
     /**
      * Modules with the same CRUD shape as {@see self::MODULES} but no export
@@ -32,7 +32,7 @@ class RolePermissionSeeder extends Seeder
      *
      * @var list<string>
      */
-    private const array NO_EXPORT_MODULES = ['PORTFOLIOS', 'SERVICES', 'STUDENTS'];
+    private const array NO_EXPORT_MODULES = ['SERVICES'];
 
     /**
      * @var list<string>
@@ -77,6 +77,9 @@ class RolePermissionSeeder extends Seeder
         'INVOICES',
         'CVS',
         'RESUME_STUDIOS',
+        'PRODUCTS',
+        'ENROLLMENTS',
+        'STUDENTS',
     ];
 
     /**
@@ -88,11 +91,12 @@ class RolePermissionSeeder extends Seeder
 
     /**
      * CRM modules without an export endpoint yet (same shape as
-     * {@see self::NO_EXPORT_MODULES}).
+     * {@see self::NO_EXPORT_MODULES}). Empty while every ADMIN CRM module
+     * ships EXPORT.
      *
      * @var list<string>
      */
-    private const array ADMIN_NO_EXPORT_MODULES = ['STUDENTS'];
+    private const array ADMIN_NO_EXPORT_MODULES = [];
 
     /**
      * Access-management permissions on the USERS module. Kept separate from the
@@ -131,6 +135,25 @@ class RolePermissionSeeder extends Seeder
      * @var list<string>
      */
     private const array RESUME_STUDIOS_RUN_ACTIONS = ['RUN'];
+
+    /**
+     * Starting the AI content-generation pipeline for a product is a distinct,
+     * metered action from editing the catalog row — same reasoning as
+     * {@see self::RESUME_STUDIOS_RUN_ACTIONS}. It fans out into one LLM call
+     * per topic, so holding UPDATE_PRODUCTS must NOT imply the ability to
+     * spend that budget.
+     *
+     * @var list<string>
+     */
+    private const array PRODUCTS_GENERATE_ACTIONS = ['GENERATE'];
+
+    /**
+     * Pulling the generated course package (MD / PDF / ZIP) off the private
+     * disk. Separate from EXPORT_PRODUCTS, which is the catalog spreadsheet.
+     *
+     * @var list<string>
+     */
+    private const array PRODUCTS_DOWNLOAD_ACTIONS = ['DOWNLOAD'];
 
     /**
      * Read-only modules (immutable audit trail): only browse / view / export.
@@ -218,6 +241,8 @@ class RolePermissionSeeder extends Seeder
             ...$this->matrix(['SOCIAL_MEDIA'], self::SOCIAL_MEDIA_PUBLISH_ACTIONS),
             ...$this->matrix(['CAMPAIGNS'], self::CAMPAIGNS_PUBLISH_ACTIONS),
             ...$this->matrix(['RESUME_STUDIOS'], self::RESUME_STUDIOS_RUN_ACTIONS),
+            ...$this->matrix(['PRODUCTS'], self::PRODUCTS_GENERATE_ACTIONS),
+            ...$this->matrix(['PRODUCTS'], self::PRODUCTS_DOWNLOAD_ACTIONS),
             ...$this->matrix(self::READ_ONLY_MODULES, self::READ_ONLY_ACTIONS),
             ...$this->matrix(['BACKUPS'], self::BACKUP_ACTIONS),
             ...$this->matrix(['VIDEO_EXPORTS'], self::VIDEO_EXPORT_ACTIONS),
@@ -285,7 +310,8 @@ class RolePermissionSeeder extends Seeder
     /**
      * ADMIN manages the availability modules directly (full CRUD + export).
      * Additive and idempotent — never wipes grants the role accrues elsewhere.
-     * Resume Studio also needs RUN (pipeline start) beyond the standard CRUD set.
+     * Resume Studio also needs RUN (pipeline start) and Products GENERATE +
+     * DOWNLOAD (content pipeline + package retrieval) beyond the standard set.
      */
     private function grantModulesToAdmin(): void
     {
@@ -294,6 +320,8 @@ class RolePermissionSeeder extends Seeder
             ...$this->matrix(self::ADMIN_NO_EXPORT_MODULES, self::NO_EXPORT_ACTIONS),
             ...$this->matrix(self::ADMIN_TOOL_MODULES, self::VIDEO_EXPORT_ACTIONS),
             ...$this->matrix(['RESUME_STUDIOS'], self::RESUME_STUDIOS_RUN_ACTIONS),
+            ...$this->matrix(['PRODUCTS'], self::PRODUCTS_GENERATE_ACTIONS),
+            ...$this->matrix(['PRODUCTS'], self::PRODUCTS_DOWNLOAD_ACTIONS),
         ];
 
         Role::query()

@@ -13,6 +13,7 @@ use Modules\Clients\Infrastructure\Persistence\Eloquent\Models\ClientEloquentMod
 use Modules\Invoices\Infrastructure\Persistence\Eloquent\Models\InvoiceEloquentModel;
 use Modules\Invoices\Infrastructure\Persistence\Eloquent\Models\InvoiceItemEloquentModel;
 use Modules\Invoices\Infrastructure\Queue\GenerateInvoicePdfJob;
+use Modules\Products\Infrastructure\Persistence\Eloquent\Models\ProductEloquentModel;
 use Modules\Services\Infrastructure\Persistence\Eloquent\Models\ServiceEloquentModel;
 use Tests\TestCase;
 
@@ -384,6 +385,39 @@ final class InvoiceManagementTest extends TestCase
 
         $invoice = InvoiceEloquentModel::query()->where('invoice_number', '005/2026')->firstOrFail();
         $this->assertSame($service->id, $invoice->items->first()->service_id);
+    }
+
+    public function test_product_uuid_is_linked_on_invoice(): void
+    {
+        $admin = $this->superAdmin();
+        $client = ClientEloquentModel::factory()->active()->create();
+        $product = ProductEloquentModel::factory()
+            ->classroom()
+            ->create([
+                'title' => 'Copilot Classroom',
+                'price' => 1200,
+                'user_id' => $admin->id,
+            ]);
+
+        $this->actingAs($admin)
+            ->post('/invoices', $this->validPayload($client, [
+                'invoice_number' => '006/2026',
+                'product_uuid' => $product->uuid,
+                'items' => [
+                    [
+                        'title' => 'Copilot Classroom',
+                        'description' => 'Classroom delivery',
+                        'quantity' => 1,
+                        'unit_price' => 1200,
+                        'service_uuid' => null,
+                        'sort_order' => 0,
+                    ],
+                ],
+            ]))
+            ->assertRedirect();
+
+        $invoice = InvoiceEloquentModel::query()->where('invoice_number', '006/2026')->firstOrFail();
+        $this->assertSame($product->id, $invoice->product_id);
     }
 
     public function test_user_role_cannot_create_invoices(): void

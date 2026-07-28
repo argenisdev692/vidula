@@ -43,14 +43,13 @@ final readonly class UserController
         $filters = UserFilterData::validateAndCreate($request);
         $users = $list->handle($filters, min(max($request->integer('per_page', 15), 1), 100));
 
-        if ($request->expectsJson()) {
-            return response()->json($users);
-        }
-
-        return Inertia::render('users/Index', [
-            'users' => $users,
-            'filters' => $filters,
-        ]);
+        return match ($request->expectsJson()) {
+            true => response()->json($users),
+            false => Inertia::render('users/Index', [
+                'users' => $users,
+                'filters' => $filters,
+            ]),
+        };
     }
 
     public function show(
@@ -60,20 +59,15 @@ final readonly class UserController
     ): InertiaResponse|JsonResponse {
         $user = $get->handle($uuid);
 
-        if ($request->expectsJson()) {
-            return response()->json(['data' => $user]);
-        }
-
-        // Read-only detail: the role, the DIRECT grants, and the full EFFECTIVE set
-        // (direct + inherited via the role) for display only. Access management
-        // (assigning the role and direct permissions) lives on the dedicated Access
-        // screen ({@see permissions()}).
-        return Inertia::render('users/Show', [
-            'user' => $user,
-            'userRoles' => $user->getRoleNames()->all(),
-            'directPermissions' => $user->getDirectPermissions()->pluck('name')->all(),
-            'effectivePermissions' => $user->getAllPermissions()->pluck('name')->all(),
-        ]);
+        return match ($request->expectsJson()) {
+            true => response()->json(['data' => $user]),
+            false => Inertia::render('users/Show', [
+                'user' => $user,
+                'userRoles' => $user->getRoleNames()->all(),
+                'directPermissions' => $user->getDirectPermissions()->pluck('name')->all(),
+                'effectivePermissions' => $user->getAllPermissions()->pluck('name')->all(),
+            ]),
+        };
     }
 
     public function create(Request $request, RoleRepositoryPort $roles): InertiaResponse

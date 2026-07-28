@@ -21,6 +21,7 @@ final readonly class GetMeetingHandler
         private Cache $cache,
     ) {}
 
+    #[\NoDiscard]
     public function handle(string $uuid): MeetingEloquentModel
     {
         return $this->cache->remember(

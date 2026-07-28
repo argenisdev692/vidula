@@ -76,6 +76,14 @@ final class JobSearchConfigEloquentModel extends Model
     }
 
     /**
+     * @return HasMany<JobMatchEloquentModel, $this>
+     */
+    public function jobMatches(): HasMany
+    {
+        return $this->hasMany(JobMatchEloquentModel::class, 'job_search_config_id');
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array

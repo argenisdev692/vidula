@@ -10,24 +10,29 @@
  * Transparent-grid + action-pill styling mirrors the Roles / Blog Categories
  * tables (the project's DataTable reference).
  */
-import type { DataTablePageEvent } from 'primevue/datatable';
+import type { DataTablePageEvent, DataTableSortEvent } from 'primevue/datatable';
 import Column from 'primevue/column';
 import DataTable from '@/volt/DataTable.vue';
 import Tag from '@/volt/Tag.vue';
 import ActionButton from '@/common/data-table/ActionButton.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
-import { formatDate } from '@/modules/users/helpers/formatDate';
+import { formatDateShort } from '@/modules/users/helpers/formatDate';
 import { resolveUserStatus, USER_STATUS_META } from '@/modules/users/helpers/userStatus';
 import type { User } from '@/modules/users/types';
 
-const props = defineProps<{
-    data: User[];
-    total: number;
-    perPage: number;
-    first: number;
-    loading: boolean;
-    selection: User[];
-}>();
+const props = withDefaults(
+    defineProps<{
+        data: User[];
+        total: number;
+        perPage: number;
+        first: number;
+        loading: boolean;
+        selection: User[];
+        sortField?: string;
+        sortOrder?: number;
+    }>(),
+    { sortField: 'created_at', sortOrder: -1 },
+);
 
 const emit = defineEmits<{
     edit: [user: User];
@@ -35,6 +40,7 @@ const emit = defineEmits<{
     restore: [user: User];
     resend: [user: User];
     page: [event: DataTablePageEvent];
+    sort: [event: DataTableSortEvent];
     'update:selection': [rows: User[]];
 }>();
 
@@ -58,16 +64,20 @@ function rowClass(row: User): string | undefined {
             data-key="uuid"
             lazy
             paginator
+            removable-sort
             :rows="props.perPage"
             :total-records="props.total"
             :first="props.first"
             :loading="props.loading"
             :row-class="rowClass"
             :selection="props.selection"
+            :sort-field="props.sortField"
+            :sort-order="props.sortOrder"
             paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport"
             current-page-report-template="{first}–{last} of {totalRecords}"
             @update:selection="(rows: User[]) => emit('update:selection', rows)"
             @page="(event: DataTablePageEvent) => emit('page', event)"
+            @sort="(event: DataTableSortEvent) => emit('sort', event)"
         >
             <template #empty>
                 <div class="table-empty">
@@ -78,7 +88,7 @@ function rowClass(row: User): string | undefined {
 
             <Column selection-mode="multiple" header-style="width: 3rem" :exportable="false" />
 
-            <Column field="first_name" header="User">
+            <Column field="first_name" header="User" sortable>
                 <template #body="{ data }">
                     <div class="user-name">
                         <i class="pi pi-user" aria-hidden="true" />
@@ -92,7 +102,7 @@ function rowClass(row: User): string | undefined {
                 </template>
             </Column>
 
-            <Column field="email" header="Email">
+            <Column field="email" header="Email" sortable>
                 <template #body="{ data }">
                     <span class="mono">{{ (data as User).email }}</span>
                 </template>
@@ -124,9 +134,9 @@ function rowClass(row: User): string | undefined {
                 </template>
             </Column>
 
-            <Column field="created_at" header="Created">
+            <Column field="created_at" header="Created" sortable>
                 <template #body="{ data }">
-                    <span class="mono">{{ formatDate((data as User).created_at) }}</span>
+                    <span class="mono">{{ formatDateShort((data as User).created_at) }}</span>
                 </template>
             </Column>
 

@@ -7,7 +7,9 @@ namespace Modules\Users\Providers;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Modules\Users\Domain\Ports\InvitationLinkPort;
+use Modules\Users\Domain\Ports\UserInvitationNotifierPort;
 use Modules\Users\Domain\Ports\UserRepositoryPort;
+use Modules\Users\Infrastructure\Invitation\LaravelUserInvitationNotifier;
 use Modules\Users\Infrastructure\Invitation\SignedUrlInvitationAdapter;
 use Modules\Users\Infrastructure\Persistence\Repositories\EloquentUserRepository;
 
@@ -17,6 +19,7 @@ final class UsersServiceProvider extends ServiceProvider
     {
         $this->app->bind(UserRepositoryPort::class, EloquentUserRepository::class);
         $this->app->bind(InvitationLinkPort::class, SignedUrlInvitationAdapter::class);
+        $this->app->bind(UserInvitationNotifierPort::class, LaravelUserInvitationNotifier::class);
     }
 
     public function boot(): void

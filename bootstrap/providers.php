@@ -17,10 +17,12 @@ use Modules\Clients\Providers\ClientsServiceProvider;
 use Modules\Company\Providers\CompanyServiceProvider;
 use Modules\ContactSupport\Providers\ContactSupportServiceProvider;
 use Modules\Cvs\Providers\CvsServiceProvider;
+use Modules\Enrollments\Providers\EnrollmentsServiceProvider;
 use Modules\Invoices\Providers\InvoicesServiceProvider;
 use Modules\Meeting\Providers\MeetingServiceProvider;
 use Modules\Portfolio\Providers\PortfolioServiceProvider;
 use Modules\Post\Providers\PostServiceProvider;
+use Modules\Products\Providers\ProductsServiceProvider;
 use Modules\Services\Providers\ServicesServiceProvider;
 use Modules\SocialMedia\Providers\SocialMediaServiceProvider;
 use Modules\Students\Providers\StudentsServiceProvider;
@@ -46,10 +48,12 @@ return [
     CompanyServiceProvider::class,
     ContactSupportServiceProvider::class,
     CvsServiceProvider::class,
+    EnrollmentsServiceProvider::class,
     InvoicesServiceProvider::class,
     MeetingServiceProvider::class,
     PortfolioServiceProvider::class,
     PostServiceProvider::class,
+    ProductsServiceProvider::class,
     ServicesServiceProvider::class,
     SocialMediaServiceProvider::class,
     StudentsServiceProvider::class,

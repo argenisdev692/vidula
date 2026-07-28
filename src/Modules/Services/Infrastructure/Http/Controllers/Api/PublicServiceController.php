@@ -13,6 +13,8 @@ use Modules\Services\Application\Queries\ListPublicServicesHandler;
  * (BACKEND-PHP §4.1 + OWASP §12 property-level authorization — never a raw
  * `Model::all()`). Reachable by anonymous internet traffic, hence the tighter
  * throttle at the route and no `auth`/`permission` middleware.
+ * Scramble documents via return types + MiddlewareAuthSecurityStrategy
+ * (no auth middleware → public `security: []`) — no manual `@OA\*` annotations.
  */
 final readonly class PublicServiceController
 {

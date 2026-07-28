@@ -4,15 +4,25 @@ declare(strict_types=1);
 
 namespace Modules\Clients\Application\Commands;
 
+use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Support\Facades\DB;
+use Modules\Clients\Application\Support\ClientCacheKeys;
 use Modules\Clients\Domain\Ports\ClientRepositoryPort;
 
 final readonly class RestoreClientHandler
 {
-    public function __construct(private ClientRepositoryPort $clients) {}
+    public function __construct(
+        private ClientRepositoryPort $clients,
+        private Cache $cache,
+    ) {}
 
+    #[\NoDiscard]
     public function handle(string $uuid): bool
     {
-        return DB::transaction(fn () => $this->clients->restore($uuid));
+        $result = DB::transaction(fn () => $this->clients->restore($uuid));
+
+        $this->cache->forget(ClientCacheKeys::client($uuid));
+
+        return $result;
     }
 }

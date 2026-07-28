@@ -67,6 +67,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Mandatory Two-Factor Authentication
+    |--------------------------------------------------------------------------
+    |
+    | When `mandatory` is true, EnsureTwoFactorEnabled redirects privileged
+    | roles listed in `mandatory_roles` to the 2FA setup page until they have
+    | confirmed TOTP (prompt §3). Tests flip this off via AUTH_MANDATORY_2FA
+    | so the suite does not need every admin fixture to enroll 2FA.
+    |
+    */
+
+    'two_factor' => [
+        'mandatory' => (bool) env('AUTH_MANDATORY_2FA', true),
+        'mandatory_roles' => ['SUPER_ADMIN', 'ADMIN'],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | One-Time Passwords (6-digit codes)
     |--------------------------------------------------------------------------
     |

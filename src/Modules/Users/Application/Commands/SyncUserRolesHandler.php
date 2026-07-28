@@ -6,6 +6,7 @@ namespace Modules\Users\Application\Commands;
 
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Modules\Authorization\Domain\SystemRoles;
 use Modules\Users\Domain\AssignableAccess;
 use Shared\Domain\Ports\AuditPort;
 
@@ -24,7 +25,11 @@ final readonly class SyncUserRolesHandler
      */
     public function handle(User $actor, User $target, array $roles): User
     {
-        AssignableAccess::assertRolesAllowed($actor, $roles);
+        AssignableAccess::assertRolesAllowed(
+            $actor->hasRole(SystemRoles::SUPER_ADMIN),
+            array_values($actor->getRoleNames()->all()),
+            $roles,
+        );
 
         DB::transaction(fn () => $target->syncRoles($roles));
 

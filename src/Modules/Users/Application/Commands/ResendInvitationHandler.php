@@ -7,7 +7,7 @@ namespace Modules\Users\Application\Commands;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Modules\Users\Domain\Ports\InvitationLinkPort;
-use Modules\Users\Infrastructure\Notifications\UserInvitationNotification;
+use Modules\Users\Domain\Ports\UserInvitationNotifierPort;
 
 /**
  * Re-emails a fresh signed activation link to a still-Pending user (e.g. the
@@ -17,7 +17,10 @@ final readonly class ResendInvitationHandler
 {
     private const LINK_TTL_HOURS = 72;
 
-    public function __construct(private InvitationLinkPort $links) {}
+    public function __construct(
+        private InvitationLinkPort $links,
+        private UserInvitationNotifierPort $notifier,
+    ) {}
 
     public function handle(User $user): void
     {
@@ -25,6 +28,6 @@ final readonly class ResendInvitationHandler
 
         DB::transaction(fn () => $user->forceFill(['invited_at' => now()])->save());
 
-        $user->notify(new UserInvitationNotification($link, self::LINK_TTL_HOURS));
+        $this->notifier->send($user, $link, self::LINK_TTL_HOURS);
     }
 }

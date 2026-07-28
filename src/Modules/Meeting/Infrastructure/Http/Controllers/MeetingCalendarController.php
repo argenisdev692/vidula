@@ -19,8 +19,6 @@ use Modules\Meeting\Application\Queries\GetMeetingCalendarFeedHandler;
  */
 final readonly class MeetingCalendarController
 {
-    private const int MAX_DAYS = 92;
-
     public function __invoke(Request $request, GetMeetingCalendarFeedHandler $feed): JsonResponse
     {
         $validated = $request->validate([
@@ -30,9 +28,10 @@ final readonly class MeetingCalendarController
 
         $from = CarbonImmutable::parse($validated['start'] ?? CarbonImmutable::now()->startOfMonth());
         $to = CarbonImmutable::parse($validated['end'] ?? $from->endOfMonth());
+        $maxDays = max(1, (int) config('meeting.calendar_max_days', 92));
 
-        if ($from->diffInDays($to) > self::MAX_DAYS) {
-            $to = $from->addDays(self::MAX_DAYS);
+        if ($from->diffInDays($to) > $maxDays) {
+            $to = $from->addDays($maxDays);
         }
 
         return response()->json(['data' => $feed->handle($from, $to)->values()]);

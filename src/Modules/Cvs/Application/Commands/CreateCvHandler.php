@@ -9,8 +9,8 @@ use Illuminate\Validation\ValidationException;
 use Modules\Cvs\Application\DTOs\CvData;
 use Modules\Cvs\Domain\Enums\CvFileType;
 use Modules\Cvs\Domain\Ports\CvRepositoryPort;
+use Modules\Cvs\Domain\Ports\CvTextExtractorPort;
 use Modules\Cvs\Infrastructure\Persistence\Eloquent\Models\CvEloquentModel;
-use Modules\Cvs\Infrastructure\Services\CvTextExtractor;
 use Shared\Domain\Ports\StoragePort;
 
 /**
@@ -21,7 +21,7 @@ final readonly class CreateCvHandler
     public function __construct(
         private CvRepositoryPort $cvs,
         private StoragePort $storage,
-        private CvTextExtractor $extractor,
+        private CvTextExtractorPort $extractor,
     ) {}
 
     #[\NoDiscard]

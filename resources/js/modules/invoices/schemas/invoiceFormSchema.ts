@@ -12,6 +12,7 @@ const invoiceItemSchema = z.object({
 export const invoiceFormSchema = z
     .object({
         client_uuid: z.string().uuid('Select a client'),
+        product_uuid: z.string().uuid().nullable(),
         invoice_number: z
             .string()
             .trim()

@@ -128,10 +128,14 @@ export interface UserFilters {
     status: UserStatus | null;
     date_from: string | null;
     date_to: string | null;
+    sort_field?: string;
+    sort_order?: number;
 }
 
 /** The full reactive query state driving the server-side DataTable. */
 export interface UserQuery extends UserFilters {
     page: number;
     per_page: number;
+    sort_field: string;
+    sort_order: number;
 }

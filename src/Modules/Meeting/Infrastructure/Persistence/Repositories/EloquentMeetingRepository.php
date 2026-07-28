@@ -6,7 +6,9 @@ namespace Modules\Meeting\Infrastructure\Persistence\Repositories;
 
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\LazyCollection;
 use Modules\Meeting\Application\DTOs\MeetingFilterData;
 use Modules\Meeting\Domain\Ports\MeetingRepositoryPort;
 use Modules\Meeting\Infrastructure\Persistence\Eloquent\Models\MeetingEloquentModel;
@@ -31,14 +33,14 @@ final readonly class EloquentMeetingRepository implements MeetingRepositoryPort
 
     public function paginate(MeetingFilterData $filters, int $perPage): LengthAwarePaginator
     {
-        return MeetingEloquentModel::query()
-            ->when($filters->status === 'suspended', fn ($q) => $q->onlyTrashed())
-            ->applyFilters($filters)
-            ->withCount('attendees')
-            ->with('organizer:id,uuid,first_name,last_name')
-            ->orderByDesc('starts_at')
+        return $this->filteredQuery($filters)
             ->paginate($perPage)
             ->withQueryString();
+    }
+
+    public function lazyForExport(MeetingFilterData $filters): LazyCollection
+    {
+        return $this->filteredQuery($filters)->lazy();
     }
 
     public function findByUuid(string $uuid): ?MeetingEloquentModel
@@ -93,5 +95,41 @@ final readonly class EloquentMeetingRepository implements MeetingRepositoryPort
     public function restore(string $uuid): bool
     {
         return (bool) MeetingEloquentModel::onlyTrashed()->where('uuid', $uuid)->restore();
+    }
+
+    public function ownedUuidsAmong(array $uuids, int $organizerId, bool $onlyTrashed = false): array
+    {
+        if ($uuids === []) {
+            return [];
+        }
+
+        $query = $onlyTrashed
+            ? MeetingEloquentModel::onlyTrashed()
+            : MeetingEloquentModel::query();
+
+        /** @var list<string> $owned */
+        $owned = $query
+            ->where('organizer_id', $organizerId)
+            ->whereIn('uuid', $uuids)
+            ->pluck('uuid')
+            ->all();
+
+        return $owned;
+    }
+
+    /**
+     * Shared list/export query builder (BACKEND-PHP §4.1 + §5.2 / §8) —
+     * soft-delete status, filters, eager loads, and client sort.
+     *
+     * @return Builder<MeetingEloquentModel>
+     */
+    private function filteredQuery(MeetingFilterData $filters): Builder
+    {
+        return MeetingEloquentModel::query()
+            ->when($filters->status === 'suspended', fn ($q) => $q->onlyTrashed())
+            ->applyFilters($filters)
+            ->withCount('attendees')
+            ->with('organizer:id,uuid,first_name,last_name')
+            ->orderBy($filters->resolvedSortField(), $filters->resolvedSortDirection());
     }
 }

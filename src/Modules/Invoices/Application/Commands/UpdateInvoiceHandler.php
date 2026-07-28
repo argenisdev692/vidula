@@ -34,6 +34,7 @@ final readonly class UpdateInvoiceHandler
         $serviceIds = $this->invoices->mapServiceIdsByUuid(
             InvoiceTotalsCalculator::collectServiceUuids($data->items),
         );
+        $productId = $this->invoices->findProductIdByUuid($data->productUuid);
         $totals = InvoiceTotalsCalculator::compute($data, $serviceIds);
 
         if ($this->invoices->numberExists(
@@ -49,6 +50,7 @@ final readonly class UpdateInvoiceHandler
 
         $updated = DB::transaction(fn () => $this->invoices->updateWithItems($invoice, [
             'client_id' => $client->id,
+            'product_id' => $productId,
             'invoice_number' => $data->invoiceNumber,
             'sequence' => $parsed['sequence'],
             'year' => $parsed['year'],

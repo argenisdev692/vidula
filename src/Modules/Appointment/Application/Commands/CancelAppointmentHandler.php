@@ -24,6 +24,7 @@ final readonly class CancelAppointmentHandler
         private Cache $cache,
     ) {}
 
+    #[\NoDiscard]
     public function handle(AppointmentEloquentModel $appointment, CancelAppointmentData $data): AppointmentEloquentModel
     {
         $notes = $data->reason !== null

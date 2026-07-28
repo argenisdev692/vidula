@@ -33,12 +33,13 @@ final readonly class CvController
         $filters = CvFilterData::validateAndCreate($request);
         $cvs = $list->handle($filters, min(max($request->integer('per_page', 15), 1), 100));
 
-        return $request->expectsJson()
-            ? response()->json($cvs)
-            : Inertia::render('cvs/Index', ['cvs' => $cvs, 'filters' => $filters]);
+        return match ($request->expectsJson()) {
+            true => response()->json($cvs),
+            false => Inertia::render('cvs/Index', ['cvs' => $cvs, 'filters' => $filters]),
+        };
     }
 
-    public function show(string $uuid, GetCvHandler $get, StoragePort $storage): InertiaResponse|JsonResponse
+    public function show(Request $request, string $uuid, GetCvHandler $get, StoragePort $storage): InertiaResponse|JsonResponse
     {
         $cv = $get->handle($uuid);
         $downloadUrl = $storage->temporaryUrl($cv->file_path, now()->addMinutes(15));
@@ -48,9 +49,10 @@ final readonly class CvController
             'download_url' => $downloadUrl,
         ];
 
-        return request()->expectsJson()
-            ? response()->json(['data' => $payload])
-            : Inertia::render('cvs/Show', ['cv' => $payload]);
+        return match ($request->expectsJson()) {
+            true => response()->json(['data' => $payload]),
+            false => Inertia::render('cvs/Show', ['cv' => $payload]),
+        };
     }
 
     public function store(Request $request, CvData $data, CreateCvHandler $create): RedirectResponse
@@ -62,7 +64,7 @@ final readonly class CvController
 
     public function update(string $uuid, CvData $data, GetCvHandler $get, UpdateCvHandler $update): RedirectResponse
     {
-        $update->handle($get->handle($uuid), $data);
+        (void) $update->handle($get->handle($uuid), $data);
 
         return back()->with('success', __('CV updated.'));
     }

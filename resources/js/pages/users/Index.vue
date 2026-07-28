@@ -3,16 +3,19 @@
  * Users — admin user management over a soft-deletable account with a three-state
  * lifecycle (Pending → Active, plus Suspended when soft-deleted).
  *
- * The shared list mechanics live in {@see useResourceList}, the confirm dialogs
- * in {@see useConfirmAction}, and the page chrome in {@see CrudIndexShell}. Unlike
- * the sibling modules, invite & edit are dedicated pages (not a modal), so create
- * / edit navigate via `router.visit`; and a row carries a third `resend` action
- * alongside suspend / restore. Success / error feedback flows through the backend
- * flash surfaced app-wide by AppLayout. Gated by VIEW_ANY_USERS; every mutating
- * control by its own permission.
+ * List data arrives as Inertia props (not a separate JSON API), so the table is
+ * fed by Inertia partial reloads via {@see useResourceList} — the same convention
+ * as Clients / Activity Log. Pinia Colada is reserved for JSON `/data/admin/*`
+ * surfaces; using it here would bypass Inertia (YAGNI).
+ *
+ * Confirm dialogs live in {@see useConfirmAction}; page chrome in {@see CrudIndexShell}.
+ * Invite & edit are dedicated pages (not a modal). Invitation mail is sent through
+ * Brevo (`UsesBrevoMailer`) — "Resend invitation" is the UX verb, not the Resend.com
+ * provider. Gated by VIEW_ANY_USERS; every mutating control by its own permission.
  */
-import { computed, reactive } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { router, useRemember } from '@inertiajs/vue3';
+import type { DataTableSortEvent } from 'primevue/datatable';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import { useAuthorization } from '@/modules/auth/composables/useAuthorization';
 import type { FilterCriteria, FilterField } from '@/common/data-table/AdvancedFilter.vue';
@@ -39,15 +42,20 @@ const canExport = computed<boolean>(() => hasPermission('EXPORT_USERS'));
 const canBulkDelete = computed<boolean>(() => hasPermission('BULK_DELETE_USERS'));
 const canBulkRestore = computed<boolean>(() => hasPermission('BULK_RESTORE_USERS'));
 
-/** The reactive request state — seeded once from the server-echoed props. */
-const query = reactive<UserQuery>({
-    search: props.filters.search,
-    status: props.filters.status,
-    date_from: props.filters.date_from,
-    date_to: props.filters.date_to,
-    page: props.users.current_page,
-    per_page: props.users.per_page,
-});
+/** Remembered across history back/forward — seeded from the server-echoed props. */
+const query = useRemember<UserQuery>(
+    {
+        search: props.filters.search,
+        status: props.filters.status,
+        date_from: props.filters.date_from,
+        date_to: props.filters.date_to,
+        sort_field: props.filters.sort_field ?? 'created_at',
+        sort_order: props.filters.sort_order === 1 ? 1 : -1,
+        page: props.users.current_page,
+        per_page: props.users.per_page,
+    },
+    'users.index',
+);
 
 function applyCriteria(target: UserQuery, criteria: FilterCriteria): void {
     target.search = criteria.search || null;
@@ -58,7 +66,7 @@ function applyCriteria(target: UserQuery, criteria: FilterCriteria): void {
     target.date_to = range?.[1] ? toLocalIsoDate(range[1]) : null;
 }
 
-const { loading, selection, firstRecord, recordLabel, isSuspendedView, resetSelection, onFilters, onPage, openExport } =
+const { loading, selection, firstRecord, recordLabel, isSuspendedView, resetSelection, reload, onFilters, onPage, openExport } =
     useResourceList<User, UserQuery>({
         baseUrl: '/users',
         propKey: 'users',
@@ -68,6 +76,14 @@ const { loading, selection, firstRecord, recordLabel, isSuspendedView, resetSele
         applyCriteria,
         exportUrl: buildUserExportUrl,
     });
+
+function onSort(event: DataTableSortEvent): void {
+    const field = typeof event.sortField === 'string' ? event.sortField : 'created_at';
+    query.sort_field = field;
+    query.sort_order = event.sortOrder === 1 ? 1 : -1;
+    query.page = 1;
+    reload();
+}
 
 const canBulkAct = computed<boolean>(() => (isSuspendedView.value ? canBulkRestore.value : canBulkDelete.value));
 
@@ -231,7 +247,10 @@ const filterFields: FilterField[] = [
                 :per-page="users.per_page"
                 :first="firstRecord"
                 :loading="loading"
+                :sort-field="query.sort_field"
+                :sort-order="query.sort_order"
                 @page="onPage"
+                @sort="onSort"
                 @edit="openEdit"
                 @delete="(user: User) => askRow({ kind: 'delete', user })"
                 @restore="(user: User) => askRow({ kind: 'restore', user })"

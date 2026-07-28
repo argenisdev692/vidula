@@ -8,7 +8,7 @@ import { computed } from 'vue';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import DetailCard from '@/common/ui/DetailCard.vue';
 import StatusBadge from '@/common/ui/StatusBadge.vue';
-import { formatDate } from '@/modules/cvs/helpers/formatDate';
+import { formatDateShort } from '@/modules/cvs/helpers/formatDate';
 import type { Cv } from '@/modules/cvs/types';
 
 defineOptions({ layout: AppLayout });
@@ -74,7 +74,7 @@ const ownerName = computed<string>(() => {
             </div>
             <div class="fact">
                 <dt>Created</dt>
-                <dd class="mono">{{ formatDate(cv.created_at) }}</dd>
+                <dd class="mono">{{ formatDateShort(cv.created_at) }}</dd>
             </div>
             <div class="fact fact--wide">
                 <dt>Download</dt>
@@ -85,11 +85,12 @@ const ownerName = computed<string>(() => {
                         class="download-link"
                         target="_blank"
                         rel="noopener noreferrer"
+                        aria-label="Download signed CV file"
                     >
                         <i class="pi pi-download" aria-hidden="true" />
                         Download signed file
                     </a>
-                    <span v-else>—</span>
+                    <span v-else class="muted">—</span>
                 </dd>
             </div>
             <div v-if="cv.raw_text" class="fact fact--wide">
@@ -150,12 +151,26 @@ const ownerName = computed<string>(() => {
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
     color: var(--accent-primary);
     text-decoration: none;
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    transition: background var(--transition), border-color var(--transition);
 }
 
 .download-link:hover {
-    text-decoration: underline;
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    border-color: var(--accent-primary);
+    text-decoration: none;
+}
+
+.download-link:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
 }
 
 .raw-text {

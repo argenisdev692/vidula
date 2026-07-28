@@ -4,6 +4,8 @@ import CursorOrb from '@/modules/app/components/CursorOrb.vue';
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue';
 import { useCompany } from '@/modules/app/composables/useCompany';
 import { apiFetch } from '@/lib/http';
+import { loginFormSchema, emailOnlySchema } from '@/modules/auth/schemas/loginFormSchema';
+import { resetPasswordFormSchema } from '@/modules/auth/schemas/resetPasswordFormSchema';
 import type { SharedProps } from '@/types/inertia';
 
 /**
@@ -101,19 +103,39 @@ const socials = computed<Social[]>(() =>
 );
 
 // ── Helpers ──
-function isValidEmail(value: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
+const emailError = computed(() => {
+  if (!email.value) {
+    return '';
+  }
+  const parsed = emailOnlySchema.safeParse({ email: email.value });
+  return parsed.success ? '' : (parsed.error.issues[0]?.message ?? 'Please enter a valid email address');
+});
+const passwordError = computed(() => {
+  if (!password.value) {
+    return '';
+  }
+  const parsed = loginFormSchema.safeParse({
+    email: email.value || 'placeholder@example.com',
+    password: password.value,
+  });
+  const issue = parsed.success
+    ? undefined
+    : parsed.error.issues.find((i) => i.path[0] === 'password');
+  return issue?.message ?? '';
+});
 
-const emailError = computed(() =>
-  !email.value ? '' : !isValidEmail(email.value) ? 'Please enter a valid email address' : '',
+const isFormValid = computed(() =>
+  loginFormSchema.safeParse({
+    email: email.value,
+    password: password.value,
+    remember: rememberMe.value,
+  }).success,
 );
-const passwordError = computed(() =>
-  !password.value ? '' : password.value.length < 6 ? 'Password must be at least 6 characters' : '',
-);
-
-const isFormValid = computed(() => isValidEmail(email.value) && password.value.length >= 6);
 const canSubmitPassword = computed(() => isFormValid.value && !isLoading.value);
+
+function isValidEmail(value: string): boolean {
+  return emailOnlySchema.safeParse({ email: value }).success;
+}
 
 const emailOtpCode = computed(() => emailOtpDigits.value.join(''));
 const canVerifyEmailOtp = computed(() => emailOtpCode.value.length === 6 && !isLoading.value);
@@ -121,14 +143,36 @@ const canVerifyEmailOtp = computed(() => emailOtpCode.value.length === 6 && !isL
 const totpCode = computed(() => totpDigits.value.join(''));
 const canVerifyTotp = computed(() => totpCode.value.length === 6 && !isLoading.value);
 
-const canSubmitReset = computed(() => {
-  const code = resetCode.value.trim();
-  return (
-    code.length >= 4 &&
-    newPassword.value.length >= 6 &&
-    newPassword.value === confirmPassword.value &&
-    !isLoading.value
-  );
+const canSubmitReset = computed(() =>
+  resetPasswordFormSchema.safeParse({
+    email: forgotEmail.value,
+    code: resetCode.value,
+    password: newPassword.value,
+    password_confirmation: confirmPassword.value,
+  }).success && !isLoading.value,
+);
+
+const newPasswordError = computed(() => {
+  if (!newPassword.value) {
+    return '';
+  }
+  const parsed = resetPasswordFormSchema.safeParse({
+    email: forgotEmail.value || 'placeholder@example.com',
+    code: resetCode.value || '1234',
+    password: newPassword.value,
+    password_confirmation: confirmPassword.value || newPassword.value,
+  });
+  const issue = parsed.success
+    ? undefined
+    : parsed.error.issues.find((i) => i.path[0] === 'password');
+  return issue?.message ?? '';
+});
+
+const confirmPasswordError = computed(() => {
+  if (!confirmPassword.value) {
+    return '';
+  }
+  return confirmPassword.value !== newPassword.value ? 'Passwords do not match' : '';
 });
 
 // Clear the server error as soon as the user edits any field.
@@ -979,8 +1023,8 @@ watch(
                           </svg>
                         </button>
                       </div>
-                      <span v-if="newPassword && newPassword.length < 6" class="error-message">
-                        Password must be at least 6 characters
+                      <span v-if="newPasswordError" class="error-message">
+                        {{ newPasswordError }}
                       </span>
                     </div>
 
@@ -1012,10 +1056,10 @@ watch(
                         </button>
                       </div>
                       <span
-                        v-if="confirmPassword && confirmPassword !== newPassword"
+                        v-if="confirmPasswordError"
                         class="error-message"
                       >
-                        Passwords do not match
+                        {{ confirmPasswordError }}
                       </span>
                     </div>
 

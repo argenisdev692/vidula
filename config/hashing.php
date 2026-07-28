@@ -10,14 +10,14 @@ return [
     |--------------------------------------------------------------------------
     |
     | This option controls the default hash driver used to hash passwords for
-    | your application. Argon2id is the project default (see rules.md); tests
-    | fall back to bcrypt for speed via HASH_DRIVER not being set.
+    | your application. Argon2id is the project default (OWASP / rules.md).
+    | PHPUnit sets HASH_DRIVER=bcrypt for speed.
     |
     | Supported: "bcrypt", "argon", "argon2id"
     |
     */
 
-    'driver' => env('HASH_DRIVER', 'bcrypt'),
+    'driver' => env('HASH_DRIVER', 'argon2id'),
 
     /*
     |--------------------------------------------------------------------------

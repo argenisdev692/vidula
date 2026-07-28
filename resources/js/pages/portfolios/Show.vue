@@ -23,7 +23,7 @@ import StatusBadge from '@/common/ui/StatusBadge.vue';
 import Tag from '@/volt/Tag.vue';
 import PortfolioGallery from './components/PortfolioGallery.vue';
 import { imagePreviewPt } from '@/common/media/imagePreviewPt';
-import { formatDate } from '@/modules/portfolio/helpers/formatDate';
+import { formatDateShort } from '@/modules/portfolio/helpers/formatDate';
 import type { Portfolio } from '@/modules/portfolio/types';
 
 defineOptions({ layout: AppLayout });
@@ -92,7 +92,7 @@ const gallery = computed(() => props.portfolio.gallery ?? []);
             </div>
             <div class="fact">
                 <dt>Published</dt>
-                <dd>{{ formatDate(portfolio.published_at) }}</dd>
+                <dd>{{ formatDateShort(portfolio.published_at) }}</dd>
             </div>
             <div class="fact">
                 <dt>Live URL</dt>
@@ -105,11 +105,11 @@ const gallery = computed(() => props.portfolio.gallery ?? []);
             </div>
             <div class="fact">
                 <dt>Created</dt>
-                <dd>{{ formatDate(portfolio.created_at) }}</dd>
+                <dd>{{ formatDateShort(portfolio.created_at) }}</dd>
             </div>
             <div class="fact">
                 <dt>Last updated</dt>
-                <dd>{{ formatDate(portfolio.updated_at ?? null) }}</dd>
+                <dd>{{ formatDateShort(portfolio.updated_at ?? null) }}</dd>
             </div>
             <div class="fact fact--wide">
                 <dt>Tech stack</dt>

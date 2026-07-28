@@ -19,14 +19,9 @@ import SecondaryButton from '@/volt/SecondaryButton.vue';
 import InputText from '@/volt/InputText.vue';
 import Dialog from '@/volt/Dialog.vue';
 import { apiFetch, HttpError } from '@/lib/http';
-
-interface TrustedDevice {
-  uuid: string;
-  user_agent: string | null;
-  ip_address: string | null;
-  last_used_at: string | null;
-  expires_at: string;
-}
+import { deviceLabel } from '@/modules/auth/helpers/deviceLabel';
+import { sanitizeTrustedSvg } from '@/modules/auth/helpers/sanitizeTrustedSvg';
+import type { TrustedDevice } from '@/modules/profile/types';
 
 const props = defineProps<{
   enabled: boolean;
@@ -89,7 +84,7 @@ async function loadEnrollment(): Promise<void> {
     apiFetch<{ svg: string }>('GET', '/user/two-factor-qr-code'),
     apiFetch<{ secretKey: string }>('GET', '/user/two-factor-secret-key'),
   ]);
-  qrSvg.value = qr.svg;
+  qrSvg.value = sanitizeTrustedSvg(qr.svg);
   secretKey.value = secret.secretKey;
   await loadRecoveryCodes();
 }
@@ -185,13 +180,6 @@ async function revealRecoveryCodes(): Promise<void> {
 
 function revokeDevice(uuid: string): void {
   router.delete(`/two-factor/trusted-devices/${uuid}`, { preserveScroll: true });
-}
-
-function deviceLabel(userAgent: string | null): string {
-  if (!userAgent) {
-    return 'Unknown device';
-  }
-  return userAgent.length > 60 ? `${userAgent.slice(0, 60)}…` : userAgent;
 }
 
 onMounted(() => {
@@ -401,7 +389,7 @@ onMounted(() => {
 .tfa__qr {
   align-self: center;
   padding: var(--space-4);
-  background: #fff;
+  background: var(--qr-canvas);
   border-radius: var(--radius-lg);
 }
 

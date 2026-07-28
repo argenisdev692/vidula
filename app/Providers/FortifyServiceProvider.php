@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
@@ -8,11 +10,12 @@ use App\Actions\Fortify\UpdateUserProfileInformation;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
-use Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable;
 use Laravel\Fortify\Fortify;
+use Modules\Auth\Infrastructure\Auth\TwoFactor\RedirectIfTwoFactorAuthenticatable;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -34,6 +37,7 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
         // Password reset uses the Auth module's OTP flow (PasswordResetController),
         // which reuses App\Actions\Fortify\ResetUserPassword directly.
+        // Module action honours the 30-day trusted-device cookie (prompt §3).
         Fortify::redirectUserForTwoFactorAuthenticationUsing(RedirectIfTwoFactorAuthenticatable::class);
 
         // The canonical login view is bound in Modules\Auth\AuthServiceProvider
@@ -47,8 +51,22 @@ class FortifyServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($throttleKey);
         });
 
+        // Prompt §2: 2FA challenge — max 5 attempts / user / 5 minutes.
         RateLimiter::for('two-factor', function (Request $request) {
-            return Limit::perMinute(5)->by($request->session()->get('login.id'));
+            return Limit::perMinutes(5, 5)->by($request->session()->get('login.id'));
+        });
+
+        // Prompt §2: registration — max 3 per IP / hour.
+        RateLimiter::for('register', function (Request $request) {
+            return Limit::perHour(3)->by($request->ip());
+        });
+
+        $this->app->booted(function (): void {
+            $route = Route::getRoutes()->getByName('register.store');
+
+            if ($route !== null) {
+                $route->middleware('throttle:register');
+            }
         });
     }
 }

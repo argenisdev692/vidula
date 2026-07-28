@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -29,15 +30,19 @@ use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\OutreachDr
 use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\RefinedCvEloquentModel;
 use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\StudioRunEloquentModel;
 use Modules\Auth\Infrastructure\Persistence\Eloquent\Models\LinkedSocialAccountEloquentModel;
+use Modules\Auth\Infrastructure\Persistence\Eloquent\Models\LoginAttemptEloquentModel;
 use Modules\Auth\Infrastructure\Persistence\Eloquent\Models\PasswordHistoryEloquentModel;
 use Modules\Auth\Infrastructure\Persistence\Eloquent\Models\TrustedDeviceEloquentModel;
 use Modules\Blog\Infrastructure\Persistence\Eloquent\Models\BlogCategoryEloquentModel;
 use Modules\Campaigns\Infrastructure\Persistence\Eloquent\Models\CampaignEloquentModel;
 use Modules\Clients\Infrastructure\Persistence\Eloquent\Models\ClientEloquentModel;
 use Modules\Cvs\Infrastructure\Persistence\Eloquent\Models\CvEloquentModel;
+use Modules\Invoices\Infrastructure\Persistence\Eloquent\Models\InvoiceEloquentModel;
 use Modules\Meeting\Infrastructure\Persistence\Eloquent\Models\MeetingEloquentModel;
 use Modules\Portfolio\Infrastructure\Persistence\Eloquent\Models\PortfolioEloquentModel;
 use Modules\Post\Infrastructure\Persistence\Eloquent\Models\PostEloquentModel;
+use Modules\Products\Infrastructure\Persistence\Eloquent\Models\ContentGenerationEloquentModel;
+use Modules\Products\Infrastructure\Persistence\Eloquent\Models\ProductEloquentModel;
 use Modules\Services\Infrastructure\Persistence\Eloquent\Models\ServiceEloquentModel;
 use Modules\SocialMedia\Infrastructure\Persistence\Eloquent\Models\SocialMediaContentEloquentModel;
 use Modules\Users\Application\DTOs\UserFilterData;
@@ -100,6 +105,8 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read int|null $roles_count
  * @property-read Collection<int, LinkedSocialAccountEloquentModel> $socialAccounts
  * @property-read int|null $social_accounts_count
+ * @property-read Collection<int, LoginAttemptEloquentModel> $loginAttempts
+ * @property-read int|null $login_attempts_count
  * @property-read Collection<int, Permission> $teams
  * @property-read int|null $teams_count
  * @property-read Collection<int, PersonalAccessToken> $tokens
@@ -185,6 +192,13 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read int|null $job_matches_count
  * @property-read Collection<int, OutreachDraftEloquentModel> $outreachDrafts
  * @property-read int|null $outreach_drafts_count
+ * @property-read Collection<int, ContentGenerationEloquentModel> $contentGenerations
+ * @property-read int|null $content_generations_count
+ * @property-read User|null $invitedByUser
+ * @property-read Collection<int, InvoiceEloquentModel> $invoices
+ * @property-read int|null $invoices_count
+ * @property-read Collection<int, ProductEloquentModel> $products
+ * @property-read int|null $products_count
  *
  * @mixin \Eloquent
  */
@@ -331,6 +345,16 @@ class User extends Authenticatable implements MustVerifyEmailContract
     }
 
     /**
+     * Admin who sent the invitation (UUID FK on `invited_by` → `users.uuid`).
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function invitedByUser(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'invited_by', 'uuid');
+    }
+
+    /**
      * @return HasMany<CompanyData, $this>
      */
     public function companyData(): HasMany
@@ -409,6 +433,36 @@ class User extends Authenticatable implements MustVerifyEmailContract
     }
 
     /**
+     * Catalog products owned by this user (classroom / video / service products).
+     *
+     * @return HasMany<ProductEloquentModel, $this>
+     */
+    public function products(): HasMany
+    {
+        return $this->hasMany(ProductEloquentModel::class);
+    }
+
+    /**
+     * Content-generation pipeline runs triggered by this user.
+     *
+     * @return HasMany<ContentGenerationEloquentModel, $this>
+     */
+    public function contentGenerations(): HasMany
+    {
+        return $this->hasMany(ContentGenerationEloquentModel::class);
+    }
+
+    /**
+     * Invoices issued by this user.
+     *
+     * @return HasMany<InvoiceEloquentModel, $this>
+     */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(InvoiceEloquentModel::class);
+    }
+
+    /**
      * Uploaded CVs owned by this user (PDF / Markdown resumes).
      *
      * @return HasMany<CvEloquentModel, $this>
@@ -476,6 +530,16 @@ class User extends Authenticatable implements MustVerifyEmailContract
     public function outreachDrafts(): HasMany
     {
         return $this->hasMany(OutreachDraftEloquentModel::class);
+    }
+
+    /**
+     * Authentication attempt audit rows keyed by the user's public UUID.
+     *
+     * @return HasMany<LoginAttemptEloquentModel, $this>
+     */
+    public function loginAttempts(): HasMany
+    {
+        return $this->hasMany(LoginAttemptEloquentModel::class, 'user_uuid', 'uuid');
     }
 
     /**

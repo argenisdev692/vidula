@@ -20,7 +20,7 @@ export type ClientLifecycleStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
 /** Soft-delete list filter. */
 export type ClientSoftStatus = 'active' | 'suspended';
 
-/** A row in the clients DataTable. */
+/** A row in the clients DataTable / detail page. */
 export interface Client {
     uuid: string;
     client_name: string;
@@ -38,7 +38,10 @@ export interface Client {
     notes: string | null;
     user_id: number;
     user?: ClientOwner | null;
+    invoices_count?: number;
+    products_count?: number;
     created_at: string | null;
+    updated_at?: string | null;
     deleted_at: string | null;
 }
 

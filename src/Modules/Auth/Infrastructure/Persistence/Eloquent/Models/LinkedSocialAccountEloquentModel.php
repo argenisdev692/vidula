@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 /**
  * A linked OAuth identity (Google / GitHub). Provider tokens are encrypted at
@@ -26,7 +28,7 @@ use Illuminate\Support\Str;
 ])]
 final class LinkedSocialAccountEloquentModel extends Model
 {
-    use SoftDeletes;
+    use LogsActivity, SoftDeletes;
 
     protected static function booted(): void
     {
@@ -55,5 +57,25 @@ final class LinkedSocialAccountEloquentModel extends Model
             'refresh_token' => 'encrypted',
             'token_expires_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Allowlist only — NEVER log token / refresh_token (encrypted secrets).
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'uuid',
+                'user_id',
+                'provider',
+                'provider_user_id',
+                'provider_email',
+                'avatar',
+                'token_expires_at',
+            ])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges()
+            ->useLogName('auth.social_account');
     }
 }

@@ -30,7 +30,7 @@ final readonly class UserExportController
 
         $rows = User::query()
             ->applyFilters($filters)
-            ->orderByDesc('created_at')
+            ->orderBy($filters->resolvedSortField(), $filters->resolvedSortDirection())
             ->lazy();
 
         return match ($format) {
@@ -45,7 +45,7 @@ final readonly class UserExportController
             default => $this->export->tabular(
                 "users.{$format}",
                 ['Name', 'Email', 'Username', 'Phone', 'Status', 'Created At'],
-                $rows->map(UserExportTransformer::transformForTable(...)),
+                $rows->map(UserExportTransformer::transformForExcel(...)),
             ),
         };
     }

@@ -12,6 +12,8 @@ use Illuminate\Support\Carbon;
 use Modules\Services\Infrastructure\Persistence\Eloquent\Models\ServiceEloquentModel;
 
 /**
+ * @internal Persistence detail of {@see InvoiceEloquentModel}; not an Application dependency.
+ *
  * @property int $id
  * @property int $invoice_id
  * @property int|null $service_id

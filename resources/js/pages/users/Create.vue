@@ -1,15 +1,16 @@
 <script setup lang="ts">
 /**
  * Invite user — dedicated create page (GET /users/create, CREATE_USERS). Replaces
- * the old modal: same look and flow as the other detail screens (BackLink + card),
- * with the shared UserForm doing the work. On success the backend redirects to the
- * users list.
+ * the old modal: same look and flow as the other detail screens (BackLink + Volt
+ * Card), with the shared UserForm doing the work. On success the backend redirects
+ * to the users list. Invitation email is delivered via Brevo.
  */
 import { Head } from '@inertiajs/vue3';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import AppHeader from '@/modules/app/components/AppHeader.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import BackLink from '@/common/ui/BackLink.vue';
+import Card from '@/volt/Card.vue';
 import UserForm from './components/UserForm.vue';
 
 defineOptions({ layout: AppLayout });
@@ -36,9 +37,11 @@ defineProps<{
         <div class="form-page">
             <BackLink href="/users" label="Back to users" />
 
-            <article class="card">
-                <UserForm mode="create" :available-roles="availableRoles" :assignable-roles="assignableRoles" />
-            </article>
+            <Card class="form-card">
+                <template #content>
+                    <UserForm mode="create" :available-roles="availableRoles" :assignable-roles="assignableRoles" />
+                </template>
+            </Card>
         </div>
     </PermissionGuard>
 </template>
@@ -53,11 +56,7 @@ defineProps<{
     margin-inline: auto;
 }
 
-.card {
-    background: color-mix(in srgb, var(--bg-surface) 60%, transparent);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-2xl);
-    padding: var(--space-6) var(--space-8);
+.form-card {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
 }
@@ -73,11 +72,5 @@ defineProps<{
 
 .empty .pi {
     font-size: var(--text-3xl);
-}
-
-@media (max-width: 640px) {
-    .card {
-        padding: var(--space-5) var(--space-4);
-    }
 }
 </style>

@@ -3,17 +3,10 @@
  * Portfolio — full CRUD over a soft-deletable project catalog (the gallery
  * shown on the landing page's portfolio section).
  *
- * The shared list mechanics (Inertia partial reloads, selection, filter / page
- * plumbing) live in {@see useResourceList}; the confirm-dialog state in
- * {@see useConfirmAction}; the page chrome in {@see CrudIndexShell}. This file
- * keeps only what is specific to portfolios: its query shape, filter fields,
- * confirm copy and toasts. There are no create/edit page routes — store/update
- * return `back()` redirects — so create & edit happen in a Volt Dialog. Gallery
- * image management (add / reorder / remove) is a per-project concern that only
- * makes sense once the record exists, so it lives on the Show page instead.
- * Gated by VIEW_ANY_PORTFOLIOS; every mutating control by its own permission.
- * Portfolio has no export endpoint (RolePermissionSeeder::NO_EXPORT_MODULES),
- * so unlike blog-categories there is no export wiring here.
+ * Shared list mechanics live in useResourceList / useConfirmAction /
+ * CrudIndexShell. Create & edit happen in a dialog (store/update return back()).
+ * Gallery image management lives on the Show page. Export is wired
+ * (PORTFOLIOS includes EXPORT in RolePermissionSeeder).
  */
 import { computed, reactive } from 'vue';
 import { router } from '@inertiajs/vue3';
@@ -30,7 +23,7 @@ import { toLocalIsoDate } from '@/lib/date';
 import PortfoliosTable from './components/PortfoliosTable.vue';
 import PortfolioFormDialog from './components/PortfolioFormDialog.vue';
 import type { PaginatedResponse, Portfolio, PortfolioFilters, PortfolioQuery, PortfolioStatus } from '@/modules/portfolio/types';
-import { buildPortfolioQueryParams } from '@/modules/portfolio/helpers/buildPortfolioQueryParams';
+import { buildPortfolioExportUrl, buildPortfolioQueryParams } from '@/modules/portfolio/helpers/buildPortfolioQueryParams';
 
 defineOptions({ layout: AppLayout });
 
@@ -43,6 +36,7 @@ const toast = useToast();
 const { hasPermission } = useAuthorization();
 
 const canCreate = computed<boolean>(() => hasPermission('CREATE_PORTFOLIOS'));
+const canExport = computed<boolean>(() => hasPermission('EXPORT_PORTFOLIOS'));
 const canBulkDelete = computed<boolean>(() => hasPermission('BULK_DELETE_PORTFOLIOS'));
 const canBulkRestore = computed<boolean>(() => hasPermission('BULK_RESTORE_PORTFOLIOS'));
 
@@ -65,7 +59,7 @@ function applyCriteria(target: PortfolioQuery, criteria: FilterCriteria): void {
     target.date_to = range?.[1] ? toLocalIsoDate(range[1]) : null;
 }
 
-const { loading, selection, firstRecord, recordLabel, isSuspendedView, resetSelection, onFilters, onPage } =
+const { loading, selection, firstRecord, recordLabel, isSuspendedView, resetSelection, onFilters, onPage, openExport } =
     useResourceList<Portfolio, PortfolioQuery>({
         baseUrl: '/portfolios',
         propKey: 'portfolios',
@@ -73,6 +67,7 @@ const { loading, selection, firstRecord, recordLabel, isSuspendedView, resetSele
         pagination: computed(() => props.portfolios),
         buildParams: buildPortfolioQueryParams,
         applyCriteria,
+        exportUrl: buildPortfolioExportUrl,
     });
 
 const canBulkAct = computed<boolean>(() => (isSuspendedView.value ? canBulkRestore.value : canBulkDelete.value));
@@ -223,7 +218,7 @@ const filterFields: FilterField[] = [
         fallback-text="You don't have permission to view portfolio projects."
         search-placeholder="Search title or client…"
         :fields="filterFields"
-        :can-export="false"
+        :can-export="canExport"
         :can-create="canCreate"
         create-label="New project"
         :record-label="recordLabel"
@@ -233,6 +228,9 @@ const filterFields: FilterField[] = [
         @filters-change="onFilters"
         @create="openCreate"
         @bulk="askBulk"
+        @export-pdf="openExport('pdf')"
+        @export-excel="openExport('xlsx')"
+        @export-csv="openExport('csv')"
     >
         <template #table>
             <PortfoliosTable

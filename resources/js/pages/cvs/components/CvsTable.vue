@@ -1,15 +1,16 @@
 <script setup lang="ts">
 /**
- * CVs server-side DataTable. Active rows: View · Edit · Delete;
+ * CVs server-side DataTable. Parent owns query + router.get — never sorts /
+ * filters / paginates in the browser. Active rows: View · Edit · Delete;
  * Suspended: View · Restore. Every action is permission-gated.
  */
-import { Link } from '@inertiajs/vue3';
 import type { DataTablePageEvent } from 'primevue/datatable';
 import Column from 'primevue/column';
 import DataTable from '@/volt/DataTable.vue';
+import ActionButton from '@/common/data-table/ActionButton.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import StatusBadge from '@/common/ui/StatusBadge.vue';
-import { formatDate } from '@/modules/cvs/helpers/formatDate';
+import { formatDateShort } from '@/modules/cvs/helpers/formatDate';
 import type { Cv, CvNiche } from '@/modules/cvs/types';
 
 const props = defineProps<{
@@ -117,65 +118,50 @@ function nicheLabel(niche: CvNiche): string {
 
             <Column field="created_at" header="Created">
                 <template #body="{ data }">
-                    <span class="mono">{{ formatDate((data as Cv).created_at) }}</span>
+                    <span class="mono">{{ formatDateShort((data as Cv).created_at) }}</span>
                 </template>
             </Column>
 
             <Column header="Actions" :pt="{ bodyCell: 'w-32' }">
                 <template #body="{ data }">
-                    <div class="actions-cell">
+                    <div class="row-actions">
                         <PermissionGuard permission="VIEW_CVS">
-                            <Link
+                            <ActionButton
+                                icon="pi pi-eye"
+                                tone="view"
+                                label="View CV"
                                 :href="`/cvs/${(data as Cv).uuid}`"
-                                class="btn-crud-action btn-crud-action-view"
-                                aria-label="View CV"
-                                title="View"
-                                v-tooltip.top="'View'"
-                            >
-                                <i class="pi pi-eye" aria-hidden="true" />
-                            </Link>
+                            />
                         </PermissionGuard>
 
                         <template v-if="(data as Cv).deleted_at">
                             <PermissionGuard permission="RESTORE_CVS">
-                                <button
-                                    type="button"
-                                    class="btn-crud-action btn-crud-action-restore"
-                                    aria-label="Restore CV"
-                                    title="Restore"
-                                    v-tooltip.top="'Restore'"
+                                <ActionButton
+                                    icon="pi pi-check-circle"
+                                    tone="restore"
+                                    label="Restore CV"
                                     @click="emit('restore', data as Cv)"
-                                >
-                                    <i class="pi pi-check-circle" aria-hidden="true" />
-                                </button>
+                                />
                             </PermissionGuard>
                         </template>
 
                         <template v-else>
                             <PermissionGuard permission="UPDATE_CVS">
-                                <button
-                                    type="button"
-                                    class="btn-crud-action btn-crud-action-edit"
-                                    aria-label="Edit CV"
-                                    title="Edit"
-                                    v-tooltip.top="'Edit'"
+                                <ActionButton
+                                    icon="pi pi-pencil"
+                                    tone="edit"
+                                    label="Edit CV"
                                     @click="emit('edit', data as Cv)"
-                                >
-                                    <i class="pi pi-pencil" aria-hidden="true" />
-                                </button>
+                                />
                             </PermissionGuard>
 
                             <PermissionGuard permission="DELETE_CVS">
-                                <button
-                                    type="button"
-                                    class="btn-crud-action btn-crud-action-delete"
-                                    aria-label="Suspend CV"
-                                    title="Suspend"
-                                    v-tooltip.top="'Suspend'"
+                                <ActionButton
+                                    icon="pi pi-trash"
+                                    tone="delete"
+                                    label="Suspend CV"
                                     @click="emit('delete', data as Cv)"
-                                >
-                                    <i class="pi pi-trash" aria-hidden="true" />
-                                </button>
+                                />
                             </PermissionGuard>
                         </template>
                     </div>
@@ -208,6 +194,14 @@ function nicheLabel(niche: CvNiche): string {
 .muted {
     color: var(--text-muted);
     font-size: var(--text-sm);
+}
+
+.row-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    white-space: nowrap;
 }
 
 .crud-table-wrap :deep(table) {
@@ -258,96 +252,6 @@ function nicheLabel(niche: CvNiche): string {
 .crud-table-wrap :deep([data-pc-name='paginator']),
 .crud-table-wrap :deep([data-pc-name='pcpaginator']) {
     background: transparent;
-}
-
-.actions-cell {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-2);
-    white-space: nowrap;
-}
-
-.btn-crud-action {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border-subtle);
-    background: color-mix(in srgb, var(--bg-elevated) 50%, transparent);
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
-    overflow: hidden;
-}
-
-.btn-crud-action::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: currentColor;
-    opacity: 0;
-    border-radius: inherit;
-    transition: opacity var(--transition);
-}
-
-.btn-crud-action:hover {
-    transform: scale(1.15);
-    border-color: currentColor;
-}
-
-.btn-crud-action:hover::after {
-    opacity: 0.1;
-}
-
-.btn-crud-action:active {
-    transform: scale(0.95);
-}
-
-.btn-crud-action:focus-visible {
-    outline: 2px solid currentColor;
-    outline-offset: 2px;
-}
-
-.btn-crud-action .pi {
-    position: relative;
-    z-index: 1;
-    font-size: 0.8rem;
-}
-
-.btn-crud-action-view {
-    color: var(--accent-info);
-}
-
-.btn-crud-action-view:hover {
-    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-info) 30%, transparent);
-}
-
-.btn-crud-action-edit {
-    color: var(--accent-primary);
-}
-
-.btn-crud-action-edit:hover {
-    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-primary) 30%, transparent);
-}
-
-.btn-crud-action-delete {
-    color: var(--accent-error);
-}
-
-.btn-crud-action-delete:hover {
-    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-error) 30%, transparent);
-}
-
-.btn-crud-action-restore {
-    color: var(--accent-success);
-}
-
-.btn-crud-action-restore:hover {
-    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-success) 30%, transparent);
 }
 
 .table-empty {

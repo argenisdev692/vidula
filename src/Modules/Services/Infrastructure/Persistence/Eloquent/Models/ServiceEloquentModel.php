@@ -10,12 +10,15 @@ use Database\Factories\ServiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Modules\Invoices\Infrastructure\Persistence\Eloquent\Models\InvoiceItemEloquentModel;
 use Modules\Services\Application\DTOs\ServiceFilterData;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -33,6 +36,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User $user
+ * @property-read Collection<int, InvoiceItemEloquentModel> $invoiceItems
  *
  * @mixin \Eloquent
  */
@@ -63,6 +67,16 @@ final class ServiceEloquentModel extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Invoice line items that reference this catalog service.
+     *
+     * @return HasMany<InvoiceItemEloquentModel, $this>
+     */
+    public function invoiceItems(): HasMany
+    {
+        return $this->hasMany(InvoiceItemEloquentModel::class, 'service_id');
     }
 
     /**

@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\DB;
 use Modules\Cvs\Application\DTOs\CvData;
 use Modules\Cvs\Domain\Enums\CvFileType;
 use Modules\Cvs\Domain\Ports\CvRepositoryPort;
+use Modules\Cvs\Domain\Ports\CvTextExtractorPort;
 use Modules\Cvs\Infrastructure\Persistence\Eloquent\Models\CvEloquentModel;
-use Modules\Cvs\Infrastructure\Services\CvTextExtractor;
 use Shared\Domain\Ports\StoragePort;
 
 /**
@@ -20,7 +20,7 @@ final readonly class UpdateCvHandler
     public function __construct(
         private CvRepositoryPort $cvs,
         private StoragePort $storage,
-        private CvTextExtractor $extractor,
+        private CvTextExtractorPort $extractor,
     ) {}
 
     public function handle(CvEloquentModel $cv, CvData $data): CvEloquentModel

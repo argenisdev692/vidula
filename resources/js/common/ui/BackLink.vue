@@ -19,7 +19,7 @@ withDefaults(
 </script>
 
 <template>
-    <Link :href="href" class="back-link" :aria-label="label">
+    <Link :href="href" prefetch class="back-link" :aria-label="label">
         <span class="back-link__icon" aria-hidden="true">
             <i class="pi pi-arrow-left" />
         </span>

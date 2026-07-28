@@ -20,7 +20,7 @@ final readonly class UserExportTransformer
      * @return array<string, string>
      */
     #[\NoDiscard]
-    public static function transformForTable(User $user): array
+    public static function transformForExcel(User $user): array
     {
         return $user
             |> self::extractBaseData(...)
@@ -33,7 +33,7 @@ final readonly class UserExportTransformer
     #[\NoDiscard]
     public static function transformForPdf(User $user): array
     {
-        return self::transformForTable($user);
+        return self::transformForExcel($user);
     }
 
     /**

@@ -4,6 +4,8 @@ import CursorOrb from '@/modules/app/components/CursorOrb.vue';
 import { computed, onMounted, ref, useTemplateRef } from 'vue';
 import { useCompany } from '@/modules/app/composables/useCompany';
 import { useFieldAvailability } from '@/common/composables/useFieldAvailability';
+import { registerFormSchema } from '@/modules/auth/schemas/registerFormSchema';
+import { emailOnlySchema } from '@/modules/auth/schemas/loginFormSchema';
 
 /**
  * Register — same dark-hero shell as Login, wired to Fortify registration:
@@ -34,7 +36,7 @@ const fieldErrors = ref<Record<string, string>>({});
 const starsHost = useTemplateRef<HTMLDivElement>('stars');
 
 function isValidEmail(value: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  return emailOnlySchema.safeParse({ email: value }).success;
 }
 
 /* Realtime email availability against the guest register endpoint (color check). */
@@ -57,25 +59,41 @@ const emailError = computed(() => {
 const emailSuccess = computed(() =>
   emailStatus.value === 'available' ? '✓ Email is available' : emailStatus.value === 'checking' ? 'Checking availability…' : '',
 );
-const passwordError = computed(() =>
-  !password.value ? '' : password.value.length < 8 ? 'Password must be at least 8 characters' : '',
+
+const registerParse = computed(() =>
+  registerFormSchema.safeParse({
+    first_name: firstName.value,
+    last_name: lastName.value || undefined,
+    email: email.value,
+    password: password.value,
+    password_confirmation: passwordConfirmation.value,
+    terms_and_conditions: acceptedTerms.value,
+  }),
 );
-const confirmError = computed(() =>
-  !passwordConfirmation.value
-    ? ''
-    : passwordConfirmation.value !== password.value
-      ? 'Passwords do not match'
-      : '',
-);
+
+const passwordError = computed(() => {
+  if (!password.value) {
+    return '';
+  }
+  const issue = registerParse.value.success
+    ? undefined
+    : registerParse.value.error.issues.find((i) => i.path[0] === 'password');
+  return issue?.message ?? '';
+});
+const confirmError = computed(() => {
+  if (!passwordConfirmation.value) {
+    return '';
+  }
+  const issue = registerParse.value.success
+    ? undefined
+    : registerParse.value.error.issues.find((i) => i.path[0] === 'password_confirmation');
+  return issue?.message ?? '';
+});
 
 const canSubmit = computed(
   () =>
-    firstName.value.trim().length > 0 &&
-    isValidEmail(email.value) &&
+    registerParse.value.success &&
     emailStatus.value !== 'taken' &&
-    password.value.length >= 8 &&
-    passwordConfirmation.value === password.value &&
-    acceptedTerms.value &&
     !isLoading.value,
 );
 

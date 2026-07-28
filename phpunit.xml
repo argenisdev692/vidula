@@ -25,6 +25,8 @@
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="AUTH_LOCKOUT_ATTEMPTS" value="10"/>
         <env name="AUTH_LOCKOUT_MINUTES" value="15"/>
+        <env name="AUTH_MANDATORY_2FA" value="false"/>
+        <env name="HASH_DRIVER" value="bcrypt"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>

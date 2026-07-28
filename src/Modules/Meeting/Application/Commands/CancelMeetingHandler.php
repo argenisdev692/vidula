@@ -6,6 +6,7 @@ namespace Modules\Meeting\Application\Commands;
 
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Support\Facades\DB;
 use Modules\Meeting\Domain\Events\MeetingCancelled;
 use Modules\Meeting\Domain\Ports\MeetingRepositoryPort;
 use Modules\Meeting\Domain\ValueObjects\MeetingStatus;
@@ -22,7 +23,9 @@ final readonly class CancelMeetingHandler
     #[\NoDiscard]
     public function handle(MeetingEloquentModel $meeting): MeetingEloquentModel
     {
-        $updated = $this->meetings->update($meeting, ['status' => MeetingStatus::Cancelled]);
+        $updated = DB::transaction(
+            fn () => $this->meetings->update($meeting, ['status' => MeetingStatus::Cancelled]),
+        );
 
         $this->cache->forget("meeting_{$meeting->uuid}");
 

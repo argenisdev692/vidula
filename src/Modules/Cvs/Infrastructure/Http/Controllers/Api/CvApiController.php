@@ -13,22 +13,31 @@ use Shared\Domain\Ports\StoragePort;
 
 /**
  * Sanctum-authenticated Cvs API (secondary). Primary UI remains Inertia/web.
+ * Scramble documents via return types + `auth:sanctum` — no manual annotations.
+ * Authorization is route middleware (`permission:*_CVS`).
  */
 final readonly class CvApiController
 {
+    /**
+     * List CVs.
+     *
+     * Returns a paginated, filterable CV list. `per_page` is capped at 100
+     * to bound resource consumption (OWASP API4).
+     */
     public function index(Request $request, ListCvsHandler $list): JsonResponse
     {
-        abort_unless((bool) $request->user()?->hasPermissionTo('VIEW_ANY_CVS'), 403);
-
         $filters = CvFilterData::validateAndCreate($request);
 
         return response()->json($list->handle($filters, min(max($request->integer('per_page', 15), 1), 100)));
     }
 
-    public function show(Request $request, string $uuid, GetCvHandler $get, StoragePort $storage): JsonResponse
+    /**
+     * Show a CV.
+     *
+     * Returns a single CV by UUID, including a short-lived signed download URL.
+     */
+    public function show(string $uuid, GetCvHandler $get, StoragePort $storage): JsonResponse
     {
-        abort_unless((bool) $request->user()?->hasPermissionTo('VIEW_CVS'), 403);
-
         $cv = $get->handle($uuid);
 
         return response()->json([

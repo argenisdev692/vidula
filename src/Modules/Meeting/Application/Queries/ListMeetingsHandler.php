@@ -12,6 +12,7 @@ final readonly class ListMeetingsHandler
 {
     public function __construct(private MeetingRepositoryPort $meetings) {}
 
+    #[\NoDiscard]
     public function handle(MeetingFilterData $filters, int $perPage = 15): LengthAwarePaginator
     {
         return $this->meetings->paginate($filters, $perPage);

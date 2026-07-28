@@ -7,18 +7,23 @@ namespace Modules\Meeting\Infrastructure\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Modules\Meeting\Application\DTOs\MeetingFilterData;
+use Modules\Meeting\Domain\Ports\MeetingRepositoryPort;
 use Modules\Meeting\Infrastructure\Http\Export\MeetingExportTransformer;
-use Modules\Meeting\Infrastructure\Persistence\Eloquent\Models\MeetingEloquentModel;
 use Shared\Domain\Ports\ExportPort;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Streams the filtered meeting list as CSV / Excel / PDF — mirrors
- * `AppointmentExportController` exactly (same `ExportPort` mechanism, DRY).
+ * `AppointmentExportController` (same `ExportPort` mechanism). Query building
+ * lives on {@see MeetingRepositoryPort::lazyForExport()} so list + export share
+ * one filter/eager-load/sort path (BACKEND-PHP §5.2 + §8).
  */
 final readonly class MeetingExportController
 {
-    public function __construct(private ExportPort $export) {}
+    public function __construct(
+        private ExportPort $export,
+        private MeetingRepositoryPort $meetings,
+    ) {}
 
     public function __invoke(Request $request): StreamedResponse|Response
     {
@@ -26,14 +31,7 @@ final readonly class MeetingExportController
         abort_unless(in_array($format, ['csv', 'xlsx', 'pdf'], true), 422);
 
         $filters = MeetingFilterData::validateAndCreate($request);
-
-        $rows = MeetingEloquentModel::query()
-            ->when($filters->status === 'suspended', fn ($q) => $q->onlyTrashed())
-            ->applyFilters($filters)
-            ->withCount('attendees')
-            ->with('organizer:id,uuid,first_name,last_name')
-            ->orderByDesc('starts_at')
-            ->lazy();
+        $rows = $this->meetings->lazyForExport($filters);
 
         return match ($format) {
             'pdf' => $this->export->pdf(

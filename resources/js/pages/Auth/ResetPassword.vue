@@ -3,6 +3,8 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import CursorOrb from '@/modules/app/components/CursorOrb.vue';
 import { computed, onMounted, ref, useTemplateRef } from 'vue';
 import { useCompany } from '@/modules/app/composables/useCompany';
+import { resetPasswordFormSchema } from '@/modules/auth/schemas/resetPasswordFormSchema';
+import { emailOnlySchema } from '@/modules/auth/schemas/loginFormSchema';
 
 /**
  * Reset password — step 2 of the passwordless (OTP) reset:
@@ -42,29 +44,39 @@ const fieldErrors = ref<Record<string, string>>({});
 
 const starsHost = useTemplateRef<HTMLDivElement>('stars');
 
+const resetParse = computed(() =>
+  resetPasswordFormSchema.safeParse({
+    email: email.value,
+    code: oneTimePassword.value,
+    password: password.value,
+    password_confirmation: passwordConfirmation.value,
+  }),
+);
+
 function isValidEmail(value: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  return emailOnlySchema.safeParse({ email: value }).success;
 }
 
-const passwordError = computed(() =>
-  !password.value ? '' : password.value.length < 8 ? 'Password must be at least 8 characters' : '',
-);
-const confirmError = computed(() =>
-  !passwordConfirmation.value
-    ? ''
-    : passwordConfirmation.value !== password.value
-      ? 'Passwords do not match'
-      : '',
-);
+const passwordError = computed(() => {
+  if (!password.value) {
+    return '';
+  }
+  const issue = resetParse.value.success
+    ? undefined
+    : resetParse.value.error.issues.find((i) => i.path[0] === 'password');
+  return issue?.message ?? '';
+});
+const confirmError = computed(() => {
+  if (!passwordConfirmation.value) {
+    return '';
+  }
+  const issue = resetParse.value.success
+    ? undefined
+    : resetParse.value.error.issues.find((i) => i.path[0] === 'password_confirmation');
+  return issue?.message ?? '';
+});
 
-const canSubmit = computed(
-  () =>
-    isValidEmail(email.value) &&
-    oneTimePassword.value.trim().length >= 4 &&
-    password.value.length >= 8 &&
-    passwordConfirmation.value === password.value &&
-    !isLoading.value,
-);
+const canSubmit = computed(() => resetParse.value.success && !isLoading.value);
 
 function onSubmit(): void {
   if (!canSubmit.value) {

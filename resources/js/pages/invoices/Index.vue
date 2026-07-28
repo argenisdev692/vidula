@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
  * Invoices — CRUD over soft-deletable PDF invoices for CRM clients.
- * Create/edit in a dialog; PDF download regenerates from current DB state.
+ * Create/edit in a dialog; list/export use shared useResourceList plumbing.
  */
 import { computed, reactive } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import { useAuthorization } from '@/modules/auth/composables/useAuthorization';
 import type { FilterCriteria, FilterField } from '@/common/data-table/AdvancedFilter.vue';
@@ -20,13 +20,14 @@ import type {
     Invoice,
     InvoiceClientOption,
     InvoiceFilters,
+    InvoiceProductOption,
     InvoiceQuery,
     InvoiceServiceOption,
     InvoiceSoftStatus,
     NextInvoiceNumber,
     PaginatedResponse,
 } from '@/modules/invoices/types';
-import { buildInvoiceQueryParams } from '@/modules/invoices/helpers/buildInvoiceQueryParams';
+import { buildInvoiceExportUrl, buildInvoiceQueryParams } from '@/modules/invoices/helpers/buildInvoiceQueryParams';
 
 defineOptions({ layout: AppLayout });
 
@@ -36,12 +37,14 @@ const props = defineProps<{
     nextInvoiceNumber: NextInvoiceNumber;
     clients: InvoiceClientOption[];
     services: InvoiceServiceOption[];
+    products: InvoiceProductOption[];
     defaultNotes: string | null;
 }>();
 
 const { hasPermission } = useAuthorization();
 
 const canCreate = computed<boolean>(() => hasPermission('CREATE_INVOICES'));
+const canExport = computed<boolean>(() => hasPermission('EXPORT_INVOICES'));
 const canBulkDelete = computed<boolean>(() => hasPermission('BULK_DELETE_INVOICES'));
 const canBulkRestore = computed<boolean>(() => hasPermission('BULK_RESTORE_INVOICES'));
 
@@ -60,7 +63,7 @@ function applyCriteria(target: InvoiceQuery, criteria: FilterCriteria): void {
     target.search = criteria.search || null;
     target.status = (criteria.status as InvoiceSoftStatus | undefined) || null;
     target.client_uuid = (criteria.client_uuid as string | undefined) || null;
-    const yearRaw = criteria.year as string | undefined;
+    const yearRaw = (criteria.year as string | undefined)?.trim();
     target.year = yearRaw ? Number.parseInt(yearRaw, 10) || null : null;
 
     const range = criteria.dateRange as Date[] | undefined;
@@ -68,7 +71,7 @@ function applyCriteria(target: InvoiceQuery, criteria: FilterCriteria): void {
     target.date_to = range?.[1] ? toLocalIsoDate(range[1]) : null;
 }
 
-const { loading, selection, firstRecord, recordLabel, isSuspendedView, resetSelection, onFilters, onPage } =
+const { loading, selection, firstRecord, recordLabel, isSuspendedView, resetSelection, onFilters, onPage, openExport } =
     useResourceList<Invoice, InvoiceQuery>({
         baseUrl: '/invoices',
         propKey: 'invoices',
@@ -76,6 +79,7 @@ const { loading, selection, firstRecord, recordLabel, isSuspendedView, resetSele
         pagination: computed(() => props.invoices),
         buildParams: buildInvoiceQueryParams,
         applyCriteria,
+        exportUrl: buildInvoiceExportUrl,
     });
 
 const canBulkAct = computed<boolean>(() => (isSuspendedView.value ? canBulkRestore.value : canBulkDelete.value));
@@ -183,7 +187,7 @@ function confirmBulk(): void {
 }
 
 function downloadPdf(invoice: Invoice): void {
-    window.open(`/invoices/${invoice.uuid}/pdf`, '_blank');
+    window.open(`/invoices/${invoice.uuid}/pdf`, '_blank', 'noopener,noreferrer');
 }
 
 const clientFilterOptions = computed(() =>
@@ -199,7 +203,7 @@ const filterFields = computed<FilterField[]>(() => [
         placeholder: 'Active',
         options: [
             { label: 'Active', value: 'active' },
-            { label: 'Deleted', value: 'suspended' },
+            { label: 'Suspended', value: 'suspended' },
         ],
     },
     {
@@ -209,10 +213,18 @@ const filterFields = computed<FilterField[]>(() => [
         placeholder: 'All clients',
         options: clientFilterOptions.value,
     },
+    {
+        key: 'year',
+        label: 'Year',
+        type: 'text',
+        placeholder: 'e.g. 2026',
+    },
 ]);
 </script>
 
 <template>
+    <Head title="Invoices" />
+
     <CrudIndexShell
         title="Invoices"
         subtitle="Create and download PDF invoices for your clients"
@@ -220,7 +232,7 @@ const filterFields = computed<FilterField[]>(() => [
         fallback-text="You don't have permission to view invoices."
         search-placeholder="Search invoice number or client…"
         :fields="filterFields"
-        :can-export="false"
+        :can-export="canExport"
         :can-create="canCreate"
         create-label="New invoice"
         :record-label="recordLabel"
@@ -230,6 +242,9 @@ const filterFields = computed<FilterField[]>(() => [
         @filters-change="onFilters"
         @create="openCreate"
         @bulk="askBulk"
+        @export-pdf="openExport('pdf')"
+        @export-excel="openExport('xlsx')"
+        @export-csv="openExport('csv')"
     >
         <template #table>
             <InvoicesTable
@@ -254,6 +269,7 @@ const filterFields = computed<FilterField[]>(() => [
                 :invoice="formInvoice"
                 :clients="clients"
                 :services="services"
+                :products="products"
                 :next-invoice-number="nextInvoiceNumber"
                 :default-notes="defaultNotes"
             />

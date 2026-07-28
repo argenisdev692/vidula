@@ -7,6 +7,7 @@ namespace Modules\Meeting\Domain\Ports;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\LazyCollection;
 use Modules\Meeting\Application\DTOs\MeetingFilterData;
 use Modules\Meeting\Infrastructure\Persistence\Eloquent\Models\MeetingEloquentModel;
 
@@ -16,6 +17,14 @@ interface MeetingRepositoryPort
      * @return LengthAwarePaginator<int, MeetingEloquentModel>
      */
     public function paginate(MeetingFilterData $filters, int $perPage): LengthAwarePaginator;
+
+    /**
+     * Streaming query for Excel/CSV/PDF exports — same filters + eager loads
+     * as {@see self::paginate()}, without pagination.
+     *
+     * @return LazyCollection<int, MeetingEloquentModel>
+     */
+    public function lazyForExport(MeetingFilterData $filters): LazyCollection;
 
     public function findByUuid(string $uuid): ?MeetingEloquentModel;
 
@@ -58,4 +67,13 @@ interface MeetingRepositoryPort
      * @param  array<int, string>  $uuids
      */
     public function bulkRestoreByUuid(array $uuids): int;
+
+    /**
+     * Intersects the requested UUID set with meetings owned by `$organizerId`
+     * (BOLA filter for non-elevated bulk actors).
+     *
+     * @param  array<int, string>  $uuids
+     * @return list<string>
+     */
+    public function ownedUuidsAmong(array $uuids, int $organizerId, bool $onlyTrashed = false): array;
 }

@@ -16,6 +16,7 @@ final readonly class DeleteServiceHandler
 {
     public function __construct(private ServiceRepositoryPort $services) {}
 
+    #[\NoDiscard]
     public function handle(string $uuid): bool
     {
         $deleted = DB::transaction(fn () => $this->services->softDelete($uuid));

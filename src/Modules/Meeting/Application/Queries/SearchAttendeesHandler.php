@@ -28,6 +28,7 @@ final readonly class SearchAttendeesHandler
     /**
      * @return Collection<int, array{type: string, uuid: string, label: string}>
      */
+    #[\NoDiscard]
     public function handle(string $term, ?string $type = null): Collection
     {
         $requested = AttendeeType::tryFrom((string) $type);

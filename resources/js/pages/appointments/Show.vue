@@ -1,12 +1,9 @@
 <script setup lang="ts">
 /**
- * Lead detail — read-only view rendered by GET /appointments/{uuid}
- * (VIEW_APPOINTMENTS). The handler resolves the record `withTrashed`, so a
- * suspended lead is viewable here; its status is shown via a badge alongside
- * the pipeline (lead + meeting) state and the anti-spam verdict. Chrome +
- * facts styling live in the shared {@see DetailCard}. Mutating the pipeline
- * (confirm / reschedule / cancel / follow-up calls / mark read / edit /
- * suspend) happens from the Index list, mirroring Users / Contact & Support.
+ * Lead detail — GET /appointments/{uuid} (VIEW_APPOINTMENTS). Suspended leads
+ * remain viewable (`withTrashed`). Pipeline mutations (confirm / reschedule /
+ * cancel / follow-up / mark-read / edit) live in AppointmentPipelinePanel;
+ * Schedule Google Meet deep-links into Meetings with the lead prefilled.
  */
 import { Head, router } from '@inertiajs/vue3';
 import { computed } from 'vue';
@@ -16,6 +13,7 @@ import StatusBadge from '@/common/ui/StatusBadge.vue';
 import { useAuthorization } from '@/modules/auth/composables/useAuthorization';
 import Button from '@/volt/Button.vue';
 import Tag from '@/volt/Tag.vue';
+import AppointmentPipelinePanel from './components/AppointmentPipelinePanel.vue';
 import { formatDateTime } from '@/modules/appointments/helpers/formatDate';
 import { appointmentDisplayName } from '@/modules/appointments/helpers/displayName';
 import { CLIENT_TYPE_LABEL, MEETING_STATUS_META, PROJECT_TYPE_LABEL, STATUS_LEAD_META } from '@/modules/appointments/helpers/statusMeta';
@@ -77,11 +75,14 @@ const addressLine = computed<string>(() => {
             <StatusBadge :tone="isSuspended ? 'danger' : 'success'" :label="isSuspended ? 'Suspended' : 'Active'" />
         </template>
 
+        <AppointmentPipelinePanel :appointment="appointment" />
+
         <div v-if="canScheduleMeeting && !isSuspended" class="lead-actions">
             <Button
                 label="Schedule Google Meet"
                 icon="pi pi-video"
                 size="small"
+                outlined
                 @click="scheduleMeeting"
             />
         </div>

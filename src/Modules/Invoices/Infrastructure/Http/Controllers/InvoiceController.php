@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Invoices\Infrastructure\Http\Controllers;
 
-use App\Models\CompanyData;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
-use Modules\Clients\Infrastructure\Persistence\Eloquent\Models\ClientEloquentModel;
 use Modules\Invoices\Application\Commands\BulkDeleteInvoicesHandler;
 use Modules\Invoices\Application\Commands\BulkRestoreInvoicesHandler;
 use Modules\Invoices\Application\Commands\CreateInvoiceHandler;
@@ -19,14 +17,15 @@ use Modules\Invoices\Application\Commands\RestoreInvoiceHandler;
 use Modules\Invoices\Application\Commands\UpdateInvoiceHandler;
 use Modules\Invoices\Application\DTOs\InvoiceData;
 use Modules\Invoices\Application\DTOs\InvoiceFilterData;
+use Modules\Invoices\Application\Queries\GetInvoiceFormOptionsHandler;
 use Modules\Invoices\Application\Queries\GetInvoiceHandler;
 use Modules\Invoices\Application\Queries\ListInvoicesHandler;
 use Modules\Invoices\Application\Queries\SuggestNextInvoiceNumberHandler;
-use Modules\Services\Domain\Ports\ServiceRepositoryPort;
 use Shared\Application\DTOs\BulkUuidsData;
 
 /**
  * Invoice CRUD. Authorization via `permission:*_INVOICES` middleware.
+ * Thin: validate → handler → Inertia or JSON.
  */
 final readonly class InvoiceController
 {
@@ -34,7 +33,7 @@ final readonly class InvoiceController
         Request $request,
         ListInvoicesHandler $list,
         SuggestNextInvoiceNumberHandler $suggest,
-        ServiceRepositoryPort $services,
+        GetInvoiceFormOptionsHandler $formOptions,
     ): InertiaResponse|JsonResponse {
         $filters = InvoiceFilterData::validateAndCreate($request);
         $invoices = $list->handle($filters, min(max($request->integer('per_page', 15), 1), 100));
@@ -45,18 +44,7 @@ final readonly class InvoiceController
                 'invoices' => $invoices,
                 'filters' => $filters,
                 'nextInvoiceNumber' => $suggest->handle(),
-                'clients' => ClientEloquentModel::query()
-                    ->where('status', 'ACTIVE')
-                    ->orderBy('client_name')
-                    ->select(['uuid', 'client_name', 'tax_id', 'nif', 'address', 'email'])
-                    ->limit(200)
-                    ->get(),
-                'services' => $services->listActive()->map(static fn ($s) => [
-                    'uuid' => $s->uuid,
-                    'name' => $s->name,
-                    'description' => $s->description,
-                ])->values(),
-                'defaultNotes' => CompanyData::query()->orderBy('id')->value('invoice_notes'),
+                ...$formOptions->handle(),
             ]),
         };
     }

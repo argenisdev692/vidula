@@ -32,6 +32,7 @@ final readonly class ConfirmAppointmentHandler
         private Cache $cache,
     ) {}
 
+    #[\NoDiscard]
     public function handle(AppointmentEloquentModel $appointment, ConfirmAppointmentData $data): AppointmentEloquentModel
     {
         $scheduledAt = $data->scheduledAt !== null

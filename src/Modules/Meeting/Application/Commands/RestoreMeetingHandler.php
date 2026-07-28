@@ -15,6 +15,7 @@ final readonly class RestoreMeetingHandler
         private Cache $cache,
     ) {}
 
+    #[\NoDiscard]
     public function handle(string $uuid): bool
     {
         $result = DB::transaction(fn () => $this->meetings->restore($uuid));

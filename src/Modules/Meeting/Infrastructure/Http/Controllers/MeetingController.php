@@ -140,16 +140,26 @@ final readonly class MeetingController
         return back()->with('success', __('Meeting restored.'));
     }
 
-    public function bulkDelete(BulkUuidsData $data, BulkDeleteMeetingsHandler $handler): RedirectResponse
+    public function bulkDelete(Request $request, BulkUuidsData $data, BulkDeleteMeetingsHandler $handler): RedirectResponse
     {
-        $count = $handler->handle($data);
+        $user = $request->user();
+        $count = $handler->handle(
+            $data,
+            (int) $user->id,
+            $user->hasPermissionTo('VIEW_ANY_MEETINGS'),
+        );
 
         return back()->with('success', __(':count meetings deleted.', ['count' => $count]));
     }
 
-    public function bulkRestore(BulkUuidsData $data, BulkRestoreMeetingsHandler $handler): RedirectResponse
+    public function bulkRestore(Request $request, BulkUuidsData $data, BulkRestoreMeetingsHandler $handler): RedirectResponse
     {
-        $count = $handler->handle($data);
+        $user = $request->user();
+        $count = $handler->handle(
+            $data,
+            (int) $user->id,
+            $user->hasPermissionTo('VIEW_ANY_MEETINGS'),
+        );
 
         return back()->with('success', __(':count meetings restored.', ['count' => $count]));
     }

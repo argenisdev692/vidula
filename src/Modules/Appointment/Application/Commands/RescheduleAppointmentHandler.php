@@ -30,6 +30,7 @@ final readonly class RescheduleAppointmentHandler
         private Cache $cache,
     ) {}
 
+    #[\NoDiscard]
     public function handle(AppointmentEloquentModel $appointment, RescheduleAppointmentData $data): AppointmentEloquentModel
     {
         $scheduledAt = CarbonImmutable::parse($data->scheduledAt);

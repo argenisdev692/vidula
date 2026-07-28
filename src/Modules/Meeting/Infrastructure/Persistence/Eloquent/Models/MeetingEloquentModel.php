@@ -14,9 +14,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Modules\Appointment\Infrastructure\Persistence\Eloquent\Models\AppointmentEloquentModel;
 use Modules\Meeting\Application\DTOs\MeetingFilterData;
 use Modules\Meeting\Domain\ValueObjects\MeetingStatus;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
@@ -74,6 +76,24 @@ final class MeetingEloquentModel extends Model
     public function attendees(): HasMany
     {
         return $this->hasMany(MeetingAttendeeEloquentModel::class, 'meeting_id');
+    }
+
+    /**
+     * Lead (Appointment) attendees for this meeting — inverse of
+     * {@see AppointmentEloquentModel::meetingAttendances()} via the
+     * polymorphic `meeting_attendees` pivot (morphMap key `lead`).
+     *
+     * @return MorphToMany<AppointmentEloquentModel, $this>
+     */
+    public function appointments(): MorphToMany
+    {
+        return $this->morphedByMany(
+            AppointmentEloquentModel::class,
+            'attendable',
+            'meeting_attendees',
+            'meeting_id',
+            'attendable_id',
+        );
     }
 
     /**

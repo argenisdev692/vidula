@@ -4,7 +4,7 @@
  *
  * Shared list mechanics live in useResourceList / useConfirmAction /
  * CrudIndexShell. Create & edit happen in a dialog (store/update return back()).
- * Export is omitted (STUDENTS is in NO_EXPORT_MODULES).
+ * Export is wired (STUDENTS includes EXPORT in RolePermissionSeeder).
  */
 import { computed, reactive } from 'vue';
 import { router } from '@inertiajs/vue3';
@@ -28,7 +28,7 @@ import type {
     StudentSoftStatus,
     PaginatedResponse,
 } from '@/modules/students/types';
-import { buildStudentQueryParams } from '@/modules/students/helpers/buildStudentQueryParams';
+import { buildStudentExportUrl, buildStudentQueryParams } from '@/modules/students/helpers/buildStudentQueryParams';
 
 defineOptions({ layout: AppLayout });
 
@@ -41,6 +41,7 @@ const toast = useToast();
 const { hasPermission } = useAuthorization();
 
 const canCreate = computed<boolean>(() => hasPermission('CREATE_STUDENTS'));
+const canExport = computed<boolean>(() => hasPermission('EXPORT_STUDENTS'));
 const canBulkDelete = computed<boolean>(() => hasPermission('BULK_DELETE_STUDENTS'));
 const canBulkRestore = computed<boolean>(() => hasPermission('BULK_RESTORE_STUDENTS'));
 
@@ -68,7 +69,7 @@ function applyCriteria(target: StudentQuery, criteria: FilterCriteria): void {
     target.date_to = range?.[1] ? toLocalIsoDate(range[1]) : null;
 }
 
-const { loading, selection, firstRecord, recordLabel, isSuspendedView, resetSelection, onFilters, onPage } =
+const { loading, selection, firstRecord, recordLabel, isSuspendedView, resetSelection, onFilters, onPage, openExport } =
     useResourceList<Student, StudentQuery>({
         baseUrl: '/students',
         propKey: 'students',
@@ -76,6 +77,7 @@ const { loading, selection, firstRecord, recordLabel, isSuspendedView, resetSele
         pagination: computed(() => props.students),
         buildParams: buildStudentQueryParams,
         applyCriteria,
+        exportUrl: buildStudentExportUrl,
     });
 
 const canBulkAct = computed<boolean>(() => (isSuspendedView.value ? canBulkRestore.value : canBulkDelete.value));
@@ -244,7 +246,7 @@ const filterFields: FilterField[] = [
         fallback-text="You don't have permission to view students."
         search-placeholder="Search name, email, phone, DNI…"
         :fields="filterFields"
-        :can-export="false"
+        :can-export="canExport"
         :can-create="canCreate"
         create-label="New student"
         :record-label="recordLabel"
@@ -254,6 +256,9 @@ const filterFields: FilterField[] = [
         @filters-change="onFilters"
         @create="openCreate"
         @bulk="askBulk"
+        @export-pdf="openExport('pdf')"
+        @export-excel="openExport('xlsx')"
+        @export-csv="openExport('csv')"
     >
         <template #table>
             <StudentsTable

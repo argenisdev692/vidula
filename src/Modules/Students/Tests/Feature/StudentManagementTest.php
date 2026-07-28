@@ -163,4 +163,49 @@ final class StudentManagementTest extends TestCase
 
         $this->actingAs($admin)->get('/students')->assertOk();
     }
+
+    public function test_export_csv_streams_successfully(): void
+    {
+        StudentEloquentModel::factory()->create(['name' => 'Export Student']);
+
+        $this->actingAs($this->superAdmin())
+            ->get('/students/export?format=csv')
+            ->assertOk();
+    }
+
+    public function test_export_xlsx_streams_successfully(): void
+    {
+        StudentEloquentModel::factory()->create();
+
+        $this->actingAs($this->superAdmin())
+            ->get('/students/export?format=xlsx')
+            ->assertOk();
+    }
+
+    public function test_export_pdf_renders_successfully(): void
+    {
+        StudentEloquentModel::factory()->create();
+
+        $this->actingAs($this->superAdmin())
+            ->get('/students/export?format=pdf')
+            ->assertOk();
+    }
+
+    public function test_show_caches_student_and_update_forgets_cache(): void
+    {
+        $admin = $this->superAdmin();
+        $student = StudentEloquentModel::factory()->create(['name' => 'Cached Name']);
+
+        $this->actingAs($admin)->get("/students/{$student->uuid}")->assertOk();
+
+        $this->actingAs($admin)->put("/students/{$student->uuid}", $this->validPayload([
+            'name' => 'Fresh Name',
+            'email' => $student->email,
+        ]))->assertRedirect();
+
+        $this->actingAs($admin)
+            ->getJson("/students/{$student->uuid}")
+            ->assertOk()
+            ->assertJsonPath('data.name', 'Fresh Name');
+    }
 }

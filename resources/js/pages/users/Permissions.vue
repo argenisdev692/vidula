@@ -23,6 +23,7 @@ import AppHeader from '@/modules/app/components/AppHeader.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import BackLink from '@/common/ui/BackLink.vue';
 import RolePicker from '@/pages/users/components/RolePicker.vue';
+import Card from '@/volt/Card.vue';
 import { groupPermissions } from '@/modules/authorization/helpers/groupPermissions';
 import type { SharedProps } from '@/types/inertia';
 import type { UserPermissionsProps } from '@/modules/users/types';
@@ -140,47 +141,50 @@ function toggle(name: string): void {
             </p>
 
             <div class="grid">
-                <article v-for="group in groups" :key="group.module" class="card">
-                    <header class="card__head">
-                        <h3 class="card__title">{{ group.label }}</h3>
-                        <span class="card__count">
-                            {{ assignedCount(group.entries.map((e) => e.name)) }} / {{ group.entries.length }}
-                        </span>
-                    </header>
-
-                    <ul class="list">
-                        <li v-for="entry in group.entries" :key="entry.name" class="item">
-                            <label class="item__label" :class="{ 'item__label--locked': isLocked(entry.name) }">
-                                <input
-                                    type="checkbox"
-                                    class="item__input"
-                                    :checked="isChecked(entry.name)"
-                                    :disabled="isLocked(entry.name) || savingName === entry.name"
-                                    @change="toggle(entry.name)"
-                                />
-                                <span class="item__box" aria-hidden="true"><i class="pi pi-check" /></span>
-                                <span class="item__text">
-                                    <span class="item__action">{{ entry.action }}</span>
-                                    <span class="item__name">{{ entry.name }}</span>
-                                </span>
-                            </label>
-
-                            <span v-if="isViaRole(entry.name)" class="badge badge--role">via role</span>
-                            <span
-                                v-else-if="isLocked(entry.name)"
-                                class="badge badge--locked"
-                                v-tooltip.left="'Outside your assignable set'"
-                            >
-                                <i class="pi pi-lock" aria-hidden="true" />
+                <Card v-for="group in groups" :key="group.module" class="perm-card">
+                    <template #content>
+                        <header class="card__head">
+                            <h3 class="card__title">{{ group.label }}</h3>
+                            <span class="card__count">
+                                {{ assignedCount(group.entries.map((e) => e.name)) }} / {{ group.entries.length }}
                             </span>
-                            <i
-                                v-if="savingName === entry.name"
-                                class="pi pi-spin pi-spinner item__spin"
-                                aria-hidden="true"
-                            />
-                        </li>
-                    </ul>
-                </article>
+                        </header>
+
+                        <ul class="list">
+                            <li v-for="entry in group.entries" :key="entry.name" class="item">
+                                <label class="item__label" :class="{ 'item__label--locked': isLocked(entry.name) }">
+                                    <input
+                                        type="checkbox"
+                                        class="item__input"
+                                        :checked="isChecked(entry.name)"
+                                        :disabled="isLocked(entry.name) || savingName === entry.name"
+                                        :aria-label="entry.name"
+                                        @change="toggle(entry.name)"
+                                    />
+                                    <span class="item__box" aria-hidden="true"><i class="pi pi-check" /></span>
+                                    <span class="item__text">
+                                        <span class="item__action">{{ entry.action }}</span>
+                                        <span class="item__name">{{ entry.name }}</span>
+                                    </span>
+                                </label>
+
+                                <span v-if="isViaRole(entry.name)" class="badge badge--role">via role</span>
+                                <span
+                                    v-else-if="isLocked(entry.name)"
+                                    class="badge badge--locked"
+                                    v-tooltip.left="'Outside your assignable set'"
+                                >
+                                    <i class="pi pi-lock" aria-hidden="true" />
+                                </span>
+                                <i
+                                    v-if="savingName === entry.name"
+                                    class="pi pi-spin pi-spinner item__spin"
+                                    aria-hidden="true"
+                                />
+                            </li>
+                        </ul>
+                    </template>
+                </Card>
 
                 <div v-if="groups.length === 0" class="empty">
                     <i class="pi pi-inbox" aria-hidden="true" />
@@ -217,11 +221,7 @@ function toggle(name: string): void {
     gap: var(--space-4);
 }
 
-.card {
-    background: color-mix(in srgb, var(--bg-surface) 60%, transparent);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-xl);
-    padding: var(--space-5);
+.perm-card {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
 }
@@ -310,7 +310,7 @@ function toggle(name: string): void {
 .item__input:checked + .item__box {
     background: var(--accent-primary);
     border-color: var(--accent-primary);
-    color: var(--on-accent, #fff);
+    color: var(--on-accent);
 }
 
 .item__input:focus-visible + .item__box {

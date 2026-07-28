@@ -10,8 +10,9 @@ use Modules\Meeting\Domain\Ports\MeetingRepositoryPort;
 use Shared\Application\DTOs\BulkUuidsData;
 
 /**
- * Soft-deletes a set of meetings by UUID. Authorization
- * (permission:BULK_DELETE_MEETINGS) is enforced at the route.
+ * Soft-deletes a set of meetings by UUID. Route gate:
+ * `permission:BULK_DELETE_MEETINGS`. Object-level BOLA: without
+ * `VIEW_ANY_MEETINGS`, only the actor's own meetings are affected.
  */
 final readonly class BulkDeleteMeetingsHandler
 {
@@ -20,11 +21,20 @@ final readonly class BulkDeleteMeetingsHandler
         private Cache $cache,
     ) {}
 
-    public function handle(BulkUuidsData $data): int
+    #[\NoDiscard]
+    public function handle(BulkUuidsData $data, int $actorId, bool $canManageAny): int
     {
-        $count = DB::transaction(fn () => $this->meetings->bulkSoftDeleteByUuid($data->uuids));
+        $uuids = $canManageAny
+            ? $data->uuids
+            : $this->meetings->ownedUuidsAmong($data->uuids, $actorId);
 
-        foreach ($data->uuids as $uuid) {
+        if ($uuids === []) {
+            return 0;
+        }
+
+        $count = DB::transaction(fn () => $this->meetings->bulkSoftDeleteByUuid($uuids));
+
+        foreach ($uuids as $uuid) {
             $this->cache->forget("meeting_{$uuid}");
         }
 

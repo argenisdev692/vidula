@@ -10,13 +10,17 @@ use Database\Factories\ClientFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Modules\Clients\Application\DTOs\ClientFilterData;
+use Modules\Invoices\Infrastructure\Persistence\Eloquent\Models\InvoiceEloquentModel;
+use Modules\Products\Infrastructure\Persistence\Eloquent\Models\ProductEloquentModel;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
@@ -41,6 +45,10 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User $user
+ * @property-read Collection<int, InvoiceEloquentModel> $invoices
+ * @property-read Collection<int, ProductEloquentModel> $products
+ * @property-read int|null $invoices_count
+ * @property-read int|null $products_count
  *
  * @mixin \Eloquent
  */
@@ -87,6 +95,24 @@ final class ClientEloquentModel extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * @return HasMany<InvoiceEloquentModel, $this>
+     */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(InvoiceEloquentModel::class, 'client_id');
+    }
+
+    /**
+     * Products optionally billed/linked to this client.
+     *
+     * @return HasMany<ProductEloquentModel, $this>
+     */
+    public function products(): HasMany
+    {
+        return $this->hasMany(ProductEloquentModel::class, 'client_id');
     }
 
     /**

@@ -14,6 +14,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Stores past password hashes so a user cannot reuse the last N passwords
  * (prompt §5). Append-only; only `created_at` is tracked.
  *
+ * No LogsActivity: the only meaningful column is `password_hash`, which must
+ * never enter the activity log (OWASP A04 / BACKEND-PHP §11).
+ *
  * @internal
  */
 #[Table('password_histories')]
@@ -28,5 +31,13 @@ final class PasswordHistoryEloquentModel extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [];
     }
 }

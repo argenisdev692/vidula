@@ -8,6 +8,7 @@ use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Appointment\Infrastructure\Persistence\Eloquent\Models\AppointmentEloquentModel;
 use Modules\ContactSupport\Infrastructure\Persistence\Eloquent\Models\ContactSupportEloquentModel;
 use Modules\Meeting\Infrastructure\Persistence\Eloquent\Models\MeetingEloquentModel;
@@ -178,6 +179,49 @@ final class MeetingManagementTest extends TestCase
     }
 
     /**
+     * OWASP API1/BOLA: BULK_DELETE_MEETINGS alone must not soft-delete another
+     * organizer's meetings — only the actor's own rows (or elevated VIEW_ANY).
+     */
+    public function test_bulk_delete_without_view_any_only_affects_own_meetings(): void
+    {
+        $actor = User::factory()->create();
+        $actor->assignRole('MODERATOR');
+        $actor->givePermissionTo('BULK_DELETE_MEETINGS');
+
+        $own = MeetingEloquentModel::factory()->create(['organizer_id' => $actor->id]);
+        $other = MeetingEloquentModel::factory()->create();
+
+        $this->actingAs($actor)
+            ->post('/meetings/bulk-delete', ['uuids' => [$own->uuid, $other->uuid]])
+            ->assertRedirect();
+
+        $this->assertSoftDeleted('meetings', ['uuid' => $own->uuid]);
+        $this->assertDatabaseHas('meetings', ['uuid' => $other->uuid, 'deleted_at' => null]);
+    }
+
+    /**
+     * Same BOLA guard for bulk restore.
+     */
+    public function test_bulk_restore_without_view_any_only_affects_own_meetings(): void
+    {
+        $actor = User::factory()->create();
+        $actor->assignRole('MODERATOR');
+        $actor->givePermissionTo('BULK_RESTORE_MEETINGS');
+
+        $own = MeetingEloquentModel::factory()->create(['organizer_id' => $actor->id]);
+        $other = MeetingEloquentModel::factory()->create();
+        $own->delete();
+        $other->delete();
+
+        $this->actingAs($actor)
+            ->post('/meetings/bulk-restore', ['uuids' => [$own->uuid, $other->uuid]])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('meetings', ['uuid' => $own->uuid, 'deleted_at' => null]);
+        $this->assertSoftDeleted('meetings', ['uuid' => $other->uuid]);
+    }
+
+    /**
      * OWASP API1/BOLA regression guard: a staff member who holds
      * UPDATE_MEETINGS but is NOT the organizer, and does not hold
      * VIEW_ANY_MEETINGS, must not be able to edit/cancel/delete someone
@@ -256,5 +300,46 @@ final class MeetingManagementTest extends TestCase
             ->get('/meetings/export?format=xlsx')
             ->assertOk()
             ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    }
+
+    public function test_exports_the_meeting_list_as_csv(): void
+    {
+        MeetingEloquentModel::factory()->create();
+
+        $this->actingAs($this->superAdmin())
+            ->get('/meetings/export?format=csv')
+            ->assertOk();
+    }
+
+    public function test_exports_the_meeting_list_as_pdf(): void
+    {
+        MeetingEloquentModel::factory()->create();
+
+        $this->actingAs($this->superAdmin())
+            ->get('/meetings/export?format=pdf')
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_sort_field_is_honoured_on_the_list(): void
+    {
+        MeetingEloquentModel::factory()->create([
+            'title' => 'Alpha sync',
+            'starts_at' => '2026-12-01 10:00:00',
+            'ends_at' => '2026-12-01 10:30:00',
+        ]);
+        MeetingEloquentModel::factory()->create([
+            'title' => 'Zulu sync',
+            'starts_at' => '2026-12-02 10:00:00',
+            'ends_at' => '2026-12-02 10:30:00',
+        ]);
+
+        $this->actingAs($this->superAdmin())
+            ->get('/meetings?sort_field=title&sort_order=1')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('meetings/Index')
+                ->where('meetings.data.0.title', 'Alpha sync')
+                ->where('meetings.data.1.title', 'Zulu sync'));
     }
 }

@@ -7,12 +7,13 @@ namespace Modules\Users\Application\Commands;
 use App\Models\User;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Facades\DB;
+use Modules\Authorization\Domain\SystemRoles;
 use Modules\Users\Application\DTOs\InviteUserData;
 use Modules\Users\Domain\AssignableAccess;
 use Modules\Users\Domain\Events\UserInvited;
 use Modules\Users\Domain\Ports\InvitationLinkPort;
+use Modules\Users\Domain\Ports\UserInvitationNotifierPort;
 use Modules\Users\Domain\Ports\UserRepositoryPort;
-use Modules\Users\Infrastructure\Notifications\UserInvitationNotification;
 
 /**
  * Creates a Pending user (no password) and emails a signed activation link.
@@ -25,6 +26,7 @@ final readonly class InviteUserHandler
     public function __construct(
         private UserRepositoryPort $users,
         private InvitationLinkPort $links,
+        private UserInvitationNotifierPort $notifier,
         private Dispatcher $events,
     ) {}
 
@@ -33,7 +35,11 @@ final readonly class InviteUserHandler
     {
         // Defence-in-depth: an actor can only seed roles they themselves hold.
         if ($actor !== null) {
-            AssignableAccess::assertRolesAllowed($actor, $data->roles);
+            AssignableAccess::assertRolesAllowed(
+                $actor->hasRole(SystemRoles::SUPER_ADMIN),
+                array_values($actor->getRoleNames()->all()),
+                $data->roles,
+            );
         }
 
         $invitedByUuid = $actor?->uuid;
@@ -76,7 +82,7 @@ final readonly class InviteUserHandler
     {
         $link = $this->links->generate($user, self::LINK_TTL_HOURS);
 
-        $user->notify(new UserInvitationNotification($link, self::LINK_TTL_HOURS));
+        $this->notifier->send($user, $link, self::LINK_TTL_HOURS);
 
         $this->events->dispatch(new UserInvited($user->uuid, $user->email, $invitedByUuid));
     }

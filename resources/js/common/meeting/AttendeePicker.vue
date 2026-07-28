@@ -103,6 +103,7 @@ const search = useDebounceFn(async (term: string): Promise<void> => {
 function onQueryInput(value: string | undefined): void {
     query.value = value ?? '';
     showCreate.value = false;
+    activeIndex.value = -1;
     void search(query.value);
 }
 
@@ -114,6 +115,7 @@ function pick(option: AttendeeOption): void {
     options.value = [];
     open.value = false;
     showCreate.value = false;
+    activeIndex.value = -1;
 }
 
 function remove(target: AttendeeOption): void {
@@ -186,15 +188,56 @@ const hasAttendees = computed<boolean>(() => model.value.length > 0);
 const showEmptyHint = computed<boolean>(
     () => !loading.value && query.value.trim().length >= 2 && options.value.length === 0 && !showCreate.value,
 );
+const activeIndex = ref<number>(-1);
+const listboxId = 'meeting-attendee-results';
 
 onClickOutside(rootRef, () => {
     open.value = false;
+    activeIndex.value = -1;
 });
+
+function moveActive(delta: number): void {
+    if (!open.value || options.value.length === 0) {
+        return;
+    }
+    const max = options.value.length - 1;
+    activeIndex.value = activeIndex.value < 0
+        ? delta > 0 ? 0 : max
+        : Math.min(max, Math.max(0, activeIndex.value + delta));
+}
+
+function onInputKeydown(event: KeyboardEvent): void {
+    if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        open.value = query.value.trim().length >= 2;
+        moveActive(1);
+        return;
+    }
+    if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        moveActive(-1);
+        return;
+    }
+    if (event.key === 'Enter' && open.value && activeIndex.value >= 0) {
+        event.preventDefault();
+        const option = options.value[activeIndex.value];
+        if (option) {
+            pick(option);
+        }
+        return;
+    }
+    if (event.key === 'Escape') {
+        open.value = false;
+        showCreate.value = false;
+        activeIndex.value = -1;
+    }
+}
 
 function onKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
         open.value = false;
         showCreate.value = false;
+        activeIndex.value = -1;
     }
 }
 
@@ -204,30 +247,48 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown));
 
 <template>
     <div ref="rootRef" class="attendee-picker">
+        <label class="attendee-picker__label" for="meeting-attendee-search">Search attendees</label>
         <div class="attendee-picker__search">
             <span class="attendee-picker__search-icon" aria-hidden="true">
                 <i class="pi pi-search" />
             </span>
             <InputText
+                id="meeting-attendee-search"
                 :model-value="query"
                 class="attendee-picker__input"
                 placeholder="Search by name or email…"
                 fluid
                 :invalid="!!error"
                 autocomplete="off"
+                role="combobox"
+                :aria-expanded="open && options.length > 0"
+                :aria-controls="listboxId"
+                :aria-activedescendant="activeIndex >= 0 ? `attendee-option-${activeIndex}` : undefined"
+                aria-autocomplete="list"
                 @update:model-value="onQueryInput"
                 @focus="open = query.trim().length >= 2"
+                @keydown="onInputKeydown"
             />
             <i v-if="loading" class="pi pi-spin pi-spinner attendee-picker__spinner" aria-hidden="true" />
         </div>
 
-        <ul v-if="open && options.length > 0" class="attendee-picker__results" role="listbox">
+        <ul
+            v-if="open && options.length > 0"
+            :id="listboxId"
+            class="attendee-picker__results"
+            role="listbox"
+            aria-label="Attendee search results"
+        >
             <li
-                v-for="option in options"
+                v-for="(option, index) in options"
+                :id="`attendee-option-${index}`"
                 :key="optionKey(option)"
                 class="attendee-picker__result"
+                :class="{ 'attendee-picker__result--active': index === activeIndex }"
                 role="option"
+                :aria-selected="index === activeIndex"
                 @mousedown.prevent="pick(option)"
+                @mouseenter="activeIndex = index"
             >
                 <Tag :value="TYPE_LABEL[option.type]" :severity="TYPE_SEVERITY[option.type]" />
                 <span>{{ option.label }}</span>
@@ -335,6 +396,12 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown));
     position: relative;
 }
 
+.attendee-picker__label {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--text-secondary);
+}
+
 .attendee-picker__search {
     position: relative;
     display: flex;
@@ -388,6 +455,10 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown));
 }
 
 .attendee-picker__result:hover {
+    background: var(--bg-hover);
+}
+
+.attendee-picker__result--active {
     background: var(--bg-hover);
 }
 

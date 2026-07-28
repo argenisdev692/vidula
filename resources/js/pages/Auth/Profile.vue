@@ -43,6 +43,9 @@ import { isValidUsername, sanitizeUsername, USERNAME_MAX, USERNAME_RULE_MESSAGE 
 import { genderOptions } from '@/modules/profile/helpers/genderOptions';
 import { profileFormSchema } from '@/modules/profile/schemas/profileFormSchema';
 import { passwordFormSchema } from '@/modules/profile/schemas/passwordFormSchema';
+import { deviceLabel } from '@/modules/auth/helpers/deviceLabel';
+import { formatSessionDate } from '@/modules/auth/helpers/formatSessionDate';
+import { sanitizeTrustedSvg } from '@/modules/auth/helpers/sanitizeTrustedSvg';
 import type {
     ActiveSession,
     ProfileData,
@@ -86,42 +89,8 @@ const genderLabel = computed<string>(
     () => genderOptions.find((option) => option.value === props.profile.gender)?.label ?? 'Not set',
 );
 
-/* ── Device / date formatting (shared by sessions + trusted devices) ────── */
-function deviceLabel(userAgent: string | null): string {
-    if (!userAgent) {
-        return 'Unknown device';
-    }
-    // Order matters: Edge/Opera UAs also contain "Chrome"/"Safari".
-    const browser = /Edg\//.test(userAgent)
-        ? 'Microsoft Edge'
-        : /OPR\/|Opera/.test(userAgent)
-          ? 'Opera'
-          : /Chrome\//.test(userAgent)
-            ? 'Chrome'
-            : /Firefox\//.test(userAgent)
-              ? 'Firefox'
-              : /Safari\//.test(userAgent)
-                ? 'Safari'
-                : 'Unknown browser';
-    const os = /Windows/.test(userAgent)
-        ? 'Windows'
-        : /Mac OS X|Macintosh/.test(userAgent)
-          ? 'macOS'
-          : /Android/.test(userAgent)
-            ? 'Android'
-            : /iPhone|iPad|iPod|iOS/.test(userAgent)
-              ? 'iOS'
-              : /Linux/.test(userAgent)
-                ? 'Linux'
-                : '';
-    return os ? `${browser} · ${os}` : browser;
-}
-
-function formatDate(iso: string | null): string {
-    return iso
-        ? new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
-        : '—';
-}
+/* ── Device / date formatting — shared auth helpers ───────────────────── */
+/* (deviceLabel + formatSessionDate imported from @/modules/auth/helpers) */
 
 /* ── Profile form ─────────────────────────────────────────────────────── */
 const form = useForm<ProfileFormValues>({
@@ -435,7 +404,7 @@ async function loadEnrollment(): Promise<void> {
         apiFetch<{ svg: string }>('GET', '/user/two-factor-qr-code'),
         apiFetch<{ secretKey: string }>('GET', '/user/two-factor-secret-key'),
     ]);
-    qrSvg.value = qr.svg;
+    qrSvg.value = sanitizeTrustedSvg(qr.svg);
     secretKey.value = secret.secretKey;
     await loadRecoveryCodes();
 }
@@ -895,7 +864,7 @@ function revokeTrustedDevice(uuid: string): void {
                                 <span v-if="session.is_current" class="badge badge--success">This device</span>
                             </span>
                             <span class="device-item__meta">
-                                {{ session.ip_address ?? 'Unknown IP' }} · {{ formatDate(session.last_active_at) }}
+                                {{ session.ip_address ?? 'Unknown IP' }} · {{ formatSessionDate(session.last_active_at) }}
                             </span>
                         </div>
                         <button
@@ -931,7 +900,7 @@ function revokeTrustedDevice(uuid: string): void {
                                     </span>
                                 </span>
                                 <span class="device-item__meta">
-                                    {{ device.ip_address ?? 'Unknown IP' }} · Expires {{ formatDate(device.expires_at) }}
+                                    {{ device.ip_address ?? 'Unknown IP' }} · Expires {{ formatSessionDate(device.expires_at) }}
                                 </span>
                             </div>
                             <button
@@ -1478,7 +1447,7 @@ function revokeTrustedDevice(uuid: string): void {
 .setup__qr {
     align-self: center;
     padding: var(--space-4);
-    background: #fff;
+    background: var(--qr-canvas);
     border-radius: var(--radius-lg);
     line-height: 0;
 }

@@ -33,6 +33,7 @@ final class InvoiceData extends Data
         public string $dueDate,
         #[DataCollectionOf(InvoiceItemData::class)]
         public array $items,
+        public ?string $productUuid = null,
         public string $currency = 'USD',
         public string $taxMode = 'EXEMPT',
         public ?float $taxRate = 0.0,
@@ -52,6 +53,7 @@ final class InvoiceData extends Data
     {
         return [
             'client_uuid' => ['required', 'uuid', 'exists:clients,uuid'],
+            'product_uuid' => ['nullable', 'uuid', 'exists:products,uuid'],
             'invoice_number' => ['required', 'string', 'max:32', 'regex:/^\d{1,6}\/\d{4}$/'],
             'issue_date' => ['required', 'date'],
             'due_date' => ['required', 'date', 'after_or_equal:issue_date'],

@@ -17,7 +17,11 @@ final readonly class DomPdfInvoiceRenderer implements InvoicePdfRendererPort
     #[\NoDiscard]
     public function render(InvoiceEloquentModel $invoice): string
     {
-        $invoice->loadMissing(['items', 'client:id,uuid,client_name,email,tax_id,nif,address']);
+        $invoice->loadMissing([
+            'items',
+            'client:id,uuid,client_name,email,tax_id,nif,address',
+            'product:id,uuid,title,type',
+        ]);
 
         return Pdf::loadView('exports.pdf.invoice', [
             'invoice' => $invoice,

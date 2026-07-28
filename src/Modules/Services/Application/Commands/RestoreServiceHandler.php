@@ -16,6 +16,7 @@ final readonly class RestoreServiceHandler
 {
     public function __construct(private ServiceRepositoryPort $services) {}
 
+    #[\NoDiscard]
     public function handle(string $uuid): bool
     {
         $restored = DB::transaction(fn () => $this->services->restore($uuid));

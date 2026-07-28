@@ -6,8 +6,8 @@ namespace Modules\Portfolio\Application\Commands;
 
 use Illuminate\Support\Facades\DB;
 use Modules\Portfolio\Application\DTOs\PortfolioData;
+use Modules\Portfolio\Application\Support\PortfolioPublicFeedCache;
 use Modules\Portfolio\Domain\Ports\PortfolioRepositoryPort;
-use Modules\Portfolio\Infrastructure\Cache\PortfolioPublicFeedCache;
 use Modules\Portfolio\Infrastructure\Persistence\Eloquent\Models\PortfolioEloquentModel;
 use Shared\Domain\Ports\StoragePort;
 

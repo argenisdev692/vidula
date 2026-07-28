@@ -4,10 +4,12 @@
  * VIEW_MEETINGS guard + BackLink + glass card), mirrors the other modules'
  * Show pages.
  */
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import DetailCard from '@/common/ui/DetailCard.vue';
+import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import Tag from '@/volt/Tag.vue';
+import Button from '@/volt/Button.vue';
 import {
     ATTENDEE_TYPE_LABEL,
     ATTENDEE_TYPE_SEVERITY,
@@ -46,6 +48,11 @@ function organizerName(): string {
         <template #badges>
             <Tag :value="meeting.status" :severity="meeting.status === 'Cancelled' ? 'danger' : 'success'" />
             <Tag v-if="meeting.deleted_at" value="Deleted" severity="secondary" />
+            <PermissionGuard v-if="!meeting.deleted_at" permission="UPDATE_MEETINGS">
+                <Link :href="`/meetings/${meeting.uuid}/edit`" class="edit-link">
+                    <Button type="button" label="Edit" icon="pi pi-pencil" size="small" outlined />
+                </Link>
+            </PermissionGuard>
         </template>
 
         <dl class="facts">
@@ -108,5 +115,9 @@ function organizerName(): string {
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
+}
+
+.edit-link {
+    text-decoration: none;
 }
 </style>

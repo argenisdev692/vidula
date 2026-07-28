@@ -16,10 +16,11 @@ final readonly class InvoicePdfController
     public function __invoke(string $uuid, DownloadInvoicePdfHandler $download): Response
     {
         $pdf = $download->handle($uuid);
+        $filename = preg_replace('/[^A-Za-z0-9._-]/', '-', $pdf['filename']) ?: 'invoice.pdf';
 
         return response($pdf['binary'], 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="'.$pdf['filename'].'"',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
     }
 }

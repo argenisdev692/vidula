@@ -7,13 +7,16 @@ namespace Modules\Cvs\Providers;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Modules\Cvs\Domain\Ports\CvRepositoryPort;
+use Modules\Cvs\Domain\Ports\CvTextExtractorPort;
 use Modules\Cvs\Infrastructure\Persistence\Repositories\EloquentCvRepository;
+use Modules\Cvs\Infrastructure\Services\CvTextExtractor;
 
 final class CvsServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
         $this->app->bind(CvRepositoryPort::class, EloquentCvRepository::class);
+        $this->app->bind(CvTextExtractorPort::class, CvTextExtractor::class);
     }
 
     public function boot(): void

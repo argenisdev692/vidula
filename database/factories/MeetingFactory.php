@@ -7,6 +7,7 @@ namespace Database\Factories;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
+use Modules\Meeting\Application\Support\MeetingDuration;
 use Modules\Meeting\Domain\ValueObjects\MeetingStatus;
 use Modules\Meeting\Infrastructure\Persistence\Eloquent\Models\MeetingEloquentModel;
 
@@ -33,7 +34,7 @@ final class MeetingFactory extends Factory
             'title' => $this->faker->sentence(4),
             'description' => $this->faker->optional()->paragraph(),
             'starts_at' => $startsAt,
-            'ends_at' => (clone $startsAt)->addHour(),
+            'ends_at' => MeetingDuration::endsAt($startsAt),
             'status' => MeetingStatus::Scheduled,
         ];
     }

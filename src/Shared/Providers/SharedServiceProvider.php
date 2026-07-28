@@ -9,6 +9,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\View as ViewFactory;
 use Illuminate\Support\ServiceProvider;
 use Shared\Domain\Ports\AuditPort;
+use Shared\Domain\Ports\DocsVerificationPort;
 use Shared\Domain\Ports\ExportPort;
 use Shared\Domain\Ports\SpeechSynthesizerPort;
 use Shared\Domain\Ports\StoragePort;
@@ -16,6 +17,9 @@ use Shared\Infrastructure\AI\AIClientInterface;
 use Shared\Infrastructure\AI\LaravelAIAdapter;
 use Shared\Infrastructure\Audit\SpatieActivityLogAdapter;
 use Shared\Infrastructure\Company\CompanyProfile;
+use Shared\Infrastructure\Console\Commands\SyncR2CorsCommand;
+use Shared\Infrastructure\Docs\Context7ClientInterface;
+use Shared\Infrastructure\Docs\Context7DocsAdapter;
 use Shared\Infrastructure\Export\SimpleExcelExportAdapter;
 use Shared\Infrastructure\Mail\BrevoMailAdapter;
 use Shared\Infrastructure\Mail\MailInterface;
@@ -24,7 +28,6 @@ use Shared\Infrastructure\Research\TavilyResearchAdapter;
 use Shared\Infrastructure\Resilience\CircuitBreaker\CircuitBreaker;
 use Shared\Infrastructure\Resilience\CircuitBreaker\CircuitBreakerInterface;
 use Shared\Infrastructure\Speech\ElevenLabsSpeechAdapter;
-use Shared\Infrastructure\Console\Commands\SyncR2CorsCommand;
 use Shared\Infrastructure\Storage\R2StorageAdapter;
 
 /**
@@ -41,6 +44,12 @@ final class SharedServiceProvider extends ServiceProvider
         $this->app->bind(ExportPort::class, SimpleExcelExportAdapter::class);
         $this->app->bind(AIClientInterface::class, LaravelAIAdapter::class);
         $this->app->bind(TavilyClientInterface::class, TavilyResearchAdapter::class);
+
+        // Both docs contracts resolve to the same adapter — the Domain port for
+        // grounded snippets, the client interface for callers that need the
+        // resolved Context7 library id itself.
+        $this->app->bind(DocsVerificationPort::class, Context7DocsAdapter::class);
+        $this->app->bind(Context7ClientInterface::class, Context7DocsAdapter::class);
         $this->app->bind(SpeechSynthesizerPort::class, ElevenLabsSpeechAdapter::class);
         $this->app->bind(MailInterface::class, BrevoMailAdapter::class);
 

@@ -41,6 +41,7 @@ final class CvData extends Data
                 'file',
                 'max:5120', // 5 MB
                 'extensions:pdf,md,markdown',
+                'mimetypes:text/markdown,text/plain,text/x-markdown,application/pdf',
             ],
         ];
     }

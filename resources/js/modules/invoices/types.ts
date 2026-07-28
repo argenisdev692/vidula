@@ -17,6 +17,15 @@ export interface InvoiceItem {
     amount: string | number;
 }
 
+export interface InvoiceProduct {
+    uuid: string;
+    title: string;
+    description?: string | null;
+    price?: string | number;
+    currency?: string;
+    type: string;
+}
+
 export interface Invoice {
     uuid: string;
     invoice_number: string;
@@ -43,6 +52,7 @@ export interface Invoice {
     client_city: string | null;
     client_country: string | null;
     client?: { uuid: string; client_name: string } | null;
+    product?: InvoiceProduct | null;
     items?: InvoiceItem[];
     user?: { first_name: string | null; last_name: string | null } | null;
     created_at: string | null;
@@ -62,6 +72,15 @@ export interface InvoiceServiceOption {
     uuid: string;
     name: string;
     description: string | null;
+}
+
+export interface InvoiceProductOption {
+    uuid: string;
+    title: string;
+    description: string | null;
+    price: string | number;
+    currency: string;
+    type: string;
 }
 
 export interface NextInvoiceNumber {

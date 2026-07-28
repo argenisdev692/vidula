@@ -13,6 +13,7 @@ use Modules\Clients\Application\Queries\ListClientsHandler;
 /**
  * Sanctum-authenticated Clients API (secondary). Primary UI remains Inertia/web.
  * Scramble documents via return types + `auth:sanctum` — no manual annotations.
+ * Authorization is route middleware (`permission:*_CLIENTS`).
  */
 final readonly class ClientApiController
 {
@@ -24,8 +25,6 @@ final readonly class ClientApiController
      */
     public function index(Request $request, ListClientsHandler $list): JsonResponse
     {
-        abort_unless((bool) $request->user()?->hasPermissionTo('VIEW_ANY_CLIENTS'), 403);
-
         $filters = ClientFilterData::validateAndCreate($request);
 
         return response()->json($list->handle($filters, min(max($request->integer('per_page', 15), 1), 100)));
@@ -34,12 +33,10 @@ final readonly class ClientApiController
     /**
      * Show a client.
      *
-     * Returns a single CRM client by UUID.
+     * Returns a single CRM client by UUID, including invoice/product counts.
      */
-    public function show(Request $request, string $uuid, GetClientHandler $get): JsonResponse
+    public function show(string $uuid, GetClientHandler $get): JsonResponse
     {
-        abort_unless((bool) $request->user()?->hasPermissionTo('VIEW_CLIENTS'), 403);
-
         return response()->json(['data' => $get->handle($uuid)]);
     }
 }

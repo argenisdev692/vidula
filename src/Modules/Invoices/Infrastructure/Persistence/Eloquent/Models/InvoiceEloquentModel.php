@@ -20,14 +20,19 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Modules\Clients\Infrastructure\Persistence\Eloquent\Models\ClientEloquentModel;
 use Modules\Invoices\Application\DTOs\InvoiceFilterData;
+use Modules\Invoices\Domain\Ports\InvoiceRepositoryPort;
+use Modules\Products\Infrastructure\Persistence\Eloquent\Models\ProductEloquentModel;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
 /**
+ * @internal Application must depend on {@see InvoiceRepositoryPort}, not this model.
+ *
  * @property int $id
  * @property string $uuid
  * @property int $user_id
  * @property int $client_id
+ * @property int|null $product_id
  * @property string $invoice_number
  * @property int $sequence
  * @property int $year
@@ -56,6 +61,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property Carbon|null $updated_at
  * @property-read User $user
  * @property-read ClientEloquentModel $client
+ * @property-read ProductEloquentModel|null $product
  * @property-read Collection<int, InvoiceItemEloquentModel> $items
  *
  * @mixin \Eloquent
@@ -65,6 +71,7 @@ use Spatie\Activitylog\Support\LogOptions;
     'uuid',
     'user_id',
     'client_id',
+    'product_id',
     'invoice_number',
     'sequence',
     'year',
@@ -125,6 +132,17 @@ final class InvoiceEloquentModel extends Model
     }
 
     /**
+     * @return BelongsTo<ProductEloquentModel, $this>
+     */
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(
+            ProductEloquentModel::class,
+            'product_id',
+        );
+    }
+
+    /**
      * @return HasMany<InvoiceItemEloquentModel, $this>
      */
     public function items(): HasMany
@@ -177,6 +195,7 @@ final class InvoiceEloquentModel extends Model
         return [
             'user_id' => 'integer',
             'client_id' => 'integer',
+            'product_id' => 'integer',
             'sequence' => 'integer',
             'year' => 'integer',
             'issue_date' => 'date',
@@ -197,6 +216,7 @@ final class InvoiceEloquentModel extends Model
             ->logOnly([
                 'invoice_number',
                 'client_id',
+                'product_id',
                 'issue_date',
                 'due_date',
                 'currency',

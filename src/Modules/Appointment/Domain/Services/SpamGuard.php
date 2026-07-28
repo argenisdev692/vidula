@@ -28,6 +28,7 @@ final readonly class SpamGuard
         private int $maxLinks,
     ) {}
 
+    #[\NoDiscard]
     public function assess(string $subject, string $message): SpamAssessment
     {
         $haystack = mb_strtolower(trim($subject.' '.$message));
