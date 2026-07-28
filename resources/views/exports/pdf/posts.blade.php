@@ -10,10 +10,10 @@
                 <th>Title</th>
                 <th>Category</th>
                 <th>Author</th>
-                <th>Status</th>
+                <th>Publication Status</th>
                 <th>SEO Score</th>
                 <th>Created</th>
-                <th>Suspended</th>
+                <th>Status</th>
             </tr>
         </thead>
         <tbody>
@@ -22,10 +22,10 @@
                     <td>{{ $row['Title'] }}</td>
                     <td>{{ $row['Category'] }}</td>
                     <td>{{ $row['Author'] }}</td>
-                    <td>{{ $row['Status'] }}</td>
+                    <td>{{ $row['Publication Status'] }}</td>
                     <td>{{ $row['SEO Score'] }}</td>
                     <td>{{ $row['Created'] }}</td>
-                    <td>{{ $row['Suspended'] }}</td>
+                    <td>{{ $row['Status'] }}</td>
                 </tr>
             @empty
                 <tr><td colspan="7"><div class="empty-state">No posts to display.</div></td></tr>

@@ -8,6 +8,7 @@ enum StudioRunStatus: string
 {
     case Pending = 'pending';
     case Running = 'running';
+    case AwaitingInput = 'awaiting_input';
     case Completed = 'completed';
     case Failed = 'failed';
 }

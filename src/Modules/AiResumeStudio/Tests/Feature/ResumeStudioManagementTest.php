@@ -10,9 +10,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
 use Modules\AiResumeStudio\Domain\Enums\OutreachStatus;
+use Modules\AiResumeStudio\Domain\Enums\StudioRunStatus;
+use Modules\AiResumeStudio\Domain\Enums\StudioRunStep;
 use Modules\AiResumeStudio\Domain\Services\CanonicalUrlNormalizer;
-use Modules\AiResumeStudio\Infrastructure\Ai\AtsRefineAgent;
+use Modules\AiResumeStudio\Infrastructure\Ai\AtsRewriteAgent;
 use Modules\AiResumeStudio\Infrastructure\Ai\CoverDraftAgent;
+use Modules\AiResumeStudio\Infrastructure\Ai\CvJudgeAgent;
 use Modules\AiResumeStudio\Infrastructure\Ai\DigestDraftAgent;
 use Modules\AiResumeStudio\Infrastructure\Ai\JobMatchScorerAgent;
 use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\JobMatchEloquentModel;
@@ -72,6 +75,8 @@ final class ResumeStudioManagementTest extends TestCase
                 'keywords' => 'laravel developer',
                 'search_language' => 'en',
                 'resume_language' => 'pt-PT',
+                'job_description' => 'Looking for Laravel and Vue experience.',
+                'github_extra_prompt' => 'Emphasize SaaS billing work.',
             ])
             ->assertRedirect();
 
@@ -90,6 +95,9 @@ final class ResumeStudioManagementTest extends TestCase
         $run = StudioRunEloquentModel::query()->where('cv_id', $cv->id)->first();
         $this->assertNotNull($run);
         $this->assertSame('pt-PT', data_get($run->meta, 'resume_language'));
+        $this->assertSame('Looking for Laravel and Vue experience.', data_get($run->meta, 'job_description'));
+        $this->assertSame('Emphasize SaaS billing work.', data_get($run->meta, 'github_extra_prompt'));
+        $this->assertSame('judge', data_get($run->meta, 'pipeline_phase'));
     }
 
     public function test_job_match_url_dedupe_normalizes_tracking_params(): void
@@ -119,6 +127,7 @@ final class ResumeStudioManagementTest extends TestCase
                 'provider' => 'openai',
                 'keywords' => 'laravel',
                 'deep_extract' => false,
+                'pipeline_phase' => 'judge',
             ],
         ]);
 
@@ -126,6 +135,62 @@ final class ResumeStudioManagementTest extends TestCase
         app()->call([$job, 'handle']);
 
         $this->assertSame(1, JobMatchEloquentModel::query()->where('user_id', $admin->id)->count());
+        $this->assertDatabaseHas('refined_cvs', ['cv_id' => $cv->id]);
+    }
+
+    public function test_judge_pauses_for_metric_questions_then_continues_after_submit(): void
+    {
+        $this->fakeStudioAgents(withMetricQuestions: true);
+
+        $admin = $this->superAdmin();
+        $cv = CvEloquentModel::factory()->create([
+            'user_id' => $admin->id,
+            'raw_text' => "Jane Doe\nBuilt Laravel APIs without metrics.",
+        ]);
+
+        $this->mock(TavilyClientInterface::class, function ($mock): void {
+            $mock->shouldReceive('search')->andReturn([]);
+        });
+
+        $run = StudioRunEloquentModel::factory()->create([
+            'user_id' => $admin->id,
+            'cv_id' => $cv->id,
+            'meta' => [
+                'provider' => 'openai',
+                'keywords' => '',
+                'deep_extract' => false,
+                'pipeline_phase' => 'judge',
+                'job_description' => 'Senior Laravel engineer — APIs, queues, MySQL.',
+                'github_extra_prompt' => 'Highlight Horizon experience.',
+            ],
+        ]);
+
+        $job = new ProcessStudioRunJob($run->uuid);
+        app()->call([$job, 'handle']);
+
+        $run->refresh();
+        $this->assertSame(StudioRunStatus::AwaitingInput, $run->status);
+        $this->assertSame(StudioRunStep::AwaitingMetrics, $run->step);
+        $this->assertNotEmpty(data_get($run->meta, 'audit.metric_questions'));
+        $this->assertSame(0, RefinedCvEloquentModel::query()->where('cv_id', $cv->id)->count());
+
+        $this->actingAs($admin)
+            ->post("/resume-studio/runs/{$run->uuid}/metrics", [
+                'metric_answers' => [
+                    ['id' => 'q1', 'answer' => 'Cut deploy time from ~2 hours to ~30 minutes'],
+                ],
+                'skip_metrics' => false,
+            ])
+            ->assertRedirect();
+
+        $run->refresh();
+        $this->assertSame(StudioRunStatus::Completed, $run->status);
+        $this->assertSame(StudioRunStep::Completed, $run->step);
+        $this->assertDatabaseHas('refined_cvs', ['cv_id' => $cv->id]);
+        $this->assertSame(
+            'Cut deploy time from ~2 hours to ~30 minutes',
+            data_get($run->meta, 'metric_answers.0.answer'),
+        );
     }
 
     public function test_mark_draft_sent_manually(): void
@@ -139,6 +204,28 @@ final class ResumeStudioManagementTest extends TestCase
 
         $draft->refresh();
         $this->assertSame(OutreachStatus::SentManually, $draft->status);
+    }
+
+    public function test_user_cannot_access_another_users_run_or_draft(): void
+    {
+        $owner = $this->superAdmin();
+        $intruder = User::factory()->create();
+        $intruder->assignRole('SUPER_ADMIN');
+
+        $cv = CvEloquentModel::factory()->create(['user_id' => $owner->id]);
+        $run = StudioRunEloquentModel::factory()->create([
+            'user_id' => $owner->id,
+            'cv_id' => $cv->id,
+        ]);
+        $draft = OutreachDraftEloquentModel::factory()->create(['user_id' => $owner->id]);
+
+        $this->actingAs($intruder)
+            ->get("/resume-studio/runs/{$run->uuid}")
+            ->assertNotFound();
+
+        $this->actingAs($intruder)
+            ->post("/resume-studio/drafts/{$draft->uuid}/mark-sent")
+            ->assertNotFound();
     }
 
     public function test_schedule_command_starts_runs_for_enabled_configs(): void
@@ -202,9 +289,25 @@ final class ResumeStudioManagementTest extends TestCase
             ->assertHeader('content-type', 'application/pdf');
     }
 
-    private function fakeStudioAgents(): void
+    private function fakeStudioAgents(bool $withMetricQuestions = false): void
     {
-        AtsRefineAgent::fake([[
+        CvJudgeAgent::fake([[
+            'target_job_title' => 'Senior Laravel Developer',
+            'strengths' => ['Clear stack'],
+            'improvements' => ['Add metrics'],
+            'keyword_gaps' => ['Horizon'],
+            'weak_lines' => ['Generic summary'],
+            'xyz_gaps' => ['Built Laravel APIs without a measurable Y'],
+            'metric_questions' => $withMetricQuestions
+              ? [[
+                  'id' => 'q1',
+                  'question' => 'Roughly how much did deploy time drop after your pipeline work?',
+                  'related_bullet' => 'Built Laravel APIs without metrics.',
+              ]]
+              : [],
+        ]]);
+
+        AtsRewriteAgent::fake([[
             'refined_md' => "# Refined CV\n\nLaravel experience.",
             'ats_score' => 84,
             'feedback' => [

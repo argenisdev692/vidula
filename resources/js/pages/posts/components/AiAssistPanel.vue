@@ -9,19 +9,24 @@
  * switches are on. Nothing here touches the Post aggregate — it only emits
  * `apply` with the generated draft; the parent PostForm decides whether to
  * accept it into the editable fields (the user can still edit before
- * saving). Uses `apiFetch` (native fetch + XSRF header) rather than an
- * Inertia visit, since this is a JSON round-trip that must not navigate the
- * page.
+ * saving). JSON round-trips go through Pinia Colada mutations in
+ * {@see usePostAiAssistMutations} (FRONTEND §6 — no `apiFetch` in SFCs).
  */
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import { apiFetch, HttpError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import SelectField from '@/common/form/SelectField.vue';
 import TextField from '@/common/form/TextField.vue';
 import GradientButton from '@/common/form/GradientButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import ToggleSwitch from '@/volt/ToggleSwitch.vue';
 import { useAiGenerationProgress } from '@/modules/post/composables/useAiGenerationProgress';
+import {
+    useGeneratePostContentMutation,
+    useGenerateReelMutation,
+    useGenerateSocialCopyMutation,
+    useSuggestPostTopicsMutation,
+} from '@/modules/post/composables/usePostAiAssistMutations';
 import type { AiProvider, GeneratedPostContent, PostTopicIdea, ReelPackage, SocialCopy } from '@/modules/post/types';
 import AiProgressBar from './AiProgressBar.vue';
 
@@ -29,6 +34,11 @@ const emit = defineEmits<{ apply: [draft: GeneratedPostContent] }>();
 
 const toast = useToast();
 const { progress, reset: resetProgress } = useAiGenerationProgress();
+
+const { mutateAsync: suggestTopicsAsync, asyncStatus: ideasAsyncStatus } = useSuggestPostTopicsMutation();
+const { mutateAsync: generateContentAsync, asyncStatus: draftAsyncStatus } = useGeneratePostContentMutation();
+const { mutateAsync: generateSocialAsync, asyncStatus: socialAsyncStatus } = useGenerateSocialCopyMutation();
+const { mutateAsync: generateReelAsync, asyncStatus: reelAsyncStatus } = useGenerateReelMutation();
 
 const PROVIDERS = [
     { label: 'OpenAI', value: 'openai' },
@@ -42,22 +52,23 @@ const generateCoverImage = ref<boolean>(true);
 const generateSocialCopy = ref<boolean>(false);
 const generateReel = ref<boolean>(false);
 
-const ideasLoading = ref<boolean>(false);
 const ideasError = ref<string | null>(null);
 const ideas = ref<PostTopicIdea[]>([]);
 const selectedIdea = ref<PostTopicIdea | null>(null);
 
-const draftLoading = ref<boolean>(false);
 const draftError = ref<string | null>(null);
 const draft = ref<GeneratedPostContent | null>(null);
 
-const socialLoading = ref<boolean>(false);
 const socialError = ref<string | null>(null);
 const socialCopy = ref<SocialCopy | null>(null);
 
-const reelLoading = ref<boolean>(false);
 const reelError = ref<string | null>(null);
 const reel = ref<ReelPackage | null>(null);
+
+const ideasLoading = computed<boolean>(() => ideasAsyncStatus.value === 'loading');
+const draftLoading = computed<boolean>(() => draftAsyncStatus.value === 'loading');
+const socialLoading = computed<boolean>(() => socialAsyncStatus.value === 'loading');
+const reelLoading = computed<boolean>(() => reelAsyncStatus.value === 'loading');
 
 function errorMessage(e: unknown): string {
     if (e instanceof HttpError) {
@@ -70,19 +81,16 @@ function errorMessage(e: unknown): string {
 
 async function suggestTopics(): Promise<void> {
     ideasError.value = null;
-    ideasLoading.value = true;
     selectedIdea.value = null;
     resetProgress('topics');
     try {
-        const response = await apiFetch<{ data: PostTopicIdea[] }>('POST', '/posts/ai/suggest-topics', {
+        const response = await suggestTopicsAsync({
             provider: provider.value,
             topic: topicSteer.value || null,
         });
         ideas.value = response.data;
     } catch (e) {
         ideasError.value = errorMessage(e);
-    } finally {
-        ideasLoading.value = false;
     }
 }
 
@@ -101,46 +109,37 @@ function variantPayload(topic: string): { topic: string; provider: AiProvider; a
 
 async function generateBlogDraft(topic: string): Promise<void> {
     draftError.value = null;
-    draftLoading.value = true;
     resetProgress('content');
     try {
-        const response = await apiFetch<{ data: GeneratedPostContent }>('POST', '/posts/ai/generate-content', {
+        const response = await generateContentAsync({
             ...variantPayload(topic),
             generate_cover_image: generateCoverImage.value,
         });
         draft.value = response.data;
     } catch (e) {
         draftError.value = errorMessage(e);
-    } finally {
-        draftLoading.value = false;
     }
 }
 
 async function generateSocialCopyVariant(topic: string): Promise<void> {
     socialError.value = null;
-    socialLoading.value = true;
     resetProgress('social');
     try {
-        const response = await apiFetch<{ data: SocialCopy }>('POST', '/posts/ai/generate-social-copy', variantPayload(topic));
+        const response = await generateSocialAsync(variantPayload(topic));
         socialCopy.value = response.data;
     } catch (e) {
         socialError.value = errorMessage(e);
-    } finally {
-        socialLoading.value = false;
     }
 }
 
 async function generateReelVariant(topic: string): Promise<void> {
     reelError.value = null;
-    reelLoading.value = true;
     resetProgress('reel');
     try {
-        const response = await apiFetch<{ data: ReelPackage }>('POST', '/posts/ai/generate-reel', variantPayload(topic));
+        const response = await generateReelAsync(variantPayload(topic));
         reel.value = response.data;
     } catch (e) {
         reelError.value = errorMessage(e);
-    } finally {
-        reelLoading.value = false;
     }
 }
 
@@ -181,7 +180,7 @@ async function copyToClipboard(text: string, label: string): Promise<void> {
 }
 
 function scoreTone(score: number): string {
-    if (score >= 75) {
+    if (score >= 70) {
         return 'score-badge--good';
     }
     return score >= 50 ? 'score-badge--warn' : 'score-badge--bad';
@@ -286,12 +285,19 @@ function scoreTone(score: number): string {
         <p v-if="draftError" class="ai-panel__error">{{ draftError }}</p>
 
         <div v-if="draft" class="draft-result">
+            <p v-if="draft.quality_warning" class="draft-result__warning">
+                {{ draft.quality_warning_message ?? 'Best attempt after quality loop — review before publishing.' }}
+                <span class="draft-result__iters">({{ draft.iterations_required }} iterations)</span>
+            </p>
+
             <div class="draft-result__scores">
                 <span class="score-badge" :class="scoreTone(draft.human_writing_index)">
                     Human {{ draft.human_writing_index }}
                 </span>
                 <span class="score-badge" :class="scoreTone(draft.seo_score)">SEO {{ draft.seo_score }}</span>
                 <span class="score-badge" :class="scoreTone(draft.eeat_score)">EEAT {{ draft.eeat_score }}</span>
+                <span class="score-badge" :class="scoreTone(draft.virality_score)">Viral {{ draft.virality_score }}</span>
+                <span class="score-badge" :class="scoreTone(draft.roi_score)">ROI {{ draft.roi_score }}</span>
                 <span class="score-badge" :class="scoreTone(100 - draft.ai_detection_risk)">
                     AI risk {{ draft.ai_detection_risk }}
                 </span>
@@ -301,6 +307,38 @@ function scoreTone(score: number): string {
 
             <p class="draft-result__title">{{ draft.title }}</p>
             <p class="draft-result__excerpt">{{ draft.excerpt }}</p>
+
+            <div class="draft-result__prompts">
+                <p class="draft-result__tips-label">Image prompts (brand palette)</p>
+
+                <div class="variant-result__field">
+                    <div class="variant-result__field-head">
+                        <span>1) Background</span>
+                        <button
+                            type="button"
+                            class="copy-btn"
+                            @click="copyToClipboard(draft.image_prompts.background, 'Background prompt')"
+                        >
+                            <i class="pi pi-copy" aria-hidden="true" />
+                        </button>
+                    </div>
+                    <p class="variant-result__text draft-result__prompt-text">{{ draft.image_prompts.background }}</p>
+                </div>
+
+                <div class="variant-result__field">
+                    <div class="variant-result__field-head">
+                        <span>2) Content</span>
+                        <button
+                            type="button"
+                            class="copy-btn"
+                            @click="copyToClipboard(draft.image_prompts.content, 'Content prompt')"
+                        >
+                            <i class="pi pi-copy" aria-hidden="true" />
+                        </button>
+                    </div>
+                    <p class="variant-result__text draft-result__prompt-text">{{ draft.image_prompts.content }}</p>
+                </div>
+            </div>
 
             <div v-if="draft.optimization_suggestions.length" class="draft-result__tips">
                 <p class="draft-result__tips-label">Optimization tips</p>
@@ -583,6 +621,32 @@ function scoreTone(score: number): string {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
+}
+
+.draft-result__warning {
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: var(--text-xs);
+    color: var(--accent-warning);
+    background: color-mix(in srgb, var(--accent-warning) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent-warning) 28%, transparent);
+}
+
+.draft-result__iters {
+    color: var(--text-muted);
+}
+
+.draft-result__prompts {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.draft-result__prompt-text {
+    max-height: 7rem;
+    overflow-y: auto;
+    white-space: pre-wrap;
 }
 
 .score-badge {

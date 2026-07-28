@@ -35,15 +35,14 @@ final readonly class PostController
         $filters = PostFilterData::validateAndCreate($request);
         $posts = $list->handle($filters, min(max($request->integer('per_page', 15), 1), 100));
 
-        if ($request->expectsJson()) {
-            return response()->json($posts);
-        }
-
-        return Inertia::render('posts/Index', [
-            'posts' => $posts,
-            'filters' => $filters,
-            'categories' => $this->categoryOptions(),
-        ]);
+        return match ($request->expectsJson()) {
+            true => response()->json($posts),
+            false => Inertia::render('posts/Index', [
+                'posts' => $posts,
+                'filters' => $filters,
+                'categories' => $this->categoryOptions(),
+            ]),
+        };
     }
 
     public function create(): InertiaResponse

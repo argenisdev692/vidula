@@ -8,11 +8,13 @@ export type { PaginatedResponse };
 
 export type StudioMode = 'career' | 'other';
 
-export type StudioRunStatus = 'pending' | 'running' | 'completed' | 'failed';
+export type StudioRunStatus = 'pending' | 'running' | 'awaiting_input' | 'completed' | 'failed';
 
 export type StudioRunStep =
     | 'queued'
     | 'enriching'
+    | 'judging'
+    | 'awaiting_metrics'
     | 'refining'
     | 'searching'
     | 'scoring'
@@ -98,11 +100,48 @@ export interface JobSearchConfig {
     deleted_at?: string | null;
 }
 
+export interface MetricQuestion {
+    id: string;
+    question: string;
+    related_bullet?: string | null;
+}
+
+export interface MetricAnswer {
+    id: string;
+    answer: string;
+}
+
+export interface StudioRunAudit {
+    target_job_title?: string;
+    strengths?: string[];
+    improvements?: string[];
+    keyword_gaps?: string[];
+    weak_lines?: string[];
+    xyz_gaps?: string[];
+    metric_questions?: MetricQuestion[];
+}
+
+export interface StudioRunMeta {
+    provider?: string;
+    keywords?: string | null;
+    targeting_prompt?: string | null;
+    job_description?: string | null;
+    github_extra_prompt?: string | null;
+    target_job_title?: string | null;
+    pipeline_phase?: string;
+    audit?: StudioRunAudit | null;
+    metric_answers?: MetricAnswer[];
+    skip_metrics?: boolean;
+    [key: string]: unknown;
+}
+
 export interface RefinedCvFeedback {
     strengths?: string[];
     improvements?: string[];
     keyword_gaps?: string[];
     weak_lines?: string[];
+    xyz_gaps?: string[];
+    metric_questions?: MetricQuestion[];
 }
 
 export interface RefinedCv {
@@ -149,6 +188,7 @@ export interface StudioRun {
     step: StudioRunStep;
     status: StudioRunStatus;
     error_summary: string | null;
+    meta?: StudioRunMeta | null;
     started_at: string | null;
     finished_at: string | null;
     created_at: string | null;

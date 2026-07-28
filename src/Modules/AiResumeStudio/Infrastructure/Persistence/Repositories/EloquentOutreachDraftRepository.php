@@ -8,7 +8,7 @@ use Modules\AiResumeStudio\Domain\Ports\OutreachDraftRepositoryPort;
 use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\OutreachDraftEloquentModel;
 use Shared\Infrastructure\Persistence\Concerns\BulkSoftDeletesByUuid;
 
-final class EloquentOutreachDraftRepository implements OutreachDraftRepositoryPort
+final readonly class EloquentOutreachDraftRepository implements OutreachDraftRepositoryPort
 {
     use BulkSoftDeletesByUuid;
 

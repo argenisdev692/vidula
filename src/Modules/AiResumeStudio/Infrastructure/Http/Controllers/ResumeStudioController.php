@@ -14,10 +14,12 @@ use Modules\AiResumeStudio\Application\Commands\BulkRestoreJobMatchesHandler;
 use Modules\AiResumeStudio\Application\Commands\CreateJobSearchConfigHandler;
 use Modules\AiResumeStudio\Application\Commands\MarkOutreachSentHandler;
 use Modules\AiResumeStudio\Application\Commands\StartStudioRunHandler;
+use Modules\AiResumeStudio\Application\Commands\SubmitStudioRunMetricsHandler;
 use Modules\AiResumeStudio\Application\Commands\UpdateJobMatchHandler;
 use Modules\AiResumeStudio\Application\DTOs\JobSearchConfigData;
 use Modules\AiResumeStudio\Application\DTOs\StartStudioRunData;
 use Modules\AiResumeStudio\Application\DTOs\StudioFilterData;
+use Modules\AiResumeStudio\Application\DTOs\SubmitStudioRunMetricsData;
 use Modules\AiResumeStudio\Application\DTOs\UpdateJobMatchData;
 use Modules\AiResumeStudio\Application\Queries\GetStudioRunHandler;
 use Modules\AiResumeStudio\Application\Queries\ListStudioRunsHandler;
@@ -41,11 +43,11 @@ final readonly class ResumeStudioController
         };
     }
 
-    public function show(string $uuid, GetStudioRunHandler $get): InertiaResponse|JsonResponse
+    public function show(string $uuid, Request $request, GetStudioRunHandler $get): InertiaResponse|JsonResponse
     {
-        $run = $get->handle($uuid);
+        $run = $get->handle($uuid, (int) $request->user()->id);
 
-        return match (request()->expectsJson()) {
+        return match ($request->expectsJson()) {
             true => response()->json(['data' => $run]),
             false => Inertia::render('resume-studio/Show', ['run' => $run]),
         };
@@ -60,6 +62,22 @@ final readonly class ResumeStudioController
             false => redirect()
                 ->route('resume-studio.runs.show', ['uuid' => $run->uuid])
                 ->with('success', __('Studio run queued.')),
+        };
+    }
+
+    public function submitMetrics(
+        string $uuid,
+        Request $request,
+        SubmitStudioRunMetricsData $data,
+        SubmitStudioRunMetricsHandler $handler,
+    ): RedirectResponse|JsonResponse {
+        $run = $handler->handle($uuid, $data, (int) $request->user()->id);
+
+        return match ($request->expectsJson()) {
+            true => response()->json(['data' => $run], 202),
+            false => redirect()
+                ->route('resume-studio.runs.show', ['uuid' => $run->uuid])
+                ->with('success', __('Metric answers saved. Rewrite queued.')),
         };
     }
 
@@ -89,21 +107,21 @@ final readonly class ResumeStudioController
         return response()->json(['data' => $repos]);
     }
 
-    public function updateMatch(string $uuid, UpdateJobMatchData $data, UpdateJobMatchHandler $handler): RedirectResponse|JsonResponse
+    public function updateMatch(string $uuid, Request $request, UpdateJobMatchData $data, UpdateJobMatchHandler $handler): RedirectResponse|JsonResponse
     {
-        $match = $handler->handle($uuid, $data);
+        $match = $handler->handle($uuid, $data, (int) $request->user()->id);
 
-        return match (request()->expectsJson()) {
+        return match ($request->expectsJson()) {
             true => response()->json(['data' => $match]),
             false => back()->with('success', __('Job match updated.')),
         };
     }
 
-    public function markDraftSent(string $uuid, MarkOutreachSentHandler $handler): RedirectResponse|JsonResponse
+    public function markDraftSent(string $uuid, Request $request, MarkOutreachSentHandler $handler): RedirectResponse|JsonResponse
     {
-        $draft = $handler->handle($uuid);
+        $draft = $handler->handle($uuid, (int) $request->user()->id);
 
-        return match (request()->expectsJson()) {
+        return match ($request->expectsJson()) {
             true => response()->json(['data' => $draft]),
             false => back()->with('success', __('Draft marked as sent manually.')),
         };

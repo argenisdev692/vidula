@@ -42,7 +42,7 @@ final class EloquentPostRepository implements PostRepositoryPort
                 'is_ai_generated', 'seo_score', 'eeat_score', 'human_writing_index',
                 'created_at', 'deleted_at',
             ])
-            ->orderByDesc('created_at')
+            ->orderBy($filters->resolvedSortField(), $filters->resolvedSortDirection())
             ->paginate($perPage)
             ->withQueryString();
     }

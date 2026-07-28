@@ -10,7 +10,7 @@ use Modules\AiResumeStudio\Domain\Ports\JobMatchRepositoryPort;
 use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\JobMatchEloquentModel;
 use Shared\Infrastructure\Persistence\Concerns\BulkSoftDeletesByUuid;
 
-final class EloquentJobMatchRepository implements JobMatchRepositoryPort
+final readonly class EloquentJobMatchRepository implements JobMatchRepositoryPort
 {
     use BulkSoftDeletesByUuid;
 

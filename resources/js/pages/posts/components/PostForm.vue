@@ -23,10 +23,12 @@ import TimeField from '@/common/form/TimeField.vue';
 import FileField from '@/common/form/FileField.vue';
 import SubmitButton from '@/common/form/SubmitButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
+import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import AiAssistPanel from './AiAssistPanel.vue';
 import { postFormSchema, type PostFormValues } from '@/modules/post/schemas/postFormSchema';
 import type { CategoryOption, GeneratedPostContent, PostDetail } from '@/modules/post/types';
 import { toLocalIsoDate } from '@/lib/date';
+import { useAuthorization } from '@/modules/auth/composables/useAuthorization';
 
 const props = withDefaults(
     defineProps<{
@@ -38,6 +40,15 @@ const props = withDefaults(
 );
 
 const isEdit = computed<boolean>(() => props.mode === 'edit');
+const isSuspended = computed<boolean>(() => props.post?.deleted_at != null);
+
+const { hasPermission } = useAuthorization();
+const canSubmit = computed<boolean>(() => {
+    if (isSuspended.value) {
+        return false;
+    }
+    return isEdit.value ? hasPermission('UPDATE_POSTS') : hasPermission('CREATE_POSTS');
+});
 
 function splitScheduledAt(value: string | null): { date: string | null; time: string | null } {
     if (!value) {
@@ -132,6 +143,12 @@ function applyAiDraft(draft: GeneratedPostContent): void {
     form.ai_scores = {
         seo_analysis: draft.seo_analysis,
         optimization_suggestions: draft.optimization_suggestions,
+        virality_score: draft.virality_score,
+        roi_score: draft.roi_score,
+        all_scores_pass: draft.all_scores_pass,
+        iterations_required: draft.iterations_required,
+        quality_warning: draft.quality_warning,
+        image_prompts: draft.image_prompts,
     };
     metaOpen.value = true;
 }
@@ -149,6 +166,10 @@ watch(
 const submitLabel = computed<string>(() => (isEdit.value ? 'Save changes' : 'Create post'));
 
 function submit(): void {
+    if (!canSubmit.value) {
+        return;
+    }
+
     const parsed = postFormSchema.safeParse({
         title: form.title,
         content: form.content,
@@ -339,11 +360,15 @@ function submit(): void {
                         :disabled="form.processing"
                         @click="router.visit('/posts')"
                     />
-                    <SubmitButton :label="submitLabel" icon="pi pi-check" :loading="form.processing" />
+                    <PermissionGuard :permission="isEdit ? 'UPDATE_POSTS' : 'CREATE_POSTS'">
+                        <SubmitButton :label="submitLabel" icon="pi pi-check" :loading="form.processing" />
+                    </PermissionGuard>
                 </div>
             </div>
 
-            <AiAssistPanel @apply="applyAiDraft" />
+            <PermissionGuard v-if="!isSuspended" permission="CREATE_POSTS">
+                <AiAssistPanel @apply="applyAiDraft" />
+            </PermissionGuard>
         </div>
     </form>
 </template>

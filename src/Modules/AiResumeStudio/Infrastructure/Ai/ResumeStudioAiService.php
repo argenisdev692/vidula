@@ -14,11 +14,58 @@ final readonly class ResumeStudioAiService
     public function __construct(private AIClientInterface $ai) {}
 
     /**
+     * @return array{
+     *     target_job_title: string,
+     *     strengths: list<string>,
+     *     improvements: list<string>,
+     *     keyword_gaps: list<string>,
+     *     weak_lines: list<string>,
+     *     xyz_gaps: list<string>,
+     *     metric_questions: list<array{id: string, question: string, related_bullet: string|null}>
+     * }
+     */
+    public function judgeCv(string $prompt, ?string $provider): array
+    {
+        $response = $this->ai->generateStructured(CvJudgeAgent::class, $prompt, $provider);
+
+        /** @var list<array{id?: mixed, question?: mixed, related_bullet?: mixed}> $rawQuestions */
+        $rawQuestions = array_values((array) ($response['metric_questions'] ?? []));
+        $metricQuestions = [];
+
+        foreach ($rawQuestions as $index => $question) {
+            $id = trim((string) ($question['id'] ?? ''));
+            $text = trim((string) ($question['question'] ?? ''));
+
+            if ($text === '') {
+                continue;
+            }
+
+            $metricQuestions[] = [
+                'id' => $id !== '' ? $id : 'q'.($index + 1),
+                'question' => $text,
+                'related_bullet' => isset($question['related_bullet']) && $question['related_bullet'] !== null
+                  ? (string) $question['related_bullet']
+                  : null,
+            ];
+        }
+
+        return [
+            'target_job_title' => (string) ($response['target_job_title'] ?? ''),
+            'strengths' => array_values(array_map('strval', (array) ($response['strengths'] ?? []))),
+            'improvements' => array_values(array_map('strval', (array) ($response['improvements'] ?? []))),
+            'keyword_gaps' => array_values(array_map('strval', (array) ($response['keyword_gaps'] ?? []))),
+            'weak_lines' => array_values(array_map('strval', (array) ($response['weak_lines'] ?? []))),
+            'xyz_gaps' => array_values(array_map('strval', (array) ($response['xyz_gaps'] ?? []))),
+            'metric_questions' => $metricQuestions,
+        ];
+    }
+
+    /**
      * @return array{refined_md: string, ats_score: int, feedback: array<string, mixed>, target_job_title: string}
      */
-    public function refineCv(string $prompt, ?string $provider): array
+    public function rewriteCv(string $prompt, ?string $provider): array
     {
-        $response = $this->ai->generateStructured(AtsRefineAgent::class, $prompt, $provider);
+        $response = $this->ai->generateStructured(AtsRewriteAgent::class, $prompt, $provider);
 
         return [
             'refined_md' => (string) ($response['refined_md'] ?? ''),

@@ -2,17 +2,18 @@
 /**
  * Studio run detail — refined CV, job matches, outreach drafts (GET /resume-studio/runs/{uuid}).
  */
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import DetailCard from '@/common/ui/DetailCard.vue';
 import StatusBadge from '@/common/ui/StatusBadge.vue';
 import SelectField from '@/common/form/SelectField.vue';
+import TextareaField from '@/common/form/TextareaField.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Message from '@/volt/Message.vue';
-import { formatDate } from '@/modules/resume-studio/helpers/buildStudioQueryParams';
+import { formatDateShort } from '@/modules/cvs/helpers/formatDate';
 import {
     modeLabel,
     statusLabel,
@@ -23,6 +24,7 @@ import { APPLICATION_STATUS_OPTIONS } from '@/modules/resume-studio/helpers/opti
 import { RESUME_LANGUAGE_OPTIONS } from '@/modules/resume-studio/helpers/locationScopes';
 import type {
     ApplicationStatus,
+    MetricQuestion,
     OutreachDraft,
     RefinedCv,
     RefinedCvFeedback,
@@ -51,6 +53,36 @@ const isSuspended = computed<boolean>(() => props.run.deleted_at !== null);
 
 const isActive = computed<boolean>(
     () => props.run.status === 'pending' || props.run.status === 'running',
+);
+
+const awaitsMetrics = computed<boolean>(
+    () => props.run.status === 'awaiting_input' && props.run.step === 'awaiting_metrics',
+);
+
+const metricQuestions = computed<MetricQuestion[]>(() => {
+    const questions = props.run.meta?.audit?.metric_questions ?? [];
+    return Array.isArray(questions) ? questions : [];
+});
+
+const auditPreview = computed(() => props.run.meta?.audit ?? null);
+
+const metricsForm = useForm<{
+    metric_answers: Array<{ id: string; answer: string }>;
+    skip_metrics: boolean;
+}>({
+    metric_answers: [],
+    skip_metrics: false,
+});
+
+watch(
+    metricQuestions,
+    (questions) => {
+        metricsForm.metric_answers = questions.map((question) => ({
+            id: question.id,
+            answer: metricsForm.metric_answers.find((row) => row.id === question.id)?.answer ?? '',
+        }));
+    },
+    { immediate: true },
 );
 
 const latestRefined = computed<RefinedCv | null>(() => {
@@ -157,6 +189,34 @@ function markSent(draft: OutreachDraft): void {
 function draftKindLabel(kind: OutreachDraft['kind']): string {
     return kind === 'cover' ? 'Cover letter' : 'Digest';
 }
+
+function submitMetrics(skip: boolean): void {
+    metricsForm.skip_metrics = skip;
+    const payload = {
+        skip_metrics: skip,
+        metric_answers: skip
+            ? []
+            : metricsForm.metric_answers
+                  .map((row) => ({
+                      id: row.id,
+                      answer: row.answer.trim(),
+                  }))
+                  .filter((row) => row.answer !== ''),
+    };
+
+    metricsForm
+        .transform(() => payload)
+        .post(`/resume-studio/runs/${props.run.uuid}/metrics`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.add({
+                    severity: 'success',
+                    summary: skip ? 'Skipped metrics — rewrite queued' : 'Metrics saved — rewrite queued',
+                    life: 4000,
+                });
+            },
+        });
+}
 </script>
 
 <template>
@@ -189,11 +249,11 @@ function draftKindLabel(kind: OutreachDraft['kind']): string {
         <div class="run-meta">
             <p class="run-meta__item">
                 <span class="run-meta__label">Started</span>
-                <span class="mono">{{ formatDate(run.started_at ?? run.created_at) }}</span>
+                <span class="mono">{{ formatDateShort(run.started_at ?? run.created_at) }}</span>
             </p>
             <p v-if="run.finished_at" class="run-meta__item">
                 <span class="run-meta__label">Finished</span>
-                <span class="mono">{{ formatDate(run.finished_at) }}</span>
+                <span class="mono">{{ formatDateShort(run.finished_at) }}</span>
             </p>
             <p v-if="isActive" class="run-meta__item run-meta__item--live">
                 <i class="pi pi-sync" aria-hidden="true" />
@@ -204,6 +264,73 @@ function draftKindLabel(kind: OutreachDraft['kind']): string {
         <Message v-if="run.error_summary" severity="error" :closable="false" class="run-error">
             {{ run.error_summary }}
         </Message>
+
+        <section
+            v-if="awaitsMetrics"
+            class="metrics-gate"
+            aria-label="Metric questions before rewrite"
+        >
+            <header class="metrics-gate__head">
+                <h3 class="metrics-gate__title">Honest metrics (optional)</h3>
+                <p class="muted">
+                    Answer with ranges or approximate scope — never invent precision you cannot defend in an interview.
+                    Then we rewrite the CV with Google XYZ bullets.
+                </p>
+            </header>
+
+            <div v-if="auditPreview" class="audit-preview">
+                <div v-if="auditPreview.xyz_gaps?.length" class="feedback__block">
+                    <p class="feedback__label">XYZ gaps</p>
+                    <ul>
+                        <li v-for="(item, index) in auditPreview.xyz_gaps" :key="`xyz-${index}`">{{ item }}</li>
+                    </ul>
+                </div>
+                <div v-if="auditPreview.weak_lines?.length" class="feedback__block">
+                    <p class="feedback__label">10s-scan weak lines</p>
+                    <ul>
+                        <li v-for="(item, index) in auditPreview.weak_lines" :key="`aw-${index}`">{{ item }}</li>
+                    </ul>
+                </div>
+            </div>
+
+            <PermissionGuard permission="RUN_RESUME_STUDIOS">
+                <form class="metrics-form" @submit.prevent="submitMetrics(false)">
+                    <div
+                        v-for="(question, index) in metricQuestions"
+                        :key="question.id"
+                        class="metrics-form__item"
+                    >
+                        <TextareaField
+                            v-if="metricsForm.metric_answers[index]"
+                            v-model="metricsForm.metric_answers[index].answer"
+                            :name="`metric_${question.id}`"
+                            :label="question.question"
+                            :hint="question.related_bullet || undefined"
+                            :rows="2"
+                            :maxlength="2000"
+                        />
+                    </div>
+
+                    <div class="metrics-form__actions">
+                        <SecondaryButton
+                            type="submit"
+                            label="Continue rewrite"
+                            icon="pi pi-check"
+                            :loading="metricsForm.processing"
+                            :disabled="metricsForm.processing"
+                        />
+                        <SecondaryButton
+                            type="button"
+                            label="Skip metrics"
+                            icon="pi pi-forward"
+                            severity="secondary"
+                            :disabled="metricsForm.processing"
+                            @click="submitMetrics(true)"
+                        />
+                    </div>
+                </form>
+            </PermissionGuard>
+        </section>
 
         <div class="dual-pane">
             <section class="pane pane--cv" aria-label="Refined CV">
@@ -222,6 +349,7 @@ function draftKindLabel(kind: OutreachDraft['kind']): string {
                                 :href="`/resume-studio/refined/${latestRefined.uuid}/pdf`"
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                aria-label="Download refined CV PDF"
                             >
                                 <i class="pi pi-file-pdf" aria-hidden="true" />
                                 Download PDF
@@ -270,6 +398,12 @@ function draftKindLabel(kind: OutreachDraft['kind']): string {
                         <p class="feedback__label">10s-scan weak lines</p>
                         <ul>
                             <li v-for="(item, index) in feedback.weak_lines" :key="`w-${index}`">{{ item }}</li>
+                        </ul>
+                    </div>
+                    <div v-if="feedback.xyz_gaps?.length" class="feedback__block">
+                        <p class="feedback__label">XYZ gaps</p>
+                        <ul>
+                            <li v-for="(item, index) in feedback.xyz_gaps" :key="`x-${index}`">{{ item }}</li>
                         </ul>
                     </div>
                 </div>
@@ -400,6 +534,52 @@ function draftKindLabel(kind: OutreachDraft['kind']): string {
 
 .run-error {
     margin-bottom: var(--space-5);
+}
+
+.metrics-gate {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+    padding: var(--space-5);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+}
+
+.metrics-gate__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.metrics-gate__title {
+    margin: 0;
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+}
+
+.audit-preview {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.metrics-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.metrics-form__item {
+    min-width: 0;
+}
+
+.metrics-form__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
 }
 
 .dual-pane {

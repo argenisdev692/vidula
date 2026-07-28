@@ -9,7 +9,7 @@ use Modules\AiResumeStudio\Domain\Ports\JobSearchConfigRepositoryPort;
 use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\JobSearchConfigEloquentModel;
 use Shared\Infrastructure\Persistence\Concerns\BulkSoftDeletesByUuid;
 
-final class EloquentJobSearchConfigRepository implements JobSearchConfigRepositoryPort
+final readonly class EloquentJobSearchConfigRepository implements JobSearchConfigRepositoryPort
 {
     use BulkSoftDeletesByUuid;
 

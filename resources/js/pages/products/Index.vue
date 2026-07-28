@@ -60,6 +60,7 @@ function applyCriteria(target: ProductQuery, criteria: FilterCriteria): void {
     target.status = (criteria.status as ProductSoftStatus | undefined) || null;
     target.product_status = (criteria.product_status as ProductLifecycleStatus | undefined) || null;
     target.type = (criteria.type as ProductType | undefined) || null;
+    target.client_uuid = (criteria.client_uuid as string | undefined) || null;
 
     const range = criteria.dateRange as Date[] | undefined;
     target.date_from = range?.[0] ? toLocalIsoDate(range[0]) : null;
@@ -181,7 +182,7 @@ function confirmBulk(): void {
     });
 }
 
-const filterFields: FilterField[] = [
+const filterFields = computed<FilterField[]>(() => [
     { key: 'dateRange', label: 'Created between', type: 'date-range', placeholder: 'Start — End' },
     {
         key: 'status',
@@ -215,7 +216,17 @@ const filterFields: FilterField[] = [
             { label: 'Video pill', value: 'video_pill' },
         ],
     },
-];
+    {
+        key: 'client_uuid',
+        label: 'Client',
+        type: 'select',
+        placeholder: 'All clients',
+        options: props.clients.map((client) => ({
+            label: client.client_name,
+            value: client.uuid,
+        })),
+    },
+]);
 </script>
 
 <template>

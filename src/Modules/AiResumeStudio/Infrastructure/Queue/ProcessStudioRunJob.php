@@ -11,6 +11,7 @@ use Illuminate\Queue\Attributes\Queue;
 use Illuminate\Queue\Attributes\Timeout;
 use Illuminate\Queue\Attributes\Tries;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Modules\AiResumeStudio\Domain\Enums\JobMatchSource;
@@ -22,6 +23,7 @@ use Modules\AiResumeStudio\Domain\Enums\SearchLanguage;
 use Modules\AiResumeStudio\Domain\Enums\StudioMode;
 use Modules\AiResumeStudio\Domain\Enums\StudioRunStatus;
 use Modules\AiResumeStudio\Domain\Enums\StudioRunStep;
+use Modules\AiResumeStudio\Domain\Ports\GithubEnrichmentRepositoryPort;
 use Modules\AiResumeStudio\Domain\Ports\GithubPortfolioPort;
 use Modules\AiResumeStudio\Domain\Ports\JobMatchRepositoryPort;
 use Modules\AiResumeStudio\Domain\Ports\JobPageScraperPort;
@@ -30,7 +32,6 @@ use Modules\AiResumeStudio\Domain\Ports\RefinedCvRepositoryPort;
 use Modules\AiResumeStudio\Domain\Ports\StudioRunRepositoryPort;
 use Modules\AiResumeStudio\Domain\Services\CanonicalUrlNormalizer;
 use Modules\AiResumeStudio\Infrastructure\Ai\ResumeStudioAiService;
-use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\GithubEnrichmentEloquentModel;
 use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\JobMatchEloquentModel;
 use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\JobSearchConfigEloquentModel;
 use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\StudioRunEloquentModel;
@@ -46,11 +47,24 @@ final class ProcessStudioRunJob implements ShouldQueue
 
     public function __construct(private readonly string $studioRunUuid) {}
 
+    /**
+     * @return list<object>
+     */
+    public function middleware(): array
+    {
+        return [
+            (new WithoutOverlapping('resume-studio-run:'.$this->studioRunUuid))
+                ->expireAfter(360)
+                ->dontRelease(),
+        ];
+    }
+
     public function handle(
         StudioRunRepositoryPort $runs,
         RefinedCvRepositoryPort $refinedCvs,
         JobMatchRepositoryPort $jobMatches,
         OutreachDraftRepositoryPort $drafts,
+        GithubEnrichmentRepositoryPort $githubEnrichments,
         ResumeStudioAiService $ai,
         TavilyClientInterface $tavily,
         GithubPortfolioPort $github,
@@ -68,6 +82,7 @@ final class ProcessStudioRunJob implements ShouldQueue
         $provider = (string) ($meta['provider'] ?? 'openai');
         $keywords = (string) ($meta['keywords'] ?? '');
         $deepExtract = (bool) ($meta['deep_extract'] ?? false);
+        $phase = (string) ($meta['pipeline_phase'] ?? 'judge');
 
         try {
             $runs->update($run, [
@@ -77,41 +92,110 @@ final class ProcessStudioRunJob implements ShouldQueue
 
             $cv = $run->cv;
             $githubContext = '';
+            $githubExtraPrompt = trim((string) ($meta['github_extra_prompt'] ?? ''));
 
             if ($run->mode === StudioMode::Career) {
                 $runs->update($run, ['step' => StudioRunStep::Enriching->value]);
-                $enrichment = GithubEnrichmentEloquentModel::query()
-                    ->where('cv_id', $run->cv_id)
-                    ->where('user_id', $run->user_id)
-                    ->latest('id')
-                    ->first();
+                $enrichment = $githubEnrichments->latestForUserCv((int) $run->user_id, (int) $run->cv_id);
 
                 if ($enrichment !== null) {
                     $repos = $github->listRepos($enrichment->github_username, $enrichment->selected_repos ?? []);
-                    $enrichment->update([
+                    $githubEnrichments->update($enrichment, [
                         'repos_summary' => $repos,
                         'last_synced_at' => now(),
                     ]);
                     $githubContext = json_encode($repos, JSON_THROW_ON_ERROR);
+
+                    if ($githubExtraPrompt === '' && filled($enrichment->extra_prompt)) {
+                        $githubExtraPrompt = trim((string) $enrichment->extra_prompt);
+                    }
                 }
             }
 
-            $runs->update($run, ['step' => StudioRunStep::Refining->value]);
             $resumeLanguage = $this->resolveResumeLanguage($run);
-            $refinePrompt = $this->buildRefinePrompt($run, (string) ($cv?->raw_text ?? ''), $githubContext, $resumeLanguage);
-            $refined = $ai->refineCv($refinePrompt, $provider);
+            $rawCv = (string) ($cv?->raw_text ?? '');
+
+            if ($phase !== 'rewrite' || ! isset($meta['audit']) || ! is_array($meta['audit'])) {
+                $runs->update($run, ['step' => StudioRunStep::Judging->value]);
+                $judgePrompt = $this->buildJudgePrompt($run, $rawCv, $githubContext, $githubExtraPrompt, $resumeLanguage);
+                $audit = $ai->judgeCv($judgePrompt, $provider);
+
+                $meta['audit'] = $audit;
+                $meta['github_extra_prompt'] = $githubExtraPrompt !== '' ? $githubExtraPrompt : ($meta['github_extra_prompt'] ?? null);
+
+                if ($audit['target_job_title'] !== '' && blank($meta['target_job_title'] ?? null)) {
+                    $meta['target_job_title'] = $audit['target_job_title'];
+                }
+
+                $needsMetrics = $audit['metric_questions'] !== [];
+                $alreadyAnswered = isset($meta['metric_answers']) || (bool) ($meta['skip_metrics'] ?? false);
+
+                if ($needsMetrics && ! $alreadyAnswered) {
+                    $meta['pipeline_phase'] = 'awaiting_metrics';
+                    $runs->update($run, [
+                        'meta' => $meta,
+                        'step' => StudioRunStep::AwaitingMetrics->value,
+                        'status' => StudioRunStatus::AwaitingInput->value,
+                    ]);
+
+                    return;
+                }
+
+                $meta['pipeline_phase'] = 'rewrite';
+                $runs->update($run, ['meta' => $meta]);
+                $run->refresh();
+                $meta = (array) ($run->meta ?? []);
+            }
+
+            $runs->update($run, ['step' => StudioRunStep::Refining->value]);
+            $rewritePrompt = $this->buildRewritePrompt(
+                $run,
+                $rawCv,
+                $githubContext,
+                $githubExtraPrompt,
+                $resumeLanguage,
+                (array) ($meta['audit'] ?? []),
+                (array) ($meta['metric_answers'] ?? []),
+                (bool) ($meta['skip_metrics'] ?? false),
+            );
+            $refined = $ai->rewriteCv($rewritePrompt, $provider);
+
+            $judgeFeedback = (array) ($meta['audit'] ?? []);
+            $rewriteFeedback = (array) ($refined['feedback'] ?? []);
+            $mergedFeedback = [
+                'strengths' => array_values(array_unique([
+                    ...array_map('strval', (array) ($rewriteFeedback['strengths'] ?? [])),
+                    ...array_map('strval', (array) ($judgeFeedback['strengths'] ?? [])),
+                ])),
+                'improvements' => array_values(array_unique([
+                    ...array_map('strval', (array) ($rewriteFeedback['improvements'] ?? [])),
+                    ...array_map('strval', (array) ($judgeFeedback['improvements'] ?? [])),
+                ])),
+                'keyword_gaps' => array_values(array_unique([
+                    ...array_map('strval', (array) ($rewriteFeedback['keyword_gaps'] ?? [])),
+                    ...array_map('strval', (array) ($judgeFeedback['keyword_gaps'] ?? [])),
+                ])),
+                'weak_lines' => array_values(array_unique([
+                    ...array_map('strval', (array) ($rewriteFeedback['weak_lines'] ?? [])),
+                    ...array_map('strval', (array) ($judgeFeedback['weak_lines'] ?? [])),
+                ])),
+                'xyz_gaps' => array_values(array_map('strval', (array) ($judgeFeedback['xyz_gaps'] ?? []))),
+                'metric_questions' => (array) ($judgeFeedback['metric_questions'] ?? []),
+            ];
 
             $refinedCv = $refinedCvs->create([
                 'user_id' => $run->user_id,
                 'cv_id' => $run->cv_id,
                 'studio_run_id' => $run->id,
                 'mode' => $run->mode->value,
-                'target_job_title' => $refined['target_job_title'] ?: ($meta['target_job_title'] ?? null),
+                'target_job_title' => $refined['target_job_title']
+                  ?: ($meta['target_job_title'] ?? null)
+                  ?: ($judgeFeedback['target_job_title'] ?? null),
                 'resume_language' => $resumeLanguage->value,
                 'provider' => $provider,
                 'ats_score' => min(100, max(0, $refined['ats_score'])),
                 'refined_md' => $refined['refined_md'],
-                'feedback' => $refined['feedback'],
+                'feedback' => $mergedFeedback,
                 'version' => $refinedCvs->nextVersionForCv($run->cv_id),
             ]);
 
@@ -238,7 +322,9 @@ final class ProcessStudioRunJob implements ShouldQueue
                 ]);
             }
 
+            $meta['pipeline_phase'] = 'completed';
             $runs->update($run, [
+                'meta' => $meta,
                 'step' => StudioRunStep::Completed->value,
                 'status' => StudioRunStatus::Completed->value,
                 'finished_at' => now(),
@@ -280,31 +366,83 @@ final class ProcessStudioRunJob implements ShouldQueue
         return ResumeLanguage::English;
     }
 
-    private function buildRefinePrompt(
+    private function buildJudgePrompt(
         StudioRunEloquentModel $run,
         string $rawCv,
         string $githubContext,
+        string $githubExtraPrompt,
         ResumeLanguage $resumeLanguage,
     ): string {
-        $meta = (array) ($run->meta ?? []);
-
         return implode("\n\n", array_filter([
+            'TASK: Audit the SOURCE CV only. Do not rewrite it.',
             'MODE: '.$run->mode->value,
             $resumeLanguage->outputInstruction(),
+            ...$this->sharedContextBlocks($run, $githubContext, $githubExtraPrompt),
+            'HARD RULE REMINDER: Never invent metrics, employers, or skills. Ask metric_questions only when honest estimates would help.',
+            "SOURCE CV:\n{$rawCv}",
+        ], static fn (?string $part): bool => $part !== null && $part !== ''));
+    }
+
+    /**
+     * @param  array<string, mixed>  $audit
+     * @param  list<array{id?: string, answer?: string}>  $metricAnswers
+     */
+    private function buildRewritePrompt(
+        StudioRunEloquentModel $run,
+        string $rawCv,
+        string $githubContext,
+        string $githubExtraPrompt,
+        ResumeLanguage $resumeLanguage,
+        array $audit,
+        array $metricAnswers,
+        bool $skipMetrics,
+    ): string {
+        $auditJson = json_encode($audit, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        $answersJson = json_encode($metricAnswers, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+
+        return implode("\n\n", array_filter([
+            'TASK: Rewrite ONE ATS-optimized Markdown resume using the JUDGE AUDIT and METRIC ANSWERS.',
+            'MODE: '.$run->mode->value,
+            $resumeLanguage->outputInstruction(),
+            ...$this->sharedContextBlocks($run, $githubContext, $githubExtraPrompt),
+            "JUDGE AUDIT (JSON):\n{$auditJson}",
+            $skipMetrics
+              ? 'METRIC ANSWERS: Candidate skipped metric Q&A — do not invent numbers.'
+              : "METRIC ANSWERS (JSON):\n{$answersJson}",
+            'HARD RULE REMINDER: Never invent metrics, employers, or skills. ats_score is a heuristic.',
+            "SOURCE CV:\n{$rawCv}",
+        ], static fn (?string $part): bool => $part !== null && $part !== ''));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function sharedContextBlocks(
+        StudioRunEloquentModel $run,
+        string $githubContext,
+        string $githubExtraPrompt,
+    ): array {
+        $meta = (array) ($run->meta ?? []);
+
+        return array_values(array_filter([
             isset($meta['target_job_title']) && $meta['target_job_title'] !== ''
               ? 'TARGET ROLE: '.$meta['target_job_title']
               : null,
             isset($meta['targeting_prompt']) && $meta['targeting_prompt'] !== ''
-              ? 'TARGETING BRIEF:\n'.$meta['targeting_prompt']
+              ? "TARGETING BRIEF:\n".$meta['targeting_prompt']
+              : null,
+            isset($meta['job_description']) && is_string($meta['job_description']) && $meta['job_description'] !== ''
+              ? "TARGET JOB DESCRIPTION (optional — mirror exact keywords naturally):\n".$meta['job_description']
               : null,
             isset($meta['location_scope']) ? 'LOCATION SCOPE: '.$meta['location_scope'] : null,
             isset($meta['search_language']) ? 'PREFERRED JOB LANGUAGE: '.$meta['search_language'] : null,
             isset($meta['keywords']) && $meta['keywords'] !== ''
               ? 'KEYWORDS: '.$meta['keywords']
               : null,
+            $githubExtraPrompt !== ''
+              ? "GITHUB / CAREER EXTRA PROMPT:\n{$githubExtraPrompt}"
+              : null,
             $githubContext !== '' ? "GITHUB EVIDENCE (selected projects only):\n{$githubContext}" : null,
-            'HARD RULE REMINDER: Never invent metrics, employers, or skills. ats_score is a heuristic.',
-            "SOURCE CV:\n{$rawCv}",
         ], static fn (?string $part): bool => $part !== null && $part !== ''));
     }
 

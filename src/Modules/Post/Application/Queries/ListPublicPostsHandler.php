@@ -6,8 +6,8 @@ namespace Modules\Post\Application\Queries;
 
 use Illuminate\Support\Facades\Cache;
 use Modules\Post\Application\ReadModels\PostPublicReadModel;
+use Modules\Post\Domain\Ports\PostPublicFeedCachePort;
 use Modules\Post\Domain\Ports\PostRepositoryPort;
-use Modules\Post\Infrastructure\Cache\PostPublicFeedCache;
 use Spatie\LaravelData\PaginatedDataCollection;
 use Throwable;
 
@@ -22,7 +22,7 @@ use Throwable;
  * anonymous traffic with no per-user throttle beyond the route's
  * `throttle:60,1` (BACKEND-PHP §5 Cache Management). Every Create/Update/
  * Delete/Restore/Bulk handler busts the `posts_public` tag via
- * {@see PostPublicFeedCache}.
+ * {@see PostPublicFeedCachePort}.
  */
 final readonly class ListPublicPostsHandler
 {

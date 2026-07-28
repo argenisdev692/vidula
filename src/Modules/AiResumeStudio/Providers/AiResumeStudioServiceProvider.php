@@ -13,6 +13,7 @@ use Modules\AiResumeStudio\Domain\Ports\JobPageScraperPort;
 use Modules\AiResumeStudio\Domain\Ports\JobSearchConfigRepositoryPort;
 use Modules\AiResumeStudio\Domain\Ports\OutreachDraftRepositoryPort;
 use Modules\AiResumeStudio\Domain\Ports\RefinedCvRepositoryPort;
+use Modules\AiResumeStudio\Domain\Ports\StudioRunDispatcherPort;
 use Modules\AiResumeStudio\Domain\Ports\StudioRunRepositoryPort;
 use Modules\AiResumeStudio\Infrastructure\Console\Commands\RunDailyResumeStudioCommand;
 use Modules\AiResumeStudio\Infrastructure\Integrations\FirecrawlJobPageScraperAdapter;
@@ -23,6 +24,7 @@ use Modules\AiResumeStudio\Infrastructure\Persistence\Repositories\EloquentJobSe
 use Modules\AiResumeStudio\Infrastructure\Persistence\Repositories\EloquentOutreachDraftRepository;
 use Modules\AiResumeStudio\Infrastructure\Persistence\Repositories\EloquentRefinedCvRepository;
 use Modules\AiResumeStudio\Infrastructure\Persistence\Repositories\EloquentStudioRunRepository;
+use Modules\AiResumeStudio\Infrastructure\Queue\QueuedStudioRunDispatcher;
 
 final class AiResumeStudioServiceProvider extends ServiceProvider
 {
@@ -36,6 +38,7 @@ final class AiResumeStudioServiceProvider extends ServiceProvider
         $this->app->bind(GithubEnrichmentRepositoryPort::class, EloquentGithubEnrichmentRepository::class);
         $this->app->bind(GithubPortfolioPort::class, GithubPortfolioAdapter::class);
         $this->app->bind(JobPageScraperPort::class, FirecrawlJobPageScraperAdapter::class);
+        $this->app->bind(StudioRunDispatcherPort::class, QueuedStudioRunDispatcher::class);
     }
 
     public function boot(): void

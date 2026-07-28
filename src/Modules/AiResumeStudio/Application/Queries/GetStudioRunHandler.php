@@ -12,9 +12,15 @@ final readonly class GetStudioRunHandler
 {
     public function __construct(private StudioRunRepositoryPort $runs) {}
 
-    public function handle(string $uuid): StudioRunEloquentModel
+    public function handle(string $uuid, int $userId): StudioRunEloquentModel
     {
-        return $this->runs->findByUuid($uuid)
+        $run = $this->runs->findByUuid($uuid)
           ?? throw (new ModelNotFoundException)->setModel(StudioRunEloquentModel::class, [$uuid]);
+
+        if ((int) $run->user_id !== $userId) {
+            throw (new ModelNotFoundException)->setModel(StudioRunEloquentModel::class, [$uuid]);
+        }
+
+        return $run;
     }
 }

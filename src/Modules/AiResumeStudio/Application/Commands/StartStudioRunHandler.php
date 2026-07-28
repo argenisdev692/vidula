@@ -12,10 +12,10 @@ use Modules\AiResumeStudio\Domain\Enums\StudioRunStatus;
 use Modules\AiResumeStudio\Domain\Enums\StudioRunStep;
 use Modules\AiResumeStudio\Domain\Ports\GithubEnrichmentRepositoryPort;
 use Modules\AiResumeStudio\Domain\Ports\JobSearchConfigRepositoryPort;
+use Modules\AiResumeStudio\Domain\Ports\StudioRunDispatcherPort;
 use Modules\AiResumeStudio\Domain\Ports\StudioRunRepositoryPort;
 use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\JobSearchConfigEloquentModel;
 use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\StudioRunEloquentModel;
-use Modules\AiResumeStudio\Infrastructure\Queue\ProcessStudioRunJob;
 use Modules\Cvs\Domain\Ports\CvRepositoryPort;
 
 final readonly class StartStudioRunHandler
@@ -25,6 +25,7 @@ final readonly class StartStudioRunHandler
         private StudioRunRepositoryPort $runs,
         private JobSearchConfigRepositoryPort $configs,
         private GithubEnrichmentRepositoryPort $githubEnrichments,
+        private StudioRunDispatcherPort $dispatcher,
     ) {}
 
     #[\NoDiscard]
@@ -91,16 +92,19 @@ final readonly class StartStudioRunHandler
                     'targeting_prompt' => $data->targetingPrompt,
                     'deep_extract' => $data->deepExtract,
                     'target_job_title' => $data->targetJobTitle,
+                    'job_description' => $data->jobDescription,
                     'location_scope' => $data->locationScope,
                     'search_language' => $data->searchLanguage,
                     'resume_language' => $data->resumeLanguage,
                     'github_username' => $data->githubUsername,
                     'github_selected_repos' => $data->githubSelectedRepos,
+                    'github_extra_prompt' => $data->githubExtraPrompt,
+                    'pipeline_phase' => 'judge',
                 ],
             ]);
         });
 
-        ProcessStudioRunJob::dispatch($run->uuid);
+        $this->dispatcher->dispatch($run->uuid);
 
         return $run;
     }
@@ -123,10 +127,11 @@ final readonly class StartStudioRunHandler
                 'search_language' => $config->search_language,
                 'resume_language' => $config->resume_language ?? 'en',
                 'scheduled' => true,
+                'pipeline_phase' => 'judge',
             ],
         ]);
 
-        ProcessStudioRunJob::dispatch($run->uuid);
+        $this->dispatcher->dispatch($run->uuid);
 
         return $run;
     }

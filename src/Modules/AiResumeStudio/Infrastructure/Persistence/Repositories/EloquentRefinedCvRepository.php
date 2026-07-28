@@ -7,7 +7,7 @@ namespace Modules\AiResumeStudio\Infrastructure\Persistence\Repositories;
 use Modules\AiResumeStudio\Domain\Ports\RefinedCvRepositoryPort;
 use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\RefinedCvEloquentModel;
 
-final class EloquentRefinedCvRepository implements RefinedCvRepositoryPort
+final readonly class EloquentRefinedCvRepository implements RefinedCvRepositoryPort
 {
     public function create(array $attributes): RefinedCvEloquentModel
     {

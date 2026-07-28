@@ -1,14 +1,15 @@
 <script setup lang="ts">
 /**
  * New post — dedicated create page (GET /posts/create, CREATE_POSTS). Same
- * shell as the other detail screens (BackLink + card), wider than the Users
- * form to fit the content editor + AI assist panel side by side.
+ * shell as Users invite (BackLink + Volt Card), wider to fit the content
+ * editor + AI assist panel side by side.
  */
 import { Head } from '@inertiajs/vue3';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import AppHeader from '@/modules/app/components/AppHeader.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import BackLink from '@/common/ui/BackLink.vue';
+import Card from '@/volt/Card.vue';
 import PostForm from './components/PostForm.vue';
 import type { CategoryOption } from '@/modules/post/types';
 
@@ -35,9 +36,11 @@ defineProps<{
         <div class="form-page">
             <BackLink href="/posts" label="Back to posts" />
 
-            <article class="card">
-                <PostForm mode="create" :categories="categories" />
-            </article>
+            <Card class="form-card">
+                <template #content>
+                    <PostForm mode="create" :categories="categories" />
+                </template>
+            </Card>
         </div>
     </PermissionGuard>
 </template>
@@ -52,13 +55,8 @@ defineProps<{
     margin-inline: auto;
 }
 
-.card {
-    background: color-mix(in srgb, var(--bg-surface) 60%, transparent);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-2xl);
-    padding: var(--space-6) var(--space-8);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+.form-card {
+    width: 100%;
 }
 
 .empty {
@@ -72,11 +70,5 @@ defineProps<{
 
 .empty .pi {
     font-size: var(--text-3xl);
-}
-
-@media (max-width: 640px) {
-    .card {
-        padding: var(--space-5) var(--space-4);
-    }
 }
 </style>

@@ -9,7 +9,7 @@ use Modules\AiResumeStudio\Application\DTOs\StudioFilterData;
 use Modules\AiResumeStudio\Domain\Ports\StudioRunRepositoryPort;
 use Modules\AiResumeStudio\Infrastructure\Persistence\Eloquent\Models\StudioRunEloquentModel;
 
-final class EloquentStudioRunRepository implements StudioRunRepositoryPort
+final readonly class EloquentStudioRunRepository implements StudioRunRepositoryPort
 {
     public function paginate(StudioFilterData $filters, int $perPage): LengthAwarePaginator
     {
@@ -46,7 +46,7 @@ final class EloquentStudioRunRepository implements StudioRunRepositoryPort
             ->with([
                 'cv:id,uuid,title,niche,raw_text',
                 'jobSearchConfig:id,uuid,keywords,schedule_enabled,deep_extract_enabled,auto_send_enabled',
-                'refinedCvs:id,uuid,studio_run_id,ats_score,target_job_title,refined_md,feedback,version,provider,created_at',
+                'refinedCvs:id,uuid,studio_run_id,ats_score,target_job_title,resume_language,refined_md,feedback,version,provider,created_at',
                 'jobMatches:id,uuid,studio_run_id,job_title,company_name,job_url,match_score,match_reasoning,application_status,source,created_at,deleted_at',
                 'outreachDrafts:id,uuid,studio_run_id,kind,subject,body,language,status,created_at',
             ])

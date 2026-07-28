@@ -20,6 +20,7 @@ use Modules\Post\Domain\Ports\PostContentGeneratorPort;
 use Modules\Post\Domain\Ports\PostTopicIdeatorPort;
 use Modules\Post\Domain\Ports\ReelPackageGeneratorPort;
 use Modules\Post\Domain\Ports\SocialCopyGeneratorPort;
+use Modules\Post\Domain\Services\PostContentQualityEvaluator;
 use Modules\Post\Infrastructure\Broadcasting\PostAiGenerationProgress;
 use Shared\Domain\Ports\SpeechSynthesizerPort;
 use Shared\Domain\Ports\StoragePort;
@@ -36,12 +37,10 @@ use Throwable;
  * plumbing while each port stays small (ISP) for its own consumer.
  *
  * Caching lives HERE, in the module adapter — never in the Shared AI/Tavily
- * clients (`LaravelAIAdapter`/`TavilyResearchAdapter` stay pure transport +
- * circuit breaker, no business/result caching). Each of these four calls is
- * a real, billed provider request with no internal iteration state, so the
- * full result is cacheable keyed on its input payload — dedupes accidental
- * double-submits/rapid retries with identical parameters within the TTL
- * without ever risking stale content past it.
+ * clients. `suggestTopics` / social / reel cache the full result. `generate()`
+ * runs an up-to-5-iteration quality loop and caches only the final best
+ * attempt keyed on the input payload (iteration state is never part of the
+ * cache key).
  */
 final readonly class LaravelAiPostAssistantAdapter implements PostContentGeneratorPort, PostTopicIdeatorPort, ReelPackageGeneratorPort, SocialCopyGeneratorPort
 {
@@ -52,6 +51,7 @@ final readonly class LaravelAiPostAssistantAdapter implements PostContentGenerat
         private TavilyClientInterface $research,
         private StoragePort $storage,
         private SpeechSynthesizerPort $speech,
+        private PostContentQualityEvaluator $evaluator = new PostContentQualityEvaluator,
     ) {}
 
     public function suggestTopics(SuggestPostTopicsData $data, ?object $causer = null): array
@@ -104,50 +104,139 @@ final readonly class LaravelAiPostAssistantAdapter implements PostContentGenerat
             $this->cacheKey('generate', $data->toArray()),
             now()->addMinutes(self::CACHE_TTL_MINUTES),
             function () use ($data, $causer): GeneratedPostContentData {
-                $this->broadcast($causer, 'content', 'researching', 'Researching current trends…', 15);
-
                 $company = CompanyProfile::data();
-                $research = $this->research->search($this->researchQueries($data->topic, $data->keyTrend));
-                $prompt = $this->buildContentPrompt($data, $company, $research);
 
-                $this->broadcast($causer, 'content', 'writing', 'Writing the blog draft…', 50);
+                $bestResponse = null;
+                $bestThresholdScores = [];
+                $bestOverallAverage = -1;
+                $previousWeaknesses = [];
+                $iterationsRan = 0;
+                $allScoresPass = false;
 
-                $response = $this->ai->generateStructured(GeneratePostContentAgent::class, $prompt, $data->provider);
+                for ($iteration = 1; $iteration <= PostContentQualityEvaluator::MAX_ITERATIONS; $iteration++) {
+                    $iterationsRan = $iteration;
+                    $progressBase = (int) round((($iteration - 1) / PostContentQualityEvaluator::MAX_ITERATIONS) * 80);
+
+                    $this->broadcast(
+                        $causer,
+                        'content',
+                        'researching',
+                        "Iteration {$iteration}: researching…",
+                        $progressBase + 5,
+                    );
+
+                    try {
+                        $research = $this->research->search(
+                            $this->researchQueriesForIteration($data->topic, $data->keyTrend, $iteration),
+                        );
+                        $prompt = $this->buildContentPrompt($data, $company, $research, $iteration, $previousWeaknesses);
+
+                        $this->broadcast(
+                            $causer,
+                            'content',
+                            'writing',
+                            "Iteration {$iteration}: writing the blog draft…",
+                            $progressBase + 15,
+                        );
+
+                        $response = $this->ai->generateStructured(GeneratePostContentAgent::class, $prompt, $data->provider);
+                    } catch (Throwable $exception) {
+                        Log::warning('post.ai.generation.iteration_failed', [
+                            'iteration' => $iteration,
+                            'error' => $exception->getMessage(),
+                        ]);
+
+                        continue;
+                    }
+
+                    /** @var array<string, mixed> $rawScores */
+                    $rawScores = (array) $response['scores'];
+                    $thresholdScores = [
+                        'human_writing_index' => (int) ($rawScores['human_writing_index'] ?? 0),
+                        'eeat_score' => (int) ($rawScores['eeat_score'] ?? 0),
+                        'virality_score' => (int) ($rawScores['virality_score'] ?? 0),
+                        'roi_score' => (int) ($rawScores['roi_score'] ?? 0),
+                        'seo_score' => (int) ($rawScores['seo_score'] ?? 0),
+                    ];
+
+                    $evaluation = $this->evaluator->evaluate($thresholdScores);
+
+                    if ($evaluation->overallAverage > $bestOverallAverage) {
+                        $bestOverallAverage = $evaluation->overallAverage;
+                        $bestResponse = $response;
+                        $bestThresholdScores = $thresholdScores;
+                    }
+
+                    if ($evaluation->allPass) {
+                        $allScoresPass = true;
+                        break;
+                    }
+
+                    $previousWeaknesses = $this->evaluator->identifyWeaknesses(
+                        $thresholdScores,
+                        array_map(static fn (int $value): string => "Scored {$value}", $thresholdScores),
+                    );
+                }
+
+                if ($bestResponse === null) {
+                    throw new \RuntimeException('Post content generation failed on every iteration.');
+                }
 
                 /** @var array{title: string, visual: string} $concept */
-                $concept = (array) $response['cover_image_concept'];
-                $coverImagePath = null;
+                $concept = (array) $bestResponse['cover_image_concept'];
+                $imagePrompts = $this->buildLayeredImagePrompts((string) $concept['title'], (string) $concept['visual']);
 
+                $coverImagePath = null;
                 if ($data->generateCoverImage) {
-                    $this->broadcast($causer, 'content', 'image', 'Generating the on-brand cover image…', 80);
-                    $coverImagePath = $this->generateAndStoreCoverImage((string) $concept['title'], (string) $concept['visual']);
+                    $this->broadcast($causer, 'content', 'image', 'Generating the on-brand cover image…', 90);
+                    $coverImagePath = $this->generateAndStoreCoverImage(
+                        (string) $concept['title'],
+                        (string) $concept['visual'],
+                    );
                 }
 
                 $coverImageUrl = $coverImagePath !== null ? $this->storage->publicUrl($coverImagePath) : null;
 
                 /** @var array<string, mixed> $scores */
-                $scores = (array) $response['scores'];
+                $scores = (array) $bestResponse['scores'];
                 /** @var array{primary_keyword: string, lsi_keywords: list<string>} $seoAnalysis */
-                $seoAnalysis = (array) $response['seo_analysis'];
+                $seoAnalysis = (array) $bestResponse['seo_analysis'];
 
-                $this->broadcast($causer, 'content', 'done', 'Draft ready.', 100);
+                $qualityWarning = ! $allScoresPass;
+
+                $this->broadcast(
+                    $causer,
+                    'content',
+                    'done',
+                    $qualityWarning ? 'Best attempt ready for review.' : 'Draft ready — all scores passed.',
+                    100,
+                );
 
                 return new GeneratedPostContentData(
-                    title: (string) $response['title'],
-                    content: (string) $response['content'],
-                    excerpt: (string) $response['excerpt'],
-                    metaTitle: (string) $response['meta_title'],
-                    metaDescription: (string) $response['meta_description'],
-                    metaKeywords: (string) $response['meta_keywords'],
+                    title: (string) $bestResponse['title'],
+                    content: (string) $bestResponse['content'],
+                    excerpt: (string) $bestResponse['excerpt'],
+                    metaTitle: (string) $bestResponse['meta_title'],
+                    metaDescription: (string) $bestResponse['meta_description'],
+                    metaKeywords: (string) $bestResponse['meta_keywords'],
                     coverImagePath: $coverImagePath,
                     coverImageUrl: $coverImageUrl,
+                    imagePrompts: $imagePrompts,
                     provider: $data->provider,
-                    seoScore: (int) $scores['seo_score'],
-                    eeatScore: (int) $scores['eeat_score'],
-                    humanWritingIndex: (int) $scores['human_writing_index'],
-                    aiDetectionRisk: (int) $scores['ai_detection_risk'],
+                    seoScore: $bestThresholdScores['seo_score'],
+                    eeatScore: $bestThresholdScores['eeat_score'],
+                    viralityScore: $bestThresholdScores['virality_score'],
+                    roiScore: $bestThresholdScores['roi_score'],
+                    humanWritingIndex: $bestThresholdScores['human_writing_index'],
+                    aiDetectionRisk: (int) ($scores['ai_detection_risk'] ?? 0),
+                    allScoresPass: $allScoresPass,
+                    iterationsRequired: $iterationsRan,
+                    qualityWarning: $qualityWarning,
+                    qualityWarningMessage: $qualityWarning
+                        ? 'Maximum iterations reached — showing the best attempt for manual review.'
+                        : null,
                     scores: $scores,
-                    optimizationSuggestions: (array) $response['optimization_suggestions'],
+                    optimizationSuggestions: (array) $bestResponse['optimization_suggestions'],
                     seoAnalysis: $seoAnalysis,
                 );
             },
@@ -264,12 +353,6 @@ final readonly class LaravelAiPostAssistantAdapter implements PostContentGenerat
     }
 
     /**
-     * Deterministic cache key for one AI operation, scoped by every input
-     * field that affects the output (via the DTO's own `toArray()` — stays
-     * correct automatically if a field is ever added). `$causer` is
-     * deliberately excluded: two different users requesting the identical
-     * payload should share the cache entry.
-     *
      * @param  array<string, mixed>  $payload
      */
     private function cacheKey(string $operation, array $payload): string
@@ -282,11 +365,30 @@ final readonly class LaravelAiPostAssistantAdapter implements PostContentGenerat
      */
     private function researchQueries(string $topic, ?string $keyTrend): array
     {
-        return array_filter([
+        return array_values(array_filter([
             "{$topic} 2026",
             $keyTrend !== null ? "{$keyTrend} statistics recent data" : null,
             "{$topic} case study results",
-        ]);
+        ]));
+    }
+
+    /**
+     * Fresh Tavily angles per quality-loop iteration (mirrors the POSTS prompt).
+     *
+     * @return list<string>
+     */
+    private function researchQueriesForIteration(string $topic, ?string $keyTrend, int $iteration): array
+    {
+        $base = $this->researchQueries($topic, $keyTrend);
+        $trend = $keyTrend ?? $topic;
+
+        return match ($iteration) {
+            2 => [...$base, "{$topic} case study results ROI", "{$topic} viral examples social media"],
+            3 => [...$base, "{$topic} expert opinion thought leadership", "{$trend} industry report 2026"],
+            4 => [...$base, "{$topic} authoritative sources citations", "{$topic} SEO keywords search volume"],
+            5 => [...$base, "{$topic} top performing posts engagement", "{$topic} conversion rate benchmarks"],
+            default => $base,
+        };
     }
 
     /**
@@ -307,9 +409,15 @@ final readonly class LaravelAiPostAssistantAdapter implements PostContentGenerat
     /**
      * @param  array{name: string, description: ?string}  $company
      * @param  list<array{title: string, url: string, content: string, score: float}>  $research
+     * @param  list<array{score: string, current: int, target: int, gap: int, explanation: string}>  $previousWeaknesses
      */
-    private function buildContentPrompt(GeneratePostContentData $data, array $company, array $research): string
-    {
+    private function buildContentPrompt(
+        GeneratePostContentData $data,
+        array $company,
+        array $research,
+        int $iteration,
+        array $previousWeaknesses,
+    ): string {
         return implode("\n\n", array_filter([
             "Company: {$company['name']}",
             $company['description'] !== null ? "Company description: {$company['description']}" : null,
@@ -317,8 +425,30 @@ final readonly class LaravelAiPostAssistantAdapter implements PostContentGenerat
             $data->angle !== null ? "Angle: {$data->angle}" : null,
             $data->keyTrend !== null ? "Key trend to reference: {$data->keyTrend}" : null,
             'Web research context:'."\n".$this->formatResearch($research),
+            $this->formatIterationFeedback($iteration, $previousWeaknesses),
             'Write the complete blog post exactly as specified in your instructions.',
         ]));
+    }
+
+    /**
+     * @param  list<array{score: string, current: int, target: int, gap: int, explanation: string}>  $weaknesses
+     */
+    private function formatIterationFeedback(int $iteration, array $weaknesses): ?string
+    {
+        if ($iteration === 1 || $weaknesses === []) {
+            return "Current iteration: {$iteration} of ".PostContentQualityEvaluator::MAX_ITERATIONS
+                .'. First attempt — all scores must meet their thresholds.';
+        }
+
+        $lines = array_map(
+            static fn (array $w): string => "- {$w['score']}: was {$w['current']}, needs {$w['target']}+. {$w['explanation']}",
+            $weaknesses,
+        );
+
+        return "Iteration {$iteration} of ".PostContentQualityEvaluator::MAX_ITERATIONS
+            .". Previous attempt failed these scores:\n"
+            .implode("\n", $lines)
+            ."\nDo NOT repeat the same content — change the hook, evidence, or CTA for each failing score.";
     }
 
     /**
@@ -358,9 +488,37 @@ final readonly class LaravelAiPostAssistantAdapter implements PostContentGenerat
     }
 
     /**
-     * Wraps the agent's short concept in a deterministic template so every
-     * cover image stays on-brand (dark navy + electric purple) regardless of
-     * what the model would otherwise invent — see {@see BrandPalette}.
+     * Deterministic BrandPalette-locked prompts for separate layer generation
+     * (background plate + content/foreground). Always returned to the client.
+     *
+     * @return array{background: string, content: string}
+     */
+    private function buildLayeredImagePrompts(string $title, string $visual): array
+    {
+        $background = BrandPalette::BACKGROUND;
+        $primaryAccent = BrandPalette::PRIMARY_ACCENT;
+        $secondaryAccent = BrandPalette::SECONDARY_ACCENT;
+
+        return [
+            'background' => <<<PROMPT
+                Abstract premium dark-mode background only, no objects, no people, no text, no logo, no watermark.
+                Deep navy base ({$background}) with soft vertical cinematic gradient, faint geometric grid, subtle film grain.
+                Soft indigo glow ({$primaryAccent}) from upper-left, lilac haze ({$secondaryAccent}) lower-right, low contrast, wide negative space in center for later compositing.
+                Editorial tech aesthetic, 16:9, 4k, photorealistic lighting, empty center stage.
+                PROMPT,
+            'content' => <<<PROMPT
+                Isolated subject on pure transparent or pure black cutout-ready background: {$visual},
+                rendered as glowing 3D glass-and-neon in electric indigo ({$primaryAccent}) with soft lilac accents ({$secondaryAccent}),
+                rim light, subtle reflections, sharp focus, depth of field.
+                Optional single short title below in clean bold sans-serif: "{$title}".
+                No paragraphs, no extra UI, no watermark, centered, Apple-keynote quality, 16:9.
+                PROMPT,
+        ];
+    }
+
+    /**
+     * Composite cover (background + content + title) for Gemini Imagen when
+     * `generate_cover_image` is true — see {@see BrandPalette}.
      */
     private function generateAndStoreCoverImage(string $title, string $visual): ?string
     {

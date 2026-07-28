@@ -20,6 +20,9 @@ use Modules\Cvs\Infrastructure\Persistence\Eloquent\Models\CvEloquentModel;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
+/**
+ * @internal Persistence adapter — Application/Domain must not import this class outside ports.
+ */
 #[Table('job_search_configs')]
 #[Fillable([
     'uuid',
@@ -72,7 +75,7 @@ final class JobSearchConfigEloquentModel extends Model
      */
     public function studioRuns(): HasMany
     {
-        return $this->hasMany(StudioRunEloquentModel::class, 'job_search_config_id');
+        return $this->hasMany(StudioRunEloquentModel::class, 'job_search_config_id')->chaperone();
     }
 
     /**
@@ -80,7 +83,7 @@ final class JobSearchConfigEloquentModel extends Model
      */
     public function jobMatches(): HasMany
     {
-        return $this->hasMany(JobMatchEloquentModel::class, 'job_search_config_id');
+        return $this->hasMany(JobMatchEloquentModel::class, 'job_search_config_id')->chaperone();
     }
 
     /**

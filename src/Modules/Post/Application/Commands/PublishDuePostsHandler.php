@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Modules\Post\Application\Commands;
 
 use Illuminate\Support\Facades\DB;
+use Modules\Post\Domain\Ports\PostPublicFeedCachePort;
 use Modules\Post\Domain\Ports\PostRepositoryPort;
-use Modules\Post\Infrastructure\Cache\PostPublicFeedCache;
 
 /**
  * Auto-publishes posts whose `scheduled_at` has been reached. Invoked by the
@@ -19,6 +19,7 @@ final readonly class PublishDuePostsHandler
 {
     public function __construct(
         private PostRepositoryPort $posts,
+        private PostPublicFeedCachePort $publicFeedCache,
     ) {}
 
     public function handle(): int
@@ -38,7 +39,7 @@ final readonly class PublishDuePostsHandler
             }
         });
 
-        PostPublicFeedCache::flush();
+        $this->publicFeedCache->flush();
 
         return $due->count();
     }

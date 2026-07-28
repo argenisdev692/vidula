@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Cache;
 use Modules\Blog\Infrastructure\Cache\BlogCategoryPublicFeedCache;
 use Modules\Post\Application\Queries\GetPublicPostHandler;
 use Modules\Post\Application\Queries\ListPublicPostsHandler;
+use Modules\Post\Domain\Ports\PostPublicFeedCachePort;
 use Throwable;
 
 /**
@@ -21,9 +22,9 @@ use Throwable;
  * Tag-based flush degrades silently when the cache store doesn't support tags
  * (BACKEND-PHP §5 Cache Management) — entries still expire via their TTL.
  */
-final class PostPublicFeedCache
+final class PostPublicFeedCache implements PostPublicFeedCachePort
 {
-    public static function flush(): void
+    public function flush(): void
     {
         try {
             Cache::tags(['posts_public'])->flush();

@@ -26,6 +26,8 @@ use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
 /**
+ * @internal Persistence adapter — Application/Domain must not import this class outside ports.
+ *
  * @property int $id
  * @property string $uuid
  * @property int $user_id
@@ -131,7 +133,7 @@ final class StudioRunEloquentModel extends Model
      */
     public function refinedCvs(): HasMany
     {
-        return $this->hasMany(RefinedCvEloquentModel::class, 'studio_run_id');
+        return $this->hasMany(RefinedCvEloquentModel::class, 'studio_run_id')->chaperone();
     }
 
     /**
@@ -139,7 +141,7 @@ final class StudioRunEloquentModel extends Model
      */
     public function jobMatches(): HasMany
     {
-        return $this->hasMany(JobMatchEloquentModel::class, 'studio_run_id');
+        return $this->hasMany(JobMatchEloquentModel::class, 'studio_run_id')->chaperone();
     }
 
     /**
@@ -147,7 +149,7 @@ final class StudioRunEloquentModel extends Model
      */
     public function outreachDrafts(): HasMany
     {
-        return $this->hasMany(OutreachDraftEloquentModel::class, 'studio_run_id');
+        return $this->hasMany(OutreachDraftEloquentModel::class, 'studio_run_id')->chaperone();
     }
 
     /**

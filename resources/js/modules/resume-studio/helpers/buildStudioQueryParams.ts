@@ -1,7 +1,7 @@
 import { buildExportUrl, type ExportFormat } from '@/lib/queryParams';
 import type { StudioQuery } from '../types';
 
-export { formatDate } from '@/modules/cvs/helpers/formatDate';
+export { formatDate, formatDateShort } from '@/modules/cvs/helpers/formatDate';
 
 /** Export formats accepted by GET /resume-studio/export (job matches). */
 export type StudioExportFormat = ExportFormat;

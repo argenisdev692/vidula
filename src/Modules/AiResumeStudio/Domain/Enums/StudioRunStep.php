@@ -8,6 +8,8 @@ enum StudioRunStep: string
 {
     case Queued = 'queued';
     case Enriching = 'enriching';
+    case Judging = 'judging';
+    case AwaitingMetrics = 'awaiting_metrics';
     case Refining = 'refining';
     case Searching = 'searching';
     case Scoring = 'scoring';

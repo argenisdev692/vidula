@@ -6,12 +6,18 @@
  * panel — mirrors the Users module precedent rather than blog-categories'
  * dialog pattern.
  *
+ * List data arrives as Inertia props (not a separate JSON API), so the table is
+ * fed by Inertia partial reloads via {@see useResourceList} — same convention
+ * as Users / Clients. Pinia Colada is reserved for the JSON AI-assist endpoints
+ * on the create/edit form (YAGNI for the list).
+ *
  * The shared list mechanics live in {@see useResourceList}, the confirm
  * dialogs in {@see useConfirmAction}, the page chrome in {@see CrudIndexShell}.
  * Gated by VIEW_ANY_POSTS; every mutating control by its own permission.
  */
-import { computed, reactive } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { Head, router, useRemember } from '@inertiajs/vue3';
+import type { DataTableSortEvent } from 'primevue/datatable';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import { useAuthorization } from '@/modules/auth/composables/useAuthorization';
 import type { FilterCriteria, FilterField } from '@/common/data-table/AdvancedFilter.vue';
@@ -39,16 +45,21 @@ const canExport = computed<boolean>(() => hasPermission('EXPORT_POSTS'));
 const canBulkDelete = computed<boolean>(() => hasPermission('BULK_DELETE_POSTS'));
 const canBulkRestore = computed<boolean>(() => hasPermission('BULK_RESTORE_POSTS'));
 
-/** The reactive request state — seeded once from the server-echoed props. */
-const query = reactive<PostQuery>({
-    search: props.filters.search,
-    status: props.filters.status,
-    date_from: props.filters.date_from,
-    date_to: props.filters.date_to,
-    category_uuid: props.filters.category_uuid,
-    page: props.posts.current_page,
-    per_page: props.posts.per_page,
-});
+/** Remembered across history back/forward — seeded from the server-echoed props. */
+const query = useRemember<PostQuery>(
+    {
+        search: props.filters.search,
+        status: props.filters.status,
+        date_from: props.filters.date_from,
+        date_to: props.filters.date_to,
+        category_uuid: props.filters.category_uuid,
+        sort_field: props.filters.sort_field ?? 'created_at',
+        sort_order: props.filters.sort_order === 1 ? 1 : -1,
+        page: props.posts.current_page,
+        per_page: props.posts.per_page,
+    },
+    'posts.index',
+);
 
 function applyCriteria(target: PostQuery, criteria: FilterCriteria): void {
     target.search = criteria.search || null;
@@ -60,7 +71,7 @@ function applyCriteria(target: PostQuery, criteria: FilterCriteria): void {
     target.date_to = range?.[1] ? toLocalIsoDate(range[1]) : null;
 }
 
-const { loading, selection, firstRecord, recordLabel, isSuspendedView, resetSelection, onFilters, onPage, openExport } =
+const { loading, selection, firstRecord, recordLabel, isSuspendedView, resetSelection, reload, onFilters, onPage, openExport } =
     useResourceList<Post, PostQuery>({
         baseUrl: '/posts',
         propKey: 'posts',
@@ -70,6 +81,14 @@ const { loading, selection, firstRecord, recordLabel, isSuspendedView, resetSele
         applyCriteria,
         exportUrl: buildPostExportUrl,
     });
+
+function onSort(event: DataTableSortEvent): void {
+    const field = typeof event.sortField === 'string' ? event.sortField : 'created_at';
+    query.sort_field = field;
+    query.sort_order = event.sortOrder === 1 ? 1 : -1;
+    query.page = 1;
+    reload();
+}
 
 const canBulkAct = computed<boolean>(() => (isSuspendedView.value ? canBulkRestore.value : canBulkDelete.value));
 
@@ -196,6 +215,8 @@ const filterFields = computed<FilterField[]>(() => [
 </script>
 
 <template>
+    <Head title="Posts" />
+
     <CrudIndexShell
         title="Posts"
         subtitle="Write manually or generate SEO-scored drafts with AI"
@@ -225,7 +246,10 @@ const filterFields = computed<FilterField[]>(() => [
                 :per-page="posts.per_page"
                 :first="firstRecord"
                 :loading="loading"
+                :sort-field="query.sort_field"
+                :sort-order="query.sort_order"
                 @page="onPage"
+                @sort="onSort"
                 @edit="openEdit"
                 @delete="(post: Post) => askRow({ kind: 'delete', post })"
                 @restore="(post: Post) => askRow({ kind: 'restore', post })"

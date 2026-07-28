@@ -32,7 +32,7 @@ final readonly class PostExportController
             ->when($filters->status === 'suspended', fn ($q) => $q->onlyTrashed())
             ->applyFilters($filters)
             ->with(['category:id,uuid,blog_category_name', 'user:id,first_name,last_name'])
-            ->orderByDesc('created_at')
+            ->orderBy($filters->resolvedSortField(), $filters->resolvedSortDirection())
             ->lazy();
 
         return match ($format) {
@@ -46,7 +46,7 @@ final readonly class PostExportController
             ),
             default => $this->export->tabular(
                 "posts.{$format}",
-                ['Title', 'Category', 'Author', 'Status', 'SEO Score', 'Created', 'Suspended'],
+                ['Title', 'Category', 'Author', 'Publication Status', 'SEO Score', 'Created', 'Status'],
                 $rows->map(PostExportTransformer::transformForTable(...)),
             ),
         };

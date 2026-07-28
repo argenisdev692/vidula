@@ -22,6 +22,9 @@ use Modules\AiResumeStudio\Domain\Enums\JobMatchSource;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
+/**
+ * @internal Persistence adapter — Application/Domain must not import this class outside ports.
+ */
 #[Table('job_matches')]
 #[Fillable([
     'uuid',
@@ -117,7 +120,7 @@ final class JobMatchEloquentModel extends Model
      */
     public function outreachDrafts(): HasMany
     {
-        return $this->hasMany(OutreachDraftEloquentModel::class, 'job_match_id');
+        return $this->hasMany(OutreachDraftEloquentModel::class, 'job_match_id')->chaperone();
     }
 
     /**

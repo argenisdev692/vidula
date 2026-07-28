@@ -17,6 +17,9 @@ use Modules\Cvs\Infrastructure\Persistence\Eloquent\Models\CvEloquentModel;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
+/**
+ * @internal Persistence adapter — Application/Domain must not import this class outside ports.
+ */
 #[Table('github_enrichments')]
 #[Fillable([
     'uuid',

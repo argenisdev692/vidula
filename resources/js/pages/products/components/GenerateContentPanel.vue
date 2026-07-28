@@ -4,6 +4,9 @@
  * Seed shapes:
  *   classroom → indice-curso-copilot.md
  *   video_*   → pildoras_video_claude_usuarios.md
+ *
+ * Status polling + ZIP download use Pinia Colada (JSON endpoints). Start
+ * generation stays on Inertia `router.post` (full-page flash + prop reload).
  */
 import { computed, onUnmounted, ref, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
@@ -15,9 +18,11 @@ import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import Button from '@/volt/Button.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import ToggleSwitch from '@/volt/ToggleSwitch.vue';
-import { apiFetch, HttpError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { useAuthorization } from '@/modules/auth/composables/useAuthorization';
 import { useProductGenerationProgress } from '@/modules/products/composables/useProductGenerationProgress';
+import { useProductGenerationStatusQuery } from '@/modules/products/composables/useProductGenerationStatusQuery';
+import { useProductPackageDownloadMutation } from '@/modules/products/composables/useProductPackageDownloadMutation';
 import type {
     Product,
     ProductGenerationStatus,
@@ -39,12 +44,19 @@ const canDownload = computed<boolean>(() => hasPermission('DOWNLOAD_PRODUCTS'));
 const markdown = ref<string>('');
 const fileInput = ref<HTMLInputElement | null>(null);
 const submitting = ref<boolean>(false);
-const downloading = ref<boolean>(false);
 const forceReplace = ref<boolean>(false);
 const localStatus = ref<ProductGenerationStatus | null>(props.generation);
 const pollTimer = ref<ReturnType<typeof setInterval> | null>(null);
+const activeGenerationUuid = computed<string | null>(() => localStatus.value?.uuid ?? null);
 
 const { progress, reset: resetProgress } = useProductGenerationProgress();
+const { refetch: refetchStatus } = useProductGenerationStatusQuery(
+    () => props.product.uuid,
+    activeGenerationUuid,
+);
+const { mutateAsync: downloadPackageAsync, asyncStatus: downloadAsyncStatus } =
+    useProductPackageDownloadMutation();
+const downloading = computed<boolean>(() => downloadAsyncStatus.value === 'loading');
 
 watch(
     () => props.generation,
@@ -101,14 +113,15 @@ function stopPolling(): void {
     }
 }
 
-async function pollStatus(generationUuid: string): Promise<void> {
+async function pollStatus(): Promise<void> {
     try {
-        const response = await apiFetch<{ data: ProductGenerationStatus }>(
-            'GET',
-            `/products/${props.product.uuid}/generations/${generationUuid}`,
-        );
-        localStatus.value = response.data;
-        if (['completed', 'failed'].includes(response.data.status)) {
+        const result = await refetchStatus();
+        const payload = result.data?.data;
+        if (!payload) {
+            return;
+        }
+        localStatus.value = payload;
+        if (['completed', 'failed'].includes(payload.status)) {
             stopPolling();
             emit('refreshed');
             router.reload({ only: ['generation', 'sessions'], preserveScroll: true });
@@ -118,11 +131,11 @@ async function pollStatus(generationUuid: string): Promise<void> {
     }
 }
 
-function startPolling(generationUuid: string): void {
+function startPolling(): void {
     stopPolling();
-    void pollStatus(generationUuid);
+    void pollStatus();
     pollTimer.value = setInterval(() => {
-        void pollStatus(generationUuid);
+        void pollStatus();
     }, 2500);
 }
 
@@ -130,7 +143,7 @@ watch(
     isInFlight,
     (flying) => {
         if (flying && localStatus.value?.uuid) {
-            startPolling(localStatus.value.uuid);
+            startPolling();
         } else if (!flying) {
             stopPolling();
         }
@@ -192,10 +205,7 @@ function submitGeneration(): void {
                     preserveScroll: true,
                     onSuccess: () => {
                         if (localStatus.value?.uuid || props.generation?.uuid) {
-                            const uuid = props.generation?.uuid ?? localStatus.value?.uuid;
-                            if (uuid) {
-                                startPolling(uuid);
-                            }
+                            startPolling();
                         }
                     },
                 });
@@ -215,12 +225,8 @@ async function downloadPackage(): Promise<void> {
     if (!canDownload.value || downloading.value) {
         return;
     }
-    downloading.value = true;
     try {
-        const response = await apiFetch<{ data: { url: string } }>(
-            'GET',
-            `/products/${props.product.uuid}/package/download`,
-        );
+        const response = await downloadPackageAsync(props.product.uuid);
         window.open(response.data.url, '_blank', 'noopener,noreferrer');
     } catch (error) {
         const detail =
@@ -228,8 +234,6 @@ async function downloadPackage(): Promise<void> {
                 ? 'Package not ready yet. Wait for generation to finish.'
                 : 'Could not get package download link.';
         toast.add({ severity: 'warn', summary: 'Download unavailable', detail, life: 5000 });
-    } finally {
-        downloading.value = false;
     }
 }
 </script>

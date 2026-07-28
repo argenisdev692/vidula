@@ -7,8 +7,8 @@ namespace Modules\Post\Application\Commands;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Post\Application\DTOs\PostData;
+use Modules\Post\Domain\Ports\PostPublicFeedCachePort;
 use Modules\Post\Domain\Ports\PostRepositoryPort;
-use Modules\Post\Infrastructure\Cache\PostPublicFeedCache;
 use Modules\Post\Infrastructure\Persistence\Eloquent\Models\PostEloquentModel;
 use Shared\Domain\Ports\StoragePort;
 
@@ -24,6 +24,7 @@ final readonly class UpdatePostHandler
     public function __construct(
         private PostRepositoryPort $posts,
         private StoragePort $storage,
+        private PostPublicFeedCachePort $publicFeedCache,
     ) {}
 
     public function handle(PostEloquentModel $post, PostData $data): PostEloquentModel
@@ -83,7 +84,7 @@ final readonly class UpdatePostHandler
         }
 
         if ($wasOrIsPublished) {
-            PostPublicFeedCache::flush();
+            $this->publicFeedCache->flush();
         }
 
         return $updated;

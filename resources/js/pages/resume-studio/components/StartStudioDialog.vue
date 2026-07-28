@@ -55,6 +55,7 @@ interface StartFormState {
     github_extra_prompt: string;
     deep_extract: boolean;
     target_job_title: string;
+    job_description: string;
     location_scope: LocationScope;
     search_language: SearchLanguage;
     resume_language: ResumeLanguage;
@@ -71,6 +72,7 @@ const form = useForm<StartFormState>({
     github_extra_prompt: '',
     deep_extract: false,
     target_job_title: '',
+    job_description: '',
     location_scope: 'remote',
     search_language: 'both',
     resume_language: 'en',
@@ -133,6 +135,7 @@ function seedForm(): void {
     form.github_extra_prompt = '';
     form.deep_extract = false;
     form.target_job_title = '';
+    form.job_description = '';
     form.location_scope = 'remote';
     form.search_language = 'both';
     form.resume_language = 'en';
@@ -222,6 +225,7 @@ function submit(): void {
         github_extra_prompt: isCareer.value ? form.github_extra_prompt.trim() || null : null,
         deep_extract: form.deep_extract,
         target_job_title: form.target_job_title.trim() || null,
+        job_description: form.job_description.trim() || null,
         location_scope: form.location_scope || 'remote',
         search_language: form.search_language || 'both',
         resume_language: form.resume_language || 'en',
@@ -308,6 +312,17 @@ function submit(): void {
                 placeholder="e.g. Senior Fullstack Developer"
                 :maxlength="255"
                 :error="form.errors.target_job_title"
+            />
+
+            <TextareaField
+                v-model="form.job_description"
+                name="job_description"
+                label="Target job description (optional)"
+                placeholder="Paste a job posting to mirror exact ATS keywords…"
+                :rows="5"
+                :maxlength="20000"
+                hint="Highest ROI for keyword match — leave empty for a general master CV."
+                :error="form.errors.job_description"
             />
 
             <SelectField

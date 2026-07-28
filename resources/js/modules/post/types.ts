@@ -62,10 +62,14 @@ export interface PostFilters {
     date_from: string | null;
     date_to: string | null;
     category_uuid: string | null;
+    sort_field?: string | null;
+    sort_order?: number | null;
 }
 
 /** The full reactive query state driving the server-side DataTable. */
 export interface PostQuery extends PostFilters {
+    sort_field: string;
+    sort_order: 1 | -1;
     page: number;
     per_page: number;
 }
@@ -88,6 +92,11 @@ export interface PostTopicIdea {
     key_trend: string;
 }
 
+export interface PostImagePrompts {
+    background: string;
+    content: string;
+}
+
 export interface GeneratedPostContent {
     title: string;
     content: string;
@@ -97,11 +106,18 @@ export interface GeneratedPostContent {
     meta_keywords: string;
     cover_image_path: string | null;
     cover_image_url: string | null;
+    image_prompts: PostImagePrompts;
     provider: AiProvider;
     seo_score: number;
     eeat_score: number;
+    virality_score: number;
+    roi_score: number;
     human_writing_index: number;
     ai_detection_risk: number;
+    all_scores_pass: boolean;
+    iterations_required: number;
+    quality_warning: boolean;
+    quality_warning_message: string | null;
     optimization_suggestions: string[];
     seo_analysis: { primary_keyword: string; lsi_keywords: string[] };
 }

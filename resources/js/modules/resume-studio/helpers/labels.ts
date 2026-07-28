@@ -5,6 +5,7 @@ export type StudioStatusTone = 'success' | 'danger' | 'muted' | 'primary';
 const STATUS_LABELS: Record<StudioRunStatus, string> = {
   pending: 'Pending',
   running: 'Running',
+  awaiting_input: 'Awaiting metrics',
   completed: 'Completed',
   failed: 'Failed',
 };
@@ -12,6 +13,7 @@ const STATUS_LABELS: Record<StudioRunStatus, string> = {
 const STATUS_TONES: Record<StudioRunStatus, StudioStatusTone> = {
   pending: 'muted',
   running: 'primary',
+  awaiting_input: 'primary',
   completed: 'success',
   failed: 'danger',
 };
@@ -19,6 +21,8 @@ const STATUS_TONES: Record<StudioRunStatus, StudioStatusTone> = {
 const STEP_LABELS: Record<StudioRunStep, string> = {
   queued: 'Queued',
   enriching: 'Enriching GitHub',
+  judging: 'Auditing CV',
+  awaiting_metrics: 'Awaiting metric answers',
   refining: 'Refining CV',
   searching: 'Searching jobs',
   scoring: 'Scoring matches',
@@ -30,6 +34,8 @@ const STEP_LABELS: Record<StudioRunStep, string> = {
 const STEP_LABELS_COMPACT: Record<StudioRunStep, string> = {
   queued: 'Queued',
   enriching: 'Enriching',
+  judging: 'Auditing',
+  awaiting_metrics: 'Metrics',
   refining: 'Refining',
   searching: 'Searching',
   scoring: 'Scoring',

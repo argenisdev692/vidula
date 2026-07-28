@@ -3,13 +3,13 @@
  * Studio runs server-side DataTable. View-only actions — no bulk selection
  * (runs are pipeline artifacts; soft-delete bulk targets job matches on Show).
  */
-import { Link } from '@inertiajs/vue3';
 import type { DataTablePageEvent } from 'primevue/datatable';
 import Column from 'primevue/column';
 import DataTable from '@/volt/DataTable.vue';
+import ActionButton from '@/common/data-table/ActionButton.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import StatusBadge from '@/common/ui/StatusBadge.vue';
-import { formatDate } from '@/modules/resume-studio/helpers/buildStudioQueryParams';
+import { formatDateShort } from '@/modules/cvs/helpers/formatDate';
 import {
     modeLabel,
     modeTone,
@@ -36,7 +36,7 @@ function rowClass(row: StudioRun): string | undefined {
 }
 
 function startedAt(row: StudioRun): string {
-    return formatDate(row.started_at ?? row.created_at);
+    return formatDateShort(row.started_at ?? row.created_at);
 }
 </script>
 
@@ -101,17 +101,14 @@ function startedAt(row: StudioRun): string {
 
             <Column header="Actions" :pt="{ bodyCell: 'w-20' }">
                 <template #body="{ data }">
-                    <div class="actions-cell">
+                    <div class="row-actions">
                         <PermissionGuard permission="VIEW_RESUME_STUDIOS">
-                            <Link
+                            <ActionButton
+                                icon="pi pi-eye"
+                                tone="view"
+                                label="View studio run"
                                 :href="`/resume-studio/runs/${(data as StudioRun).uuid}`"
-                                class="btn-crud-action btn-crud-action-view"
-                                aria-label="View studio run"
-                                title="View"
-                                v-tooltip.top="'View'"
-                            >
-                                <i class="pi pi-eye" aria-hidden="true" />
-                            </Link>
+                            />
                         </PermissionGuard>
                     </div>
                 </template>
@@ -135,6 +132,14 @@ function startedAt(row: StudioRun): string {
 .muted {
     color: var(--text-muted);
     font-size: var(--text-sm);
+}
+
+.row-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    white-space: nowrap;
 }
 
 .crud-table-wrap :deep(table) {
@@ -187,72 +192,6 @@ function startedAt(row: StudioRun): string {
     background: transparent;
 }
 
-.actions-cell {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-2);
-    white-space: nowrap;
-}
-
-.btn-crud-action {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border-subtle);
-    background: color-mix(in srgb, var(--bg-elevated) 50%, transparent);
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
-    overflow: hidden;
-}
-
-.btn-crud-action::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: currentColor;
-    opacity: 0;
-    border-radius: inherit;
-    transition: opacity var(--transition);
-}
-
-.btn-crud-action:hover {
-    transform: scale(1.04);
-    border-color: currentColor;
-}
-
-.btn-crud-action:hover::after {
-    opacity: 0.1;
-}
-
-.btn-crud-action:active {
-    transform: scale(0.98);
-}
-
-.btn-crud-action:focus-visible {
-    outline: 2px solid currentColor;
-    outline-offset: 2px;
-}
-
-.btn-crud-action .pi {
-    position: relative;
-    z-index: 1;
-    font-size: 0.8rem;
-}
-
-.btn-crud-action-view {
-    color: var(--accent-info);
-}
-
-.btn-crud-action-view:hover {
-    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-info) 30%, transparent);
-}
-
 .table-empty {
     display: flex;
     flex-direction: column;
@@ -267,15 +206,8 @@ function startedAt(row: StudioRun): string {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .btn-crud-action,
-    .btn-crud-action::after,
     .crud-table-wrap :deep(tbody tr) {
         transition: none;
-    }
-
-    .btn-crud-action:hover,
-    .btn-crud-action:active {
-        transform: none;
     }
 }
 </style>

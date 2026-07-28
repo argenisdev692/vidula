@@ -13,10 +13,14 @@ final readonly class MarkOutreachSentHandler
 {
     public function __construct(private OutreachDraftRepositoryPort $drafts) {}
 
-    public function handle(string $uuid): OutreachDraftEloquentModel
+    public function handle(string $uuid, int $userId): OutreachDraftEloquentModel
     {
         $draft = $this->drafts->findByUuid($uuid)
           ?? throw (new ModelNotFoundException)->setModel(OutreachDraftEloquentModel::class, [$uuid]);
+
+        if ((int) $draft->user_id !== $userId) {
+            throw (new ModelNotFoundException)->setModel(OutreachDraftEloquentModel::class, [$uuid]);
+        }
 
         return $this->drafts->update($draft, [
             'status' => OutreachStatus::SentManually->value,

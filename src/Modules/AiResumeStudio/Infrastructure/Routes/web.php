@@ -41,6 +41,11 @@ Route::middleware(['web', 'auth', 'throttle:60,1'])->prefix('resume-studio')->na
     Route::get('/runs/{uuid}', [ResumeStudioController::class, 'show'])
         ->middleware('permission:VIEW_RESUME_STUDIOS')->whereUuid('uuid')->name('runs.show');
 
+    Route::post('/runs/{uuid}/metrics', [ResumeStudioController::class, 'submitMetrics'])
+        ->middleware(['permission:RUN_RESUME_STUDIOS', 'throttle:10,1'])
+        ->whereUuid('uuid')
+        ->name('runs.metrics');
+
     Route::patch('/matches/{uuid}', [ResumeStudioController::class, 'updateMatch'])
         ->middleware('permission:UPDATE_RESUME_STUDIOS')->whereUuid('uuid')->name('matches.update');
 

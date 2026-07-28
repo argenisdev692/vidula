@@ -9,12 +9,14 @@ export type PostExportFormat = ExportFormat;
  * server-side DataTable reload AND the export URL, so the two can never drift.
  * Empty filters are omitted so the query string stays clean. The backend
  * `PostFilterData` reads `search`, `status`, `date_from`, `date_to`,
- * `category_uuid`; pagination reads `page` + `per_page`.
+ * `category_uuid`, `sort_field`, `sort_order`; pagination reads `page` + `per_page`.
  */
 export function buildPostQueryParams(query: PostQuery): Record<string, string | number> {
     const params: Record<string, string | number> = {
         page: query.page,
         per_page: query.per_page,
+        sort_field: query.sort_field,
+        sort_order: query.sort_order,
     };
 
     if (query.search) {
