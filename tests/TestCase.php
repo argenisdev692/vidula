@@ -11,6 +11,10 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
+        // CI and local test runs do not build Vite assets; mock the integration
+        // so Inertia full-page renders (app.blade.php @vite) return 200.
+        $this->withoutVite();
+
         if (class_exists(Telescope::class)) {
             Telescope::stopRecording();
         }
