@@ -12,7 +12,7 @@ import type { PaginatedResponse } from '@/modules/company/types';
 export type { PaginatedResponse };
 
 export type AiProvider = 'openai' | 'anthropic' | 'gemini';
-export type ContentLanguage = 'es' | 'en';
+export type ContentLanguage = 'es' | 'en' | 'pt-PT';
 export type BusinessGoal = 'awareness' | 'engagement' | 'viral' | 'leads' | 'sales' | 'community';
 export type BrandVoice = 'professional' | 'conversational' | 'trendy' | 'inspirational' | 'humorous';
 export type FunnelStage = 'tofu' | 'mofu' | 'bofu';
@@ -26,7 +26,7 @@ export type SocialMediaContentRowStatus = SocialMediaContentStatus | 'generating
 /** Every value the `status` filter/list column can show (adds the soft-delete state). */
 export type SocialMediaContentListStatus = SocialMediaContentRowStatus | 'suspended';
 
-export interface SocialMediaContentCreator {
+export interface SocialMediaContentAuthor {
     id: number;
     first_name: string | null;
     last_name: string | null;
@@ -46,7 +46,7 @@ export interface SocialMediaContent {
     quality_warning: boolean;
     scheduled_at: string | null;
     published_at: string | null;
-    creator?: SocialMediaContentCreator | null;
+    user?: SocialMediaContentAuthor | null;
     created_at: string | null;
     deleted_at: string | null;
 }
@@ -71,6 +71,29 @@ export interface ScoreSet {
     overall_average: number;
 }
 
+/** One CapCut timeline row (TikTok / Instagram Reels). */
+export interface VideoScene {
+    time_range: string;
+    action: string;
+    on_screen_text: string;
+    voiceover_line: string;
+    visual_prompt: string;
+}
+
+/** CapCut-ready short-form package nested under TikTok / Instagram platforms. */
+export interface VideoPackage {
+    scenes: VideoScene[];
+    clean_script: string;
+    sound_suggestion: string;
+    /** Stage-aware target inside the 15–30s product band. */
+    target_duration_seconds: number;
+    /** Always ugc_native for 2026 short-form ROI. */
+    creative_style: string;
+}
+
+/** Visual route from the Argenis A/B/C image system. */
+export type ImageRoute = 'a' | 'b' | 'c';
+
 /** One platform's adapted copy + assets (mirrors PlatformContentData). */
 export interface PlatformContent {
     platform: string;
@@ -78,9 +101,11 @@ export interface PlatformContent {
     character_count: number;
     hashtags: string[];
     image_prompt: string;
+    image_route?: ImageRoute;
     is_thread: boolean;
     thread_tweets: string[];
     video_script: string | null;
+    video_package?: VideoPackage | null;
     image_path: string | null;
     image_url: string | null;
     voiceover_audio_path: string | null;
@@ -168,6 +193,15 @@ export interface SocialMediaTopicIdea {
     suggested_format: string;
     content_type: string;
     funnel_stage: FunnelStage;
+}
+
+/** Step 1 payload — POST /social-media/ai/suggest-topics. */
+export interface SuggestSocialMediaTopicsPayload {
+    provider: AiProvider;
+    language: ContentLanguage;
+    niche?: string | null;
+    audience?: string | null;
+    business_goal?: BusinessGoal | null;
 }
 
 /** Step 2 payload — POST /social-media/ai/generate-content. */

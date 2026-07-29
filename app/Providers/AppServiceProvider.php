@@ -31,9 +31,9 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
-        // Enterprise password policy (prompt §5): 12+ chars, mixed case, a
-        // number and a symbol. Consumed everywhere via Password::default().
-        Password::defaults(fn (): Password => Password::min(12)
+        // Password policy: 8+ chars, mixed case, a number and a symbol.
+        // Consumed everywhere via Password::default().
+        Password::defaults(fn (): Password => Password::min(8)
             ->mixedCase()
             ->numbers()
             ->symbols());

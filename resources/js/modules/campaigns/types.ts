@@ -12,7 +12,7 @@ import type { PaginatedResponse } from '@/modules/company/types';
 export type { PaginatedResponse };
 
 export type AiProvider = 'openai' | 'anthropic' | 'gemini';
-export type CampaignLanguage = 'es' | 'en';
+export type CampaignLanguage = 'es' | 'en' | 'pt-PT';
 
 /** Campaigns is a paid Meta Ads module — acquisition/retention goals only (no 'viral'/'community'). */
 export type BusinessGoal = 'awareness' | 'engagement' | 'leads' | 'sales' | 'retention';
@@ -84,6 +84,23 @@ export interface ScoreSet {
     overall_average: number;
 }
 
+/** CapCut-ready Meta Reels/Stories package (stage-aware 15–30s). */
+export interface CampaignVideoScene {
+    time_range: string;
+    action: string;
+    on_screen_text: string;
+    voiceover_line: string;
+    visual_prompt: string;
+}
+
+export interface CampaignVideoPackage {
+    scenes: CampaignVideoScene[];
+    clean_script: string;
+    sound_suggestion: string;
+    target_duration_seconds: number;
+    creative_style: string;
+}
+
 /** One Meta surface's (Facebook or Instagram) adapted ad copy + cover image (mirrors PlatformCampaignContentData). */
 export interface PlatformContent {
     platform: string;
@@ -95,6 +112,7 @@ export interface PlatformContent {
     image_prompt: string;
     image_path: string | null;
     image_url: string | null;
+    video_package?: CampaignVideoPackage | null;
 }
 
 export interface ResearchSource {
@@ -158,6 +176,19 @@ export interface CampaignQuery extends CampaignFilters {
 
 /* ── AI wizard contracts (mirror CampaignTopicIdeaData / GenerateCampaignData) ── */
 
+/** Step 1 payload — POST /campaigns/ai/suggest-topics. */
+export interface SuggestCampaignTopicsPayload {
+    provider: AiProvider;
+    language: CampaignLanguage;
+    niche?: string | null;
+    audience?: string | null;
+    business_goal?: BusinessGoal | null;
+    city?: string | null;
+    state?: string | null;
+    country?: string | null;
+    location?: string | null;
+}
+
 /** One of the exactly-10 candidate Meta Ads angles returned by Step 1 (suggest-topics). */
 export interface CampaignTopicIdea {
     title: string;
@@ -192,6 +223,10 @@ export interface GenerateCampaignPayload {
     niche?: string | null;
     audience?: string | null;
     generate_images: boolean;
+    city?: string | null;
+    state?: string | null;
+    country?: string | null;
+    location?: string | null;
 }
 
 /** Real-time tick broadcast on the user's private channel (`campaigns.ai.progress`). */

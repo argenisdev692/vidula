@@ -71,6 +71,8 @@ final class PostSocialAndReelAssistTest extends TestCase
                 ],
                 'clean_script' => 'If you are still doing this, stop. Here is why.',
                 'sound_suggestion' => 'Minimal tech beat, hard cut on the hook.',
+                'target_duration_seconds' => 15,
+                'creative_style' => 'ugc_native',
                 'tiktok_caption' => 'This changes everything.',
                 'tiktok_hashtags' => ['#techtok', '#fyp', '#laravel', '#devtips', '#programacion'],
             ],
@@ -83,6 +85,8 @@ final class PostSocialAndReelAssistTest extends TestCase
             ])
             ->assertOk()
             ->assertJsonPath('data.clean_script', 'If you are still doing this, stop. Here is why.')
+            ->assertJsonPath('data.target_duration_seconds', 15)
+            ->assertJsonPath('data.creative_style', 'ugc_native')
             ->assertJsonPath('data.voiceover_audio_url', null)
             ->assertJsonCount(1, 'data.scenes');
     }

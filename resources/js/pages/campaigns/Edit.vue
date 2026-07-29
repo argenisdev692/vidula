@@ -13,6 +13,7 @@ import AppLayout from '@/pages/layouts/AppLayout.vue';
 import AppHeader from '@/modules/app/components/AppHeader.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import BackLink from '@/common/ui/BackLink.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
 import AiProgressBar from './components/AiProgressBar.vue';
 import CampaignForm from './components/CampaignForm.vue';
 import { useAiGenerationProgress } from '@/modules/campaigns/composables/useAiGenerationProgress';
@@ -54,9 +55,12 @@ function refresh(): void {
                     :message="activeProgress?.message ?? 'Running the quality-loop…'"
                     :percent="activeProgress?.progress ?? 5"
                 />
-                <button type="button" class="generating__refresh" @click="refresh">
-                    <i class="pi pi-refresh" aria-hidden="true" /> Refresh
-                </button>
+                <SecondaryButton
+                    type="button"
+                    label="Refresh"
+                    icon="pi pi-refresh"
+                    @click="refresh"
+                />
             </section>
 
             <PermissionGuard v-else permission="UPDATE_CAMPAIGNS">
@@ -122,25 +126,6 @@ function refresh(): void {
 .generating .ai-progress {
     width: 100%;
     max-width: 24rem;
-}
-
-.generating__refresh {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    margin-top: var(--space-2);
-    padding: var(--space-2) var(--space-4);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-md);
-    background: transparent;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: border-color var(--transition), color var(--transition);
-}
-
-.generating__refresh:hover {
-    border-color: var(--accent-primary);
-    color: var(--accent-primary);
 }
 
 .empty {

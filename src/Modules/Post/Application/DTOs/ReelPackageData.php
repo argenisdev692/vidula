@@ -29,5 +29,7 @@ final class ReelPackageData extends Data
         public string $tiktokCaption,
         public array $tiktokHashtags,
         public ?string $voiceoverAudioUrl,
+        public int $targetDurationSeconds = 15,
+        public string $creativeStyle = 'ugc_native',
     ) {}
 }

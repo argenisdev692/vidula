@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\Campaigns\Application\DTOs;
 
 use Modules\Campaigns\Domain\Ports\CampaignGeneratorPort;
-use Modules\Campaigns\Infrastructure\Queue\GenerateCampaignJob;
 use Spatie\LaravelData\Attributes\MapOutputName;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\SnakeCaseMapper;
@@ -14,9 +13,8 @@ use Spatie\LaravelData\Mappers\SnakeCaseMapper;
  * One full generation attempt returned by
  * {@see CampaignGeneratorPort}.
  * Iteration-level metadata (how many attempts it took, whether the loop gave
- * up) is NOT part of this shape —
- * {@see GenerateCampaignJob} adds it
- * once the loop finishes, keeping this DTO focused on "what the model
+ * up) is NOT part of this shape — the Infrastructure quality-loop Job adds
+ * it once the loop finishes, keeping this DTO focused on "what the model
  * produced this one time".
  */
 #[MapOutputName(SnakeCaseMapper::class)]

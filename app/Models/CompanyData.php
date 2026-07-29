@@ -56,7 +56,6 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string|null $state
  * @property string|null $country
  * @property string|null $country_code
- *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData onlyTrashed()
@@ -100,7 +99,6 @@ use Spatie\Activitylog\Support\LogOptions;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereZipCode($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData withoutTrashed()
- *
  * @mixin \Eloquent
  */
 class CompanyData extends Model

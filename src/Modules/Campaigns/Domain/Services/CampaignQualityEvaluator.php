@@ -13,8 +13,9 @@ namespace Modules\Campaigns\Domain\Services;
  * `audience_fit_score` is the gatekeeper (mirrors SocialMedia's
  * human_writing_index / the reference prompt's local_market_fit) — a Meta ad
  * that scores well on virality/ROI but doesn't fit the stated audience/niche
- * is a wasted budget regardless of how good the copy reads. The average of
- * all five is exposed to the user as the campaign's "success probability".
+ * (and geographic market when supplied) is a wasted budget regardless of how
+ * good the copy reads. The average of all five is exposed to the user as the
+ * campaign's "success probability".
  */
 final readonly class CampaignQualityEvaluator
 {

@@ -1,37 +1,41 @@
 <script setup lang="ts">
 /**
- * "New Claims" monthly bar chart, ported from the GUIDE Angular `app-claims-chart`.
- * Renders through the Volt `Chart` (chart.js). Bar fills and axis colours are read
- * from the live CSS design tokens and rebuilt whenever the theme flips, so the
- * chart always matches light/dark. Data is static placeholder for now.
- *
- * TODO(backend): swap `chartData` for a Pinia Colada query once the metrics
- * endpoint exists.
+ * "New Products" monthly bar chart — ROI-oriented overview of products created
+ * per month. Renders through the Volt `Chart` (chart.js). Bar fills and axis
+ * colours follow design tokens and rebuild when the theme flips.
  */
 import { computed, onMounted, ref, watch } from 'vue';
 import Chart from '@/volt/Chart.vue';
 import { useThemeStore } from '@/modules/app/stores/useThemeStore';
 
+const props = withDefaults(
+    defineProps<{
+        series?: number[];
+    }>(),
+    {
+        series: () => [6, 8, 7, 10, 9, 12, 11, 8, 10, 14, 12, 9],
+    },
+);
+
 const theme = useThemeStore();
 
 const currentYear = new Date().getFullYear();
 
-const series = [42, 38, 55, 48, 62, 71, 58, 49, 67, 74, 61, 53];
-const totalClaims = computed<number>(() => series.reduce((a, b) => a + b, 0));
+const totalProducts = computed<number>(() => props.series.reduce((a, b) => a + b, 0));
 
-const chartData = {
+const chartData = computed(() => ({
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     datasets: [
         {
-            label: 'New Claims',
-            data: series,
+            label: 'New Products',
+            data: props.series,
             borderRadius: 8,
             borderSkipped: false,
             barThickness: 18,
             maxBarThickness: 24,
         },
     ],
-};
+}));
 
 const chartOptions = ref<Record<string, unknown>>({});
 
@@ -65,7 +69,7 @@ function buildOptions(): void {
                 padding: 12,
                 displayColors: false,
                 callbacks: {
-                    label: (ctx: { raw: number }) => `${ctx.raw} claims`,
+                    label: (ctx: { raw: number }) => `${ctx.raw} products`,
                 },
             },
         },
@@ -85,12 +89,12 @@ function buildOptions(): void {
                     color: textMuted,
                     font: { family: fontFamily, size: 11, weight: '500' },
                     padding: 8,
-                    stepSize: 20,
+                    stepSize: 2,
                 },
                 beginAtZero: true,
             },
         },
-        animation: { duration: 1200, easing: 'easeOutQuart' },
+        animation: { duration: 400, easing: 'easeOutQuart' },
         datasets: {
             bar: {
                 backgroundColor: (ctx: { chart: { ctx: CanvasRenderingContext2D } }) => {
@@ -118,13 +122,13 @@ watch(() => theme.isDark, buildOptions);
     <div class="claims-chart-card">
         <div class="chart-header">
             <div class="chart-header-left">
-                <i class="pi pi-chart-bar chart-icon" aria-hidden="true" />
+                <i class="pi pi-chart-line chart-icon" aria-hidden="true" />
                 <div>
-                    <h3 class="chart-title">New Claims</h3>
-                    <p class="chart-subtitle">Monthly overview — {{ currentYear }}</p>
+                    <h3 class="chart-title">New Products</h3>
+                    <p class="chart-subtitle">Monthly ROI overview — {{ currentYear }}</p>
                 </div>
             </div>
-            <span class="chart-badge">{{ totalClaims }} total</span>
+            <span class="chart-badge">{{ totalProducts }} total</span>
         </div>
         <div class="chart-body">
             <Chart type="bar" :data="chartData" :options="chartOptions" class="claims-chart-canvas" />

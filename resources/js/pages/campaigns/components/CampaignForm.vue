@@ -184,6 +184,14 @@ function scoreTone(value: number): string {
 
 /* ── Per-platform preview (lightweight custom tabs — no Volt Tabs installed) ── */
 const platformKeys = computed<string[]>(() => Object.keys(props.campaign.platforms ?? {}));
+
+async function copyText(value: string): Promise<void> {
+    try {
+        await navigator.clipboard.writeText(value);
+    } catch {
+        // Clipboard may be blocked; the text remains visible for manual copy.
+    }
+}
 const activePlatform = ref<string | null>(platformKeys.value[0] ?? null);
 const activePlatformContent = computed<PlatformContent | null>(() => {
     const key = activePlatform.value;
@@ -386,6 +394,73 @@ const detailsOpen = ref<boolean>(false);
                             :alt="`${activePlatform} cover`"
                             class="platform-preview__image"
                         />
+
+                        <div v-if="activePlatformContent.video_package" class="video-pack">
+                            <p class="video-pack__label">
+                                <i class="pi pi-video" aria-hidden="true" />
+                                CapCut pack · Reels/Stories
+                                <span class="video-pack__duration">
+                                    · {{ activePlatformContent.video_package.target_duration_seconds }}s
+                                    · {{ activePlatformContent.video_package.creative_style }}
+                                </span>
+                            </p>
+
+                            <div class="video-pack__timeline">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Time</th>
+                                            <th>Action</th>
+                                            <th>On-screen</th>
+                                            <th>Voice-over</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr
+                                            v-for="(scene, index) in activePlatformContent.video_package.scenes"
+                                            :key="index"
+                                        >
+                                            <td>{{ scene.time_range }}</td>
+                                            <td>{{ scene.action }}</td>
+                                            <td>{{ scene.on_screen_text }}</td>
+                                            <td>{{ scene.voiceover_line }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="video-pack__field">
+                                <div class="video-pack__field-head">
+                                    <span>Clean script (TTS / VO)</span>
+                                    <button
+                                        type="button"
+                                        class="copy-btn"
+                                        aria-label="Copy clean script"
+                                        @click="copyText(activePlatformContent.video_package!.clean_script)"
+                                    >
+                                        <i class="pi pi-copy" aria-hidden="true" />
+                                    </button>
+                                </div>
+                                <p class="platform-preview__text">{{ activePlatformContent.video_package.clean_script }}</p>
+                            </div>
+
+                            <p class="video-pack__sound">
+                                <i class="pi pi-volume-up" aria-hidden="true" />
+                                {{ activePlatformContent.video_package.sound_suggestion }}
+                            </p>
+
+                            <details v-if="activePlatformContent.video_package.scenes.length" class="video-pack__shots">
+                                <summary>Shot list / visual prompts</summary>
+                                <ol>
+                                    <li
+                                        v-for="(scene, index) in activePlatformContent.video_package.scenes"
+                                        :key="`shot-${index}`"
+                                    >
+                                        <strong>{{ scene.time_range }}</strong> — {{ scene.visual_prompt }}
+                                    </li>
+                                </ol>
+                            </details>
+                        </div>
                     </div>
                 </div>
 
@@ -644,6 +719,104 @@ const detailsOpen = ref<boolean>(false);
     border-radius: var(--radius-md);
     border: 1px solid var(--border-subtle);
     object-fit: cover;
+}
+
+.video-pack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    background: color-mix(in srgb, var(--surface-elevated, var(--surface)) 80%, transparent);
+}
+
+.video-pack__label {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    color: var(--accent-primary);
+}
+
+.video-pack__duration {
+    font-weight: var(--font-normal);
+    color: var(--text-muted);
+}
+
+.video-pack__timeline {
+    overflow-x: auto;
+}
+
+.video-pack__timeline table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-xs);
+}
+
+.video-pack__timeline th,
+.video-pack__timeline td {
+    padding: var(--space-2);
+    text-align: left;
+    border-bottom: 1px solid var(--border-subtle);
+    vertical-align: top;
+    color: var(--text-primary);
+}
+
+.video-pack__timeline th {
+    color: var(--text-muted);
+    font-weight: var(--font-semibold);
+}
+
+.video-pack__field-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    margin-bottom: var(--space-1);
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    color: var(--text-muted);
+}
+
+.copy-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-1);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--accent-primary);
+    cursor: pointer;
+}
+
+.video-pack__sound {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+.video-pack__shots {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+.video-pack__shots summary {
+    cursor: pointer;
+    color: var(--accent-primary);
+    font-weight: var(--font-semibold);
+}
+
+.video-pack__shots ol {
+    margin: var(--space-2) 0 0;
+    padding-left: var(--space-4);
 }
 
 .hashtag-list {

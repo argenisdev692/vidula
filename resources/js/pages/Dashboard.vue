@@ -1,27 +1,36 @@
 <script setup lang="ts">
 /**
- * Dashboard — authenticated home. Mirrors the GUIDE Angular dashboard 1:1:
- * page header (with the "New Product" action), a 4-up stat grid, and a bottom
- * grid pairing the claims chart with the recent-activity feed. Uses AppLayout,
- * which supplies the aurora background, overlay sidebar, floating menu button
- * and app-wide toast.
+ * Dashboard — authenticated home. Software-oriented stats (Users, Students,
+ * Classrooms, AI Generations), New Products chart, and Activity Log feed.
+ * Counts / series / activities arrive from {@see DashboardController}.
  */
-import { Head } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { Head, router } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import AppHeader from '@/modules/app/components/AppHeader.vue';
 import DashboardCard from '@/modules/dashboard/components/DashboardCard.vue';
 import ClaimsChart from '@/modules/dashboard/components/ClaimsChart.vue';
 import RecentActivity from '@/modules/dashboard/components/RecentActivity.vue';
+import type { DashboardActivity, DashboardStats } from '@/modules/dashboard/types';
 
 defineOptions({ layout: AppLayout });
 
+const props = defineProps<{
+    stats: DashboardStats;
+    productSeries: number[];
+    activities: DashboardActivity[];
+}>();
+
+const usersLabel = computed<string>(() => props.stats.users.toLocaleString('en-US'));
+const studentsLabel = computed<string>(() => props.stats.students.toLocaleString('en-US'));
+const classroomsLabel = computed<string>(() => props.stats.classrooms.toLocaleString('en-US'));
+const aiLabel = computed<string>(() => props.stats.ai_generations.toLocaleString('en-US'));
+
 function onNewProduct(): void {
-    // TODO(product): route to the product create flow once that module ships.
+    router.visit('/products');
 }
 
-/* Cheap deferred reveal (parity with Angular @defer) so heavy visuals mount
-   after the header paints; a skeleton holds the layout in the meantime. */
+/* Cheap deferred reveal so heavy visuals mount after the header paints. */
 const ready = ref<boolean>(true);
 </script>
 
@@ -30,7 +39,7 @@ const ready = ref<boolean>(true);
 
     <AppHeader
         title="Dashboard"
-        subtitle="Welcome back — here's what's happening today."
+        subtitle="Welcome back — your software workspace at a glance."
         show-action
         action-label="New Product"
         action-icon="pi-plus"
@@ -39,46 +48,46 @@ const ready = ref<boolean>(true);
 
     <section class="stats-grid">
         <DashboardCard
-            title="Total Revenue"
-            value="$124,500"
-            subtitle="+12.5% from last month"
-            icon="pi-dollar"
+            title="Users"
+            :value="usersLabel"
+            subtitle="Active accounts in the workspace"
+            icon="pi-users"
             trend="up"
-            trend-value="+12.5%"
+            trend-value="+4"
             color="purple"
         />
         <DashboardCard
-            title="Active Users"
-            value="8,432"
-            subtitle="+5.2% from last month"
-            icon="pi-users"
+            title="Students"
+            :value="studentsLabel"
+            subtitle="Learners enrolled across products"
+            icon="pi-graduation-cap"
             trend="up"
-            trend-value="+5.2%"
+            trend-value="+2"
             color="blue"
         />
         <DashboardCard
-            title="Projects"
-            value="24"
-            subtitle="3 in progress"
-            icon="pi-briefcase"
+            title="Classrooms"
+            :value="classroomsLabel"
+            subtitle="Live teaching spaces"
+            icon="pi-building"
             trend="neutral"
             color="green"
         />
         <DashboardCard
-            title="Conversion Rate"
-            value="3.2%"
-            subtitle="-0.8% from last month"
-            icon="pi-chart-bar"
-            trend="down"
-            trend-value="-0.8%"
+            title="AI Generations"
+            :value="aiLabel"
+            subtitle="Content pipeline runs"
+            icon="pi-sparkles"
+            trend="up"
+            trend-value="+3"
             color="orange"
         />
     </section>
 
     <section class="dashboard-bottom-grid">
         <template v-if="ready">
-            <ClaimsChart />
-            <RecentActivity />
+            <ClaimsChart :series="productSeries" />
+            <RecentActivity :activities="activities" />
         </template>
         <template v-else>
             <div class="skeleton chart-skeleton" aria-hidden="true" />

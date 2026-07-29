@@ -3,15 +3,16 @@
  * Social media server-side DataTable. Fed by Inertia partial reloads (the
  * parent owns the reactive query + `router.get`), so it never sorts / filters
  * / paginates in the browser. An ACTIVE row (deleted_at === null) shows
- * Edit · Delete; a SUSPENDED row shows Restore (never Edit). Every action is
- * permission-gated. Styling mirrors the Posts table (project's DataTable
- * reference for AI-generated content modules).
+ * View · Edit · Delete; a SUSPENDED row shows View · Restore (never Edit).
+ * Every action is permission-gated. Action pills use shared
+ * {@see ActionButton} (FRONTEND §7 / §11 — no hover scale > 1.04).
  */
 import type { DataTablePageEvent } from 'primevue/datatable';
 import Column from 'primevue/column';
 import DataTable from '@/volt/DataTable.vue';
+import ActionButton from '@/common/data-table/ActionButton.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
-import { formatDate } from '@/modules/social-media/helpers/formatDate';
+import { formatDateShort } from '@/modules/social-media/helpers/formatDate';
 import type { SocialMediaContent } from '@/modules/social-media/types';
 
 const props = defineProps<{
@@ -31,8 +32,8 @@ const emit = defineEmits<{
     'update:selection': [rows: SocialMediaContent[]];
 }>();
 
-function creatorName(row: SocialMediaContent): string {
-    const name = [row.creator?.first_name, row.creator?.last_name].filter(Boolean).join(' ').trim();
+function authorName(row: SocialMediaContent): string {
+    const name = [row.user?.first_name, row.user?.last_name].filter(Boolean).join(' ').trim();
     return name || 'System';
 }
 
@@ -118,7 +119,7 @@ function rowClass(row: SocialMediaContent): string | undefined {
 
             <Column header="Author">
                 <template #body="{ data }">
-                    <span class="muted">{{ creatorName(data as SocialMediaContent) }}</span>
+                    <span class="muted">{{ authorName(data as SocialMediaContent) }}</span>
                 </template>
             </Column>
 
@@ -140,50 +141,50 @@ function rowClass(row: SocialMediaContent): string | undefined {
 
             <Column field="created_at" header="Created">
                 <template #body="{ data }">
-                    <span class="mono">{{ formatDate((data as SocialMediaContent).created_at) }}</span>
+                    <span class="mono">{{ formatDateShort((data as SocialMediaContent).created_at) }}</span>
                 </template>
             </Column>
 
-            <Column header="Actions" :pt="{ bodyCell: 'w-32' }">
+            <Column header="Actions" :pt="{ bodyCell: 'w-36' }">
                 <template #body="{ data }">
                     <div class="actions-cell">
+                        <PermissionGuard permission="VIEW_SOCIAL_MEDIA">
+                            <ActionButton
+                                icon="pi pi-eye"
+                                tone="view"
+                                label="View content"
+                                :href="`/social-media/${(data as SocialMediaContent).uuid}/edit`"
+                            />
+                        </PermissionGuard>
+
                         <template v-if="(data as SocialMediaContent).deleted_at">
                             <PermissionGuard permission="RESTORE_SOCIAL_MEDIA">
-                                <button
-                                    type="button"
-                                    class="btn-crud-action btn-crud-action-restore"
-                                    aria-label="Restore content"
-                                    v-tooltip.top="'Restore'"
+                                <ActionButton
+                                    icon="pi pi-check-circle"
+                                    tone="restore"
+                                    label="Restore content"
                                     @click="emit('restore', data as SocialMediaContent)"
-                                >
-                                    <i class="pi pi-check-circle" aria-hidden="true" />
-                                </button>
+                                />
                             </PermissionGuard>
                         </template>
 
                         <template v-else>
-                            <PermissionGuard permission="VIEW_SOCIAL_MEDIA">
-                                <button
-                                    type="button"
-                                    class="btn-crud-action btn-crud-action-edit"
-                                    aria-label="Edit content"
-                                    v-tooltip.top="'Edit'"
+                            <PermissionGuard permission="UPDATE_SOCIAL_MEDIA">
+                                <ActionButton
+                                    icon="pi pi-pencil"
+                                    tone="edit"
+                                    label="Edit content"
                                     @click="emit('edit', data as SocialMediaContent)"
-                                >
-                                    <i class="pi pi-pencil" aria-hidden="true" />
-                                </button>
+                                />
                             </PermissionGuard>
 
                             <PermissionGuard permission="DELETE_SOCIAL_MEDIA">
-                                <button
-                                    type="button"
-                                    class="btn-crud-action btn-crud-action-delete"
-                                    aria-label="Suspend content"
-                                    v-tooltip.top="'Suspend'"
+                                <ActionButton
+                                    icon="pi pi-trash"
+                                    tone="delete"
+                                    label="Suspend content"
                                     @click="emit('delete', data as SocialMediaContent)"
-                                >
-                                    <i class="pi pi-trash" aria-hidden="true" />
-                                </button>
+                                />
                             </PermissionGuard>
                         </template>
                     </div>
@@ -292,7 +293,7 @@ function rowClass(row: SocialMediaContent): string | undefined {
     color: var(--text-muted);
 }
 
-/* ── Minimalist transparent CRUD table (matches the Posts/Activity Log reference) ── */
+/* ── Minimalist transparent CRUD table (matches the Posts reference) ── */
 .crud-table-wrap :deep(table) {
     background: transparent;
 }
@@ -349,80 +350,6 @@ function rowClass(row: SocialMediaContent): string | undefined {
     justify-content: center;
     gap: var(--space-2);
     white-space: nowrap;
-}
-
-.btn-crud-action {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border-subtle);
-    background: color-mix(in srgb, var(--bg-elevated) 50%, transparent);
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
-    overflow: hidden;
-}
-
-.btn-crud-action::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: currentColor;
-    opacity: 0;
-    border-radius: inherit;
-    transition: opacity var(--transition);
-}
-
-.btn-crud-action:hover {
-    transform: scale(1.15);
-    border-color: currentColor;
-}
-
-.btn-crud-action:hover::after {
-    opacity: 0.1;
-}
-
-.btn-crud-action:active {
-    transform: scale(0.95);
-}
-
-.btn-crud-action:focus-visible {
-    outline: 2px solid currentColor;
-    outline-offset: 2px;
-}
-
-.btn-crud-action .pi {
-    position: relative;
-    z-index: 1;
-    font-size: 0.8rem;
-}
-
-.btn-crud-action-edit {
-    color: var(--accent-primary);
-}
-
-.btn-crud-action-edit:hover {
-    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-primary) 30%, transparent);
-}
-
-.btn-crud-action-delete {
-    color: var(--accent-error);
-}
-
-.btn-crud-action-delete:hover {
-    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-error) 30%, transparent);
-}
-
-.btn-crud-action-restore {
-    color: var(--accent-success);
-}
-
-.btn-crud-action-restore:hover {
-    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-success) 30%, transparent);
 }
 
 .table-empty {

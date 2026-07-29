@@ -1,12 +1,12 @@
 import { z } from 'zod';
 
 /**
- * Shared Fortify Password::default() UX rules (12+, mixed case, number, symbol).
+ * Shared Fortify Password::default() UX rules (8+, mixed case, number, symbol).
  * Used by register + reset-password guest forms.
  */
 export const passwordPolicySchema = z
     .string()
-    .min(12, 'Password must be at least 12 characters')
+    .min(8, 'Password must be at least 8 characters')
     .regex(/[a-z]/, 'Must include a lowercase letter')
     .regex(/[A-Z]/, 'Must include an uppercase letter')
     .regex(/\d/, 'Must include a number')

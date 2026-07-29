@@ -113,7 +113,6 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read int|null $tokens_count
  * @property-read Collection<int, TrustedDeviceEloquentModel> $trustedDevices
  * @property-read int|null $trusted_devices_count
- *
  * @method static Builder<static>|User applyFilters(\Modules\Users\Application\DTOs\UserFilterData $filters)
  * @method static \Database\Factories\UserFactory factory($count = null, $state = [])
  * @method static Builder<static>|User newModelQuery()
@@ -161,7 +160,6 @@ use Spatie\Permission\Traits\HasRoles;
  * @method static Builder<static>|User withoutRole($roles, ?string $guard = null)
  * @method static Builder<static>|User withoutTeam($teams)
  * @method static Builder<static>|User withoutTrashed()
- *
  * @property-read Collection<int, BlogCategoryEloquentModel> $blogCategories
  * @property-read int|null $blog_categories_count
  * @property-read Collection<int, CampaignEloquentModel> $campaigns
@@ -199,7 +197,6 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read int|null $invoices_count
  * @property-read Collection<int, ProductEloquentModel> $products
  * @property-read int|null $products_count
- *
  * @mixin \Eloquent
  */
 class User extends Authenticatable implements MustVerifyEmailContract

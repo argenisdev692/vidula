@@ -1,34 +1,14 @@
 <script setup lang="ts">
 /**
- * "Recent Activity" live feed — an infinite vertical marquee, ported from the
- * GUIDE Angular `app-recent-activity`. Items are rendered twice so the CSS
- * scroll loops seamlessly; hovering pauses it. Static placeholder data.
- *
- * TODO(backend): swap `activities` for the activity-log feed once wired.
+ * Activity Log feed — infinite vertical marquee of recent workspace actions.
+ * Items are rendered twice so the CSS scroll loops seamlessly; hovering pauses.
+ * Data comes from {@see DashboardController} (real activity_log or demo fillers).
  */
-interface ActivityItem {
-    id: string;
-    user: string;
-    initials: string;
-    action: string;
-    target: string;
-    time: string;
-    icon: string;
-    iconColor: string;
-}
+import type { DashboardActivity } from '@/modules/dashboard/types';
 
-const activities: ActivityItem[] = [
-    { id: '1', user: 'Sarah Johnson', initials: 'SJ', action: 'created claim', target: '#4452', time: '2 min ago', icon: 'pi-file-plus', iconColor: 'var(--accent-primary)' },
-    { id: '2', user: 'Mike Chen', initials: 'MC', action: 'updated status', target: 'Oak St Remediation', time: '12 min ago', icon: 'pi-refresh', iconColor: 'var(--accent-info)' },
-    { id: '3', user: 'Emily Davis', initials: 'ED', action: 'approved invoice', target: '#4451', time: '35 min ago', icon: 'pi-check-circle', iconColor: 'var(--accent-success)' },
-    { id: '4', user: 'Tom Wilson', initials: 'TW', action: 'scheduled inspection', target: 'Sunset Blvd', time: '1 hr ago', icon: 'pi-calendar', iconColor: 'var(--accent-warning)' },
-    { id: '5', user: 'Lisa Park', initials: 'LP', action: 'commented on', target: 'Claim #4401', time: '2 hr ago', icon: 'pi-comment', iconColor: 'var(--accent-primary)' },
-    { id: '6', user: 'Sarah Johnson', initials: 'SJ', action: 'assigned task', target: 'Review Photos', time: '3 hr ago', icon: 'pi-user-plus', iconColor: 'var(--accent-info)' },
-    { id: '7', user: 'Mike Chen', initials: 'MC', action: 'closed claim', target: '#4398', time: '5 hr ago', icon: 'pi-lock', iconColor: 'var(--accent-success)' },
-    { id: '8', user: 'Emily Davis', initials: 'ED', action: 'uploaded document', target: 'Policy-2026.pdf', time: '6 hr ago', icon: 'pi-upload', iconColor: 'var(--accent-warning)' },
-    { id: '9', user: 'Tom Wilson', initials: 'TW', action: 'sent message', target: 'Client: ABC Corp', time: '8 hr ago', icon: 'pi-send', iconColor: 'var(--accent-primary)' },
-    { id: '10', user: 'Lisa Park', initials: 'LP', action: 'created estimate', target: '#1024', time: '10 hr ago', icon: 'pi-calculator', iconColor: 'var(--accent-info)' },
-];
+const props = defineProps<{
+    activities: DashboardActivity[];
+}>();
 </script>
 
 <template>
@@ -37,8 +17,8 @@ const activities: ActivityItem[] = [
             <div class="activity-header-left">
                 <i class="pi pi-history activity-icon" aria-hidden="true" />
                 <div>
-                    <h3 class="activity-title">Recent Activity</h3>
-                    <p class="activity-subtitle">Live user actions</p>
+                    <h3 class="activity-title">Activity Log</h3>
+                    <p class="activity-subtitle">Recent workspace events</p>
                 </div>
             </div>
             <span class="activity-live-dot" aria-hidden="true" />
@@ -47,8 +27,8 @@ const activities: ActivityItem[] = [
         <div class="marquee-container">
             <div class="marquee-track">
                 <div
-                    v-for="item in [...activities, ...activities]"
-                    :key="`${item.id}-${item.time}`"
+                    v-for="(item, index) in [...props.activities, ...props.activities]"
+                    :key="`${item.id}-${index}`"
                     class="activity-item"
                 >
                     <div class="activity-avatar" :style="{ '--avatar-color': item.iconColor }">

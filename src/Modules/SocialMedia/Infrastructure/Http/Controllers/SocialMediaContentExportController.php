@@ -46,7 +46,7 @@ final readonly class SocialMediaContentExportController
             ),
             default => $this->export->tabular(
                 "social-media.{$format}",
-                ['Topic', 'Funnel Stage', 'Status', 'Overall Score', 'Scores Passed', 'Created', 'Suspended'],
+                ['Topic', 'Funnel Stage', 'Content Status', 'Overall Score', 'Scores Passed', 'Created', 'Status'],
                 $rows->map(SocialMediaContentExportTransformer::transformForTable(...)),
             ),
         };

@@ -6,12 +6,17 @@
  * opens the AI wizard (`/campaigns/create`) — mirrors the Social Media
  * module's dedicated-page precedent.
  *
+ * List data arrives as Inertia props (not a separate JSON API), so the table is
+ * fed by Inertia partial reloads via {@see useResourceList} — same convention
+ * as Social Media / Posts. Pinia Colada is reserved for the JSON AI-wizard
+ * endpoints on Create (YAGNI for the list).
+ *
  * The shared list mechanics live in {@see useResourceList}, the confirm
  * dialogs in {@see useConfirmAction}, the page chrome in {@see CrudIndexShell}.
  * Gated by VIEW_ANY_CAMPAIGNS; every mutating control by its own permission.
  */
-import { computed, reactive } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { Head, router, useRemember } from '@inertiajs/vue3';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import { useAuthorization } from '@/modules/auth/composables/useAuthorization';
 import type { FilterCriteria, FilterField } from '@/common/data-table/AdvancedFilter.vue';
@@ -38,15 +43,18 @@ const canExport = computed<boolean>(() => hasPermission('EXPORT_CAMPAIGNS'));
 const canBulkDelete = computed<boolean>(() => hasPermission('BULK_DELETE_CAMPAIGNS'));
 const canBulkRestore = computed<boolean>(() => hasPermission('BULK_RESTORE_CAMPAIGNS'));
 
-/** The reactive request state — seeded once from the server-echoed props. */
-const query = reactive<CampaignQuery>({
-    search: props.filters.search,
-    status: props.filters.status,
-    date_from: props.filters.date_from,
-    date_to: props.filters.date_to,
-    page: props.campaigns.current_page,
-    per_page: props.campaigns.per_page,
-});
+/** Remembered across history back/forward — seeded from the server-echoed props. */
+const query = useRemember<CampaignQuery>(
+    {
+        search: props.filters.search,
+        status: props.filters.status,
+        date_from: props.filters.date_from,
+        date_to: props.filters.date_to,
+        page: props.campaigns.current_page,
+        per_page: props.campaigns.per_page,
+    },
+    'campaigns.index',
+);
 
 function applyCriteria(target: CampaignQuery, criteria: FilterCriteria): void {
     target.search = criteria.search || null;
@@ -189,6 +197,8 @@ const filterFields = computed<FilterField[]>(() => [
 </script>
 
 <template>
+    <Head title="Campaigns" />
+
     <CrudIndexShell
         title="Campaigns"
         subtitle="Generate scored Meta Ads campaigns with AI"

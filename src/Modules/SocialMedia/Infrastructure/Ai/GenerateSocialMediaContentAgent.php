@@ -19,15 +19,13 @@ use Stringable;
  * brand voice, Tavily research and (from iteration 2 onward) which scores
  * failed last time — this class owns only the persona, the human-voice /
  * virality / engagement / ROI / trend rules, the funnel-stage CTA mapping,
- * the TikTok retention structure and the output contract.
+ * CapCut video packages (TikTok + Instagram Reels), image-route selection
+ * (A/B/C), and the output contract.
  *
- * Image concepts (per platform + cover) are deliberately short — a title and
- * one visual sentence — because the caller applies the brand palette
- * deterministically (see LaravelAiSocialMediaAssistantAdapter), the same
- * discipline Post's GeneratePostContentAgent already uses. `value`/`factors`/
- * `explanation` are the only score fields asked of the model: threshold/pass
- * are computed in PHP against ContentQualityEvaluator::THRESHOLDS so the
- * model is never trusted to grade its own pass/fail.
+ * Image concepts stay short (title + visual + route + optional svg_steps) —
+ * the caller applies BrandPalette and platform aspect ratios
+ * deterministically. Score pass/fail is computed in PHP against
+ * ContentQualityEvaluator::THRESHOLDS.
  */
 final class GenerateSocialMediaContentAgent implements Agent, Conversational, HasStructuredOutput
 {
@@ -97,6 +95,8 @@ final class GenerateSocialMediaContentAgent implements Agent, Conversational, Ha
               problem.
             - Include one implicit or explicit path to go deeper (link, DM,
               consultation), sized to the funnel stage.
+            - Prioritize short-form video packaging on TikTok and Instagram
+              Reels — in 2026 short-form video is the highest-ROI social format.
 
             === TREND ALIGNMENT RULES (target trend_alignment >= 70) ===
             - Reference at least one current trend/format relevant to the
@@ -106,29 +106,58 @@ final class GenerateSocialMediaContentAgent implements Agent, Conversational, Ha
 
             === PLATFORM SPECS ===
             LinkedIn: 1000-1300 characters. Hook line -> 3-5 insight blocks ->
-            CTA. 3-5 hashtags (professional, niche).
+            CTA. 3-5 hashtags (professional, niche). Banner aspect 16:9.
             Twitter/X: single tweet <=280 chars, OR a thread marked [1/N]..[N/N]
-            when the idea needs more room. 1-2 hashtags max.
-            Instagram: 400-600 characters. Visual hook -> story -> community
-            CTA. 5-8 hashtags.
+            when the idea needs more room. 1-2 hashtags max. Banner 16:9.
+            Instagram: 400-600 characters feed caption. Visual hook -> story ->
+            community CTA. 5-8 hashtags. Square 1:1 banner PLUS a full CapCut
+            Reels video_package (same retention structure as TikTok).
             Facebook: 400-600 characters. Conversational hook -> story ->
-            community CTA. 2-3 hashtags.
-            TikTok: a 25-40s vertical (9:16) video script following this
-            retention structure — 0-3s Hook (tension line, on-screen text, no
-            intro), 3-8s Problem (the concrete pain, fast), 8-25s Payoff (the
-            insight, high pace), 25-35s Proof (a data point or mini-demo),
-            35-40s CTA (one single call to action, matched to the funnel
-            stage). Cuts every 2-4 seconds. On-screen text on every scene
-            (most people watch muted). Caption is 1-2 lines, distinct from the
-            other platforms. 5-7 hashtags mixing niche technical tags with
-            broad discovery tags.
+            community CTA. 2-3 hashtags. Banner 16:9.
+            TikTok: caption 1-2 lines (distinct from LinkedIn/IG), 5-7 hashtags
+            mixing niche + discovery tags, PLUS a CapCut video_package
+            (vertical 9:16 thumbnail).
 
-            === IMAGE CONCEPTS ===
-            You do NOT choose colors or overall visual style — the caller
-            applies the brand palette deterministically. For the cover and
-            each platform, give only a short 2-5 word title and a one-sentence
-            visual concept (e.g. "a stylized API gateway rendered as a glowing
-            node network").
+            === CAPCUT VIDEO PACKAGE (mandatory on TikTok AND Instagram) ===
+            Vertical 9:16. Product band: 15-30 seconds total. Stage-aware
+            target_duration_seconds (mandatory — pick ONE length in range):
+            - TOFU: 15s (scroll-stop awareness; short end of the band)
+            - MOFU: 21-30s (consideration / storytelling sweet spot)
+            - BOFU: 15-20s (proof + offer + hard CTA — keep tight)
+            Retention beats scaled to target_duration_seconds:
+            - 0-3s Hook: tension line + large on-screen text, no intro.
+            - Next ~20-35% Problem: concrete pain, fast.
+            - Middle Payoff: the insight/value, high pace.
+            - Late Proof: data point or mini-demo (can merge with payoff on
+              TOFU/BOFU when duration is short).
+            - Final 3-5s CTA: one call to action matched to funnel stage.
+            creative_style MUST be "ugc_native" (2026 ROI): phone-camera /
+            creator energy beats polished commercial; captions always (most
+            watch muted); no corporate bumper/intro; lo-fi > hi-fi; feel like
+            organic Reels/TikTok, not a TV spot.
+            Rules: cuts every 2-4s; on-screen text EVERY scene (3-6 words,
+            large); VO first person, direct; one message, one CTA.
+            clean_script = continuous VO only (no scene labels), ready for TTS.
+            sound_suggestion = TYPE of trending audio + a CapCut/TikTok search
+            term — NEVER invent a specific track name.
+            Provide enough scenes to cover target_duration_seconds with 2-4s
+            cuts (typically 5-10 scenes). Each scene needs time_range, action,
+            on_screen_text, voiceover_line, visual_prompt (English, UGC-native).
+
+            === IMAGE CONCEPTS (routes A / B / C) ===
+            You do NOT choose colors — the caller applies the brand palette.
+            For cover + each platform, return:
+            - title: 2-5 words
+            - visual: one-sentence concept in English
+            - route: "a" | "b" | "c"
+              - a = title + emblem/icon (default for most posts)
+              - b = abstract concept art, NO text (when text will be overlaid later)
+              - c = roadmap / multi-step visual — put 3-6 short step labels in
+                svg_steps (caller renders crisp SVG; do NOT put labels in visual)
+            - svg_steps: required array — fill with 3-6 short labels when
+              route is "c", otherwise empty array []
+            Pick the route that best fits the angle. Prefer "a" for news/hooks,
+            "b" for abstract architecture, "c" for how-to / process angles.
 
             === SCORING ===
             Score every field honestly on a 0-100 scale — do not inflate
@@ -156,6 +185,24 @@ final class GenerateSocialMediaContentAgent implements Agent, Conversational, Ha
         $imageConcept = fn ($schema) => $schema->object(fn ($schema) => [
             'title' => $schema->string()->required(),
             'visual' => $schema->string()->required(),
+            'route' => $schema->string()->required(),
+            'svg_steps' => $schema->array()->items($schema->string())->required(),
+        ])->required();
+
+        $videoPackage = fn ($schema) => $schema->object(fn ($schema) => [
+            'scenes' => $schema->array()
+                ->items($schema->object(fn ($schema) => [
+                    'time_range' => $schema->string()->required(),
+                    'action' => $schema->string()->required(),
+                    'on_screen_text' => $schema->string()->required(),
+                    'voiceover_line' => $schema->string()->required(),
+                    'visual_prompt' => $schema->string()->required(),
+                ]))
+                ->required(),
+            'clean_script' => $schema->string()->required(),
+            'sound_suggestion' => $schema->string()->required(),
+            'target_duration_seconds' => $schema->integer()->min(15)->max(30)->required(),
+            'creative_style' => $schema->string()->required(),
         ])->required();
 
         $scoreField = fn ($schema, array $factorKeys) => $schema->object(fn ($schema) => [
@@ -167,6 +214,13 @@ final class GenerateSocialMediaContentAgent implements Agent, Conversational, Ha
             'explanation' => $schema->string()->required(),
         ])->required();
 
+        $basePlatform = fn ($schema) => [
+            'adapted_content' => $schema->string()->required(),
+            'character_count' => $schema->integer()->required(),
+            'hashtags' => $schema->array()->items($schema->string())->required(),
+            'image_concept' => $imageConcept($schema),
+        ];
+
         return [
             'content' => $schema->object(fn ($schema) => [
                 'headline' => $schema->string()->required(),
@@ -176,38 +230,20 @@ final class GenerateSocialMediaContentAgent implements Agent, Conversational, Ha
             ])->required(),
 
             'platforms' => $schema->object(fn ($schema) => [
-                'linkedin' => $schema->object(fn ($schema) => [
-                    'adapted_content' => $schema->string()->required(),
-                    'character_count' => $schema->integer()->required(),
-                    'hashtags' => $schema->array()->items($schema->string())->required(),
-                    'image_concept' => $imageConcept($schema),
-                ])->required(),
+                'linkedin' => $schema->object(fn ($schema) => $basePlatform($schema))->required(),
                 'twitter' => $schema->object(fn ($schema) => [
-                    'adapted_content' => $schema->string()->required(),
-                    'character_count' => $schema->integer()->required(),
+                    ...$basePlatform($schema),
                     'is_thread' => $schema->boolean()->required(),
                     'thread_tweets' => $schema->array()->items($schema->string())->required(),
-                    'hashtags' => $schema->array()->items($schema->string())->required(),
-                    'image_concept' => $imageConcept($schema),
                 ])->required(),
                 'instagram' => $schema->object(fn ($schema) => [
-                    'adapted_content' => $schema->string()->required(),
-                    'character_count' => $schema->integer()->required(),
-                    'hashtags' => $schema->array()->items($schema->string())->required(),
-                    'image_concept' => $imageConcept($schema),
+                    ...$basePlatform($schema),
+                    'video_package' => $videoPackage($schema),
                 ])->required(),
-                'facebook' => $schema->object(fn ($schema) => [
-                    'adapted_content' => $schema->string()->required(),
-                    'character_count' => $schema->integer()->required(),
-                    'hashtags' => $schema->array()->items($schema->string())->required(),
-                    'image_concept' => $imageConcept($schema),
-                ])->required(),
+                'facebook' => $schema->object(fn ($schema) => $basePlatform($schema))->required(),
                 'tiktok' => $schema->object(fn ($schema) => [
-                    'adapted_content' => $schema->string()->required(),
-                    'video_script' => $schema->string()->required(),
-                    'character_count' => $schema->integer()->required(),
-                    'hashtags' => $schema->array()->items($schema->string())->required(),
-                    'image_concept' => $imageConcept($schema),
+                    ...$basePlatform($schema),
+                    'video_package' => $videoPackage($schema),
                 ])->required(),
             ])->required(),
 

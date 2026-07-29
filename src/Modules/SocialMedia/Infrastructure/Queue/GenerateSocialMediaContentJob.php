@@ -115,7 +115,12 @@ final class GenerateSocialMediaContentJob implements ShouldQueue
             'body' => $bestAttempt->body,
             'call_to_action' => $bestAttempt->callToAction,
             'hashtags' => $bestAttempt->hashtags,
-            'platforms' => $bestAttempt->platforms,
+            'platforms' => array_map(
+                static fn (mixed $platform): array => $platform instanceof \Modules\SocialMedia\Application\DTOs\PlatformContentData
+                    ? $platform->toArray()
+                    : (array) $platform,
+                $bestAttempt->platforms,
+            ),
             'cover_image_path' => $bestAttempt->coverImagePath,
             'cover_image_prompt' => $bestAttempt->coverImagePrompt,
             'scores' => $bestAttempt->scores->toArray(),

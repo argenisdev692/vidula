@@ -33,7 +33,7 @@ final class EloquentSocialMediaContentRepository implements SocialMediaContentRe
         return SocialMediaContentEloquentModel::query()
             ->when($filters->status === 'suspended', fn ($q) => $q->onlyTrashed())
             ->applyFilters($filters)
-            ->with('creator:id,first_name,last_name')
+            ->with('user:id,first_name,last_name')
             ->select([
                 'id', 'uuid', 'topic', 'status', 'business_goal', 'funnel_stage', 'language',
                 'provider', 'overall_score_avg', 'all_scores_pass', 'quality_warning',
@@ -47,7 +47,7 @@ final class EloquentSocialMediaContentRepository implements SocialMediaContentRe
     public function findByUuid(string $uuid): ?SocialMediaContentEloquentModel
     {
         return SocialMediaContentEloquentModel::withTrashed()
-            ->with('creator:id,first_name,last_name')
+            ->with('user:id,first_name,last_name')
             ->where('uuid', $uuid)
             ->first();
     }

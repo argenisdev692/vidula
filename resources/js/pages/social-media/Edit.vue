@@ -13,6 +13,7 @@ import AppLayout from '@/pages/layouts/AppLayout.vue';
 import AppHeader from '@/modules/app/components/AppHeader.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import BackLink from '@/common/ui/BackLink.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
 import AiProgressBar from './components/AiProgressBar.vue';
 import SocialMediaContentForm from './components/SocialMediaContentForm.vue';
 import { useAiGenerationProgress } from '@/modules/social-media/composables/useAiGenerationProgress';
@@ -54,9 +55,13 @@ function refresh(): void {
                     :message="activeProgress?.message ?? 'Running the quality-loop…'"
                     :percent="activeProgress?.progress ?? 5"
                 />
-                <button type="button" class="generating__refresh" @click="refresh">
-                    <i class="pi pi-refresh" aria-hidden="true" /> Refresh
-                </button>
+                <SecondaryButton
+                    type="button"
+                    icon="pi pi-refresh"
+                    label="Refresh"
+                    class="generating__refresh"
+                    @click="refresh"
+                />
             </section>
 
             <PermissionGuard v-else permission="UPDATE_SOCIAL_MEDIA">
@@ -125,22 +130,7 @@ function refresh(): void {
 }
 
 .generating__refresh {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
     margin-top: var(--space-2);
-    padding: var(--space-2) var(--space-4);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-md);
-    background: transparent;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: border-color var(--transition), color var(--transition);
-}
-
-.generating__refresh:hover {
-    border-color: var(--accent-primary);
-    color: var(--accent-primary);
 }
 
 .empty {

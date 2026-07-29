@@ -32,6 +32,7 @@ final readonly class ContentQualityEvaluator
     /**
      * @param  array<string, int>  $scores
      */
+    #[\NoDiscard]
     public function evaluate(array $scores): QualityEvaluationResult
     {
         $failingScores = $this->failingScores($scores);
@@ -54,6 +55,7 @@ final readonly class ContentQualityEvaluator
      * @param  array<string, string>  $explanations  score key => why it scored that way
      * @return list<array{score: string, current: int, target: int, gap: int, explanation: string}>
      */
+    #[\NoDiscard]
     public function identifyWeaknesses(array $scores, array $explanations): array
     {
         return array_map(

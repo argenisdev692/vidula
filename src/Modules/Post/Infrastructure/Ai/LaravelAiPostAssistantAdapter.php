@@ -315,6 +315,9 @@ final readonly class LaravelAiPostAssistantAdapter implements PostContentGenerat
 
                 $this->broadcast($causer, 'reel', 'done', 'Reel package ready.', 100);
 
+                $targetDuration = (int) ($response['target_duration_seconds'] ?? 15);
+                $targetDuration = max(15, min(30, $targetDuration));
+
                 return new ReelPackageData(
                     scenes: $scenes,
                     cleanScript: $cleanScript,
@@ -322,6 +325,8 @@ final readonly class LaravelAiPostAssistantAdapter implements PostContentGenerat
                     tiktokCaption: (string) $response['tiktok_caption'],
                     tiktokHashtags: (array) $response['tiktok_hashtags'],
                     voiceoverAudioUrl: $voiceoverAudioUrl,
+                    targetDurationSeconds: $targetDuration,
+                    creativeStyle: (string) ($response['creative_style'] ?? 'ugc_native') ?: 'ugc_native',
                 );
             },
         );

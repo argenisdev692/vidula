@@ -36,14 +36,13 @@ final readonly class CampaignController
         $filters = CampaignFilterData::validateAndCreate($request);
         $campaigns = $list->handle($filters, min(max($request->integer('per_page', 15), 1), 100));
 
-        if ($request->expectsJson()) {
-            return response()->json($campaigns);
-        }
-
-        return Inertia::render('campaigns/Index', [
-            'campaigns' => $campaigns,
-            'filters' => $filters,
-        ]);
+        return match ($request->expectsJson()) {
+            true => response()->json($campaigns),
+            false => Inertia::render('campaigns/Index', [
+                'campaigns' => $campaigns,
+                'filters' => $filters,
+            ]),
+        };
     }
 
     public function create(): InertiaResponse

@@ -14,10 +14,10 @@ use Laravel\Ai\Promptable;
 use Stringable;
 
 /**
- * Generates a short-form Reel/TikTok package (9:16, 25-40s) for one chosen
- * topic/angle (Post module). The prompt supplied at call time embeds the
- * topic, angle, company profile and research — this class owns only the
- * persona, the retention structure and the output contract.
+ * Generates a short-form Reel/TikTok package (9:16, stage-aware 15–30s,
+ * UGC-native) for one chosen topic/angle (Post module). The prompt supplied
+ * at call time embeds the topic, angle, company profile and research — this
+ * class owns only the persona, the retention structure and the output contract.
  */
 final class GenerateReelPackageAgent implements Agent, Conversational, HasStructuredOutput
 {
@@ -27,15 +27,23 @@ final class GenerateReelPackageAgent implements Agent, Conversational, HasStruct
     {
         return <<<'INSTRUCTIONS'
             You are a short-form video strategist who writes CapCut-ready
-            Reel/TikTok packages, vertical 9:16, 25-40 seconds total.
+            Reel/TikTok packages, vertical 9:16, stage-aware 15-30 seconds.
+            creative_style MUST be "ugc_native" (phone-camera / creator energy
+            beats polished commercial; captions always; no corporate bumper).
 
-            Retention structure (mandatory):
+            If funnel stage is supplied, set target_duration_seconds:
+            - TOFU: 15s
+            - MOFU: 21-30s
+            - BOFU: 15-20s
+            Default to 15s when stage is unknown.
+
+            Retention beats scaled to target_duration_seconds:
             - 0-3s Hook: a tension line + large on-screen text, no intro.
-            - 3-8s Problem: the concrete pain, fast.
-            - 8-25s Payoff: the solution/insight, high pace, this is where the
-              value lives.
-            - 25-35s Proof: a data point, result, or mini-demo for credibility.
-            - 35-40s CTA: one single call to action.
+            - Next ~20-35% Problem: the concrete pain, fast.
+            - Middle Payoff: the solution/insight, high pace.
+            - Late Proof: a data point or mini-demo (may merge with payoff on
+              short TOFU/BOFU cuts).
+            - Final 3-5s CTA: one single call to action.
 
             Rules:
             - Cuts every 2-4 seconds — no long static shots.
@@ -82,6 +90,8 @@ final class GenerateReelPackageAgent implements Agent, Conversational, HasStruct
 
             'clean_script' => $schema->string()->required(),
             'sound_suggestion' => $schema->string()->required(),
+            'target_duration_seconds' => $schema->integer()->min(15)->max(30)->required(),
+            'creative_style' => $schema->string()->required(),
             'tiktok_caption' => $schema->string()->required(),
             'tiktok_hashtags' => $schema->array()->items($schema->string())->required(),
         ];

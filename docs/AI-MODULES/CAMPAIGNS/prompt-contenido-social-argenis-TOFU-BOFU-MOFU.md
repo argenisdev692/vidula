@@ -77,7 +77,15 @@ El objetivo no es engañar a un detector de IA (son poco fiables) — es **escri
 
 ## 🎬 Módulo Reel / TikTok (short-form video para CapCut)
 
-Genera un paquete listo para montar en **CapCut**, formato **9:16 vertical**. Duración objetivo **25–40 s** (punto dulce de retención). Adapta el mismo ángulo del post, pero con lógica de video: **gancho en los primeros 3 segundos o se pierde**.
+Genera un paquete listo para montar en **CapCut**, formato **9:16 vertical**. Duración **stage-aware dentro de 15–30 s** (banda de producto 2026):
+
+| Etapa | Duración objetivo |
+|---|---|
+| **TOFU** | **15 s** (awareness / scroll-stop) |
+| **MOFU** | **21–30 s** (consideración / storytelling) |
+| **BOFU** | **15–20 s** (prueba + oferta + CTA duro) |
+
+`creative_style` = **ugc_native** (estilo creador / cámara de teléfono > spot pulido). Adapta el mismo ángulo del post, pero con lógica de video: **gancho en los primeros 3 segundos o se pierde**.
 
 **Reglas del reel:**
 - **Cortes cada 2–4 s.** Nada de planos largos.
@@ -86,12 +94,12 @@ Genera un paquete listo para montar en **CapCut**, formato **9:16 vertical**. Du
 - Voz en off en **primera persona** (Argenis), tono directo de ingeniero senior.
 - Un solo mensaje. Un solo CTA al final.
 
-**Estructura de retención (no SAAEEF, adaptada a video):**
+**Estructura de retención (escalada a `target_duration_seconds`):**
 1. **0–3 s — Hook:** frase/pregunta que genere tensión + texto en pantalla grande. Sin intro.
-2. **3–8 s — Problema:** el dolor concreto, rápido.
-3. **8–25 s — Payoff:** la solución/insight con mi stack. Aquí va el valor. Ritmo alto.
-4. **25–35 s — Prueba/gancho de credibilidad:** dato, resultado o mini-demo.
-5. **35–40 s — CTA:** "Sígueme para más" o "Link en bio → argenis.dev".
+2. **Problema (~20–35%):** el dolor concreto, rápido.
+3. **Payoff (medio):** la solución/insight con mi stack. Aquí va el valor. Ritmo alto.
+4. **Prueba (tarde):** dato, resultado o mini-demo (puede fusionarse con payoff en TOFU/BOFU cortos).
+5. **Últimos 3–5 s — CTA:** "Sígueme para más" o "Link en bio → argenis.dev" (ajustado a la etapa).
 
 **Entrega el reel como una TABLA-TIMELINE con estas columnas:**
 
@@ -214,4 +222,5 @@ Un roadmap real tiene muchas etiquetas → **DALL-E lo destroza**. Dos opciones:
 - [ ] ¿El CTA coincide con la etapa del embudo (no vender duro en un TOFU)?
 - [ ] **Reel:** ¿el gancho entra en los primeros 3 s?
 - [ ] **Reel:** ¿hay texto en pantalla en cada plano y subtítulos?
-- [ ] **Reel:** ¿los cortes son cada 2–4 s y el total ≤ 40 s?
+- [ ] **Reel:** ¿los cortes son cada 2–4 s y el total está en 15–30 s (stage-aware)?
+- [ ] **Reel:** ¿el estilo es UGC-native (no spot TV)?

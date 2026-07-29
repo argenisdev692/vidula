@@ -11,17 +11,15 @@ use Modules\Campaigns\Domain\Enums\CampaignBusinessGoal;
 use Modules\Campaigns\Domain\Enums\CampaignFunnelStage;
 use Modules\Campaigns\Domain\Enums\CampaignLanguage;
 use Modules\Campaigns\Domain\Enums\CampaignPlatform;
-use Modules\Campaigns\Infrastructure\Queue\GenerateCampaignJob;
 use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 
 /**
  * Input for Step 2 (quality-loop campaign generation). One instance is
- * reused across every iteration of
- * {@see GenerateCampaignJob}; only
- * the previous-scores/weaknesses feedback (passed separately to the port)
- * changes between iterations.
+ * reused across every iteration of the Infrastructure quality-loop Job;
+ * only the previous-scores/weaknesses feedback (passed separately to the
+ * port) changes between iterations.
  */
 #[MapInputName(SnakeCaseMapper::class)]
 final class GenerateCampaignData extends Data
@@ -41,6 +39,10 @@ final class GenerateCampaignData extends Data
         public ?string $niche = null,
         public ?string $audience = null,
         public bool $generateImages = true,
+        public ?string $city = null,
+        public ?string $state = null,
+        public ?string $country = null,
+        public ?string $location = null,
     ) {}
 
     /**
@@ -63,6 +65,10 @@ final class GenerateCampaignData extends Data
             'niche' => ['nullable', 'string', 'max:255'],
             'audience' => ['nullable', 'string', 'max:255'],
             'generate_images' => ['boolean'],
+            'city' => ['nullable', 'string', 'max:120'],
+            'state' => ['nullable', 'string', 'max:120'],
+            'country' => ['nullable', 'string', 'max:120'],
+            'location' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

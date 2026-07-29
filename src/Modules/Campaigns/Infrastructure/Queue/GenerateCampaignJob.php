@@ -16,6 +16,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Modules\Campaigns\Application\DTOs\GenerateCampaignData;
+use Modules\Campaigns\Application\DTOs\PlatformCampaignContentData;
 use Modules\Campaigns\Domain\Ports\CampaignGeneratorPort;
 use Modules\Campaigns\Domain\Ports\CampaignRepositoryPort;
 use Modules\Campaigns\Domain\Services\CampaignQualityEvaluator;
@@ -118,7 +119,10 @@ final class GenerateCampaignJob implements ShouldQueue
             'hashtags' => $bestAttempt->hashtags,
             'lead_form_questions' => $bestAttempt->leadFormQuestions,
             'targeting_suggestions' => $bestAttempt->targetingSuggestions,
-            'platforms' => $bestAttempt->platforms,
+            'platforms' => array_map(
+                static fn (PlatformCampaignContentData $platform): array => $platform->toArray(),
+                $bestAttempt->platforms,
+            ),
             'cover_image_path' => $bestAttempt->coverImagePath,
             'cover_image_prompt' => $bestAttempt->coverImagePrompt,
             'scores' => $bestAttempt->scores->toArray(),

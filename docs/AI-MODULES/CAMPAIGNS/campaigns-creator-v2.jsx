@@ -1,3 +1,9 @@
+/**
+ * DESIGN SKETCH ONLY — not the live Campaigns module.
+ * Live product = Meta Ads wizard in resources/js/pages/campaigns/Create.vue
+ * + Modules/Campaigns (see docs/AI-MODULES/CAMPAIGNS/prompt-campaigns-generator-v2.md).
+ * This JSX prototypes an older video-ZIP / geo / 15-25s idea; keep for UX reference.
+ */
 import { useState, useRef, useEffect } from "react";
 
 // ─── DESIGN TOKENS ──────────────────────────────────────────────────────────

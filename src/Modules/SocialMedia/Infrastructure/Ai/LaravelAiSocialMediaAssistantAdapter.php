@@ -16,6 +16,9 @@ use Modules\SocialMedia\Application\DTOs\ScoreResultData;
 use Modules\SocialMedia\Application\DTOs\ScoreSetData;
 use Modules\SocialMedia\Application\DTOs\SocialMediaTopicIdeaData;
 use Modules\SocialMedia\Application\DTOs\SuggestSocialMediaTopicsData;
+use Modules\SocialMedia\Application\DTOs\VideoPackageData;
+use Modules\SocialMedia\Application\DTOs\VideoSceneData;
+use Modules\SocialMedia\Domain\Enums\ContentLanguage;
 use Modules\SocialMedia\Domain\Ports\SocialMediaContentGeneratorPort;
 use Modules\SocialMedia\Domain\Ports\SocialMediaTopicIdeatorPort;
 use Modules\SocialMedia\Domain\Services\ContentQualityEvaluator;
@@ -76,7 +79,8 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
                     "Niche: {$niche}",
                     $data->audience !== null ? "Target audience: {$data->audience}" : 'Target audience: infer from the niche.',
                     $data->businessGoal !== null ? "Business goal: {$data->businessGoal}" : null,
-                    "Output language: {$data->language}",
+                    ContentLanguage::tryFrom($data->language)?->outputInstruction()
+                        ?? "Output language: {$data->language}",
                     'Web research context:'."\n".$this->formatResearch($research),
                     'Generate exactly 10 viral topics as specified in your instructions.',
                 ]));
@@ -165,10 +169,18 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
 
         $this->broadcast($causer, $contentUuid, 'cover_image', "Iteration {$iteration}: generating the cover image…", 90, $iteration);
 
-        /** @var array{title: string, visual: string} $coverConcept */
+        /** @var array{title: string, visual: string, route?: string, svg_steps?: list<string>} $coverConcept */
         $coverConcept = (array) $response['cover_image_concept'];
+        $coverRoute = $this->normalizeImageRoute($coverConcept['route'] ?? 'a');
+        $coverSteps = array_values(array_map(strval(...), (array) ($coverConcept['svg_steps'] ?? [])));
         $coverImagePath = $data->generateImages
-            ? $this->generateAndStoreImage('cover', (string) $coverConcept['title'], (string) $coverConcept['visual'])
+            ? $this->generateAndStoreImage(
+                'cover',
+                (string) $coverConcept['title'],
+                (string) $coverConcept['visual'],
+                $coverRoute,
+                $coverSteps,
+            )
             : null;
         $coverImageUrl = $coverImagePath !== null ? $this->storage->publicUrl($coverImagePath) : null;
 
@@ -185,7 +197,11 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
             platforms: $platforms,
             coverImagePath: $coverImagePath,
             coverImageUrl: $coverImageUrl,
-            coverImagePrompt: "{$coverConcept['title']} — {$coverConcept['visual']}",
+            coverImagePrompt: $this->describeImagePrompt(
+                (string) $coverConcept['title'],
+                (string) $coverConcept['visual'],
+                $coverRoute,
+            ),
             scores: $scores,
             eeatAnalysis: (array) $response['eeat_analysis'],
             optimizationSuggestions: (array) $response['optimization_suggestions'],
@@ -207,20 +223,41 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
         string $contentUuid,
         int $iteration,
     ): PlatformContentData {
-        /** @var array{title: string, visual: string} $imageConcept */
+        /** @var array{title: string, visual: string, route?: string, svg_steps?: list<string>} $imageConcept */
         $imageConcept = (array) $variation['image_concept'];
+        $imageRoute = $this->normalizeImageRoute($imageConcept['route'] ?? 'a');
+        $svgSteps = array_values(array_map(strval(...), (array) ($imageConcept['svg_steps'] ?? [])));
 
         $imagePath = $data->generateImages
-            ? $this->generateAndStoreImage($platform, (string) $imageConcept['title'], (string) $imageConcept['visual'])
+            ? $this->generateAndStoreImage(
+                $platform,
+                (string) $imageConcept['title'],
+                (string) $imageConcept['visual'],
+                $imageRoute,
+                $svgSteps,
+            )
             : null;
         $imageUrl = $imagePath !== null ? $this->storage->publicUrl($imagePath) : null;
+
+        $videoPackage = $this->mapVideoPackage($variation['video_package'] ?? null);
 
         $voiceoverPath = null;
         $voiceoverUrl = null;
 
-        if ($platform === 'tiktok' && $data->generateVoiceover) {
-            $this->broadcast($causer, $contentUuid, 'voiceover', "Iteration {$iteration}: synthesizing the TikTok voiceover…", 95, $iteration);
-            $voiceoverPath = $this->generateAndStoreVoiceover((string) $variation['video_script']);
+        $shouldSynthesizeVoiceover = $data->generateVoiceover
+            && $videoPackage !== null
+            && in_array($platform, ['tiktok', 'instagram'], true);
+
+        if ($shouldSynthesizeVoiceover) {
+            $this->broadcast(
+                $causer,
+                $contentUuid,
+                'voiceover',
+                "Iteration {$iteration}: synthesizing the {$platform} voiceover…",
+                95,
+                $iteration,
+            );
+            $voiceoverPath = $this->generateAndStoreVoiceover($videoPackage->cleanScript);
             $voiceoverUrl = $voiceoverPath !== null ? $this->storage->publicUrl($voiceoverPath) : null;
         }
 
@@ -229,15 +266,76 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
             adaptedContent: (string) $variation['adapted_content'],
             characterCount: (int) $variation['character_count'],
             hashtags: (array) $variation['hashtags'],
-            imagePrompt: "{$imageConcept['title']} — {$imageConcept['visual']}",
+            imagePrompt: $this->describeImagePrompt(
+                (string) $imageConcept['title'],
+                (string) $imageConcept['visual'],
+                $imageRoute,
+            ),
+            imageRoute: $imageRoute,
             isThread: (bool) ($variation['is_thread'] ?? false),
             threadTweets: (array) ($variation['thread_tweets'] ?? []),
-            videoScript: isset($variation['video_script']) ? (string) $variation['video_script'] : null,
+            videoScript: $videoPackage?->cleanScript,
+            videoPackage: $videoPackage,
             imagePath: $imagePath,
             imageUrl: $imageUrl,
             voiceoverAudioPath: $voiceoverPath,
             voiceoverAudioUrl: $voiceoverUrl,
         );
+    }
+
+    private function mapVideoPackage(mixed $raw): ?VideoPackageData
+    {
+        if (! is_array($raw)) {
+            return null;
+        }
+
+        /** @var list<array{time_range: string, action: string, on_screen_text: string, voiceover_line: string, visual_prompt: string}> $scenes */
+        $scenes = (array) ($raw['scenes'] ?? []);
+
+        $targetDuration = (int) ($raw['target_duration_seconds'] ?? 15);
+        $targetDuration = max(15, min(30, $targetDuration));
+
+        return new VideoPackageData(
+            scenes: array_map(
+                static fn (array $scene): VideoSceneData => new VideoSceneData(
+                    timeRange: (string) $scene['time_range'],
+                    action: (string) $scene['action'],
+                    onScreenText: (string) $scene['on_screen_text'],
+                    voiceoverLine: (string) $scene['voiceover_line'],
+                    visualPrompt: (string) $scene['visual_prompt'],
+                ),
+                $scenes,
+            ),
+            cleanScript: (string) ($raw['clean_script'] ?? ''),
+            soundSuggestion: (string) ($raw['sound_suggestion'] ?? ''),
+            targetDurationSeconds: $targetDuration,
+            creativeStyle: (string) ($raw['creative_style'] ?? 'ugc_native') ?: 'ugc_native',
+        );
+    }
+
+    private function normalizeImageRoute(mixed $route): string
+    {
+        $normalized = strtolower(trim((string) $route));
+
+        return in_array($normalized, ['a', 'b', 'c'], true) ? $normalized : 'a';
+    }
+
+    private function describeImagePrompt(string $title, string $visual, string $route): string
+    {
+        return "[route {$route}] {$title} — {$visual}";
+    }
+
+    /**
+     * Platform-native aspect ratios aligned with docs/AI-MODULES/SOCIAL-MEDIA
+     * (LinkedIn/Twitter/Facebook/cover ≈ 16:9, Instagram 1:1, TikTok 9:16).
+     */
+    private function imageSizeForPlatform(string $platform): string
+    {
+        return match ($platform) {
+            'instagram' => '1:1',
+            'tiktok' => '9:16',
+            default => '16:9',
+        };
     }
 
     /**
@@ -299,9 +397,9 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
         ]);
 
         return match (true) {
-            $iteration >= 4 => [...$base, "{$niche} authority sources citations", "{$data->topic} best practices"],
-            $iteration >= 2 => [...$base, "{$niche} viral examples social media", "{$data->topic} engagement benchmarks"],
-            default => $base,
+            $iteration >= 4 => [...$base, "{$niche} authority sources citations", "{$data->topic} best practices", "{$niche} CapCut trending sounds"],
+            $iteration >= 2 => [...$base, "{$niche} viral examples social media", "{$data->topic} engagement benchmarks", "{$niche} short form video Reels TikTok ROI 2026"],
+            default => [...$base, "{$niche} short form video viral hooks 2026"],
         };
     }
 
@@ -328,7 +426,8 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
             "Business goal: {$data->businessGoal}",
             "Brand voice: {$data->brandVoice}",
             "Funnel stage: {$data->funnelStage}",
-            "Output language: {$data->language}",
+            ContentLanguage::tryFrom($data->language)?->outputInstruction()
+                ?? "Output language: {$data->language}",
             'Web research context:'."\n".$this->formatResearch($research),
             $iteration === 1
                 ? 'This is the first attempt. Generate the best possible content from the start.'
@@ -372,18 +471,57 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
     }
 
     /**
-     * Wraps the agent's short concept in a deterministic template so every
-     * image stays on-brand (dark navy + electric purple) regardless of what
-     * the model would otherwise invent — see {@see BrandPalette}. Mirrors
-     * Post's `generateAndStoreCoverImage()`.
+     * Renders on-brand assets via route A/B (Imagen) or C (deterministic SVG).
+     * Aspect ratio is platform-native — see {@see self::imageSizeForPlatform()}.
+     *
+     * @param  list<string>  $svgSteps
      */
-    private function generateAndStoreImage(string $platform, string $title, string $visual): ?string
+    private function generateAndStoreImage(
+        string $platform,
+        string $title,
+        string $visual,
+        string $route,
+        array $svgSteps,
+    ): ?string {
+        if ($route === 'c') {
+            return $this->generateAndStoreSvgRoadmap($platform, $title, $svgSteps);
+        }
+
+        $prompt = $this->buildImagePrompt($title, $visual, $route);
+        $size = $this->imageSizeForPlatform($platform);
+
+        $image = $this->ai->generateImage($prompt, provider: null, size: $size, quality: 'high');
+
+        $extension = str_contains($image['mime'], 'png') ? 'png' : 'jpg';
+        $path = 'social-media/ai/'.$platform.'/'.Str::uuid7().'.'.$extension;
+
+        return $this->storage->put($path, base64_decode($image['base64'], true) ?: '', 'public');
+    }
+
+    /**
+     * Argenis Ruta A (title + emblem) vs Ruta B (abstract, no text). Colors
+     * always come from {@see BrandPalette} — never from the model.
+     */
+    private function buildImagePrompt(string $title, string $visual, string $route): string
     {
         $background = BrandPalette::BACKGROUND;
         $primaryAccent = BrandPalette::PRIMARY_ACCENT;
         $secondaryAccent = BrandPalette::SECONDARY_ACCENT;
 
-        $prompt = <<<PROMPT
+        if ($route === 'b') {
+            return <<<PROMPT
+                Abstract tech concept art, dark mode, minimalist, high-end cinematic.
+                Deep navy blue ({$background}) background. {$visual}, rendered as a
+                network of glowing interconnected nodes and data-flow lines in
+                electric purple ({$primaryAccent}) with soft lilac accents
+                ({$secondaryAccent}). Soft glow, volumetric lighting, depth of field,
+                floating geometric shapes, subtle grid. Editorial, engineered
+                aesthetic. Sharp, 4k. No text, no labels, no letters, no numbers,
+                no watermark.
+                PROMPT;
+        }
+
+        return <<<PROMPT
             Premium tech social media graphic, dark mode, minimalist, high-end.
             Background: deep navy blue ({$background}) with a subtle gradient
             and soft cinematic lighting from top. Centered composition: {$visual},
@@ -395,19 +533,65 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
             Apple-keynote quality. Sharp focus, depth of field, 4k. No extra text,
             no paragraphs, no watermark.
             PROMPT;
-
-        $image = $this->ai->generateImage($prompt, provider: null, size: '1:1', quality: 'high');
-
-        $extension = str_contains($image['mime'], 'png') ? 'png' : 'jpg';
-        $path = 'social-media/ai/'.$platform.'/'.Str::uuid7().'.'.$extension;
-
-        return $this->storage->put($path, base64_decode($image['base64'], true) ?: '', 'public');
     }
 
     /**
-     * Best-effort TikTok voiceover. Null on any failure (ElevenLabs
-     * unreachable/misconfigured) — the script remains fully usable without
-     * audio, same contract as Post's Reel package.
+     * Argenis Ruta C — crisp SVG roadmap (Imagen mangles multi-label text).
+     *
+     * @param  list<string>  $svgSteps
+     */
+    private function generateAndStoreSvgRoadmap(string $platform, string $title, array $svgSteps): ?string
+    {
+        $steps = $svgSteps !== []
+            ? array_slice(array_values(array_filter(array_map('trim', $svgSteps))), 0, 6)
+            : ['Step 1', 'Step 2', 'Step 3'];
+
+        $background = BrandPalette::BACKGROUND;
+        $primary = BrandPalette::PRIMARY_ACCENT;
+        $secondary = BrandPalette::SECONDARY_ACCENT;
+        $safeTitle = htmlspecialchars($title, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+
+        $stepCount = count($steps);
+        $spacing = $stepCount > 1 ? 900 / ($stepCount - 1) : 0;
+        $nodes = '';
+
+        foreach ($steps as $index => $label) {
+            $x = 150 + ($index * $spacing);
+            $safeLabel = htmlspecialchars($label, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+            $nodes .= <<<SVG
+                <circle cx="{$x}" cy="320" r="18" fill="{$primary}" stroke="{$secondary}" stroke-width="3"/>
+                <text x="{$x}" y="290" text-anchor="middle" fill="{$secondary}" font-family="system-ui,sans-serif" font-size="14" font-weight="700">{$index + 1}</text>
+                <text x="{$x}" y="370" text-anchor="middle" fill="#e2e8f0" font-family="system-ui,sans-serif" font-size="16" font-weight="600">{$safeLabel}</text>
+                SVG;
+        }
+
+        $lineEnd = 150 + (($stepCount - 1) * $spacing);
+
+        $svg = <<<SVG
+            <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+              <rect width="1200" height="630" fill="{$background}"/>
+              <defs>
+                <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="{$primary}" stop-opacity="0.25"/>
+                  <stop offset="100%" stop-color="{$secondary}" stop-opacity="0.08"/>
+                </linearGradient>
+              </defs>
+              <rect width="1200" height="630" fill="url(#g)"/>
+              <text x="600" y="120" text-anchor="middle" fill="#f8fafc" font-family="system-ui,sans-serif" font-size="36" font-weight="700">{$safeTitle}</text>
+              <line x1="150" y1="320" x2="{$lineEnd}" y2="320" stroke="{$primary}" stroke-width="4" stroke-linecap="round"/>
+              {$nodes}
+            </svg>
+            SVG;
+
+        $path = 'social-media/ai/'.$platform.'/'.Str::uuid7().'.svg';
+
+        return $this->storage->put($path, $svg, 'public');
+    }
+
+    /**
+     * Best-effort voiceover for TikTok / Reels. Null on any failure
+     * (ElevenLabs unreachable/misconfigured) — CapCut timeline + clean script
+     * remain fully usable without audio.
      */
     private function generateAndStoreVoiceover(string $videoScript): ?string
     {
@@ -417,7 +601,7 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
             return null;
         }
 
-        $path = 'social-media/ai/tiktok/audio/'.Str::uuid7().'.mp3';
+        $path = 'social-media/ai/voiceover/'.Str::uuid7().'.mp3';
         $stored = $this->storage->put($path, base64_decode($audio['base64'], true) ?: '', 'public');
 
         return $stored;

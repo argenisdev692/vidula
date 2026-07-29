@@ -57,6 +57,8 @@ final class SuggestCampaignTopicsAgent implements Agent, Conversational, HasStru
               repeat purchase, community angles.
             Balance the 10 angles across all four stages — never return all
             TOFU. Justify the stage in 3-5 words inside `why_it_works`.
+            When geographic location is supplied, prefer angles with local
+            market fit (city/state seasonality, competition, cultural hooks).
 
             `estimated_lead_potential` (0-100) is distinct from
             `estimated_roi`: it scores specifically how likely the angle is to

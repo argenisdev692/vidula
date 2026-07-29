@@ -47,7 +47,7 @@ final readonly class CampaignExportController
             ),
             default => $this->export->tabular(
                 "campaigns.{$format}",
-                ['Topic', 'Funnel Stage', 'Platform', 'Status', 'Success Probability', 'Scores Passed', 'Created', 'Suspended'],
+                ['Topic', 'Funnel Stage', 'Platform', 'Campaign Status', 'Success Probability', 'Scores Passed', 'Created', 'Status'],
                 $rows->map(CampaignExportTransformer::transformForTable(...)),
             ),
         };

@@ -5448,10 +5448,11 @@
             },
             "CampaignLanguage": {
                 "type": "string",
-                "description": "Output language the user picks for AI generation \u2014 never inferred, always explicit (the same niche can be worked in either market).\n",
+                "description": "Output language the user picks for AI generation \u2014 never inferred, always explicit (the same niche can be worked in either market). pt-PT = European Portuguese (Portugal), not Brazilian.\n",
                 "enum": [
                     "es",
-                    "en"
+                    "en",
+                    "pt-PT"
                 ],
                 "title": "CampaignLanguage"
             },
@@ -5876,10 +5877,11 @@
             },
             "ContentLanguage": {
                 "type": "string",
-                "description": "Output language the user picks for AI generation \u2014 never inferred, always explicit (the same topic/niche can be worked in either market).\n",
+                "description": "Output language the user picks for AI generation \u2014 never inferred, always explicit (the same topic/niche can be worked in either market). pt-PT = European Portuguese (Portugal), not Brazilian.\n",
                 "enum": [
                     "es",
-                    "en"
+                    "en",
+                    "pt-PT"
                 ],
                 "title": "ContentLanguage"
             },
@@ -5998,7 +6000,7 @@
             },
             "GenerateCampaignData": {
                 "type": "object",
-                "description": "Input for Step 2 (quality-loop campaign generation). One instance is\nreused across every iteration of\n{@see GenerateCampaignJob}; only\nthe previous-scores/weaknesses feedback (passed separately to the port)\nchanges between iterations.",
+                "description": "Input for Step 2 (quality-loop campaign generation). One instance is\nreused across every iteration of the Infrastructure quality-loop Job;\nonly the previous-scores/weaknesses feedback (passed separately to the\nport) changes between iterations.",
                 "properties": {
                     "topic": {
                         "type": "string",
@@ -6067,6 +6069,34 @@
                     },
                     "generate_images": {
                         "type": "boolean"
+                    },
+                    "city": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 120
+                    },
+                    "state": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 120
+                    },
+                    "country": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 120
+                    },
+                    "location": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
                     }
                 },
                 "required": [
@@ -7661,6 +7691,34 @@
                                 "type": "null"
                             }
                         ]
+                    },
+                    "city": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 120
+                    },
+                    "state": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 120
+                    },
+                    "country": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 120
+                    },
+                    "location": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
                     }
                 },
                 "required": [

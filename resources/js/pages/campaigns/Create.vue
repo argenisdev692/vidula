@@ -22,14 +22,18 @@ import GradientButton from '@/common/form/GradientButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import ToggleSwitch from '@/volt/ToggleSwitch.vue';
 import AiProgressBar from './components/AiProgressBar.vue';
-import { apiFetch, HttpError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { useAiGenerationProgress } from '@/modules/campaigns/composables/useAiGenerationProgress';
+import {
+    useCampaignGenerationStatusMutation,
+    useGenerateCampaignMutation,
+    useSuggestCampaignTopicsMutation,
+} from '@/modules/campaigns/composables/useCampaignAiAssistMutations';
 import type {
     AdFormat,
     AiProvider,
     BrandVoice,
     BusinessGoal,
-    CampaignDetail,
     CampaignLanguage,
     CampaignPlatform,
     CampaignTopicIdea,
@@ -48,6 +52,7 @@ const PROVIDERS: { label: string; value: AiProvider }[] = [
 const LANGUAGES: { label: string; value: CampaignLanguage }[] = [
     { label: 'Español (LatAm neutro)', value: 'es' },
     { label: 'English', value: 'en' },
+    { label: 'Português (Portugal)', value: 'pt-PT' },
 ];
 
 const BUSINESS_GOALS: { label: string; value: BusinessGoal }[] = [
@@ -92,13 +97,24 @@ const provider = ref<AiProvider>('openai');
 const language = ref<CampaignLanguage>('es');
 const niche = ref<string>('');
 const audience = ref<string>('');
+const city = ref<string>('');
+const state = ref<string>('');
+const country = ref<string>('');
+const location = ref<string>('');
 const businessGoal = ref<BusinessGoal | null>(null);
 const topicSteer = ref<string>('');
 
-const ideasLoading = ref<boolean>(false);
 const ideasError = ref<string | null>(null);
 const ideas = ref<CampaignTopicIdea[]>([]);
 const selectedIdea = ref<CampaignTopicIdea | null>(null);
+
+const { mutateAsync: suggestTopicsAsync, asyncStatus: ideasAsyncStatus } = useSuggestCampaignTopicsMutation();
+const { mutateAsync: generateCampaignAsync, asyncStatus: generateAsyncStatus } = useGenerateCampaignMutation();
+const { mutateAsync: checkStatusAsync, asyncStatus: statusAsyncStatus } = useCampaignGenerationStatusMutation();
+
+const ideasLoading = computed<boolean>(() => ideasAsyncStatus.value === 'loading');
+const generateLoading = computed<boolean>(() => generateAsyncStatus.value === 'loading');
+const statusChecking = computed<boolean>(() => statusAsyncStatus.value === 'loading');
 
 function errorMessage(e: unknown): string {
     if (e instanceof HttpError) {
@@ -111,21 +127,22 @@ function errorMessage(e: unknown): string {
 
 async function suggestTopics(): Promise<void> {
     ideasError.value = null;
-    ideasLoading.value = true;
     selectedIdea.value = null;
     try {
-        const response = await apiFetch<{ data: CampaignTopicIdea[] }>('POST', '/campaigns/ai/suggest-topics', {
+        const response = await suggestTopicsAsync({
             provider: provider.value,
             language: language.value,
             niche: niche.value || null,
             audience: audience.value || null,
             business_goal: businessGoal.value,
+            city: city.value || null,
+            state: state.value || null,
+            country: country.value || null,
+            location: location.value || null,
         });
         ideas.value = response.data;
     } catch (e) {
         ideasError.value = errorMessage(e);
-    } finally {
-        ideasLoading.value = false;
     }
 }
 
@@ -174,7 +191,6 @@ const platform = ref<CampaignPlatform>('both');
 const adFormat = ref<AdFormat>('feed');
 const generateImages = ref<boolean>(true);
 
-const generateLoading = ref<boolean>(false);
 const generateError = ref<string | null>(null);
 const generatedUuid = ref<string | null>(null);
 
@@ -191,7 +207,6 @@ async function generateCampaign(): Promise<void> {
     }
 
     generateError.value = null;
-    generateLoading.value = true;
     resetProgress();
 
     const payload: GenerateCampaignPayload = {
@@ -208,36 +223,33 @@ async function generateCampaign(): Promise<void> {
         key_trend: selectedIdea.value?.key_trend ?? null,
         niche: niche.value || null,
         audience: audience.value || null,
+        city: city.value || null,
+        state: state.value || null,
+        country: country.value || null,
+        location: location.value || null,
         generate_images: generateImages.value,
     };
 
     try {
-        const response = await apiFetch<{ data: CampaignDetail }>('POST', '/campaigns/ai/generate-campaign', payload);
+        const response = await generateCampaignAsync(payload);
         generatedUuid.value = response.data.uuid;
     } catch (e) {
         generateError.value = errorMessage(e);
-    } finally {
-        generateLoading.value = false;
     }
 }
 
 /* ── Terminal state — hand off to the review screen ───────────────────── */
-const statusChecking = ref<boolean>(false);
-
 async function checkStatus(): Promise<void> {
     if (!generatedUuid.value) {
         return;
     }
-    statusChecking.value = true;
     try {
-        const response = await apiFetch<{ data: CampaignDetail }>('GET', `/campaigns/ai/${generatedUuid.value}/status`);
+        const response = await checkStatusAsync(generatedUuid.value);
         if (response.data.status !== 'generating') {
             goToReview();
         }
     } catch (e) {
         generateError.value = errorMessage(e);
-    } finally {
-        statusChecking.value = false;
     }
 }
 
@@ -328,6 +340,13 @@ const isDone = computed<boolean>(() => activeProgress.value?.stage === 'complete
                             <TextField v-model="audience" name="audience" label="Audience (optional)" placeholder="e.g. Ops managers at mid-market companies" :maxlength="255" />
                         </div>
 
+                        <div class="wizard-step__grid">
+                            <TextField v-model="city" name="city" label="City (optional)" placeholder="Defaults from company profile" :maxlength="120" />
+                            <TextField v-model="state" name="state" label="State / region (optional)" placeholder="Defaults from company profile" :maxlength="120" />
+                            <TextField v-model="country" name="country" label="Country (optional)" placeholder="Defaults from company profile" :maxlength="120" />
+                            <TextField v-model="location" name="location" label="Address / locality (optional)" placeholder="Neighborhood or street for local fit" :maxlength="255" />
+                        </div>
+
                         <div class="wizard-step__row">
                             <SecondaryButton
                                 type="button"
@@ -346,7 +365,13 @@ const isDone = computed<boolean>(() => activeProgress.value?.stage === 'complete
                                 :key="idea.title"
                                 class="idea-card"
                                 :class="{ 'idea-card--selected': selectedIdea?.title === idea.title }"
+                                role="button"
+                                tabindex="0"
+                                :aria-pressed="selectedIdea?.title === idea.title"
+                                :aria-label="`Select angle: ${idea.title}`"
                                 @click="pickIdea(idea)"
+                                @keydown.enter.prevent="pickIdea(idea)"
+                                @keydown.space.prevent="pickIdea(idea)"
                             >
                                 <div class="idea-card__head">
                                     <span class="idea-card__index">#{{ index + 1 }}</span>
@@ -393,6 +418,9 @@ const isDone = computed<boolean>(() => activeProgress.value?.stage === 'complete
                             <SelectField v-model="platform" name="platform" label="Meta platform" :options="PLATFORMS" />
                             <SelectField v-model="adFormat" name="ad_format" label="Ad format" :options="AD_FORMATS" />
                         </div>
+                        <p v-if="adFormat === 'reel' || adFormat === 'story'" class="wizard-step__hint">
+                            Reel/Story formats generate a CapCut video pack (stage-aware 15–30s, UGC-native creative).
+                        </p>
 
                         <div class="wizard-step__toggles">
                             <div class="wizard-step__toggle">
@@ -537,6 +565,12 @@ const isDone = computed<boolean>(() => activeProgress.value?.stage === 'complete
     color: var(--accent-error);
 }
 
+.wizard-step__hint {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
 .wizard-step__done {
     display: flex;
     align-items: center;
@@ -568,6 +602,11 @@ const isDone = computed<boolean>(() => activeProgress.value?.stage === 'complete
 
 .idea-card:hover {
     border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+}
+
+.idea-card:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
 }
 
 .idea-card--selected {

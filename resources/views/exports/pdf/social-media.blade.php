@@ -9,11 +9,11 @@
             <tr>
                 <th>Topic</th>
                 <th>Funnel Stage</th>
-                <th>Status</th>
+                <th>Content Status</th>
                 <th>Overall Score</th>
                 <th>Scores Passed</th>
                 <th>Created</th>
-                <th>Suspended</th>
+                <th>Status</th>
             </tr>
         </thead>
         <tbody>
@@ -21,11 +21,11 @@
                 <tr>
                     <td>{{ $row['Topic'] }}</td>
                     <td>{{ $row['Funnel Stage'] }}</td>
-                    <td>{{ $row['Status'] }}</td>
+                    <td>{{ $row['Content Status'] }}</td>
                     <td>{{ $row['Overall Score'] }}</td>
                     <td>{{ $row['Scores Passed'] }}</td>
                     <td>{{ $row['Created'] }}</td>
-                    <td>{{ $row['Suspended'] }}</td>
+                    <td>{{ $row['Status'] }}</td>
                 </tr>
             @empty
                 <tr><td colspan="7"><div class="empty-state">No social media content to display.</div></td></tr>

@@ -73,7 +73,7 @@ use Throwable;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read string|null $cover_image_url
- * @property-read User|null $creator
+ * @property-read User|null $user
  *
  * @mixin \Eloquent
  */
@@ -112,9 +112,12 @@ final class SocialMediaContentEloquentModel extends Model
     }
 
     /**
+     * Owner / author of this package (BACKEND-PHP §4 — method MUST be `user()`,
+     * even when the FK column is `created_by`).
+     *
      * @return BelongsTo<User, $this>
      */
-    public function creator(): BelongsTo
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }

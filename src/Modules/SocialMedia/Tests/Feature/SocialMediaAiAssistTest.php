@@ -135,6 +135,10 @@ final class SocialMediaAiAssistTest extends TestCase
         $this->assertSame(1, $content->iterations_required);
         $this->assertFalse($content->quality_warning);
         $this->assertSame('Generated headline', $content->headline);
+        $this->assertIsArray($content->platforms['tiktok']['video_package'] ?? null);
+        $this->assertNotEmpty($content->platforms['tiktok']['video_package']['scenes'] ?? []);
+        $this->assertIsArray($content->platforms['instagram']['video_package'] ?? null);
+        $this->assertSame('a', $content->platforms['tiktok']['image_route'] ?? null);
     }
 
     public function test_ai_endpoints_are_gated_by_create_permission(): void
@@ -152,14 +156,58 @@ final class SocialMediaAiAssistTest extends TestCase
      */
     private function passingAttempt(): array
     {
-        $platform = static fn (bool $withScript = false): array => array_filter([
+        $imageConcept = static fn (string $route = 'a'): array => [
+            'title' => 'Short Title',
+            'visual' => 'a glowing node network',
+            'route' => $route,
+            'svg_steps' => $route === 'c' ? ['Discover', 'Build', 'Ship'] : [],
+        ];
+
+        $videoPackage = [
+            'scenes' => [
+                [
+                    'time_range' => '0-3s',
+                    'action' => 'Zoom on emblem',
+                    'on_screen_text' => 'Stop doing this',
+                    'voiceover_line' => 'If you still ship like this, pause.',
+                    'visual_prompt' => 'close-up glowing API gateway icon, phone-camera UGC style',
+                ],
+                [
+                    'time_range' => '3-7s',
+                    'action' => 'Cut to pain',
+                    'on_screen_text' => 'Latency killing deals',
+                    'voiceover_line' => 'Your onboarding latency is killing closes.',
+                    'visual_prompt' => 'red latency graph spike on dark UI, native reel framing',
+                ],
+                [
+                    'time_range' => '7-12s',
+                    'action' => 'Show payoff',
+                    'on_screen_text' => 'Queue + cache win',
+                    'voiceover_line' => 'Here is the queue and cache pattern that cut ours in half.',
+                    'visual_prompt' => 'animated queue nodes with cache layer, creator-style overlay',
+                ],
+                [
+                    'time_range' => '12-15s',
+                    'action' => 'CTA',
+                    'on_screen_text' => 'Follow for more',
+                    'voiceover_line' => 'Follow for the full playbook.',
+                    'visual_prompt' => 'end card with brand mark, lo-fi UGC finish',
+                ],
+            ],
+            'clean_script' => 'If you still ship like this, pause. Your onboarding latency is killing closes. Here is the queue and cache pattern that cut ours in half. Follow for the full playbook.',
+            'sound_suggestion' => 'Minimal tech beat with a hard cut on the hook — search CapCut for "tech whoosh beat"',
+            'target_duration_seconds' => 15,
+            'creative_style' => 'ugc_native',
+        ];
+
+        $platform = static fn (bool $withVideo = false, string $route = 'a'): array => array_filter([
             'adapted_content' => 'Adapted content.',
             'character_count' => 120,
             'is_thread' => false,
             'thread_tweets' => [],
             'hashtags' => ['#tech'],
-            'video_script' => $withScript ? 'Hook. Problem. Payoff. Proof. CTA.' : null,
-            'image_concept' => ['title' => 'Short Title', 'visual' => 'a glowing node network'],
+            'image_concept' => $imageConcept($route),
+            'video_package' => $withVideo ? $videoPackage : null,
         ], static fn ($v): bool => $v !== null);
 
         $score = static fn (int $value, array $factors): array => [
@@ -178,11 +226,11 @@ final class SocialMediaAiAssistTest extends TestCase
             'platforms' => [
                 'linkedin' => $platform(),
                 'twitter' => $platform(),
-                'instagram' => $platform(),
+                'instagram' => $platform(withVideo: true, route: 'b'),
                 'facebook' => $platform(),
-                'tiktok' => $platform(withScript: true),
+                'tiktok' => $platform(withVideo: true, route: 'a'),
             ],
-            'cover_image_concept' => ['title' => 'Short Title', 'visual' => 'a glowing node network'],
+            'cover_image_concept' => $imageConcept('a'),
             'scores' => [
                 'human_writing_index' => $score(82, ['natural_language' => 85, 'personal_anecdotes' => 78, 'varied_structure' => 83, 'emotional_depth' => 80]),
                 'virality_score' => $score(76, ['hook_strength' => 82, 'shareability' => 74, 'timing' => 71, 'emotional_trigger' => 77]),

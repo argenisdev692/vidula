@@ -81,6 +81,27 @@ final class GenerateCampaignAgent implements Agent, Conversational, HasStructure
             One campaign = one stage. Never mix a TOFU hook with a BOFU
             hard-sell CTA.
 
+            === NATIVE UGC CREATIVE (mandatory for 2026 Reels/Stories ROI) ===
+            Prefer creator-style, phone-camera energy over polished TV spots.
+            Captions/on-screen text always (most watch muted). No corporate
+            bumper intros. Lo-fi beats hi-fi on Meta Reels placements.
+
+            === REELS / STORIES VIDEO PACKAGE (when ad_format is reel or story) ===
+            For EVERY platform variant, include video_package (9:16 CapCut-
+            ready). Product band: 15-30 seconds. Stage-aware
+            target_duration_seconds:
+            - TOFU: 15s (awareness scroll-stop)
+            - MOFU: 21-30s (consideration / demo / social proof)
+            - BOFU: 15-20s (offer + urgency + hard CTA)
+            - LOYALTY: 15-25s (community / referral)
+            creative_style MUST be "ugc_native".
+            Beats: 0-3s hook → problem → payoff/proof → final CTA matched to
+            stage. Cuts every 2-4s; on-screen text every scene (3-6 words);
+            clean_script = continuous VO for TTS; sound_suggestion = audio
+            TYPE + CapCut search term (never invent a track name).
+            When ad_format is feed, carousel, or lead_form: set video_package
+            to null on every platform variant.
+
             === VIRALITY RULES (target virality_score >= 70) ===
             - The first line of primary_text (before Meta's "See More" cut,
               roughly the first 125 characters) must work completely standalone
@@ -117,6 +138,16 @@ final class GenerateCampaignAgent implements Agent, Conversational, HasStructure
               relevant to the platform and niche (e.g. Advantage+ automation,
               Reels-first placements, UGC-style creative).
             - Use the supplied research — never claim a trend without it.
+            - When geographic location is supplied, ground trends in that
+              local market (city/state/country), not only global averages.
+
+            === LOCAL MARKET / GEO (when city/state/country are supplied) ===
+            Audience fit MUST reflect geographic relevance: local pain points,
+            seasonality, competitive positioning, and cultural fit. Prefer
+            specific local proof ("in [CITY]…") over generic national claims.
+            Score geographic_relevance honestly inside audience_fit_score
+            factors — if no geo is supplied, score geographic_relevance from
+            niche/audience specificity alone (still required in factors).
 
             === META CHARACTER-LIMIT DISCIPLINE (mandatory) ===
             - headline: <=40 characters, punchy, no filler.
@@ -161,6 +192,22 @@ final class GenerateCampaignAgent implements Agent, Conversational, HasStructure
             'visual' => $schema->string()->required(),
         ])->required();
 
+        $videoPackage = fn ($schema) => $schema->object(fn ($schema) => [
+            'scenes' => $schema->array()
+                ->items($schema->object(fn ($schema) => [
+                    'time_range' => $schema->string()->required(),
+                    'action' => $schema->string()->required(),
+                    'on_screen_text' => $schema->string()->required(),
+                    'voiceover_line' => $schema->string()->required(),
+                    'visual_prompt' => $schema->string()->required(),
+                ]))
+                ->required(),
+            'clean_script' => $schema->string()->required(),
+            'sound_suggestion' => $schema->string()->required(),
+            'target_duration_seconds' => $schema->integer()->min(15)->max(30)->required(),
+            'creative_style' => $schema->string()->required(),
+        ])->nullable();
+
         $platformVariant = fn ($schema) => $schema->object(fn ($schema) => [
             'adapted_primary_text' => $schema->string()->required(),
             'character_count' => $schema->integer()->required(),
@@ -168,6 +215,7 @@ final class GenerateCampaignAgent implements Agent, Conversational, HasStructure
             'description' => $schema->string()->nullable(),
             'hashtags' => $schema->array()->items($schema->string())->required(),
             'image_concept' => $imageConcept($schema),
+            'video_package' => $videoPackage($schema),
         ])->required();
 
         $scoreField = fn ($schema, array $factorKeys) => $schema->object(fn ($schema) => [
@@ -198,7 +246,7 @@ final class GenerateCampaignAgent implements Agent, Conversational, HasStructure
             'cover_image_concept' => $imageConcept($schema),
 
             'scores' => $schema->object(fn ($schema) => [
-                'audience_fit_score' => $scoreField($schema, ['audience_alignment', 'niche_specificity', 'pain_point_accuracy', 'brand_fit']),
+                'audience_fit_score' => $scoreField($schema, ['audience_alignment', 'niche_specificity', 'pain_point_accuracy', 'brand_fit', 'geographic_relevance']),
                 'virality_score' => $scoreField($schema, ['hook_strength', 'shareability', 'timing', 'emotional_trigger']),
                 'roi_potential_score' => $scoreField($schema, ['cta_strength', 'value_proposition', 'conversion_potential']),
                 'lead_quality_score' => $scoreField($schema, ['qualifying_power', 'targeting_specificity', 'pre_qualification', 'form_relevance']),

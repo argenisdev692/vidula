@@ -36,14 +36,13 @@ final readonly class SocialMediaContentController
         $filters = SocialMediaContentFilterData::validateAndCreate($request);
         $content = $list->handle($filters, min(max($request->integer('per_page', 15), 1), 100));
 
-        if ($request->expectsJson()) {
-            return response()->json($content);
-        }
-
-        return Inertia::render('social-media/Index', [
-            'content' => $content,
-            'filters' => $filters,
-        ]);
+        return match ($request->expectsJson()) {
+            true => response()->json($content),
+            false => Inertia::render('social-media/Index', [
+                'content' => $content,
+                'filters' => $filters,
+            ]),
+        };
     }
 
     public function create(): InertiaResponse

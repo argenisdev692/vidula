@@ -6,12 +6,17 @@
  * (`/social-media/create`) — mirrors the Post module's dedicated-page
  * precedent, minus the manual content fields since content is always AI-born.
  *
+ * List data arrives as Inertia props (not a separate JSON API), so the table is
+ * fed by Inertia partial reloads via {@see useResourceList} — same convention
+ * as Posts / Users. Pinia Colada is reserved for the JSON AI-wizard endpoints
+ * on Create (YAGNI for the list).
+ *
  * The shared list mechanics live in {@see useResourceList}, the confirm
  * dialogs in {@see useConfirmAction}, the page chrome in {@see CrudIndexShell}.
  * Gated by VIEW_ANY_SOCIAL_MEDIA; every mutating control by its own permission.
  */
-import { computed, reactive } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { Head, router, useRemember } from '@inertiajs/vue3';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
 import { useAuthorization } from '@/modules/auth/composables/useAuthorization';
 import type { FilterCriteria, FilterField } from '@/common/data-table/AdvancedFilter.vue';
@@ -38,15 +43,18 @@ const canExport = computed<boolean>(() => hasPermission('EXPORT_SOCIAL_MEDIA'));
 const canBulkDelete = computed<boolean>(() => hasPermission('BULK_DELETE_SOCIAL_MEDIA'));
 const canBulkRestore = computed<boolean>(() => hasPermission('BULK_RESTORE_SOCIAL_MEDIA'));
 
-/** The reactive request state — seeded once from the server-echoed props. */
-const query = reactive<SocialMediaContentQuery>({
-    search: props.filters.search,
-    status: props.filters.status,
-    date_from: props.filters.date_from,
-    date_to: props.filters.date_to,
-    page: props.content.current_page,
-    per_page: props.content.per_page,
-});
+/** Remembered across history back/forward — seeded from the server-echoed props. */
+const query = useRemember<SocialMediaContentQuery>(
+    {
+        search: props.filters.search,
+        status: props.filters.status,
+        date_from: props.filters.date_from,
+        date_to: props.filters.date_to,
+        page: props.content.current_page,
+        per_page: props.content.per_page,
+    },
+    'social-media.index',
+);
 
 function applyCriteria(target: SocialMediaContentQuery, criteria: FilterCriteria): void {
     target.search = criteria.search || null;
@@ -189,6 +197,8 @@ const filterFields = computed<FilterField[]>(() => [
 </script>
 
 <template>
+    <Head title="Social Media" />
+
     <CrudIndexShell
         title="Social Media"
         subtitle="Generate scored, multi-platform content packages with AI"

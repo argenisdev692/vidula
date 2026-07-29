@@ -27,6 +27,10 @@ final class SuggestCampaignTopicsData extends Data
         public ?string $niche = null,
         public ?string $audience = null,
         public ?string $businessGoal = null,
+        public ?string $city = null,
+        public ?string $state = null,
+        public ?string $country = null,
+        public ?string $location = null,
     ) {}
 
     /**
@@ -40,6 +44,10 @@ final class SuggestCampaignTopicsData extends Data
             'niche' => ['nullable', 'string', 'max:255'],
             'audience' => ['nullable', 'string', 'max:255'],
             'business_goal' => ['nullable', 'string', Rule::enum(CampaignBusinessGoal::class)],
+            'city' => ['nullable', 'string', 'max:120'],
+            'state' => ['nullable', 'string', 'max:120'],
+            'country' => ['nullable', 'string', 'max:120'],
+            'location' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

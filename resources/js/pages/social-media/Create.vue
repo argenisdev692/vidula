@@ -22,8 +22,13 @@ import GradientButton from '@/common/form/GradientButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import ToggleSwitch from '@/volt/ToggleSwitch.vue';
 import AiProgressBar from './components/AiProgressBar.vue';
-import { apiFetch, HttpError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { useAiGenerationProgress } from '@/modules/social-media/composables/useAiGenerationProgress';
+import {
+    useGenerateSocialMediaContentMutation,
+    useSocialMediaGenerationStatusMutation,
+    useSuggestSocialMediaTopicsMutation,
+} from '@/modules/social-media/composables/useSocialMediaAiAssistMutations';
 import type {
     AiProvider,
     BrandVoice,
@@ -31,7 +36,6 @@ import type {
     ContentLanguage,
     FunnelStage,
     GenerateSocialMediaContentPayload,
-    SocialMediaContentDetail,
     SocialMediaTopicIdea,
 } from '@/modules/social-media/types';
 
@@ -46,6 +50,7 @@ const PROVIDERS: { label: string; value: AiProvider }[] = [
 const LANGUAGES: { label: string; value: ContentLanguage }[] = [
     { label: 'Español (LatAm neutro)', value: 'es' },
     { label: 'English', value: 'en' },
+    { label: 'Português (Portugal)', value: 'pt-PT' },
 ];
 
 const BUSINESS_GOALS: { label: string; value: BusinessGoal }[] = [
@@ -79,10 +84,17 @@ const audience = ref<string>('');
 const businessGoal = ref<BusinessGoal | null>(null);
 const topicSteer = ref<string>('');
 
-const ideasLoading = ref<boolean>(false);
 const ideasError = ref<string | null>(null);
 const ideas = ref<SocialMediaTopicIdea[]>([]);
 const selectedIdea = ref<SocialMediaTopicIdea | null>(null);
+
+const { mutateAsync: suggestTopicsAsync, asyncStatus: ideasAsyncStatus } = useSuggestSocialMediaTopicsMutation();
+const { mutateAsync: generateContentAsync, asyncStatus: generateAsyncStatus } = useGenerateSocialMediaContentMutation();
+const { mutateAsync: checkStatusAsync, asyncStatus: statusAsyncStatus } = useSocialMediaGenerationStatusMutation();
+
+const ideasLoading = computed<boolean>(() => ideasAsyncStatus.value === 'loading');
+const generateLoading = computed<boolean>(() => generateAsyncStatus.value === 'loading');
+const statusChecking = computed<boolean>(() => statusAsyncStatus.value === 'loading');
 
 function errorMessage(e: unknown): string {
     if (e instanceof HttpError) {
@@ -95,10 +107,9 @@ function errorMessage(e: unknown): string {
 
 async function suggestTopics(): Promise<void> {
     ideasError.value = null;
-    ideasLoading.value = true;
     selectedIdea.value = null;
     try {
-        const response = await apiFetch<{ data: SocialMediaTopicIdea[] }>('POST', '/social-media/ai/suggest-topics', {
+        const response = await suggestTopicsAsync({
             provider: provider.value,
             language: language.value,
             niche: niche.value || null,
@@ -108,8 +119,6 @@ async function suggestTopics(): Promise<void> {
         ideas.value = response.data;
     } catch (e) {
         ideasError.value = errorMessage(e);
-    } finally {
-        ideasLoading.value = false;
     }
 }
 
@@ -137,7 +146,6 @@ const funnelStage = ref<FunnelStage>('tofu');
 const generateImages = ref<boolean>(true);
 const generateVoiceover = ref<boolean>(true);
 
-const generateLoading = ref<boolean>(false);
 const generateError = ref<string | null>(null);
 const generatedUuid = ref<string | null>(null);
 
@@ -154,7 +162,6 @@ async function generateContent(): Promise<void> {
     }
 
     generateError.value = null;
-    generateLoading.value = true;
     resetProgress();
 
     const payload: GenerateSocialMediaContentPayload = {
@@ -174,32 +181,25 @@ async function generateContent(): Promise<void> {
     };
 
     try {
-        const response = await apiFetch<{ data: SocialMediaContentDetail }>('POST', '/social-media/ai/generate-content', payload);
+        const response = await generateContentAsync(payload);
         generatedUuid.value = response.data.uuid;
     } catch (e) {
         generateError.value = errorMessage(e);
-    } finally {
-        generateLoading.value = false;
     }
 }
 
 /* ── Terminal state — hand off to the review screen ───────────────────── */
-const statusChecking = ref<boolean>(false);
-
 async function checkStatus(): Promise<void> {
     if (!generatedUuid.value) {
         return;
     }
-    statusChecking.value = true;
     try {
-        const response = await apiFetch<{ data: SocialMediaContentDetail }>('GET', `/social-media/ai/${generatedUuid.value}/status`);
+        const response = await checkStatusAsync(generatedUuid.value);
         if (response.data.status !== 'generating') {
             goToReview();
         }
     } catch (e) {
         generateError.value = errorMessage(e);
-    } finally {
-        statusChecking.value = false;
     }
 }
 
@@ -356,8 +356,8 @@ const isDone = computed<boolean>(() => activeProgress.value?.stage === 'complete
                                 <ToggleSwitch v-model="generateImages" input-id="generate_images" aria-label="Generate cover images" />
                             </div>
                             <div class="wizard-step__toggle">
-                                <span><i class="pi pi-volume-up" aria-hidden="true" /> Generate voiceover (TikTok)</span>
-                                <ToggleSwitch v-model="generateVoiceover" input-id="generate_voiceover" aria-label="Generate voiceover" />
+                                <span><i class="pi pi-volume-up" aria-hidden="true" /> Generate voiceover (TikTok + Reels)</span>
+                                <ToggleSwitch v-model="generateVoiceover" input-id="generate_voiceover" aria-label="Generate voiceover for TikTok and Instagram Reels" />
                             </div>
                         </div>
 

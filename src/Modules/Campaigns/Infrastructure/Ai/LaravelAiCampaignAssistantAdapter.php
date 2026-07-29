@@ -11,10 +11,13 @@ use Illuminate\Support\Str;
 use Modules\Campaigns\Application\DTOs\CampaignScoreResultData;
 use Modules\Campaigns\Application\DTOs\CampaignScoreSetData;
 use Modules\Campaigns\Application\DTOs\CampaignTopicIdeaData;
+use Modules\Campaigns\Application\DTOs\CampaignVideoPackageData;
+use Modules\Campaigns\Application\DTOs\CampaignVideoSceneData;
 use Modules\Campaigns\Application\DTOs\GenerateCampaignData;
 use Modules\Campaigns\Application\DTOs\GeneratedCampaignData;
 use Modules\Campaigns\Application\DTOs\PlatformCampaignContentData;
 use Modules\Campaigns\Application\DTOs\SuggestCampaignTopicsData;
+use Modules\Campaigns\Domain\Enums\CampaignLanguage;
 use Modules\Campaigns\Domain\Ports\CampaignGeneratorPort;
 use Modules\Campaigns\Domain\Ports\CampaignIdeatorPort;
 use Modules\Campaigns\Domain\Services\CampaignQualityEvaluator;
@@ -62,20 +65,26 @@ final readonly class LaravelAiCampaignAssistantAdapter implements CampaignGenera
             function () use ($data): array {
                 $company = CompanyProfile::data();
                 $niche = $data->niche ?? $company['description'] ?? $company['name'];
+                $geo = $this->resolveGeo($data->city, $data->state, $data->country, $data->location, $company);
+                $geoLabel = $this->formatGeoLabel($geo);
 
-                $research = $this->research->search([
-                    "{$niche} Meta Ads lead generation trends 2026",
-                    "{$niche} Facebook Instagram ad examples high ROI",
-                    "{$niche} audience pain points buyers",
-                ]);
+                $research = $this->research->search(array_values(array_filter([
+                    "{$niche} Meta Ads lead generation trends 2026".($geoLabel !== '' ? " {$geoLabel}" : ''),
+                    "{$niche} Facebook Instagram ad examples high ROI".($geoLabel !== '' ? " {$geoLabel}" : ''),
+                    "{$niche} audience pain points buyers".($geoLabel !== '' ? " {$geoLabel}" : ''),
+                    $geoLabel !== '' ? "{$niche} local market video ads {$geoLabel} 2026" : null,
+                ])));
 
                 $prompt = implode("\n\n", array_filter([
                     "Niche: {$niche}",
                     $data->audience !== null ? "Target audience: {$data->audience}" : 'Target audience: infer from the niche.',
                     $data->businessGoal !== null ? "Business goal: {$data->businessGoal}" : null,
-                    "Output language: {$data->language}",
+                    $geoLabel !== '' ? "Geographic location: {$geoLabel}" : null,
+                    CampaignLanguage::tryFrom($data->language)?->outputInstruction()
+                        ?? "Output language: {$data->language}",
                     'Web research context:'."\n".$this->formatResearch($research),
                     'Generate exactly 10 Meta Ads campaign angles as specified in your instructions.',
+                    'Balance TOFU/MOFU/BOFU/LOYALTY. Prefer local-market angles when geography is supplied.',
                 ]));
 
                 $response = $this->ai->generateStructured(SuggestCampaignTopicsAgent::class, $prompt, $data->provider);
@@ -212,6 +221,41 @@ final readonly class LaravelAiCampaignAssistantAdapter implements CampaignGenera
             imagePrompt: "{$imageConcept['title']} — {$imageConcept['visual']}",
             imagePath: $imagePath,
             imageUrl: $imageUrl,
+            videoPackage: $this->mapVideoPackage($variation['video_package'] ?? null, $data->adFormat),
+        );
+    }
+
+    private function mapVideoPackage(mixed $raw, string $adFormat): ?CampaignVideoPackageData
+    {
+        if (! in_array($adFormat, ['reel', 'story'], true) || ! is_array($raw)) {
+            return null;
+        }
+
+        /** @var list<array{time_range: string, action: string, on_screen_text: string, voiceover_line: string, visual_prompt: string}> $scenes */
+        $scenes = (array) ($raw['scenes'] ?? []);
+
+        if ($scenes === []) {
+            return null;
+        }
+
+        $targetDuration = (int) ($raw['target_duration_seconds'] ?? 15);
+        $targetDuration = max(15, min(30, $targetDuration));
+
+        return new CampaignVideoPackageData(
+            scenes: array_map(
+                static fn (array $scene): CampaignVideoSceneData => new CampaignVideoSceneData(
+                    timeRange: (string) $scene['time_range'],
+                    action: (string) $scene['action'],
+                    onScreenText: (string) $scene['on_screen_text'],
+                    voiceoverLine: (string) $scene['voiceover_line'],
+                    visualPrompt: (string) $scene['visual_prompt'],
+                ),
+                $scenes,
+            ),
+            cleanScript: (string) ($raw['clean_script'] ?? ''),
+            soundSuggestion: (string) ($raw['sound_suggestion'] ?? ''),
+            targetDurationSeconds: $targetDuration,
+            creativeStyle: (string) ($raw['creative_style'] ?? 'ugc_native') ?: 'ugc_native',
         );
     }
 
@@ -270,21 +314,26 @@ final readonly class LaravelAiCampaignAssistantAdapter implements CampaignGenera
     private function researchQueries(GenerateCampaignData $data, int $iteration): array
     {
         $niche = $data->niche ?? $data->topic;
-        $base = array_filter([
-            "{$data->topic} {$niche} Meta Ads 2026",
-            $data->keyTrend !== null ? "{$data->keyTrend} statistics recent data" : null,
-            "{$niche} lead generation audience insights",
-        ]);
+        $company = CompanyProfile::data();
+        $geo = $this->resolveGeo($data->city, $data->state, $data->country, $data->location, $company);
+        $geoLabel = $this->formatGeoLabel($geo);
+
+        $base = array_values(array_filter([
+            "{$data->topic} {$niche} Meta Ads 2026".($geoLabel !== '' ? " {$geoLabel}" : ''),
+            $data->keyTrend !== null ? "{$data->keyTrend} statistics recent data".($geoLabel !== '' ? " {$geo['country']}" : '') : null,
+            "{$niche} lead generation audience insights".($geoLabel !== '' ? " {$geoLabel}" : ''),
+            $geoLabel !== '' ? "{$niche} local market trends {$geoLabel}" : null,
+        ]));
 
         return match (true) {
-            $iteration >= 4 => [...$base, "{$niche} authority sources citations", "{$data->topic} best practices"],
-            $iteration >= 2 => [...$base, "{$niche} viral ad examples Facebook Instagram", "{$data->topic} conversion rate benchmarks"],
+            $iteration >= 4 => [...$base, "{$niche} authority sources citations", "{$data->topic} best practices".($geoLabel !== '' ? " {$geoLabel}" : '')],
+            $iteration >= 2 => [...$base, "{$niche} viral Reels ad examples Facebook Instagram UGC", "{$data->topic} conversion rate benchmarks"],
             default => $base,
         };
     }
 
     /**
-     * @param  array{name: string, description: ?string}  $company
+     * @param  array{name: string, description: ?string, city?: ?string, state?: ?string, country?: ?string, address?: ?string}  $company
      * @param  list<array{title: string, url: string, content: string, score: float}>  $research
      * @param  list<array{score: string, current: int, target: int, gap: int, explanation: string}>  $previousWeaknesses
      */
@@ -295,6 +344,10 @@ final readonly class LaravelAiCampaignAssistantAdapter implements CampaignGenera
         int $iteration,
         array $previousWeaknesses,
     ): string {
+        $geo = $this->resolveGeo($data->city, $data->state, $data->country, $data->location, $company);
+        $geoLabel = $this->formatGeoLabel($geo);
+        $needsVideo = in_array($data->adFormat, ['reel', 'story'], true);
+
         return implode("\n\n", array_filter([
             "Company: {$company['name']}",
             $company['description'] !== null ? "Company description: {$company['description']}" : null,
@@ -303,18 +356,55 @@ final readonly class LaravelAiCampaignAssistantAdapter implements CampaignGenera
             $data->hook !== null ? "Hook: {$data->hook}" : null,
             $data->keyTrend !== null ? "Key trend to reference: {$data->keyTrend}" : null,
             $data->audience !== null ? "Target audience: {$data->audience}" : null,
+            $geoLabel !== '' ? "Geographic location: {$geoLabel}" : null,
+            $geo['location'] !== null && $geo['location'] !== '' ? "Address/locality: {$geo['location']}" : null,
             "Business goal: {$data->businessGoal}",
             "Brand voice: {$data->brandVoice}",
             "Funnel stage: {$data->funnelStage}",
             "Meta platform: {$data->platform}",
             "Ad format: {$data->adFormat}",
-            "Output language: {$data->language}",
+            CampaignLanguage::tryFrom($data->language)?->outputInstruction()
+                ?? "Output language: {$data->language}",
+            $needsVideo
+                ? 'Ad format requires a CapCut video_package on EVERY platform variant (stage-aware 15-30s, creative_style=ugc_native).'
+                : 'Ad format does NOT use video — set video_package to null on every platform variant.',
             'Web research context:'."\n".$this->formatResearch($research),
             $iteration === 1
                 ? 'This is the first attempt. Generate the best possible campaign from the start.'
                 : $this->formatWeaknesses($iteration, $previousWeaknesses),
             'Write the complete Facebook + Instagram Meta Ads package exactly as specified in your instructions.',
         ]));
+    }
+
+    /**
+     * @param  array{name: string, description: ?string, city?: ?string, state?: ?string, country?: ?string, address?: ?string}  $company
+     * @return array{city: ?string, state: ?string, country: ?string, location: ?string}
+     */
+    private function resolveGeo(
+        ?string $city,
+        ?string $state,
+        ?string $country,
+        ?string $location,
+        array $company,
+    ): array {
+        return [
+            'city' => $city ?: ($company['city'] ?? null),
+            'state' => $state ?: ($company['state'] ?? null),
+            'country' => $country ?: ($company['country'] ?? null),
+            'location' => $location ?: ($company['address'] ?? null),
+        ];
+    }
+
+    /**
+     * @param  array{city: ?string, state: ?string, country: ?string, location?: ?string}  $geo
+     */
+    private function formatGeoLabel(array $geo): string
+    {
+        return implode(', ', array_values(array_filter([
+            $geo['city'] ?? null,
+            $geo['state'] ?? null,
+            $geo['country'] ?? null,
+        ], static fn (?string $part): bool => $part !== null && $part !== '')));
     }
 
     /**
