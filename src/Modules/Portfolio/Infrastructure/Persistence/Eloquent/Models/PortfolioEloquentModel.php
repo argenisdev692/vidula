@@ -99,7 +99,7 @@ final class PortfolioEloquentModel extends Model
      */
     public function gallery(): HasMany
     {
-        return $this->hasMany(PortfolioMediaEloquentModel::class)->orderBy('sort_order');
+        return $this->hasMany(PortfolioMediaEloquentModel::class, 'portfolio_id')->orderBy('sort_order');
     }
 
     /**

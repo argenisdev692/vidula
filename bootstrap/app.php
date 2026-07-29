@@ -9,6 +9,7 @@ use Laravel\Ai\Exceptions\AiException;
 use Laravel\Ai\Exceptions\FailoverableException;
 use Modules\Auth\Infrastructure\Http\Middleware\EnsurePasswordNotExpired;
 use Modules\Auth\Infrastructure\Http\Middleware\EnsureTwoFactorEnabled;
+use Modules\Users\Infrastructure\Http\Middleware\EnsurePasswordChanged;
 use Shared\Infrastructure\Http\Middleware\SecurityHeaders;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
@@ -40,14 +41,16 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // SecurityHeaders runs BEFORE Inertia so its headers + CSP nonce
         // survive Inertia (SSR) responses. EnsurePasswordNotExpired forces a
-        // password change once it expires (prompt §5); it self-excludes the
-        // password-update / logout routes and no-ops for guests.
+        // password change once it expires (prompt §5); EnsurePasswordChanged
+        // handles admin-forced `must_change_password`. Both self-exclude the
+        // password-update / logout routes and no-op for guests.
         // EnsureTwoFactorEnabled only redirects when AUTH_MANDATORY_2FA=true;
         // default is opt-in 2FA from Profile. Self-excludes setup routes.
         $middleware->web(append: [
             SecurityHeaders::class,
             HandleInertiaRequests::class,
             EnsurePasswordNotExpired::class,
+            EnsurePasswordChanged::class,
             EnsureTwoFactorEnabled::class,
         ]);
 

@@ -69,7 +69,7 @@ final class PortfolioMediaEloquentModel extends Model
      */
     public function portfolio(): BelongsTo
     {
-        return $this->belongsTo(PortfolioEloquentModel::class);
+        return $this->belongsTo(PortfolioEloquentModel::class, 'portfolio_id');
     }
 
     /**

@@ -8,7 +8,7 @@ use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
-use Spatie\Permission\Models\Role;
+use Modules\Authorization\Infrastructure\Persistence\Eloquent\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 

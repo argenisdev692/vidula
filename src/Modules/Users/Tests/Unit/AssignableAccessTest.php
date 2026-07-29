@@ -8,9 +8,9 @@ use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Authorization\Domain\SystemRoles;
+use Modules\Authorization\Infrastructure\Persistence\Eloquent\Models\Role;
 use Modules\Users\Domain\AssignableAccess;
 use Modules\Users\Domain\Exceptions\PrivilegeEscalationException;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
