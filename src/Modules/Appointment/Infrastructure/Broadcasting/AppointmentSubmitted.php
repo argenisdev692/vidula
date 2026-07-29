@@ -29,8 +29,7 @@ final class AppointmentSubmitted implements ShouldBroadcast
 
     public function __construct(
         private readonly AppointmentEloquentModel $appointment,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array<int, Channel>

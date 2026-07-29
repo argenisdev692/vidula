@@ -28,8 +28,7 @@ final class ContactSupportSubmitted implements ShouldBroadcast
 
     public function __construct(
         private readonly ContactSupportEloquentModel $contactSupport,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array<int, Channel>
