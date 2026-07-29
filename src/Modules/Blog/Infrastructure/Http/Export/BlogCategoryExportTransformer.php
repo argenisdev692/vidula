@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Modules\Blog\Infrastructure\Http\Export;
 
 use Modules\Blog\Infrastructure\Persistence\Eloquent\Models\BlogCategoryEloquentModel;
+use Shared\Domain\Ports\ExportPort;
 
 /**
  * Maps a {@see BlogCategoryEloquentModel} row to export columns so CSV, Excel and
  * PDF stay consistent with the on-screen list. The module ships only this
  * transformer — the writer / streamer / PDF renderer live behind the Shared
- * {@see \Shared\Domain\Ports\ExportPort} (BACKEND-PHP §8). The cover image is
+ * {@see ExportPort} (BACKEND-PHP §8). The cover image is
  * intentionally omitted (a tabular/PDF report carries text, not binaries).
  */
 final readonly class BlogCategoryExportTransformer

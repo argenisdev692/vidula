@@ -10,16 +10,18 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Queue\SerializesModels;
 use Modules\Appointment\Infrastructure\Persistence\Eloquent\Models\AppointmentEloquentModel;
+use Modules\ContactSupport\Infrastructure\Broadcasting\ContactSupportSubmitted;
+use Modules\Post\Infrastructure\Broadcasting\PostAiGenerationProgress;
 
 /**
  * New-booking ping for the navbar notification bell. Unlike the per-user
- * AI-progress broadcasts ({@see \Modules\Post\Infrastructure\Broadcasting\PostAiGenerationProgress}),
+ * AI-progress broadcasts ({@see PostAiGenerationProgress}),
  * this is queued (`ShouldBroadcast`, not `ShouldBroadcastNow`) since it fires
  * from the PUBLIC booking form — the visitor's response must never wait on
  * Reverb delivery. Sent on the shared `notifications.appointments` channel
  * (permission-gated in routes/channels.php) rather than a single user's
  * channel, since any staff member with VIEW_ANY_APPOINTMENTS should see it,
- * not just one causer. Mirrors {@see \Modules\ContactSupport\Infrastructure\Broadcasting\ContactSupportSubmitted}.
+ * not just one causer. Mirrors {@see ContactSupportSubmitted}.
  */
 final class AppointmentSubmitted implements ShouldBroadcast
 {
@@ -27,7 +29,8 @@ final class AppointmentSubmitted implements ShouldBroadcast
 
     public function __construct(
         private readonly AppointmentEloquentModel $appointment,
-    ) {}
+    ) {
+    }
 
     /**
      * @return array<int, Channel>

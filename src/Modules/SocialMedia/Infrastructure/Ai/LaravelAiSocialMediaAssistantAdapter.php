@@ -558,9 +558,10 @@ final readonly class LaravelAiSocialMediaAssistantAdapter implements SocialMedia
         foreach ($steps as $index => $label) {
             $x = 150 + ($index * $spacing);
             $safeLabel = htmlspecialchars($label, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+            $stepNumber = $index + 1;
             $nodes .= <<<SVG
                 <circle cx="{$x}" cy="320" r="18" fill="{$primary}" stroke="{$secondary}" stroke-width="3"/>
-                <text x="{$x}" y="290" text-anchor="middle" fill="{$secondary}" font-family="system-ui,sans-serif" font-size="14" font-weight="700">{$index + 1}</text>
+                <text x="{$x}" y="290" text-anchor="middle" fill="{$secondary}" font-family="system-ui,sans-serif" font-size="14" font-weight="700">{$stepNumber}</text>
                 <text x="{$x}" y="370" text-anchor="middle" fill="#e2e8f0" font-family="system-ui,sans-serif" font-size="16" font-weight="600">{$safeLabel}</text>
                 SVG;
         }

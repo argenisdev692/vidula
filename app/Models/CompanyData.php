@@ -45,17 +45,19 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property int $user_id
  * @property float|null $latitude
  * @property float|null $longitude
- * @property Carbon|null $deleted_at
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
- * @property-read Collection<int, Activity> $activitiesAsSubject
- * @property-read int|null $activities_as_subject_count
- * @property-read User|null $user
  * @property string|null $zip_code
  * @property string|null $city
  * @property string|null $state
  * @property string|null $country
  * @property string|null $country_code
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ *
+ * @property-read Collection<int, Activity> $activitiesAsSubject
+ * @property-read int|null $activities_as_subject_count
+ * @property-read User|null $user
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData onlyTrashed()
@@ -99,6 +101,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData whereZipCode($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CompanyData withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class CompanyData extends Model

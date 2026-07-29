@@ -10,10 +10,11 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Queue\SerializesModels;
 use Modules\ContactSupport\Infrastructure\Persistence\Eloquent\Models\ContactSupportEloquentModel;
+use Modules\Post\Infrastructure\Broadcasting\PostAiGenerationProgress;
 
 /**
  * New-submission ping for the navbar notification bell. Unlike the per-user
- * AI-progress broadcasts ({@see \Modules\Post\Infrastructure\Broadcasting\PostAiGenerationProgress}),
+ * AI-progress broadcasts ({@see PostAiGenerationProgress}),
  * this is queued (`ShouldBroadcast`, not `ShouldBroadcastNow`) since it fires
  * from the PUBLIC guest contact form — the visitor's response must never wait
  * on Reverb delivery. Sent on the shared `notifications.contact-supports`
@@ -27,7 +28,8 @@ final class ContactSupportSubmitted implements ShouldBroadcast
 
     public function __construct(
         private readonly ContactSupportEloquentModel $contactSupport,
-    ) {}
+    ) {
+    }
 
     /**
      * @return array<int, Channel>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
@@ -13,6 +14,7 @@ use Modules\Products\Infrastructure\Persistence\Eloquent\Models\ClassroomEloquen
 use Modules\Products\Infrastructure\Persistence\Eloquent\Models\ContentGenerationEloquentModel;
 use Modules\Products\Infrastructure\Persistence\Eloquent\Models\ProductEloquentModel;
 use Modules\Students\Infrastructure\Persistence\Eloquent\Models\StudentEloquentModel;
+use Throwable;
 
 /**
  * Authenticated application home. Renders the Vue `Dashboard` page with
@@ -206,8 +208,8 @@ final class DashboardController extends Controller
     private function relativeTime(string $timestamp): string
     {
         try {
-            $diff = now()->diffInMinutes(\Carbon\CarbonImmutable::parse($timestamp));
-        } catch (\Throwable) {
+            $diff = now()->diffInMinutes(CarbonImmutable::parse($timestamp));
+        } catch (Throwable) {
             return 'just now';
         }
 
