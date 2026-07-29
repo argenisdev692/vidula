@@ -43,10 +43,10 @@ final class ActivityLogTest extends TestCase
 
     public function test_super_admin_lists_activity_logs(): void
     {
-        $activity = $this->makeActivity('did a thing');
+        $activity = $this->makeActivity('did a thing', now()->addSecond());
 
         $this->actingAs($this->superAdmin())
-            ->getJson('/activity-logs')
+            ->getJson('/activity-logs?search='.urlencode('did a thing'))
             ->assertOk()
             ->assertJsonFragment(['id' => $activity->id, 'event' => 'created']);
     }

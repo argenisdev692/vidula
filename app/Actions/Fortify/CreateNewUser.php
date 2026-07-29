@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Actions\Fortify;
 
 use App\Models\User;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -32,6 +35,8 @@ final class CreateNewUser implements CreatesNewUsers
      */
     public function create(array $input): User
     {
+        $this->ensureRegistrationIsNotRateLimited();
+
         Validator::make($input, [
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['nullable', 'string', 'max:255'],
@@ -58,5 +63,20 @@ final class CreateNewUser implements CreatesNewUsers
         $user->assignRole('USER');
 
         return $user;
+    }
+
+    private function ensureRegistrationIsNotRateLimited(): void
+    {
+        /** @var Request $request */
+        $request = request();
+        $key = 'register|'.$request->ip();
+
+        if (RateLimiter::tooManyAttempts($key, 3)) {
+            throw new ThrottleRequestsException(
+                RateLimiter::availableIn($key),
+            );
+        }
+
+        RateLimiter::hit($key, 3600);
     }
 }

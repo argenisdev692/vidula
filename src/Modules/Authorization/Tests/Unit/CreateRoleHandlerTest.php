@@ -9,7 +9,7 @@ use Modules\Authorization\Application\Commands\CreateRoleHandler;
 use Modules\Authorization\Application\DTOs\RoleData;
 use Modules\Authorization\Domain\Ports\RoleRepositoryPort;
 use Modules\Authorization\Infrastructure\Persistence\Eloquent\Models\Role;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 final class CreateRoleHandlerTest extends TestCase
 {
@@ -21,8 +21,7 @@ final class CreateRoleHandlerTest extends TestCase
 
     public function test_it_creates_the_role_then_syncs_its_permissions(): void
     {
-        // Mockery skips the constructor, so no booted container is needed here.
-        $role = new Role(['name' => 'EDITOR', 'guard_name' => 'web']);
+        $role = Role::factory()->make(['name' => 'EDITOR', 'guard_name' => 'web']);
 
         $repository = Mockery::mock(RoleRepositoryPort::class);
         $repository->shouldReceive('create')
