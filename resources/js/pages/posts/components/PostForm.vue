@@ -26,7 +26,7 @@ import SecondaryButton from '@/volt/SecondaryButton.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import AiAssistPanel from './AiAssistPanel.vue';
 import { postFormSchema, type PostFormValues } from '@/modules/post/schemas/postFormSchema';
-import type { CategoryOption, GeneratedPostContent, PostDetail } from '@/modules/post/types';
+import type { CategoryOption, GeneratedPostContent, PostDetail, PostImagePrompts } from '@/modules/post/types';
 import { toLocalIsoDate } from '@/lib/date';
 import { useAuthorization } from '@/modules/auth/composables/useAuthorization';
 
@@ -63,6 +63,12 @@ const initialSchedule = splitScheduledAt(props.post?.scheduled_at ?? null);
 interface AiScoresPayload {
     seo_analysis: { primary_keyword: string; lsi_keywords: string[] };
     optimization_suggestions: string[];
+    virality_score: number;
+    roi_score: number;
+    all_scores_pass: boolean;
+    iterations_required: number;
+    quality_warning: boolean;
+    image_prompts: PostImagePrompts;
 }
 
 interface PostFormFields extends PostFormValues {

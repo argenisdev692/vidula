@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\SocialMedia\Application\Commands;
 
+use Modules\Post\Application\Commands\SuggestPostTopicsHandler;
 use Modules\SocialMedia\Application\DTOs\SocialMediaTopicIdeaData;
 use Modules\SocialMedia\Application\DTOs\SuggestSocialMediaTopicsData;
 use Modules\SocialMedia\Domain\Ports\SocialMediaTopicIdeatorPort;
@@ -11,7 +12,7 @@ use Shared\Domain\Ports\AuditPort;
 
 /**
  * Imperative AI action (no DB write) — mirrors
- * {@see \Modules\Post\Application\Commands\SuggestPostTopicsHandler}. Every
+ * {@see SuggestPostTopicsHandler}. Every
  * call is a real, billed provider request, so it is meta-audited even though
  * nothing is persisted yet. Authorization (permission:CREATE_SOCIAL_MEDIA) is
  * enforced at the route.

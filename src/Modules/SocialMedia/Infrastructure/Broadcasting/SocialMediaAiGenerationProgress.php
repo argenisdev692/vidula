@@ -7,11 +7,12 @@ namespace Modules\SocialMedia\Infrastructure\Broadcasting;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Modules\Post\Infrastructure\Broadcasting\PostAiGenerationProgress;
 
 /**
  * Real-time progress tick for the quality-loop Job. Broadcast immediately
  * (no extra queue hop) since the Job itself already runs on the queue worker
- * — mirrors {@see \Modules\Post\Infrastructure\Broadcasting\PostAiGenerationProgress}.
+ * — mirrors {@see PostAiGenerationProgress}.
  * Sent on the causer's own private channel (`routes/channels.php`).
  */
 final readonly class SocialMediaAiGenerationProgress implements ShouldBroadcastNow

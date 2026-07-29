@@ -7,6 +7,7 @@
  */
 import { computed, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
+import type { RequestPayload } from '@inertiajs/core';
 import { useToast } from 'primevue/usetoast';
 import AppModal from '@/common/ui/AppModal.vue';
 import DateField from '@/common/form/DateField.vue';
@@ -84,7 +85,7 @@ function goEdit(): void {
     router.visit(`/appointments/${props.appointment.uuid}/edit`);
 }
 
-function runPatch(url: string, payload: Record<string, unknown>, successSummary: string): void {
+function runPatch(url: string, payload: RequestPayload, successSummary: string): void {
     processing.value = true;
     router.patch(url, payload, {
         preserveScroll: true,
@@ -103,7 +104,7 @@ function runPatch(url: string, payload: Record<string, unknown>, successSummary:
     });
 }
 
-function runPost(url: string, payload: Record<string, unknown>, successSummary: string): void {
+function runPost(url: string, payload: RequestPayload, successSummary: string): void {
     processing.value = true;
     router.post(url, payload, {
         preserveScroll: true,

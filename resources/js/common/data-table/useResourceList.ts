@@ -10,7 +10,7 @@
  *
  * Layer: common/ — imports Inertia + lib/ only, never modules/ or Pages/.
  */
-import { computed, ref, type ComputedRef, type Ref } from 'vue';
+import { computed, ref, toValue, type ComputedRef, type MaybeRef, type Ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import type { DataTablePageEvent } from 'primevue/datatable';
 import type { FilterCriteria } from './AdvancedFilter.vue';
@@ -36,7 +36,7 @@ export interface ResourceListOptions<T, Q extends ListQuery> {
     /** The Inertia prop key to partially reload, e.g. `blogCategories`. */
     propKey: string;
     /** The page-owned reactive query, seeded from the server-echoed props. */
-    query: Q;
+    query: MaybeRef<Q>;
     /** The paginator, typically `computed(() => props.blogCategories)`. */
     pagination: ComputedRef<Pagination> | Ref<Pagination>;
     /** Serialises the query into the request params (module-specific keys). */
@@ -60,15 +60,16 @@ export function useResourceList<T, Q extends ListQuery>(options: ResourceListOpt
     });
 
     /** The list is homogeneous per the status filter: suspended view ⇒ restore. */
-    const isSuspendedView = computed<boolean>(() => query.status === 'suspended');
+    const isSuspendedView = computed<boolean>(() => toValue(query).status === 'suspended');
 
     function resetSelection(): void {
         selection.value = [];
     }
 
     function reload(): void {
+        const currentQuery = toValue(query);
         loading.value = true;
-        router.get(baseUrl, options.buildParams(query), {
+        router.get(baseUrl, options.buildParams(currentQuery), {
             preserveState: true,
             preserveScroll: true,
             replace: true,
@@ -80,21 +81,23 @@ export function useResourceList<T, Q extends ListQuery>(options: ResourceListOpt
     }
 
     function onFilters(criteria: FilterCriteria): void {
-        options.applyCriteria(query, criteria);
-        query.page = 1;
+        const currentQuery = toValue(query);
+        options.applyCriteria(currentQuery, criteria);
+        currentQuery.page = 1;
         resetSelection();
         reload();
     }
 
     function onPage(event: DataTablePageEvent): void {
-        query.page = event.page + 1;
-        query.per_page = event.rows;
+        const currentQuery = toValue(query);
+        currentQuery.page = event.page + 1;
+        currentQuery.per_page = event.rows;
         reload();
     }
 
     function openExport(format: ExportFormat): void {
         if (options.exportUrl) {
-            window.location.href = options.exportUrl(query, format);
+            window.location.href = options.exportUrl(toValue(query), format);
         }
     }
 

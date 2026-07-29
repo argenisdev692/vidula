@@ -8,6 +8,7 @@ use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Modules\Post\Tests\Feature\PostAiAssistApiTest;
 use Modules\SocialMedia\Infrastructure\Ai\SuggestSocialMediaTopicsAgent;
 use Tests\TestCase;
 
@@ -16,7 +17,7 @@ use Tests\TestCase;
  * endpoints (mobile/external clients) — the primary UI remains the web
  * wizard, tested in {@see SocialMediaAiAssistTest}. Only the auth/permission
  * wiring is asserted here since the generation logic itself is already
- * covered there — mirrors {@see \Modules\Post\Tests\Feature\PostAiAssistApiTest}.
+ * covered there — mirrors {@see PostAiAssistApiTest}.
  */
 final class SocialMediaAiAssistApiTest extends TestCase
 {

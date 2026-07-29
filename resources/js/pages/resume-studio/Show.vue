@@ -116,7 +116,7 @@ function startPolling(): void {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const intervalMs = reducedMotion ? 8000 : 4000;
     pollTimer.value = setInterval(() => {
-        router.reload({ only: ['run'], preserveScroll: true });
+        router.reload({ only: ['run'] });
     }, intervalMs);
 }
 

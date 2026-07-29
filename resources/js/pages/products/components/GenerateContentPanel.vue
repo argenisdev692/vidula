@@ -124,7 +124,7 @@ async function pollStatus(): Promise<void> {
         if (['completed', 'failed'].includes(payload.status)) {
             stopPolling();
             emit('refreshed');
-            router.reload({ only: ['generation', 'sessions'], preserveScroll: true });
+            router.reload({ only: ['generation', 'sessions'] });
         }
     } catch {
         // Keep polling; transient network blips should not abort the UI.
@@ -202,7 +202,6 @@ function submitGeneration(): void {
                 });
                 router.reload({
                     only: ['generation', 'sessions'],
-                    preserveScroll: true,
                     onSuccess: () => {
                         if (localStatus.value?.uuid || props.generation?.uuid) {
                             startPolling();

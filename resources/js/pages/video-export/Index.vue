@@ -153,7 +153,7 @@ function removeFile(id: string): void {
     files.value = files.value.filter((f) => f.id !== id);
 }
 
-async function onScriptSelected(event: Event): void {
+async function onScriptSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;
     input.value = '';

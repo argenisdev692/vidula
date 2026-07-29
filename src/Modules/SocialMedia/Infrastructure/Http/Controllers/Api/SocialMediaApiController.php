@@ -6,6 +6,7 @@ namespace Modules\SocialMedia\Infrastructure\Http\Controllers\Api;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\Post\Infrastructure\Http\Controllers\Api\PostApiController;
 use Modules\SocialMedia\Application\Commands\GenerateSocialMediaContentHandler;
 use Modules\SocialMedia\Application\Commands\SuggestSocialMediaTopicsHandler;
 use Modules\SocialMedia\Application\DTOs\GenerateSocialMediaContentData;
@@ -17,7 +18,7 @@ use Modules\SocialMedia\Application\Queries\ListSocialMediaContentHandler;
 /**
  * API endpoints for content lookup + the 2-step AI wizard. Secondary
  * Sanctum-authenticated surface (mobile/external clients); the primary UI
- * remains Inertia/web — mirrors {@see \Modules\Post\Infrastructure\Http\Controllers\Api\PostApiController}.
+ * remains Inertia/web — mirrors {@see PostApiController}.
  * Authorization is checked on the model (`hasPermissionTo`) so it is safe
  * under the `sanctum` guard. Documented by Scramble via return types +
  * `auth:sanctum` detection — no manual annotations.

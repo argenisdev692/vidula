@@ -9,13 +9,14 @@ use Modules\SocialMedia\Domain\Enums\BrandVoice;
 use Modules\SocialMedia\Domain\Enums\BusinessGoal;
 use Modules\SocialMedia\Domain\Enums\ContentLanguage;
 use Modules\SocialMedia\Domain\Enums\FunnelStage;
+use Modules\SocialMedia\Infrastructure\Queue\GenerateSocialMediaContentJob;
 use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 
 /**
  * Input for Step 2 (quality-loop content generation). One instance is reused
- * across every iteration of {@see \Modules\SocialMedia\Infrastructure\Queue\GenerateSocialMediaContentJob};
+ * across every iteration of {@see GenerateSocialMediaContentJob};
  * only the previous-scores/weaknesses feedback (passed separately to the
  * port) changes between iterations.
  */

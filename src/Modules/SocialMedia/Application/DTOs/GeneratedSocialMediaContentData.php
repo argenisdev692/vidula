@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace Modules\SocialMedia\Application\DTOs;
 
+use Modules\SocialMedia\Domain\Ports\SocialMediaContentGeneratorPort;
+use Modules\SocialMedia\Infrastructure\Queue\GenerateSocialMediaContentJob;
 use Spatie\LaravelData\Attributes\MapOutputName;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 
 /**
  * One full generation attempt returned by
- * {@see \Modules\SocialMedia\Domain\Ports\SocialMediaContentGeneratorPort}.
+ * {@see SocialMediaContentGeneratorPort}.
  * Iteration-level metadata (how many attempts it took, whether the loop gave
- * up) is NOT part of this shape — {@see \Modules\SocialMedia\Infrastructure\Queue\GenerateSocialMediaContentJob}
+ * up) is NOT part of this shape — {@see GenerateSocialMediaContentJob}
  * adds it once the loop finishes, keeping this DTO focused on "what the model
  * produced this one time".
  */

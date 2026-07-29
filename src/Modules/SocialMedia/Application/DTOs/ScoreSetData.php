@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\SocialMedia\Application\DTOs;
 
+use Modules\SocialMedia\Domain\Services\ContentQualityEvaluator;
 use Spatie\LaravelData\Attributes\MapOutputName;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 
 /**
  * The five quality-loop scores for one generation attempt, evaluated against
- * {@see \Modules\SocialMedia\Domain\Services\ContentQualityEvaluator::THRESHOLDS}.
+ * {@see ContentQualityEvaluator::THRESHOLDS}.
  */
 #[MapOutputName(SnakeCaseMapper::class)]
 final class ScoreSetData extends Data
@@ -26,7 +27,7 @@ final class ScoreSetData extends Data
     ) {}
 
     /**
-     * Flattened `score_key => value` map for {@see \Modules\SocialMedia\Domain\Services\ContentQualityEvaluator}.
+     * Flattened `score_key => value` map for {@see ContentQualityEvaluator}.
      *
      * @return array<string, int>
      */

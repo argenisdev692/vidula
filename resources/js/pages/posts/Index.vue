@@ -15,7 +15,7 @@
  * dialogs in {@see useConfirmAction}, the page chrome in {@see CrudIndexShell}.
  * Gated by VIEW_ANY_POSTS; every mutating control by its own permission.
  */
-import { computed } from 'vue';
+import { computed, toValue } from 'vue';
 import { Head, router, useRemember } from '@inertiajs/vue3';
 import type { DataTableSortEvent } from 'primevue/datatable';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
@@ -84,9 +84,10 @@ const { loading, selection, firstRecord, recordLabel, isSuspendedView, resetSele
 
 function onSort(event: DataTableSortEvent): void {
     const field = typeof event.sortField === 'string' ? event.sortField : 'created_at';
-    query.sort_field = field;
-    query.sort_order = event.sortOrder === 1 ? 1 : -1;
-    query.page = 1;
+    const currentQuery = toValue(query);
+    currentQuery.sort_field = field;
+    currentQuery.sort_order = event.sortOrder === 1 ? 1 : -1;
+    currentQuery.page = 1;
     reload();
 }
 

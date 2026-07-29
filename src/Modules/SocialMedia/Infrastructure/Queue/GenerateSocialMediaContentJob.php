@@ -16,6 +16,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Modules\SocialMedia\Application\DTOs\GenerateSocialMediaContentData;
+use Modules\SocialMedia\Application\DTOs\PlatformContentData;
 use Modules\SocialMedia\Domain\Ports\SocialMediaContentGeneratorPort;
 use Modules\SocialMedia\Domain\Ports\SocialMediaContentRepositoryPort;
 use Modules\SocialMedia\Domain\Services\ContentQualityEvaluator;
@@ -116,7 +117,7 @@ final class GenerateSocialMediaContentJob implements ShouldQueue
             'call_to_action' => $bestAttempt->callToAction,
             'hashtags' => $bestAttempt->hashtags,
             'platforms' => array_map(
-                static fn (mixed $platform): array => $platform instanceof \Modules\SocialMedia\Application\DTOs\PlatformContentData
+                static fn (mixed $platform): array => $platform instanceof PlatformContentData
                     ? $platform->toArray()
                     : (array) $platform,
                 $bestAttempt->platforms,

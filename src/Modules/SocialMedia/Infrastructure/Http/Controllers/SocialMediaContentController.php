@@ -25,7 +25,7 @@ use Shared\Application\DTOs\BulkUuidsData;
  * Social media content management. Every route is authorized via
  * `permission:*_SOCIAL_MEDIA` middleware (not roles) — see Routes. There is no
  * `create`/`store`: content is always AI-born via
- * {@see \Modules\SocialMedia\Infrastructure\Http\Controllers\SocialMediaAiAssistController} —
+ * {@see SocialMediaAiAssistController} —
  * this controller only reviews, edits, publishes, and manages the lifecycle
  * of an already-generated package.
  */

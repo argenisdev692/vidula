@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\SocialMedia\Application\DTOs;
 
+use Modules\SocialMedia\Domain\Ports\SocialMediaTopicIdeatorPort;
 use Spatie\LaravelData\Attributes\MapOutputName;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 
 /**
  * One of the exactly-10 candidate topics returned by
- * {@see \Modules\SocialMedia\Domain\Ports\SocialMediaTopicIdeatorPort}.
+ * {@see SocialMediaTopicIdeatorPort}.
  * `funnelStage` (TOFU/MOFU/BOFU) is assigned by the agent, not the user — it
  * later drives which CTA rules {@see GenerateSocialMediaContentData} applies.
  */

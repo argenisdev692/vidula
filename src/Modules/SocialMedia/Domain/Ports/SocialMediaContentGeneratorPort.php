@@ -6,6 +6,7 @@ namespace Modules\SocialMedia\Domain\Ports;
 
 use Modules\SocialMedia\Application\DTOs\GeneratedSocialMediaContentData;
 use Modules\SocialMedia\Application\DTOs\GenerateSocialMediaContentData;
+use Modules\SocialMedia\Domain\Services\ContentQualityEvaluator;
 
 /**
  * Step 2: one generation attempt (fresh Tavily research + all 5 platforms +
@@ -14,7 +15,7 @@ use Modules\SocialMedia\Application\DTOs\GenerateSocialMediaContentData;
  *
  * `$iteration` and `$previousWeaknesses` are null/empty on the first call;
  * from iteration 2 onward the job passes back
- * {@see \Modules\SocialMedia\Domain\Services\ContentQualityEvaluator::identifyWeaknesses()}
+ * {@see ContentQualityEvaluator::identifyWeaknesses()}
  * so the agent targets the specific scores that failed instead of a blind
  * retry.
  */

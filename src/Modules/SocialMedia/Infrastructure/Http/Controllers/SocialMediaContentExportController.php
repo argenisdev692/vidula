@@ -6,6 +6,7 @@ namespace Modules\SocialMedia\Infrastructure\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Modules\Post\Infrastructure\Http\Controllers\PostExportController;
 use Modules\SocialMedia\Application\DTOs\SocialMediaContentFilterData;
 use Modules\SocialMedia\Infrastructure\Http\Export\SocialMediaContentExportTransformer;
 use Modules\SocialMedia\Infrastructure\Persistence\Eloquent\Models\SocialMediaContentEloquentModel;
@@ -16,7 +17,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  * Streams the filtered content list as CSV / Excel / PDF. Thin: reuses the
  * SAME {@see SocialMediaContentFilterData} + `scopeApplyFilters()` as the list
  * query (DRY) and the Shared {@see ExportPort} — mirrors
- * {@see \Modules\Post\Infrastructure\Http\Controllers\PostExportController}.
+ * {@see PostExportController}.
  */
 final readonly class SocialMediaContentExportController
 {

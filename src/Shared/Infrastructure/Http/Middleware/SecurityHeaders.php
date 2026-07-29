@@ -7,6 +7,8 @@ namespace Shared\Infrastructure\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Vite;
+use Laravel\Horizon\Horizon;
+use Laravel\Telescope\Telescope;
 use Shared\Providers\SharedServiceProvider;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -104,8 +106,8 @@ final class SecurityHeaders
 
     /**
      * Horizon and Telescope render their dashboards from vendor Blade views
-     * ({@see \Laravel\Horizon\Horizon::css()}/{@see \Laravel\Horizon\Horizon::js()},
-     * {@see \Laravel\Telescope\Telescope::css()}/{@see \Laravel\Telescope\Telescope::js()})
+     * ({@see Horizon::css()}/{@see Horizon::js()},
+     * {@see Telescope::css()}/{@see Telescope::js()})
      * that inline the compiled CSS/JS directly into unscoped `<style>`/`<script>`
      * tags with no CSP nonce. Under the nonce-strict app policy every one of
      * those tags is silently dropped, leaving an unstyled, non-interactive

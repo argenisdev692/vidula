@@ -8,6 +8,7 @@ use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
+use Modules\Post\Tests\Feature\PostAiAssistTest;
 use Modules\SocialMedia\Application\DTOs\GenerateSocialMediaContentData;
 use Modules\SocialMedia\Infrastructure\Ai\GenerateSocialMediaContentAgent;
 use Modules\SocialMedia\Infrastructure\Ai\SuggestSocialMediaTopicsAgent;
@@ -19,7 +20,7 @@ use Tests\TestCase;
  * Tavily and ElevenLabs are not faked explicitly — their API keys are unset in
  * the testing environment, so both adapters short-circuit (empty research /
  * null audio) without any HTTP call, same convention as
- * {@see \Modules\Post\Tests\Feature\PostAiAssistTest}.
+ * {@see PostAiAssistTest}.
  */
 final class SocialMediaAiAssistTest extends TestCase
 {

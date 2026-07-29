@@ -5,7 +5,6 @@
 import { computed } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AppLayout from '@/pages/layouts/AppLayout.vue';
-import DetailCard from '@/common/ui/DetailCard.vue';
 import StatusBadge from '@/common/ui/StatusBadge.vue';
 import BackLink from '@/common/ui/BackLink.vue';
 import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
@@ -38,7 +37,7 @@ const isClassroom = computed<boolean>(() => props.product.type === 'classroom');
 const isVideo = computed<boolean>(() => props.product.type === 'video_tutorial' || props.product.type === 'video_pill');
 
 function refreshShow(): void {
-    router.reload({ only: ['product', 'generation', 'sessions'], preserveScroll: true });
+    router.reload({ only: ['product', 'generation', 'sessions'] });
 }
 
 function scriptTone(status: string | null): 'success' | 'primary' | 'muted' | 'danger' {
@@ -73,7 +72,8 @@ function scriptTone(status: string | null): 'success' | 'primary' | 'muted' | 'd
             </div>
         </header>
 
-        <DetailCard title="Catalog">
+        <section class="show-card">
+            <h2 class="show-card__title">Catalog</h2>
             <dl class="detail-grid">
                 <div>
                     <dt>Price</dt>
@@ -108,13 +108,15 @@ function scriptTone(status: string | null): 'success' | 'primary' | 'muted' | 'd
                     <dd>{{ product.materials_count }}</dd>
                 </div>
             </dl>
-        </DetailCard>
+        </section>
 
-        <DetailCard v-if="product.description" title="Description">
+        <section v-if="product.description" class="show-card">
+            <h2 class="show-card__title">Description</h2>
             <p class="prose">{{ product.description }}</p>
-        </DetailCard>
+        </section>
 
-        <DetailCard v-if="isClassroom && product.classroom" title="Classroom">
+        <section v-if="isClassroom && product.classroom" class="show-card">
+            <h2 class="show-card__title">Classroom</h2>
             <dl class="detail-grid">
                 <div>
                     <dt>Max students</dt>
@@ -129,9 +131,10 @@ function scriptTone(status: string | null): 'success' | 'primary' | 'muted' | 'd
                     <dd class="prose">{{ product.classroom.objectives || '—' }}</dd>
                 </div>
             </dl>
-        </DetailCard>
+        </section>
 
-        <DetailCard v-if="isVideo && product.video_course" title="Video course">
+        <section v-if="isVideo && product.video_course" class="show-card">
+            <h2 class="show-card__title">Video course</h2>
             <dl class="detail-grid">
                 <div>
                     <dt>Platform</dt>
@@ -156,19 +159,21 @@ function scriptTone(status: string | null): 'success' | 'primary' | 'muted' | 'd
                     <dd>{{ product.video_course.playlist_url || '—' }}</dd>
                 </div>
             </dl>
-        </DetailCard>
+        </section>
 
         <PermissionGuard permission="VIEW_PRODUCTS">
-            <DetailCard title="Content generation">
+            <section class="show-card">
+                <h2 class="show-card__title">Content generation</h2>
                 <GenerateContentPanel
                     :product="product"
                     :generation="generation"
                     @refreshed="refreshShow"
                 />
-            </DetailCard>
+            </section>
         </PermissionGuard>
 
-        <DetailCard v-if="sessions.length > 0" title="Content tree">
+        <section v-if="sessions.length > 0" class="show-card">
+            <h2 class="show-card__title">Content tree</h2>
             <div class="sessions">
                 <article v-for="session in sessions" :key="session.session_number" class="session">
                     <h3>
@@ -190,7 +195,7 @@ function scriptTone(status: string | null): 'success' | 'primary' | 'muted' | 'd
                     </ul>
                 </article>
             </div>
-        </DetailCard>
+        </section>
     </div>
 </template>
 
@@ -226,6 +231,20 @@ function scriptTone(status: string | null): 'success' | 'primary' | 'muted' | 'd
 .badges {
     display: flex;
     gap: 0.5rem;
+}
+.show-card {
+    background: color-mix(in srgb, var(--bg-surface) 60%, transparent);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-6) var(--space-8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+.show-card__title {
+    margin: 0 0 var(--space-5);
+    font-size: var(--text-xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
 }
 .detail-grid {
     display: grid;
