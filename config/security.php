@@ -70,17 +70,18 @@ return [
     | Mandatory Two-Factor Authentication
     |--------------------------------------------------------------------------
     |
+    | Default is off: users enable 2FA themselves from Profile (Enable 2FA).
     | When `mandatory` is true, EnsureTwoFactorEnabled redirects privileged
-    | roles listed in `mandatory_roles` to the 2FA setup page until they have
-    | confirmed TOTP (prompt §3). Tests flip this off via AUTH_MANDATORY_2FA
-    | so the suite does not need every admin fixture to enroll 2FA.
+    | roles listed in `mandatory_roles` to /two-factor/setup until they have
+    | confirmed TOTP. Use FILTER_VALIDATE_BOOLEAN so Railway/OS env strings
+    | like "false" / "true" are cast correctly (plain (bool) "false" is true).
     |
     */
 
     'two_factor' => [
-        // Off while developing without a production domain. Turn on in production:
-        // AUTH_MANDATORY_2FA=true
-        'mandatory' => (bool) env('AUTH_MANDATORY_2FA', false),
+        // Opt-in via Profile. Only set AUTH_MANDATORY_2FA=true if you want
+        // ADMIN/SUPER_ADMIN forced to enroll before using the app.
+        'mandatory' => filter_var(env('AUTH_MANDATORY_2FA', false), FILTER_VALIDATE_BOOLEAN),
         'mandatory_roles' => ['SUPER_ADMIN', 'ADMIN'],
     ],
 

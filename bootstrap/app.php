@@ -42,8 +42,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // survive Inertia (SSR) responses. EnsurePasswordNotExpired forces a
         // password change once it expires (prompt §5); it self-excludes the
         // password-update / logout routes and no-ops for guests.
-        // EnsureTwoFactorEnabled forces ADMIN/SUPER_ADMIN to enroll 2FA
-        // (prompt §3); self-excludes setup / Fortify 2FA management routes.
+        // EnsureTwoFactorEnabled only redirects when AUTH_MANDATORY_2FA=true;
+        // default is opt-in 2FA from Profile. Self-excludes setup routes.
         $middleware->web(append: [
             SecurityHeaders::class,
             HandleInertiaRequests::class,

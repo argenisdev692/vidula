@@ -51,7 +51,7 @@ final class EnsureTwoFactorEnabled
 
     public function handle(Request $request, Closure $next): Response
     {
-        if (! (bool) config('security.two_factor.mandatory', true)) {
+        if (! (bool) config('security.two_factor.mandatory', false)) {
             return $next($request);
         }
 
