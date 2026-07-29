@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Students\Infrastructure\Http\Controllers;
 
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,6 +20,8 @@ use Modules\Students\Application\DTOs\StudentData;
 use Modules\Students\Application\DTOs\StudentFilterData;
 use Modules\Students\Application\Queries\GetStudentHandler;
 use Modules\Students\Application\Queries\ListStudentsHandler;
+use Modules\Students\Domain\Ports\StudentRepositoryPort;
+use Modules\Students\Infrastructure\Persistence\Eloquent\Models\StudentEloquentModel;
 use Shared\Application\DTOs\BulkUuidsData;
 
 /**
@@ -55,9 +58,12 @@ final readonly class StudentController
         return back()->with('success', __('Student created.'));
     }
 
-    public function update(string $uuid, StudentData $data, GetStudentHandler $get, UpdateStudentHandler $update): RedirectResponse
+    public function update(string $uuid, StudentData $data, StudentRepositoryPort $students, UpdateStudentHandler $update): RedirectResponse
     {
-        (void) $update->handle($get->handle($uuid), $data);
+        $student = $students->findByUuid($uuid)
+            ?? throw (new ModelNotFoundException)->setModel(StudentEloquentModel::class, [$uuid]);
+
+        (void) $update->handle($student, $data);
 
         return back()->with('success', __('Student updated.'));
     }

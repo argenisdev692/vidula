@@ -31,6 +31,21 @@ final class StudentData extends Data
     ) {}
 
     /**
+     * @param  array<string, mixed>  $properties
+     * @return array<string, mixed>
+     */
+    public static function prepareForPipeline(array $properties): array
+    {
+        foreach (['email', 'phone', 'dni', 'address', 'avatar', 'notes'] as $field) {
+            if (array_key_exists($field, $properties) && $properties[$field] === '') {
+                $properties[$field] = null;
+            }
+        }
+
+        return $properties;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public static function rules(): array
@@ -51,7 +66,7 @@ final class StudentData extends Data
             'avatar' => ['nullable', 'string', 'max:2048', 'url'],
             'notes' => ['nullable', 'string', 'max:5000'],
             'status' => ['required', 'string', 'in:DRAFT,ACTIVE,ARCHIVED'],
-            'active' => ['required', 'boolean'],
+            'active' => ['boolean'],
         ];
     }
 }

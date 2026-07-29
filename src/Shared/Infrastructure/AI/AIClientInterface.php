@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shared\Infrastructure\AI;
 
-use Laravel\Ai\Responses\StructuredTextResponse;
+use Laravel\Ai\Responses\StructuredAgentResponse;
 use Shared\Infrastructure\Resilience\CircuitBreaker\CircuitBreaker;
 
 /**
@@ -27,11 +27,11 @@ interface AIClientInterface
     /**
      * Invoke a structured-output Agent (implements `Agent` + `HasStructuredOutput`)
      * and return its schema-validated response. Access fields via
-     * `$response['field']` (StructuredTextResponse is array-accessible).
+     * `$response['field']` (StructuredAgentResponse is array-accessible).
      *
      * @param  class-string  $agentClass
      */
-    public function generateStructured(string $agentClass, string $prompt, ?string $provider = null): StructuredTextResponse;
+    public function generateStructured(string $agentClass, string $prompt, ?string $provider = null): StructuredAgentResponse;
 
     /**
      * Generate a single image and return its raw bytes (never persisted here —

@@ -7,7 +7,7 @@ namespace Shared\Infrastructure\AI;
 use Illuminate\Support\Facades\Log;
 use Laravel\Ai\Exceptions\FailoverableException;
 use Laravel\Ai\Image;
-use Laravel\Ai\Responses\StructuredTextResponse;
+use Laravel\Ai\Responses\StructuredAgentResponse;
 use Shared\Infrastructure\Resilience\CircuitBreaker\CircuitBreakerInterface;
 use Throwable;
 
@@ -20,13 +20,13 @@ final readonly class LaravelAIAdapter implements AIClientInterface
 
     public function __construct(private CircuitBreakerInterface $breaker) {}
 
-    public function generateStructured(string $agentClass, string $prompt, ?string $provider = null): StructuredTextResponse
+    public function generateStructured(string $agentClass, string $prompt, ?string $provider = null): StructuredAgentResponse
     {
         return $this->breaker->call(
             'ai:structured:'.($provider ?? 'default'),
-            function () use ($agentClass, $prompt, $provider): StructuredTextResponse {
+            function () use ($agentClass, $prompt, $provider): StructuredAgentResponse {
                 try {
-                    /** @var StructuredTextResponse $response */
+                    /** @var StructuredAgentResponse $response */
                     $response = app($agentClass)->prompt(
                         $prompt,
                         provider: $provider,

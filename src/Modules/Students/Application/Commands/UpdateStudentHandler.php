@@ -21,6 +21,8 @@ final readonly class UpdateStudentHandler
     #[\NoDiscard]
     public function handle(StudentEloquentModel $student, StudentData $data): StudentEloquentModel
     {
+        $this->cache->forget(StudentCacheKeys::student($student->uuid));
+
         $updated = DB::transaction(fn () => $this->students->update($student, [
             'name' => $data->name,
             'email' => $data->email,
