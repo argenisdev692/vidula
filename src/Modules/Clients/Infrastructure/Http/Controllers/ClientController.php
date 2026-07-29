@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Clients\Infrastructure\Http\Controllers;
 
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,6 +20,8 @@ use Modules\Clients\Application\DTOs\ClientData;
 use Modules\Clients\Application\DTOs\ClientFilterData;
 use Modules\Clients\Application\Queries\GetClientHandler;
 use Modules\Clients\Application\Queries\ListClientsHandler;
+use Modules\Clients\Domain\Ports\ClientRepositoryPort;
+use Modules\Clients\Infrastructure\Persistence\Eloquent\Models\ClientEloquentModel;
 use Shared\Application\DTOs\BulkUuidsData;
 
 /**
@@ -48,16 +51,23 @@ final readonly class ClientController
         };
     }
 
-    public function store(Request $request, ClientData $data, CreateClientHandler $create): RedirectResponse
+    public function store(Request $request, CreateClientHandler $create): RedirectResponse
     {
+        $data = ClientData::validateAndCreate($request);
+
         (void) $create->handle($data, (int) $request->user()->id);
 
         return back()->with('success', __('Client created.'));
     }
 
-    public function update(string $uuid, ClientData $data, GetClientHandler $get, UpdateClientHandler $update): RedirectResponse
+    public function update(Request $request, string $uuid, ClientRepositoryPort $clients, UpdateClientHandler $update): RedirectResponse
     {
-        (void) $update->handle($get->handle($uuid), $data);
+        $data = ClientData::validateAndCreate($request);
+
+        $client = $clients->findByUuid($uuid)
+            ?? throw (new ModelNotFoundException)->setModel(ClientEloquentModel::class, [$uuid]);
+
+        (void) $update->handle($client, $data);
 
         return back()->with('success', __('Client updated.'));
     }

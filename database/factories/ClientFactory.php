@@ -30,7 +30,7 @@ final class ClientFactory extends Factory
             'client_name' => $this->faker->company(),
             'email' => $this->faker->unique()->safeEmail(),
             'status' => 'DRAFT',
-            'phone' => '+15551234567',
+            'phone' => '+12015550101',
             'address' => $this->faker->streetAddress(),
             'tax_id' => null,
             'nif' => null,

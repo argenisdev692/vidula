@@ -9,8 +9,8 @@ use Modules\Authorization\Application\Commands\BulkDeleteRolesHandler;
 use Modules\Authorization\Domain\Exceptions\ProtectedRoleException;
 use Modules\Authorization\Domain\Ports\RoleRepositoryPort;
 use Modules\Authorization\Domain\SystemRoles;
-use PHPUnit\Framework\TestCase;
 use Shared\Application\DTOs\BulkUuidsData;
+use Tests\TestCase;
 
 final class BulkDeleteRolesHandlerTest extends TestCase
 {

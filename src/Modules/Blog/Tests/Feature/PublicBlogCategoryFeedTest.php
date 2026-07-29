@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Blog\Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Modules\Blog\Infrastructure\Persistence\Eloquent\Models\BlogCategoryEloquentModel;
 use Modules\Post\Infrastructure\Persistence\Eloquent\Models\PostEloquentModel;
 use Tests\TestCase;
@@ -12,6 +13,12 @@ use Tests\TestCase;
 final class PublicBlogCategoryFeedTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Cache::flush();
+    }
 
     public function test_public_feed_requires_no_authentication(): void
     {

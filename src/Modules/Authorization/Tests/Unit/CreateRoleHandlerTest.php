@@ -22,7 +22,7 @@ final class CreateRoleHandlerTest extends TestCase
     public function test_it_creates_the_role_then_syncs_its_permissions(): void
     {
         // Mockery skips the constructor, so no booted container is needed here.
-        $role = Mockery::mock(Role::class);
+        $role = new Role(['name' => 'EDITOR', 'guard_name' => 'web']);
 
         $repository = Mockery::mock(RoleRepositoryPort::class);
         $repository->shouldReceive('create')

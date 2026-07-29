@@ -41,7 +41,7 @@ final class RegistrationTest extends TestCase
             'password' => 'Sup3rS3cret!2026',
             'password_confirmation' => 'Sup3rS3cret!2026',
             'terms_and_conditions' => true,
-        ])->assertSuccessful();
+        ])->assertRedirect();
 
         $user = User::query()->where('email', 'jane@example.com')->first();
 
@@ -59,7 +59,7 @@ final class RegistrationTest extends TestCase
                 'password' => 'Sup3rS3cret!2026',
                 'password_confirmation' => 'Sup3rS3cret!2026',
                 'terms_and_conditions' => true,
-            ])->assertSuccessful();
+            ])->assertRedirect();
         }
 
         $this->postJson('/register', [

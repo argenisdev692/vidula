@@ -35,6 +35,21 @@ final class ClientData extends Data
     ) {}
 
     /**
+     * @param  array<string, mixed>  $properties
+     * @return array<string, mixed>
+     */
+    public static function prepareForPipeline(array $properties): array
+    {
+        foreach (['email', 'address', 'tax_id', 'nif', 'website', 'facebook_link', 'instagram_link', 'linkedin_link', 'twitter_link', 'notes'] as $field) {
+            if (array_key_exists($field, $properties) && $properties[$field] === '') {
+                $properties[$field] = null;
+            }
+        }
+
+        return $properties;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public static function rules(): array

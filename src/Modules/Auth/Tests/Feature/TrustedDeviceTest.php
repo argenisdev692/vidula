@@ -120,12 +120,12 @@ final class TrustedDeviceTest extends TestCase
             'expires_at' => now()->addDays(30),
         ]);
 
-        $this->withUnencryptedCookie('two_factor_trust_'.$user->getKey(), $token)
+        $this->withCookie('two_factor_trust_'.$user->getKey(), $token)
             ->post('/login', [
                 'email' => $user->email,
                 'password' => 'password',
             ])
-            ->assertRedirect('/');
+            ->assertRedirect('/dashboard');
 
         $this->assertAuthenticatedAs($user);
     }

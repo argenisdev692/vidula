@@ -38,7 +38,7 @@ final class ClientManagementTest extends TestCase
             'client_name' => 'Acme Corp',
             'email' => 'ops@acme.test',
             'status' => 'DRAFT',
-            'phone' => '+15551234567',
+            'phone' => '+12015550101',
             'address' => '1 Main St',
             'tax_id' => null,
             'nif' => null,
@@ -64,7 +64,7 @@ final class ClientManagementTest extends TestCase
 
         $this->assertSame($admin->id, $client->user_id);
         $this->assertSame('DRAFT', $client->status);
-        $this->assertSame('+15551234567', $client->phone);
+        $this->assertSame('+12015550101', $client->phone);
     }
 
     public function test_invalid_phone_is_rejected(): void

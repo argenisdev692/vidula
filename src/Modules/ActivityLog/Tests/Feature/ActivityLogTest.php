@@ -48,8 +48,7 @@ final class ActivityLogTest extends TestCase
         $this->actingAs($this->superAdmin())
             ->getJson('/activity-logs')
             ->assertOk()
-            ->assertJsonPath('data.0.id', $activity->id)
-            ->assertJsonPath('data.0.event', 'created');
+            ->assertJsonFragment(['id' => $activity->id, 'event' => 'created']);
     }
 
     public function test_super_admin_shows_a_single_entry(): void

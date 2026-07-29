@@ -36,12 +36,15 @@ use Shared\Application\DTOs\BulkUuidsData;
  */
 final readonly class MeetingController
 {
-    public function index(Request $request, ListMeetingsHandler $list): InertiaResponse
+    public function index(Request $request, ListMeetingsHandler $list): InertiaResponse|JsonResponse
     {
         $filters = MeetingFilterData::validateAndCreate($request);
         $meetings = $list->handle($filters, min(max($request->integer('per_page', 15), 1), 100));
 
-        return Inertia::render('meetings/Index', ['meetings' => $meetings, 'filters' => $filters]);
+        return match ($request->expectsJson()) {
+            true => response()->json($meetings),
+            false => Inertia::render('meetings/Index', ['meetings' => $meetings, 'filters' => $filters]),
+        };
     }
 
     public function show(Request $request, string $uuid, GetMeetingHandler $get): InertiaResponse

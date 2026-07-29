@@ -8,6 +8,7 @@ use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Modules\AiResumeStudio\Domain\Enums\OutreachStatus;
 use Modules\AiResumeStudio\Domain\Enums\StudioRunStatus;
@@ -64,6 +65,8 @@ final class ResumeStudioManagementTest extends TestCase
 
     public function test_start_run_creates_studio_run_row(): void
     {
+        Queue::fake();
+
         $admin = $this->superAdmin();
         $cv = CvEloquentModel::factory()->create(['user_id' => $admin->id]);
 
