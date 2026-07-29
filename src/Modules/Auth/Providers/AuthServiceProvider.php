@@ -12,6 +12,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Fortify\Contracts\LoginResponse as LoginResponseContract;
+use Laravel\Fortify\Contracts\PasswordConfirmedResponse as PasswordConfirmedResponseContract;
+use Laravel\Fortify\Contracts\TwoFactorLoginResponse as TwoFactorLoginResponseContract;
 use Laravel\Fortify\Events\RecoveryCodeReplaced;
 use Laravel\Fortify\Events\RecoveryCodesGenerated;
 use Laravel\Fortify\Events\TwoFactorAuthenticationConfirmed;
@@ -24,6 +27,9 @@ use Modules\Auth\Domain\Ports\GeoLocatorPort;
 use Modules\Auth\Domain\Ports\LoginAttemptRepositoryPort;
 use Modules\Auth\Infrastructure\Geo\CdnHeaderGeoLocator;
 use Modules\Auth\Infrastructure\Http\Controllers\Web\AuthPageController;
+use Modules\Auth\Infrastructure\Http\Responses\LoginResponse;
+use Modules\Auth\Infrastructure\Http\Responses\PasswordConfirmedResponse;
+use Modules\Auth\Infrastructure\Http\Responses\TwoFactorLoginResponse;
 use Modules\Auth\Infrastructure\Listeners\LockoutWarningListener;
 use Modules\Auth\Infrastructure\Listeners\NewDeviceListener;
 use Modules\Auth\Infrastructure\Listeners\TwoFactorAuditListener;
@@ -38,6 +44,11 @@ final class AuthServiceProvider extends ServiceProvider
         $this->app->bind(LoginAttemptRepositoryPort::class, EloquentLoginAttemptRepository::class);
         $this->app->bind(AccountLockoutPort::class, CacheAccountLockoutAdapter::class);
         $this->app->bind(GeoLocatorPort::class, CdnHeaderGeoLocator::class);
+
+        // Same-origin gate on Fortify post-auth redirects (blocks gmail.com / off-site intended).
+        $this->app->singleton(LoginResponseContract::class, LoginResponse::class);
+        $this->app->singleton(PasswordConfirmedResponseContract::class, PasswordConfirmedResponse::class);
+        $this->app->singleton(TwoFactorLoginResponseContract::class, TwoFactorLoginResponse::class);
     }
 
     public function boot(): void

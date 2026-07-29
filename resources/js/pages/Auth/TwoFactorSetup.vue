@@ -122,6 +122,13 @@ async function confirm(): Promise<void> {
     toast.add({ severity: 'success', summary: 'Two-factor authentication enabled.', life: 4000 });
     router.reload({ only: ['enabled', 'confirmed'] });
   } catch (error) {
+    if (error instanceof HttpError && error.status === 423) {
+      busy.value = false;
+      requirePassword(async () => {
+        await confirm();
+      });
+      return;
+    }
     confirmError.value =
       error instanceof HttpError && error.status === 422
         ? 'That code is invalid or expired.'
@@ -129,6 +136,10 @@ async function confirm(): Promise<void> {
   } finally {
     busy.value = false;
   }
+}
+
+function continueToApp(): void {
+  router.visit('/dashboard');
 }
 
 function disable(): void {
@@ -185,7 +196,15 @@ function revokeDevice(uuid: string): void {
 onMounted(() => {
   // Resume an interrupted enrollment (enabled but never confirmed).
   if (status.value === 'pending') {
-    loadEnrollment().catch(() => fail('Could not load your two-factor setup.'));
+    loadEnrollment().catch((error: unknown) => {
+      if (error instanceof HttpError && error.status === 423) {
+        requirePassword(async () => {
+          await loadEnrollment();
+        });
+        return;
+      }
+      fail('Could not load your two-factor setup.');
+    });
   }
 });
 </script>
@@ -198,100 +217,103 @@ onMounted(() => {
     subtitle="Add a second step to your sign-in for extra security."
   />
 
-  <section class="tfa">
-    <!-- Status banner -->
-    <div class="tfa__status" :class="`tfa__status--${status}`">
-      <i
-        class="pi"
-        :class="status === 'enabled' ? 'pi-shield' : 'pi-exclamation-triangle'"
-        aria-hidden="true"
-      />
-      <div>
-        <p class="tfa__status-title">
-          {{ status === 'enabled' ? 'Two-factor authentication is on' : 'Two-factor authentication is off' }}
-        </p>
-        <p class="tfa__status-text">
-          {{
-            status === 'enabled'
-              ? 'Your account requires an authenticator code at sign-in.'
-              : 'Protect your account with a time-based one-time code.'
-          }}
-        </p>
-      </div>
-    </div>
-
-    <!-- DISABLED → enable -->
-    <div v-if="status === 'disabled'" class="tfa__card">
-      <p class="tfa__lead">
-        You'll use an authenticator app (Google Authenticator, 1Password, Authy…) to generate
-        codes.
-      </p>
-      <Button label="Enable two-factor authentication" :disabled="busy" @click="enable" />
-    </div>
-
-    <!-- PENDING → scan + confirm -->
-    <div v-else-if="status === 'pending'" class="tfa__card">
-      <p class="tfa__lead">Scan this QR code with your authenticator app, then enter the 6-digit code.</p>
-      <div class="tfa__qr" v-html="qrSvg" />
-      <p v-if="secretKey" class="tfa__secret">
-        Or enter this key manually: <code>{{ secretKey }}</code>
-      </p>
-
-      <form class="tfa__confirm" @submit.prevent="confirm">
-        <InputText
-          v-model="confirmCode"
-          inputmode="numeric"
-          maxlength="6"
-          placeholder="123456"
-          autocomplete="one-time-code"
-          aria-label="Authentication code"
+  <div class="tfa-page">
+    <section class="tfa">
+      <!-- Status banner -->
+      <div class="tfa__status" :class="`tfa__status--${status}`">
+        <i
+          class="pi"
+          :class="status === 'enabled' ? 'pi-shield' : 'pi-exclamation-triangle'"
+          aria-hidden="true"
         />
-        <Button type="submit" label="Confirm" :disabled="busy || confirmCode.length < 6" />
-      </form>
-      <p v-if="confirmError" class="tfa__error">{{ confirmError }}</p>
-    </div>
-
-    <!-- ENABLED → recovery codes + disable -->
-    <div v-else class="tfa__card">
-      <div class="tfa__recovery-head">
         <div>
-          <p class="tfa__lead">Recovery codes</p>
-          <p class="tfa__hint">Store these somewhere safe — each one signs you in once if you lose your device.</p>
+          <p class="tfa__status-title">
+            {{ status === 'enabled' ? 'Two-factor authentication is on' : 'Two-factor authentication is off' }}
+          </p>
+          <p class="tfa__status-text">
+            {{
+              status === 'enabled'
+                ? 'Your account requires an authenticator code at sign-in.'
+                : 'Protect your account with a time-based one-time code.'
+            }}
+          </p>
         </div>
-        <SecondaryButton
-          v-if="!showRecovery"
-          label="Show recovery codes"
-          @click="revealRecoveryCodes"
-        />
       </div>
 
-      <ul v-if="showRecovery && recoveryCodes.length" class="tfa__codes">
-        <li v-for="code in recoveryCodes" :key="code"><code>{{ code }}</code></li>
-      </ul>
-
-      <div class="tfa__actions">
-        <SecondaryButton label="Regenerate recovery codes" :disabled="busy" @click="regenerateRecoveryCodes" />
-        <button type="button" class="btn-danger" :disabled="busy" @click="disable">
-          Disable two-factor
-        </button>
+      <!-- DISABLED → enable -->
+      <div v-if="status === 'disabled'" class="tfa__card">
+        <p class="tfa__lead">
+          You'll use an authenticator app (Google Authenticator, 1Password, Authy…) to generate
+          codes.
+        </p>
+        <Button label="Enable two-factor authentication" :disabled="busy" @click="enable" />
       </div>
-    </div>
 
-    <!-- Trusted devices -->
-    <div v-if="trustedDevices.length" class="tfa__card">
-      <p class="tfa__lead">Trusted devices</p>
-      <p class="tfa__hint">These devices skip the second step for 30 days.</p>
-      <ul class="tfa__devices">
-        <li v-for="device in trustedDevices" :key="device.uuid" class="tfa__device">
-          <div class="tfa__device-body">
-            <span class="tfa__device-name">{{ deviceLabel(device.user_agent) }}</span>
-            <span class="tfa__device-meta">{{ device.ip_address ?? 'Unknown IP' }}</span>
+      <!-- PENDING → scan + confirm -->
+      <div v-else-if="status === 'pending'" class="tfa__card">
+        <p class="tfa__lead">Scan this QR code with your authenticator app, then enter the 6-digit code.</p>
+        <div class="tfa__qr" v-html="qrSvg" />
+        <p v-if="secretKey" class="tfa__secret">
+          Or enter this key manually: <code>{{ secretKey }}</code>
+        </p>
+
+        <form class="tfa__confirm" @submit.prevent="confirm">
+          <InputText
+            v-model="confirmCode"
+            inputmode="numeric"
+            maxlength="6"
+            placeholder="123456"
+            autocomplete="one-time-code"
+            aria-label="Authentication code"
+          />
+          <Button type="submit" label="Confirm" :disabled="busy || confirmCode.length < 6" />
+        </form>
+        <p v-if="confirmError" class="tfa__error">{{ confirmError }}</p>
+      </div>
+
+      <!-- ENABLED → recovery codes + disable -->
+      <div v-else class="tfa__card">
+        <div class="tfa__recovery-head">
+          <div>
+            <p class="tfa__lead">Recovery codes</p>
+            <p class="tfa__hint">Store these somewhere safe — each one signs you in once if you lose your device.</p>
           </div>
-          <SecondaryButton label="Revoke" @click="revokeDevice(device.uuid)" />
-        </li>
-      </ul>
-    </div>
-  </section>
+          <SecondaryButton
+            v-if="!showRecovery"
+            label="Show recovery codes"
+            @click="revealRecoveryCodes"
+          />
+        </div>
+
+        <ul v-if="showRecovery && recoveryCodes.length" class="tfa__codes">
+          <li v-for="code in recoveryCodes" :key="code"><code>{{ code }}</code></li>
+        </ul>
+
+        <div class="tfa__actions">
+          <SecondaryButton label="Regenerate recovery codes" :disabled="busy" @click="regenerateRecoveryCodes" />
+          <Button label="Continue to dashboard" @click="continueToApp" />
+          <button type="button" class="btn-danger" :disabled="busy" @click="disable">
+            Disable two-factor
+          </button>
+        </div>
+      </div>
+
+      <!-- Trusted devices -->
+      <div v-if="trustedDevices.length" class="tfa__card">
+        <p class="tfa__lead">Trusted devices</p>
+        <p class="tfa__hint">These devices skip the second step for 30 days.</p>
+        <ul class="tfa__devices">
+          <li v-for="device in trustedDevices" :key="device.uuid" class="tfa__device">
+            <div class="tfa__device-body">
+              <span class="tfa__device-name">{{ deviceLabel(device.user_agent) }}</span>
+              <span class="tfa__device-meta">{{ device.ip_address ?? 'Unknown IP' }}</span>
+            </div>
+            <SecondaryButton label="Revoke" @click="revokeDevice(device.uuid)" />
+          </li>
+        </ul>
+      </div>
+    </section>
+  </div>
 
   <!-- Password confirmation -->
   <Dialog
@@ -319,24 +341,37 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.tfa-page {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding-block: var(--space-4);
+}
+
 .tfa {
-  max-width: 640px;
+  width: 100%;
+  max-width: 40rem;
+  margin-inline: auto;
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
+  text-align: center;
 }
 
 .tfa__status {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-4);
   padding: var(--space-4) var(--space-5);
   border-radius: var(--radius-xl);
   border: 1px solid var(--border-default);
+  text-align: start;
 }
 
 .tfa__status .pi {
   font-size: var(--text-2xl);
+  flex-shrink: 0;
 }
 
 .tfa__status--enabled {
@@ -367,6 +402,7 @@ onMounted(() => {
 .tfa__card {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: var(--space-4);
   padding: var(--space-5);
   border: 1px solid var(--border-default);
@@ -387,7 +423,6 @@ onMounted(() => {
 }
 
 .tfa__qr {
-  align-self: center;
   padding: var(--space-4);
   background: var(--qr-canvas);
   border-radius: var(--radius-lg);
@@ -416,6 +451,8 @@ onMounted(() => {
   display: flex;
   gap: var(--space-3);
   flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
 }
 
 .tfa__recovery-head {
@@ -423,12 +460,15 @@ onMounted(() => {
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-3);
+  width: 100%;
+  text-align: start;
 }
 
 .tfa__codes {
   list-style: none;
   margin: 0;
   padding: var(--space-4);
+  width: 100%;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: var(--space-2);
@@ -445,15 +485,18 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
+  justify-content: center;
 }
 
 .tfa__devices {
   list-style: none;
   margin: 0;
   padding: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  text-align: start;
 }
 
 .tfa__device {

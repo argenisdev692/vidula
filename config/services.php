@@ -89,14 +89,20 @@ return [
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-        'redirect' => env('GOOGLE_REDIRECT_URL'),
+        // Empty redirect_uri sends users to Google's error page (often read as
+        // "gmail.com"). Keep in sync with the Socialite callback route.
+        'redirect' => env('GOOGLE_REDIRECT_URL', rtrim((string) env('APP_URL', 'http://localhost'), '/').'/auth/google/callback'),
         'scopes' => ['openid', 'profile', 'email'],
     ],
 
     'github' => [
         'client_id' => env('GITHUB_CLIENT_ID'),
         'client_secret' => env('GITHUB_CLIENT_SECRET'),
-        'redirect' => env('GITHUB_REDIRECT_URL'),
+        // Prefer GITHUB_REDIRECT_URL; fall back to the historical GITHUB_REDIRECT_URI key.
+        'redirect' => env(
+            'GITHUB_REDIRECT_URL',
+            env('GITHUB_REDIRECT_URI', rtrim((string) env('APP_URL', 'http://localhost'), '/').'/auth/github/callback'),
+        ),
         'scopes' => ['user:email', 'read:user'],
     ],
 

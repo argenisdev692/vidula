@@ -73,7 +73,18 @@ return [
     |
     */
 
-    'home' => '/',
+    // Post-auth landing for login / register / 2FA challenge / password confirm.
+    // Must be the SPA home — NOT `/` (HomeController is only a guest/auth switch).
+    'home' => '/dashboard',
+
+    'redirects' => [
+        'login' => '/dashboard',
+        'logout' => '/',
+        'password-confirmation' => '/dashboard',
+        'register' => '/dashboard',
+        'email-verification' => '/dashboard',
+        'password-reset' => '/login',
+    ],
 
     /*
     |--------------------------------------------------------------------------

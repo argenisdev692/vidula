@@ -20,6 +20,8 @@ use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\DatabaseNotificationCollection;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
+use Laravel\Fortify\Fortify;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -46,6 +48,7 @@ use Modules\Products\Infrastructure\Persistence\Eloquent\Models\ProductEloquentM
 use Modules\Services\Infrastructure\Persistence\Eloquent\Models\ServiceEloquentModel;
 use Modules\SocialMedia\Infrastructure\Persistence\Eloquent\Models\SocialMediaContentEloquentModel;
 use Modules\Users\Application\DTOs\UserFilterData;
+use Shared\Infrastructure\Company\CompanyProfile;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -113,6 +116,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read int|null $tokens_count
  * @property-read Collection<int, TrustedDeviceEloquentModel> $trustedDevices
  * @property-read int|null $trusted_devices_count
+ *
  * @method static Builder<static>|User applyFilters(\Modules\Users\Application\DTOs\UserFilterData $filters)
  * @method static \Database\Factories\UserFactory factory($count = null, $state = [])
  * @method static Builder<static>|User newModelQuery()
@@ -160,6 +164,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @method static Builder<static>|User withoutRole($roles, ?string $guard = null)
  * @method static Builder<static>|User withoutTeam($teams)
  * @method static Builder<static>|User withoutTrashed()
+ *
  * @property-read Collection<int, BlogCategoryEloquentModel> $blogCategories
  * @property-read int|null $blog_categories_count
  * @property-read Collection<int, CampaignEloquentModel> $campaigns
@@ -197,6 +202,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read int|null $invoices_count
  * @property-read Collection<int, ProductEloquentModel> $products
  * @property-read int|null $products_count
+ *
  * @mixin \Eloquent
  */
 class User extends Authenticatable implements MustVerifyEmailContract
@@ -580,6 +586,21 @@ class User extends Authenticatable implements MustVerifyEmailContract
     public function meetings(): HasMany
     {
         return $this->hasMany(MeetingEloquentModel::class, 'organizer_id');
+    }
+
+    /**
+     * Authenticator QR issuer/label uses the company brand (falls back to APP_NAME)
+     * so Google Authenticator shows "Vidula: you@gmail.com" — not a bare domain.
+     */
+    public function twoFactorQrCodeUrl(): string
+    {
+        $companyName = CompanyProfile::data()['name'] ?: (string) config('app.name');
+
+        return app(TwoFactorAuthenticationProvider::class)->qrCodeUrl(
+            $companyName,
+            $this->{Fortify::username()},
+            Fortify::currentEncrypter()->decrypt($this->two_factor_secret),
+        );
     }
 
     /**

@@ -78,7 +78,9 @@ return [
     */
 
     'two_factor' => [
-        'mandatory' => (bool) env('AUTH_MANDATORY_2FA', true),
+        // Off while developing without a production domain. Turn on in production:
+        // AUTH_MANDATORY_2FA=true
+        'mandatory' => (bool) env('AUTH_MANDATORY_2FA', false),
         'mandatory_roles' => ['SUPER_ADMIN', 'ADMIN'],
     ],
 

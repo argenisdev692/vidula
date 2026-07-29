@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
+use Modules\Auth\Infrastructure\Http\Support\SafeIntended;
 use Modules\Auth\Infrastructure\Session\SessionRegistry;
 use Shared\Domain\Ports\AuditPort;
 
@@ -20,14 +21,6 @@ use Shared\Domain\Ports\AuditPort;
  */
 final readonly class SessionController
 {
-    /**
-     * Auth pages an intended-URL redirect must never point back at (avoids loops
-     * and open-redirect abuse once combined with the local-path guard).
-     */
-    private const array DENIED_INTENDED_PREFIXES = [
-        '/login', '/register', '/forgot-password', '/reset-password', '/logout', '/auth', '/two-factor',
-    ];
-
     public function __construct(
         private SessionRegistry $sessions,
         private AuditPort $audit,
@@ -92,7 +85,7 @@ final readonly class SessionController
      */
     public function idleLogout(Request $request): RedirectResponse
     {
-        $intended = $this->safeIntended($request->string('intended')->toString());
+        $intended = SafeIntended::normalize($request->string('intended')->toString());
 
         $this->audit->log(
             event: 'auth.idle_logout',
@@ -114,34 +107,5 @@ final readonly class SessionController
         Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-    }
-
-    /**
-     * Accept only local, absolute, same-origin paths that are not auth screens.
-     * Rejects protocol-relative (`//host`), scheme-qualified and backslash inputs
-     * (OWASP A01/A10 — open redirect).
-     */
-    private function safeIntended(?string $intended): ?string
-    {
-        if ($intended === null || $intended === '' || ! str_starts_with($intended, '/')) {
-            return null;
-        }
-
-        if (str_starts_with($intended, '//') || str_contains($intended, '\\')) {
-            return null;
-        }
-
-        // Local path only — strip query/fragment without parse_url() (PHP 8.5).
-        $path = $intended
-            |> (fn (string $s): string => explode('#', $s, 2)[0])
-            |> (fn (string $s): string => explode('?', $s, 2)[0]);
-
-        foreach (self::DENIED_INTENDED_PREFIXES as $denied) {
-            if (str_starts_with($path, $denied)) {
-                return null;
-            }
-        }
-
-        return $intended;
     }
 }

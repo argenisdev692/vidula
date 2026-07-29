@@ -42,8 +42,17 @@ export async function apiFetch<T = unknown>(
     method,
     headers,
     credentials: 'same-origin',
+    // Never follow HTML redirects (e.g. password.confirm → /user/confirm-password
+    // or intended → external host). Callers must handle 302/323/401/423 as JSON errors.
+    redirect: 'manual',
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
+
+  if (response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400)) {
+    throw new HttpError(response.status || 302, {
+      message: 'Unexpected redirect from the server. Please reload and try again.',
+    });
+  }
 
   const text = await response.text();
   let parsed: unknown;
