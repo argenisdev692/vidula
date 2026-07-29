@@ -88,10 +88,12 @@ final class DashboardController extends Controller
             return self::FILLER_PRODUCT_SERIES;
         }
 
+        $monthExpression = $this->monthOfCreatedAtExpression();
+
         $rows = ProductEloquentModel::query()
-            ->selectRaw('MONTH(created_at) as month, COUNT(*) as total')
+            ->selectRaw("{$monthExpression} as month, COUNT(*) as total")
             ->whereYear('created_at', now()->year)
-            ->groupByRaw('MONTH(created_at)')
+            ->groupByRaw($monthExpression)
             ->pluck('total', 'month');
 
         if ($rows->isEmpty()) {
@@ -190,6 +192,15 @@ final class DashboardController extends Controller
             ['id' => '9', 'user' => 'Ana Ruiz', 'initials' => 'AR', 'action' => 'generated social package', 'target' => 'TOFU hook', 'time' => '8 hr ago', 'icon' => 'pi-share-alt', 'iconColor' => 'var(--accent-primary)'],
             ['id' => '10', 'user' => 'Luis Mora', 'initials' => 'LM', 'action' => 'logged activity', 'target' => 'dashboard.view', 'time' => '10 hr ago', 'icon' => 'pi-history', 'iconColor' => 'var(--accent-info)'],
         ];
+    }
+
+    private function monthOfCreatedAtExpression(): string
+    {
+        return match (DB::connection()->getDriverName()) {
+            'pgsql' => 'CAST(EXTRACT(MONTH FROM created_at) AS INTEGER)',
+            'sqlite' => "CAST(strftime('%m', created_at) AS INTEGER)",
+            default => 'MONTH(created_at)',
+        };
     }
 
     private function relativeTime(string $timestamp): string
