@@ -24,14 +24,22 @@ final readonly class LaravelAIAdapter implements AIClientInterface
     {
         return $this->breaker->call(
             'ai:structured:'.($provider ?? 'default'),
-            function () use ($agentClass, $prompt, $provider): StructuredAgentResponse {
+            function () use ($agentClass, $prompt, $provider) {
                 try {
-                    /** @var StructuredAgentResponse $response */
                     $response = app($agentClass)->prompt(
                         $prompt,
                         provider: $provider,
                         timeout: self::DEFAULT_TIMEOUT_SECONDS,
                     );
+
+                    if (! $response instanceof StructuredAgentResponse) {
+                        throw new \UnexpectedValueException(sprintf(
+                            'Expected %s from structured agent %s, received %s.',
+                            StructuredAgentResponse::class,
+                            $agentClass,
+                            $response::class,
+                        ));
+                    }
 
                     return $response;
                 } catch (FailoverableException|Throwable $e) {

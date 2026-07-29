@@ -27,7 +27,7 @@ final class StudentFactory extends Factory
             'uuid' => (string) Str::uuid7(),
             'name' => $this->faker->name(),
             'email' => $this->faker->unique()->safeEmail(),
-            'phone' => '+15551234567',
+            'phone' => '+12015550101',
             'dni' => null,
             'address' => $this->faker->streetAddress(),
             'avatar' => null,

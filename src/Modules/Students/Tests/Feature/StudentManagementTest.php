@@ -37,7 +37,7 @@ final class StudentManagementTest extends TestCase
         return [
             'name' => 'Ada Lovelace',
             'email' => 'ada@academy.test',
-            'phone' => '+15551234567',
+            'phone' => '+12015550101',
             'dni' => null,
             'address' => '1 Analytical Engine Way',
             'avatar' => null,
@@ -61,7 +61,7 @@ final class StudentManagementTest extends TestCase
         $this->assertSame('Ada Lovelace', $student->name);
         $this->assertSame('DRAFT', $student->status);
         $this->assertTrue($student->active);
-        $this->assertSame('+15551234567', $student->phone);
+        $this->assertSame('+12015550101', $student->phone);
     }
 
     public function test_duplicate_email_is_rejected(): void

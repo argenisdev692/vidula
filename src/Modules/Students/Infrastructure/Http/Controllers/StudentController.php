@@ -51,15 +51,19 @@ final readonly class StudentController
         };
     }
 
-    public function store(StudentData $data, CreateStudentHandler $create): RedirectResponse
+    public function store(Request $request, CreateStudentHandler $create): RedirectResponse
     {
+        $data = StudentData::validateAndCreate($request);
+
         (void) $create->handle($data);
 
         return back()->with('success', __('Student created.'));
     }
 
-    public function update(string $uuid, StudentData $data, StudentRepositoryPort $students, UpdateStudentHandler $update): RedirectResponse
+    public function update(Request $request, string $uuid, StudentRepositoryPort $students, UpdateStudentHandler $update): RedirectResponse
     {
+        $data = StudentData::validateAndCreate($request);
+
         $student = $students->findByUuid($uuid)
             ?? throw (new ModelNotFoundException)->setModel(StudentEloquentModel::class, [$uuid]);
 
