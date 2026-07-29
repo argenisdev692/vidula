@@ -22,4 +22,12 @@ enum MaterialType: string
             self::Link => 'text/uri-list',
         };
     }
+
+    public function isStoredFile(): bool
+    {
+        return match ($this) {
+            self::Pdf, self::Markdown => true,
+            self::Link => false,
+        };
+    }
 }

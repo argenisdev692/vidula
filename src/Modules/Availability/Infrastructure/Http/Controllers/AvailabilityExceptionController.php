@@ -63,14 +63,14 @@ final readonly class AvailabilityExceptionController
 
     public function destroy(string $uuid, DeleteAvailabilityExceptionHandler $delete): RedirectResponse
     {
-        $delete->handle($uuid);
+        (void) $delete->handle($uuid);
 
         return back()->with('success', __('Availability exception suspended.'));
     }
 
     public function restore(string $uuid, RestoreAvailabilityExceptionHandler $restore): RedirectResponse
     {
-        $restore->handle($uuid);
+        (void) $restore->handle($uuid);
 
         return back()->with('success', __('Availability exception restored.'));
     }

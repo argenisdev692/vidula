@@ -72,14 +72,14 @@ final readonly class EnrollmentController
 
     public function destroy(string $uuid, DeleteEnrollmentHandler $delete): RedirectResponse
     {
-        $delete->handle($uuid);
+        (void) $delete->handle($uuid);
 
         return back()->with('success', __('Enrollment suspended.'));
     }
 
     public function restore(string $uuid, RestoreEnrollmentHandler $restore): RedirectResponse
     {
-        $restore->handle($uuid);
+        (void) $restore->handle($uuid);
 
         return back()->with('success', __('Enrollment restored.'));
     }

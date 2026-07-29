@@ -62,28 +62,28 @@ final readonly class PostController
 
     public function store(Request $request, PostData $data, CreatePostHandler $create): RedirectResponse
     {
-        $create->handle($data, (int) $request->user()->id);
+        (void) $create->handle($data, (int) $request->user()->id);
 
         return redirect()->route('posts.index')->with('success', __('Post created.'));
     }
 
     public function update(string $uuid, PostData $data, GetPostHandler $get, UpdatePostHandler $update): RedirectResponse
     {
-        $update->handle($get->handle($uuid), $data);
+        (void) $update->handle($get->handle($uuid), $data);
 
         return redirect()->route('posts.index')->with('success', __('Post updated.'));
     }
 
     public function destroy(string $uuid, DeletePostHandler $delete): RedirectResponse
     {
-        $delete->handle($uuid);
+        (void) $delete->handle($uuid);
 
         return back()->with('success', __('Post suspended.'));
     }
 
     public function restore(string $uuid, RestorePostHandler $restore): RedirectResponse
     {
-        $restore->handle($uuid);
+        (void) $restore->handle($uuid);
 
         return back()->with('success', __('Post restored.'));
     }

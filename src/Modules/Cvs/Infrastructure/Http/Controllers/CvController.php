@@ -71,14 +71,14 @@ final readonly class CvController
 
     public function destroy(string $uuid, DeleteCvHandler $delete): RedirectResponse
     {
-        $delete->handle($uuid);
+        (void) $delete->handle($uuid);
 
         return back()->with('success', __('CV suspended.'));
     }
 
     public function restore(string $uuid, RestoreCvHandler $restore): RedirectResponse
     {
-        $restore->handle($uuid);
+        (void) $restore->handle($uuid);
 
         return back()->with('success', __('CV restored.'));
     }

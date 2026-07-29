@@ -73,21 +73,21 @@ final readonly class ContactSupportController
 
     public function store(ContactSupportData $data, CreateContactSupportHandler $create): RedirectResponse
     {
-        $create->handle($data);
+        (void) $create->handle($data);
 
         return back()->with('success', __('Contact request created.'));
     }
 
     public function update(string $uuid, ContactSupportData $data, GetContactSupportHandler $get, UpdateContactSupportHandler $update): RedirectResponse
     {
-        $update->handle($get->handle($uuid), $data);
+        (void) $update->handle($get->handle($uuid), $data);
 
         return back()->with('success', __('Contact request updated.'));
     }
 
     public function markRead(string $uuid, MarkContactSupportReadHandler $markRead): RedirectResponse|JsonResponse
     {
-        $markRead->handle($uuid);
+        (void) $markRead->handle($uuid);
 
         return request()->expectsJson()
             ? response()->json(['success' => true])
@@ -108,14 +108,14 @@ final readonly class ContactSupportController
 
     public function destroy(string $uuid, DeleteContactSupportHandler $delete): RedirectResponse
     {
-        $delete->handle($uuid);
+        (void) $delete->handle($uuid);
 
         return back()->with('success', __('Contact request suspended.'));
     }
 
     public function restore(string $uuid, RestoreContactSupportHandler $restore): RedirectResponse
     {
-        $restore->handle($uuid);
+        (void) $restore->handle($uuid);
 
         return back()->with('success', __('Contact request restored.'));
     }

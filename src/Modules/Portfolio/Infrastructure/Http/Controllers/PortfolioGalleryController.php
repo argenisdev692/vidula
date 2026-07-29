@@ -22,21 +22,21 @@ final readonly class PortfolioGalleryController
 {
     public function store(string $uuid, AddPortfolioGalleryImageData $data, GetPortfolioHandler $get, AddPortfolioGalleryImageHandler $add): RedirectResponse
     {
-        $add->handle($get->handle($uuid), $data);
+        (void) $add->handle($get->handle($uuid), $data);
 
         return back()->with('success', __('Gallery image added.'));
     }
 
     public function destroy(string $uuid, string $mediaUuid, GetPortfolioHandler $get, DeletePortfolioGalleryImageHandler $delete): RedirectResponse
     {
-        $delete->handle($get->handle($uuid), $mediaUuid);
+        (void) $delete->handle($get->handle($uuid), $mediaUuid);
 
         return back()->with('success', __('Gallery image removed.'));
     }
 
     public function reorder(string $uuid, BulkUuidsData $data, GetPortfolioHandler $get, ReorderPortfolioGalleryHandler $reorder): RedirectResponse
     {
-        $reorder->handle($get->handle($uuid), $data);
+        (void) $reorder->handle($get->handle($uuid), $data);
 
         return back()->with('success', __('Gallery order updated.'));
     }

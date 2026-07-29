@@ -59,7 +59,7 @@ final readonly class BackupApiController
     {
         abort_unless((bool) $request->user()?->hasPermissionTo('CREATE_BACKUPS'), 403);
 
-        $run->handle($request->user());
+        (void) $run->handle($request->user());
 
         return response()->json(['message' => __('Backup queued.')], 202);
     }
@@ -73,7 +73,7 @@ final readonly class BackupApiController
     {
         abort_unless((bool) $request->user()?->hasPermissionTo('DELETE_BACKUPS'), 403);
 
-        $delete->handle($backup, $request->user());
+        (void) $delete->handle($backup, $request->user());
 
         return response()->json(['message' => __('Backup deleted.')]);
     }

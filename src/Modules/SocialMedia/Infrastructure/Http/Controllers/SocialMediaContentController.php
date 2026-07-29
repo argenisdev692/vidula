@@ -63,28 +63,28 @@ final readonly class SocialMediaContentController
         GetSocialMediaContentHandler $get,
         UpdateSocialMediaContentHandler $update,
     ): RedirectResponse {
-        $update->handle($get->handle($uuid), $data);
+        (void) $update->handle($get->handle($uuid), $data);
 
         return redirect()->route('social-media.index')->with('success', __('Content updated.'));
     }
 
     public function publish(string $uuid, Request $request, GetSocialMediaContentHandler $get, PublishSocialMediaContentHandler $publish): RedirectResponse
     {
-        $publish->handle($get->handle($uuid), $request->user());
+        (void) $publish->handle($get->handle($uuid), $request->user());
 
         return back()->with('success', __('Content marked as published.'));
     }
 
     public function destroy(string $uuid, DeleteSocialMediaContentHandler $delete): RedirectResponse
     {
-        $delete->handle($uuid);
+        (void) $delete->handle($uuid);
 
         return back()->with('success', __('Content suspended.'));
     }
 
     public function restore(string $uuid, RestoreSocialMediaContentHandler $restore): RedirectResponse
     {
-        $restore->handle($uuid);
+        (void) $restore->handle($uuid);
 
         return back()->with('success', __('Content restored.'));
     }

@@ -53,7 +53,7 @@ final readonly class PublicContactApiController
             return $accepted;
         }
 
-        $submit->handle($data);
+        (void) $submit->handle($data);
 
         return $accepted;
     }

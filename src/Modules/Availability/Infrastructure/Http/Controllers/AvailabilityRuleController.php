@@ -63,14 +63,14 @@ final readonly class AvailabilityRuleController
 
     public function destroy(string $uuid, DeleteAvailabilityRuleHandler $delete): RedirectResponse
     {
-        $delete->handle($uuid);
+        (void) $delete->handle($uuid);
 
         return back()->with('success', __('Availability rule suspended.'));
     }
 
     public function restore(string $uuid, RestoreAvailabilityRuleHandler $restore): RedirectResponse
     {
-        $restore->handle($uuid);
+        (void) $restore->handle($uuid);
 
         return back()->with('success', __('Availability rule restored.'));
     }

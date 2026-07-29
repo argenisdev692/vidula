@@ -75,21 +75,21 @@ final readonly class InvoiceController
 
     public function update(string $uuid, InvoiceData $data, GetInvoiceHandler $get, UpdateInvoiceHandler $update): RedirectResponse
     {
-        $update->handle($get->handle($uuid), $data);
+        (void) $update->handle($get->handle($uuid), $data);
 
         return back()->with('success', __('Invoice updated.'));
     }
 
     public function destroy(string $uuid, DeleteInvoiceHandler $delete): RedirectResponse
     {
-        $delete->handle($uuid);
+        (void) $delete->handle($uuid);
 
         return back()->with('success', __('Invoice deleted.'));
     }
 
     public function restore(string $uuid, RestoreInvoiceHandler $restore): RedirectResponse
     {
-        $restore->handle($uuid);
+        (void) $restore->handle($uuid);
 
         return back()->with('success', __('Invoice restored.'));
     }

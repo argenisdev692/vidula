@@ -69,21 +69,21 @@ final readonly class ProductController
 
     public function update(string $uuid, ProductData $data, GetProductHandler $get, UpdateProductHandler $update): RedirectResponse
     {
-        $update->handle($get->handle($uuid), $data);
+        (void) $update->handle($get->handle($uuid), $data);
 
         return back()->with('success', __('Product updated.'));
     }
 
     public function destroy(string $uuid, DeleteProductHandler $delete): RedirectResponse
     {
-        $delete->handle($uuid);
+        (void) $delete->handle($uuid);
 
         return back()->with('success', __('Product suspended.'));
     }
 
     public function restore(string $uuid, RestoreProductHandler $restore): RedirectResponse
     {
-        $restore->handle($uuid);
+        (void) $restore->handle($uuid);
 
         return back()->with('success', __('Product restored.'));
     }

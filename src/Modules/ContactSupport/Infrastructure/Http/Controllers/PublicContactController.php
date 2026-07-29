@@ -29,7 +29,7 @@ final readonly class PublicContactController
 
     public function store(ContactSupportData $data, SubmitContactRequestHandler $submit): RedirectResponse
     {
-        $submit->handle($data);
+        (void) $submit->handle($data);
 
         // Always report success — a flagged (spam) row is stored silently for
         // review, never surfaced to the sender, so bots learn nothing.

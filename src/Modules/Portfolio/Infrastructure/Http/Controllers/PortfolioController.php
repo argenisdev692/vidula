@@ -49,28 +49,28 @@ final readonly class PortfolioController
 
     public function store(Request $request, PortfolioData $data, CreatePortfolioHandler $create): RedirectResponse
     {
-        $create->handle($data, (int) $request->user()->id);
+        (void) $create->handle($data, (int) $request->user()->id);
 
         return back()->with('success', __('Portfolio project created.'));
     }
 
     public function update(string $uuid, PortfolioData $data, GetPortfolioHandler $get, UpdatePortfolioHandler $update): RedirectResponse
     {
-        $update->handle($get->handle($uuid), $data);
+        (void) $update->handle($get->handle($uuid), $data);
 
         return back()->with('success', __('Portfolio project updated.'));
     }
 
     public function destroy(string $uuid, DeletePortfolioHandler $delete): RedirectResponse
     {
-        $delete->handle($uuid);
+        (void) $delete->handle($uuid);
 
         return back()->with('success', __('Portfolio project suspended.'));
     }
 
     public function restore(string $uuid, RestorePortfolioHandler $restore): RedirectResponse
     {
-        $restore->handle($uuid);
+        (void) $restore->handle($uuid);
 
         return back()->with('success', __('Portfolio project restored.'));
     }

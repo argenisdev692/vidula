@@ -126,7 +126,7 @@ final readonly class MeetingController
     {
         $this->authorizeMeetingAccess($request, $get->handle($uuid));
 
-        $delete->handle($uuid);
+        (void) $delete->handle($uuid);
 
         return back()->with('success', __('Meeting deleted.'));
     }
@@ -135,7 +135,7 @@ final readonly class MeetingController
     {
         $this->authorizeMeetingAccess($request, $get->handle($uuid));
 
-        $restore->handle($uuid);
+        (void) $restore->handle($uuid);
 
         return back()->with('success', __('Meeting restored.'));
     }

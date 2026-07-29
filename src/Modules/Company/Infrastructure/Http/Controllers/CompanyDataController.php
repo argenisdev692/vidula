@@ -48,35 +48,35 @@ final readonly class CompanyDataController
 
     public function update(string $uuid, UpdateCompanyData $data, GetCompanyHandler $get, UpdateCompanyHandler $update): RedirectResponse
     {
-        $update->handle($get->handle($uuid), $data);
+        (void) $update->handle($get->handle($uuid), $data);
 
         return back()->with('success', __('Company data updated.'));
     }
 
     public function updateLogo(UpdateCompanyLogoData $data, UpdateCompanyLogoHandler $handler): RedirectResponse
     {
-        $handler->handle($data);
+        (void) $handler->handle($data);
 
         return back()->with('success', __('Logo updated.'));
     }
 
     public function destroyLogo(string $type, DeleteCompanyAssetHandler $handler): RedirectResponse
     {
-        $handler->handle($type);
+        (void) $handler->handle($type);
 
         return back()->with('success', __('Logo removed.'));
     }
 
     public function updateSignature(UpdateCompanySignatureData $data, UpdateCompanySignatureHandler $handler): RedirectResponse
     {
-        $handler->handle($data);
+        (void) $handler->handle($data);
 
         return back()->with('success', __('Signature updated.'));
     }
 
     public function destroySignature(DeleteCompanyAssetHandler $handler): RedirectResponse
     {
-        $handler->handle('signature');
+        (void) $handler->handle('signature');
 
         return back()->with('success', __('Signature removed.'));
     }

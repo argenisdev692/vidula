@@ -134,7 +134,7 @@ final readonly class UserController
         $actor = $request->user();
 
         try {
-            $sync->handle($actor, $get->handle($uuid), $data->roles);
+            (void) $sync->handle($actor, $get->handle($uuid), $data->roles);
         } catch (PrivilegeEscalationException $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -175,7 +175,7 @@ final readonly class UserController
         $actor = $request->user();
 
         try {
-            $handler->handle($actor, $get->handle($uuid), $data->permission, $data->granted);
+            (void) $handler->handle($actor, $get->handle($uuid), $data->permission, $data->granted);
         } catch (PrivilegeEscalationException $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -185,21 +185,21 @@ final readonly class UserController
 
     public function update(string $uuid, UpdateUserData $data, GetUserHandler $get, UpdateUserHandler $update): RedirectResponse
     {
-        $update->handle($get->handle($uuid), $data);
+        (void) $update->handle($get->handle($uuid), $data);
 
         return redirect()->route('users.index')->with('success', __('User updated.'));
     }
 
     public function destroy(string $uuid, DeleteUserHandler $delete): RedirectResponse
     {
-        $delete->handle($uuid);
+        (void) $delete->handle($uuid);
 
         return back()->with('success', __('User suspended.'));
     }
 
     public function restore(string $uuid, RestoreUserHandler $restore): RedirectResponse
     {
-        $restore->handle($uuid);
+        (void) $restore->handle($uuid);
 
         return back()->with('success', __('User restored.'));
     }
@@ -209,7 +209,7 @@ final readonly class UserController
         $user = $get->handle($uuid);
         abort_unless($user->isPending(), 422, __('User is already active.'));
 
-        $resend->handle($user);
+        (void) $resend->handle($user);
 
         return back()->with('success', __('Invitation re-sent.'));
     }

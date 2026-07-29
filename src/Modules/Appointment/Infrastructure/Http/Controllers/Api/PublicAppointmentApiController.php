@@ -56,7 +56,7 @@ final readonly class PublicAppointmentApiController
             return $accepted;
         }
 
-        $book->handle($data);
+        (void) $book->handle($data);
 
         return $accepted;
     }

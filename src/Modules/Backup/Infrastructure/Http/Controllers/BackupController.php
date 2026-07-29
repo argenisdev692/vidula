@@ -41,14 +41,14 @@ final readonly class BackupController
 
     public function store(Request $request, RunBackupHandler $run): RedirectResponse
     {
-        $run->handle($request->user());
+        (void) $run->handle($request->user());
 
         return back()->with('success', __('Backup queued — it will appear here once the job finishes.'));
     }
 
     public function destroy(string $backup, Request $request, DeleteBackupHandler $delete): RedirectResponse
     {
-        $delete->handle($backup, $request->user());
+        (void) $delete->handle($backup, $request->user());
 
         return back()->with('success', __('Backup deleted.'));
     }

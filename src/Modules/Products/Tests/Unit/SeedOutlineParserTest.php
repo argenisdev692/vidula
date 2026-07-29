@@ -44,13 +44,13 @@ final class SeedOutlineParserTest extends TestCase
     public function test_empty_markdown_throws(): void
     {
         $this->expectException(SeedOutlineException::class);
-        $this->parser->parse('   ', ProductType::Classroom);
+        (void) $this->parser->parse('   ', ProductType::Classroom);
     }
 
     public function test_unparseable_markdown_throws(): void
     {
         $this->expectException(SeedOutlineException::class);
-        $this->parser->parse("# Just a title\n\nNo sessions here.", ProductType::Classroom);
+        (void) $this->parser->parse("# Just a title\n\nNo sessions here.", ProductType::Classroom);
     }
 
     public function test_minimal_classroom_shape(): void

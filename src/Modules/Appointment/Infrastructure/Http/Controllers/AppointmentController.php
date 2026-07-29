@@ -131,21 +131,21 @@ final readonly class AppointmentController
     {
         $scheduledAt = $request->validate(['scheduled_at' => ['nullable', 'date']])['scheduled_at'] ?? null;
 
-        $create->handle($data, $scheduledAt);
+        (void) $create->handle($data, $scheduledAt);
 
         return back()->with('success', __('Lead created.'));
     }
 
     public function update(string $uuid, AppointmentData $data, GetAppointmentHandler $get, UpdateAppointmentHandler $update): RedirectResponse
     {
-        $update->handle($get->handle($uuid), $data);
+        (void) $update->handle($get->handle($uuid), $data);
 
         return back()->with('success', __('Lead updated.'));
     }
 
     public function markRead(string $uuid, MarkAppointmentReadHandler $markRead): RedirectResponse|JsonResponse
     {
-        $markRead->handle($uuid);
+        (void) $markRead->handle($uuid);
 
         return match (request()->expectsJson()) {
             true => response()->json(['success' => true]),
@@ -168,42 +168,42 @@ final readonly class AppointmentController
 
     public function confirm(string $uuid, ConfirmAppointmentData $data, GetAppointmentHandler $get, ConfirmAppointmentHandler $confirm): RedirectResponse
     {
-        $confirm->handle($get->handle($uuid), $data);
+        (void) $confirm->handle($get->handle($uuid), $data);
 
         return back()->with('success', __('Appointment confirmed.'));
     }
 
     public function reschedule(string $uuid, RescheduleAppointmentData $data, GetAppointmentHandler $get, RescheduleAppointmentHandler $reschedule): RedirectResponse
     {
-        $reschedule->handle($get->handle($uuid), $data);
+        (void) $reschedule->handle($get->handle($uuid), $data);
 
         return back()->with('success', __('Appointment rescheduled.'));
     }
 
     public function cancel(string $uuid, CancelAppointmentData $data, GetAppointmentHandler $get, CancelAppointmentHandler $cancel): RedirectResponse
     {
-        $cancel->handle($get->handle($uuid), $data);
+        (void) $cancel->handle($get->handle($uuid), $data);
 
         return back()->with('success', __('Appointment cancelled.'));
     }
 
     public function addFollowUpCall(string $uuid, AddFollowUpCallData $data, GetAppointmentHandler $get, AddFollowUpCallHandler $handler): RedirectResponse
     {
-        $handler->handle($get->handle($uuid), $data);
+        (void) $handler->handle($get->handle($uuid), $data);
 
         return back()->with('success', __('Follow-up call logged.'));
     }
 
     public function destroy(string $uuid, DeleteAppointmentHandler $delete): RedirectResponse
     {
-        $delete->handle($uuid);
+        (void) $delete->handle($uuid);
 
         return back()->with('success', __('Lead suspended.'));
     }
 
     public function restore(string $uuid, RestoreAppointmentHandler $restore): RedirectResponse
     {
-        $restore->handle($uuid);
+        (void) $restore->handle($uuid);
 
         return back()->with('success', __('Lead restored.'));
     }
