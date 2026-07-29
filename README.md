@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://vidula.up.railway.app"><img src="https://img.shields.io/badge/demo-live-brightgreen" alt="Live demo"></a>
+  <a href="https://vidula.up.railway.app" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/demo-live-brightgreen" alt="Live demo"></a>
   <a href="https://github.com/argenisdev692/vidula-laravel/actions/workflows/ci.yml"><img src="https://github.com/argenisdev692/vidula-laravel/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/PHP-8.5-777bb4?logo=php&logoColor=white" alt="PHP 8.5">
   <img src="https://img.shields.io/badge/Laravel-13-ff2d20?logo=laravel&logoColor=white" alt="Laravel 13">
