@@ -96,27 +96,28 @@ final class AppointmentNotificationsTest extends TestCase
         Event::fake([AppointmentSubmitted::class]);
         $this->seedOpenFriday();
 
-        $this->postJson('/api/appointments', [
-            'first_name' => 'Ada',
-            'last_name' => 'Lovelace',
-            'client_type' => 'individual',
-            'company_name' => null,
-            'project_type' => 'new_website',
-            'email' => 'ada@example.com',
-            'phone' => '+15551234567',
-            'address' => '123 Main St',
-            'address_2' => null,
-            'zip_code' => '10001',
-            'city' => 'New York',
-            'state' => 'NY',
-            'country' => 'United States',
-            'country_code' => 'US',
-            'latitude' => null,
-            'longitude' => null,
-            'scheduled_at' => '2026-12-11 10:00:00',
-            'sms_consent' => true,
-            'notes' => 'Looking forward to it.',
-        ])->assertCreated();
+        $this->withHeaders($this->crmHeaders())
+            ->postJson('/api/appointments', [
+                'first_name' => 'Ada',
+                'last_name' => 'Lovelace',
+                'client_type' => 'individual',
+                'company_name' => null,
+                'project_type' => 'new_website',
+                'email' => 'ada@example.com',
+                'phone' => '+15551234567',
+                'address' => '123 Main St',
+                'address_2' => null,
+                'zip_code' => '10001',
+                'city' => 'New York',
+                'state' => 'NY',
+                'country' => 'United States',
+                'country_code' => 'US',
+                'latitude' => null,
+                'longitude' => null,
+                'scheduled_at' => '2026-12-11 10:00:00',
+                'sms_consent' => true,
+                'notes' => 'Looking forward to it.',
+            ])->assertCreated();
 
         Event::assertDispatched(AppointmentSubmitted::class);
     }

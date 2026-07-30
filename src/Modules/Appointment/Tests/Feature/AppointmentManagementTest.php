@@ -195,13 +195,14 @@ final class AppointmentManagementTest extends TestCase
         Mail::fake();
         AvailabilityRuleEloquentModel::factory()->forDay(5)->slot('09:00', '13:00')->create();
 
-        $this->postJson('/api/appointments', [
-            'first_name' => 'Grace',
-            'last_name' => 'Hopper',
-            'client_type' => 'individual',
-            'email' => 'grace@navy.mil',
-            'scheduled_at' => '2026-12-11 10:00:00',
-        ])->assertCreated();
+        $this->withHeaders($this->crmHeaders())
+            ->postJson('/api/appointments', [
+                'first_name' => 'Grace',
+                'last_name' => 'Hopper',
+                'client_type' => 'individual',
+                'email' => 'grace@navy.mil',
+                'scheduled_at' => '2026-12-11 10:00:00',
+            ])->assertCreated();
 
         Mail::assertSent(NewLeadMail::class);
         Mail::assertSent(AppointmentReceivedMail::class, fn (AppointmentReceivedMail $mail): bool => $mail->hasTo('grace@navy.mil'));

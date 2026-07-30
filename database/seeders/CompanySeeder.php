@@ -25,16 +25,20 @@ class CompanySeeder extends Seeder
             throw new \RuntimeException('UserSeeder must create argenis692@gmail.com before CompanySeeder runs.');
         }
 
-        $company = CompanyData::query()->firstOrNew(['email' => 'argenis692@gmail.com']);
+        // Lookup by owner so changing the public email does not spawn a second row.
+        $company = CompanyData::query()->firstOrNew(['user_id' => $userId]);
+        if (! $company->exists) {
+            $company->uuid = (string) Str::uuid7();
+        }
+
         $company->fill([
-            'uuid' => (string) Str::uuid7(), // Se añade el UUID aquí
             'name' => 'Argenis Carrillo Gonzalez',
             'company_name' => 'Vidula',
             'description' => 'Vidula is an AI-powered workspace for creators and educators: classroom '
                 .'management, AI-assisted content generation, social media management and social media '
                 .'campaign scheduling, all in one platform.',
             'signature_path' => null,
-            'email' => 'argenis692@gmail.com',
+            'email' => 'info@argenis.dev',
             'phone' => '+351 963 490 414',
             'nif_nipc' => '316416584',
             'nie' => '2175V64V7',
@@ -52,11 +56,11 @@ class CompanySeeder extends Seeder
             'country_code' => 'PT',
             'website' => null,
             'user_id' => $userId,
-            'facebook_link' => null,
-            'instagram_link' => null,
-            'linkedin_link' => null,
+            'facebook_link' => 'https://www.facebook.com/argenisdev692/',
+            'instagram_link' => 'https://www.instagram.com/argenis.dev/',
+            'linkedin_link' => 'https://www.linkedin.com/in/argenisdev692/',
             'twitter_link' => null,
-            'tiktok_link' => 'https://www.tiktok.com/@vidula',
+            'tiktok_link' => 'https://www.tiktok.com/@argenisdev692?lang=es-419',
             'latitude' => 40.2806,
             'longitude' => -7.5049,
         ]);

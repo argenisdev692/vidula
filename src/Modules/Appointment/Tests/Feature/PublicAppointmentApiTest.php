@@ -10,9 +10,9 @@ use Spatie\Honeypot\EncryptedTime;
 use Tests\TestCase;
 
 /**
- * Public REST API for the Astro marketing landing page: POST /api/appointments
- * (book) + GET /api/appointments/honeypot (trap descriptor). Stateless,
- * unauthenticated, JSON in/out.
+ * CRM-token-gated REST API for the Astro marketing landing page:
+ * POST /api/appointments + GET /api/appointments/honeypot.
+ * Stateless JSON; Astro must send Authorization: Bearer {CRM_API_TOKEN}.
  */
 final class PublicAppointmentApiTest extends TestCase
 {
@@ -55,9 +55,20 @@ final class PublicAppointmentApiTest extends TestCase
         AvailabilityRuleEloquentModel::factory()->forDay(5)->slot('09:00', '13:00')->create();
     }
 
-    public function test_the_honeypot_descriptor_is_publicly_available(): void
+    public function test_without_crm_token_returns_401(): void
     {
-        $this->getJson('/api/appointments/honeypot')
+        $this->seedOpenFriday();
+
+        $this->postJson('/api/appointments', $this->payload())
+            ->assertUnauthorized();
+
+        $this->assertDatabaseCount('appointments', 0);
+    }
+
+    public function test_the_honeypot_descriptor_requires_crm_token(): void
+    {
+        $this->withHeaders($this->crmHeaders())
+            ->getJson('/api/appointments/honeypot')
             ->assertOk()
             ->assertJsonStructure(['nameFieldName', 'validFromFieldName', 'encryptedValidFrom']);
     }
@@ -66,7 +77,8 @@ final class PublicAppointmentApiTest extends TestCase
     {
         $this->seedOpenFriday();
 
-        $this->postJson('/api/appointments', $this->payload())
+        $this->withHeaders($this->crmHeaders())
+            ->postJson('/api/appointments', $this->payload())
             ->assertCreated()
             ->assertJsonStructure(['message']);
 
@@ -81,10 +93,11 @@ final class PublicAppointmentApiTest extends TestCase
     {
         $this->seedOpenFriday();
 
-        $this->postJson('/api/appointments', $this->payload([
-            'email' => 'spammer@example.com',
-            'notes' => 'Best crypto casino offer — click here to earn money now!',
-        ]))->assertCreated();
+        $this->withHeaders($this->crmHeaders())
+            ->postJson('/api/appointments', $this->payload([
+                'email' => 'spammer@example.com',
+                'notes' => 'Best crypto casino offer — click here to earn money now!',
+            ]))->assertCreated();
 
         // Flagged, never rejected: the lead is stored so a false positive can be reviewed.
         $this->assertDatabaseHas('appointments', [
@@ -95,14 +108,16 @@ final class PublicAppointmentApiTest extends TestCase
 
     public function test_validation_errors_return_422(): void
     {
-        $this->postJson('/api/appointments', [])
+        $this->withHeaders($this->crmHeaders())
+            ->postJson('/api/appointments', [])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['first_name', 'last_name', 'client_type', 'email', 'scheduled_at']);
     }
 
     public function test_a_past_date_is_rejected_with_422(): void
     {
-        $this->postJson('/api/appointments', $this->payload(['scheduled_at' => '2020-01-01 10:00:00']))
+        $this->withHeaders($this->crmHeaders())
+            ->postJson('/api/appointments', $this->payload(['scheduled_at' => '2020-01-01 10:00:00']))
             ->assertStatus(422)
             ->assertJsonValidationErrors(['scheduled_at']);
     }
@@ -111,7 +126,8 @@ final class PublicAppointmentApiTest extends TestCase
     {
         $this->seedOpenFriday();
 
-        $this->postJson('/api/appointments', $this->payload(['scheduled_at' => '2026-12-11 20:00:00']))
+        $this->withHeaders($this->crmHeaders())
+            ->postJson('/api/appointments', $this->payload(['scheduled_at' => '2026-12-11 20:00:00']))
             ->assertStatus(422)
             ->assertJsonValidationErrors(['scheduled_at']);
     }
@@ -120,10 +136,11 @@ final class PublicAppointmentApiTest extends TestCase
     {
         $this->seedOpenFriday();
 
-        $this->postJson('/api/appointments', $this->payload([
-            'my_name' => 'http://spam.example',
-            'valid_from' => EncryptedTime::create(now()->subMinute()),
-        ]))->assertCreated();
+        $this->withHeaders($this->crmHeaders())
+            ->postJson('/api/appointments', $this->payload([
+                'my_name' => 'http://spam.example',
+                'valid_from' => EncryptedTime::create(now()->subMinute()),
+            ]))->assertCreated();
 
         $this->assertDatabaseCount('appointments', 0);
     }
@@ -133,12 +150,15 @@ final class PublicAppointmentApiTest extends TestCase
         $this->seedOpenFriday();
         AvailabilityRuleEloquentModel::factory()->forDay(5)->slot('14:00', '18:00')->create();
 
-        $this->postJson('/api/appointments', $this->payload())->assertCreated();
+        $this->withHeaders($this->crmHeaders())
+            ->postJson('/api/appointments', $this->payload())
+            ->assertCreated();
         $this->assertDatabaseCount('appointments', 1);
 
         // A second request from the same email must NOT create/overwrite a lead —
         // a super-admin reschedules the existing one instead.
-        $this->postJson('/api/appointments', $this->payload(['scheduled_at' => '2026-12-11 15:00:00']))
+        $this->withHeaders($this->crmHeaders())
+            ->postJson('/api/appointments', $this->payload(['scheduled_at' => '2026-12-11 15:00:00']))
             ->assertStatus(422)
             ->assertJsonValidationErrors('email');
 
@@ -153,11 +173,14 @@ final class PublicAppointmentApiTest extends TestCase
     {
         $this->seedOpenFriday();
 
-        $this->postJson('/api/appointments', $this->payload())->assertCreated();
+        $this->withHeaders($this->crmHeaders())
+            ->postJson('/api/appointments', $this->payload())
+            ->assertCreated();
 
         // Same address, different casing — normalized at the DTO boundary, so the
         // duplicate guard still catches it (no case-variant second row).
-        $this->postJson('/api/appointments', $this->payload(['email' => 'ada@EXAMPLE.com']))
+        $this->withHeaders($this->crmHeaders())
+            ->postJson('/api/appointments', $this->payload(['email' => 'ada@EXAMPLE.com']))
             ->assertStatus(422)
             ->assertJsonValidationErrors('email');
 

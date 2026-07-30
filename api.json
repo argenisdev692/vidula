@@ -6,7 +6,7 @@
     },
     "servers": [
         {
-            "url": "http://localhost/api"
+            "url": "http://localhost:8080/api"
         }
     ],
     "security": [
@@ -3155,6 +3155,29 @@
                 "security": []
             }
         },
+        "/company-data/public": {
+            "get": {
+                "operationId": "company-data.public",
+                "description": "Returns the seeded company singleton for the landing page (branding,\ncontact, socials, map coordinates). Bank / fiscal fields are never\nincluded.",
+                "summary": "Show public company data",
+                "tags": [
+                    "PublicCompanyData"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`CompanyPublicReadModel`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CompanyPublicReadModel"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
         "/contact-supports/honeypot": {
             "get": {
                 "operationId": "contact-supports.honeypot",
@@ -5748,6 +5771,11 @@
                 ],
                 "title": "ClientType"
             },
+            "CompanyPublicReadModel": {
+                "type": "object",
+                "additionalProperties": {},
+                "title": "CompanyPublicReadModel"
+            },
             "ContactSupportData": {
                 "type": "object",
                 "description": "Create/update payload for a contact-support submission. Store and Update share\n100% of the fields and rules, so a single fused DTO is used (DTO Fusion Rule).\nThe `readed` flag is intentionally NOT part of this DTO \u2014 it is toggled through\nthe dedicated mark-as-read action, never mass-assigned from a form.\n\n`#[MapInputName]` snake-cases the request payload (`first_name`, `sms_consent`)\nonto the camelCase properties.",
@@ -6190,7 +6218,7 @@
             },
             "GenerateSocialMediaContentData": {
                 "type": "object",
-                "description": "Input for Step 2 (quality-loop content generation). One instance is reused\nacross every iteration of {@see \\Modules\\SocialMedia\\Infrastructure\\Queue\\GenerateSocialMediaContentJob};\nonly the previous-scores/weaknesses feedback (passed separately to the\nport) changes between iterations.",
+                "description": "Input for Step 2 (quality-loop content generation). One instance is reused\nacross every iteration of {@see GenerateSocialMediaContentJob};\nonly the previous-scores/weaknesses feedback (passed separately to the\nport) changes between iterations.",
                 "properties": {
                     "topic": {
                         "type": "string",
@@ -7754,7 +7782,7 @@
             },
             "SuggestSocialMediaTopicsData": {
                 "type": "object",
-                "description": "Input for Step 1 (10 viral topics). `niche` is an optional steer \u2014 when\nblank the agent leans entirely on the company profile + Tavily trend\nresearch, mirroring {@see \\Modules\\Post\\Application\\DTOs\\SuggestPostTopicsData}.",
+                "description": "Input for Step 1 (10 viral topics). `niche` is an optional steer \u2014 when\nblank the agent leans entirely on the company profile + Tavily trend\nresearch, mirroring {@see SuggestPostTopicsData}.",
                 "properties": {
                     "provider": {
                         "type": "string",

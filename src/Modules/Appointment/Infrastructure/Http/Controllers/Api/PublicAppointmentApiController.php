@@ -29,6 +29,8 @@ use Spatie\Honeypot\SpamProtection;
  * Scheduling validation (past date / closed day / conflict) and the
  * one-active-lead-per-email guard happen inside {@see BookAppointmentHandler}
  * and surface as a normal 422.
+ *
+ * Auth: `crm.token` middleware (CRM_API_TOKEN) — Astro server-side only.
  */
 final readonly class PublicAppointmentApiController
 {

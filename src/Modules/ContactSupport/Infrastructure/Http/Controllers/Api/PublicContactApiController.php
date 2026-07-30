@@ -23,6 +23,8 @@ use Spatie\Honeypot\SpamProtection;
  *      from {@see self::honeypot()}, they are enforced here.
  *   2. SpamGuard content scoring inside {@see SubmitContactRequestHandler} —
  *      flags, never rejects. Plus a tight per-IP throttle on the route.
+ *
+ * Auth: `crm.token` middleware (CRM_API_TOKEN) — Astro server-side only.
  */
 final readonly class PublicContactApiController
 {

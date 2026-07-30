@@ -10,6 +10,7 @@ use Laravel\Ai\Exceptions\FailoverableException;
 use Modules\Auth\Infrastructure\Http\Middleware\EnsurePasswordNotExpired;
 use Modules\Auth\Infrastructure\Http\Middleware\EnsureTwoFactorEnabled;
 use Modules\Users\Infrastructure\Http\Middleware\EnsurePasswordChanged;
+use Shared\Infrastructure\Http\Middleware\EnsureCrmApiToken;
 use Shared\Infrastructure\Http\Middleware\SecurityHeaders;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
@@ -31,6 +32,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'two-factor.enforce' => EnsureTwoFactorEnabled::class,
             'password.not-expired' => EnsurePasswordNotExpired::class,
+            // Astro / server-side CRM clients: shared secret from CRM_API_TOKEN.
+            'crm.token' => EnsureCrmApiToken::class,
             // spatie/laravel-permission aliases are NOT auto-registered in
             // Laravel 11+ (no Http/Kernel). Every `permission:*` / `role:*`
             // route guard depends on these.

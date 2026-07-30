@@ -24,7 +24,7 @@ use Throwable;
  * A null column falls back to the bundled asset served from APP_URL. R2 failures
  * degrade to the bundled asset rather than breaking every render.
  *
- * @phpstan-type CompanyArray array{name: string, description: ?string, url: ?string, logo_url: string, logo_white_url: string, mark_url: string, address: ?string, city: ?string, state: ?string, country: ?string, support_email: ?string, socials: array<string, string>}
+ * @phpstan-type CompanyArray array{name: string, description: ?string, url: ?string, logo_url: string, logo_white_url: string, mark_url: string, address: ?string, address_2: ?string, zip_code: ?string, city: ?string, state: ?string, country: ?string, country_code: ?string, phone: ?string, support_email: ?string, latitude: ?float, longitude: ?float, socials: array<string, string>}
  */
 final class CompanyProfile
 {
@@ -58,10 +58,16 @@ final class CompanyProfile
                 'logo_white_url' => self::logoUrl($company?->logo_white_path, self::FALLBACK_LOGO_WHITE),
                 'mark_url' => self::logoUrl($company?->mark_path, self::FALLBACK_MARK),
                 'address' => $company?->address,
+                'address_2' => $company?->address_2,
+                'zip_code' => $company?->zip_code,
                 'city' => $company?->city,
                 'state' => $company?->state,
                 'country' => $company?->country,
+                'country_code' => $company?->country_code,
+                'phone' => $company?->phone,
                 'support_email' => $company?->email ?: config('mail.from.address'),
+                'latitude' => $company?->latitude,
+                'longitude' => $company?->longitude,
                 'socials' => array_filter([
                     'linkedin' => $company?->linkedin_link,
                     'twitter' => $company?->twitter_link,

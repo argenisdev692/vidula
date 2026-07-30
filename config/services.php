@@ -76,6 +76,14 @@ return [
         'model_id' => env('ELEVENLABS_MODEL_ID', 'eleven_multilingual_v2'),
     ],
 
+    'crm' => [
+        // Shared secret for Astro landing → Laravel public CRM endpoints
+        // (company-data GET, contact-support / appointment POST + honeypot).
+        // Send as `Authorization: Bearer …` or `X-CRM-Api-Token`. Server-side
+        // only on Astro — never PUBLIC_/VITE_*. Empty = fail-closed 401.
+        'api_token' => env('CRM_API_TOKEN'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Socialite OAuth Providers

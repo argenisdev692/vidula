@@ -9,9 +9,9 @@ use Spatie\Honeypot\EncryptedTime;
 use Tests\TestCase;
 
 /**
- * Public REST API for the marketing landing page: POST /api/contact-supports
- * (submit) + GET /api/contact-supports/honeypot (trap descriptor). Stateless,
- * unauthenticated, JSON in/out.
+ * CRM-token-gated REST API for the marketing landing page:
+ * POST /api/contact-supports + GET /api/contact-supports/honeypot.
+ * Stateless JSON; Astro must send Authorization: Bearer {CRM_API_TOKEN}.
  */
 final class PublicContactApiTest extends TestCase
 {
@@ -35,16 +35,26 @@ final class PublicContactApiTest extends TestCase
         ];
     }
 
-    public function test_the_honeypot_descriptor_is_publicly_available(): void
+    public function test_without_crm_token_returns_401(): void
     {
-        $this->getJson('/api/contact-supports/honeypot')
+        $this->postJson('/api/contact-supports', $this->payload())
+            ->assertUnauthorized();
+
+        $this->assertDatabaseCount('contact_supports', 0);
+    }
+
+    public function test_the_honeypot_descriptor_requires_crm_token(): void
+    {
+        $this->withHeaders($this->crmHeaders())
+            ->getJson('/api/contact-supports/honeypot')
             ->assertOk()
             ->assertJsonStructure(['nameFieldName', 'validFromFieldName', 'encryptedValidFrom']);
     }
 
     public function test_a_landing_page_submission_is_stored_and_returns_201(): void
     {
-        $this->postJson('/api/contact-supports', $this->payload())
+        $this->withHeaders($this->crmHeaders())
+            ->postJson('/api/contact-supports', $this->payload())
             ->assertCreated()
             ->assertJsonStructure(['message']);
 
@@ -56,17 +66,19 @@ final class PublicContactApiTest extends TestCase
 
     public function test_validation_errors_return_422(): void
     {
-        $this->postJson('/api/contact-supports', [])
+        $this->withHeaders($this->crmHeaders())
+            ->postJson('/api/contact-supports', [])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['first_name', 'last_name', 'email', 'phone', 'subject', 'message']);
     }
 
     public function test_spammy_content_is_stored_but_flagged(): void
     {
-        $this->postJson('/api/contact-supports', $this->payload([
-            'subject' => 'Special offer',
-            'message' => 'Cheap viagra and casino bonuses at http://a.co and http://b.co now.',
-        ]))->assertCreated();
+        $this->withHeaders($this->crmHeaders())
+            ->postJson('/api/contact-supports', $this->payload([
+                'subject' => 'Special offer',
+                'message' => 'Cheap viagra and casino bonuses at http://a.co and http://b.co now.',
+            ]))->assertCreated();
 
         $this->assertDatabaseHas('contact_supports', [
             'email' => 'ada@example.com',
@@ -76,10 +88,11 @@ final class PublicContactApiTest extends TestCase
 
     public function test_a_filled_honeypot_is_dropped_silently_with_the_same_201(): void
     {
-        $this->postJson('/api/contact-supports', $this->payload([
-            'my_name' => 'http://spam.example',
-            'valid_from' => EncryptedTime::create(now()->subMinute()),
-        ]))->assertCreated();
+        $this->withHeaders($this->crmHeaders())
+            ->postJson('/api/contact-supports', $this->payload([
+                'my_name' => 'http://spam.example',
+                'valid_from' => EncryptedTime::create(now()->subMinute()),
+            ]))->assertCreated();
 
         // Bot learns nothing (identical response) but nothing is persisted.
         $this->assertDatabaseCount('contact_supports', 0);

@@ -7,13 +7,14 @@ use Modules\ContactSupport\Infrastructure\Http\Controllers\Api\ContactSupportApi
 use Modules\ContactSupport\Infrastructure\Http\Controllers\Api\PublicContactApiController;
 
 /*
-| PUBLIC contact-support API for the marketing landing page. Unauthenticated,
-| stateless (no session/CSRF), tightly throttled per IP. Defined BEFORE the
-| authenticated group so GET /honeypot is never shadowed by GET /{uuid}.
-| Documented by Scramble under /api/contact-supports.
+| PUBLIC contact-support API for the marketing landing page. Stateless
+| (no session/CSRF), gated by `crm.token` (CRM_API_TOKEN), tightly throttled
+| per IP. Defined BEFORE the authenticated group so GET /honeypot is never
+| shadowed by GET /{uuid}. Documented by Scramble under /api/contact-supports.
 */
 Route::prefix('contact-supports')
     ->name('api.contact-supports.')
+    ->middleware('crm.token')
     ->group(function (): void {
         Route::post('/', [PublicContactApiController::class, 'store'])
             ->middleware('throttle:5,1')

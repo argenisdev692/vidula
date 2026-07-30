@@ -8,12 +8,13 @@ use Modules\Appointment\Infrastructure\Http\Controllers\Api\PublicAppointmentApi
 
 /*
 | PUBLIC appointment-booking API for the Astro marketing landing page.
-| Unauthenticated, stateless (no session/CSRF), tightly throttled per IP.
-| Defined BEFORE the authenticated group so GET /honeypot is never shadowed by
-| GET /{uuid}. Documented by Scramble under /api/appointments.
+| Stateless (no session/CSRF), gated by `crm.token` (CRM_API_TOKEN), tightly
+| throttled per IP. Defined BEFORE the authenticated group so GET /honeypot
+| is never shadowed by GET /{uuid}. Documented by Scramble under /api/appointments.
 */
 Route::prefix('appointments')
     ->name('api.appointments.')
+    ->middleware('crm.token')
     ->group(function (): void {
         Route::post('/', [PublicAppointmentApiController::class, 'store'])
             ->middleware('throttle:5,1')

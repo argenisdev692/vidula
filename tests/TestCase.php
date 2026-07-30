@@ -19,4 +19,16 @@ abstract class TestCase extends BaseTestCase
             Telescope::stopRecording();
         }
     }
+
+    /**
+     * Headers for CRM-token-gated Astro public endpoints (`crm.token` middleware).
+     *
+     * @return array{Authorization: string}
+     */
+    protected function crmHeaders(): array
+    {
+        return [
+            'Authorization' => 'Bearer '.(string) config('services.crm.api_token'),
+        ];
+    }
 }

@@ -38,5 +38,6 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="true"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="CRM_API_TOKEN" value="test-crm-api-token"/>
     </php>
 </phpunit>
