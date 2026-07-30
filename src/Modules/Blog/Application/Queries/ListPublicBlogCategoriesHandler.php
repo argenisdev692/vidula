@@ -44,6 +44,8 @@ final readonly class ListPublicBlogCategoriesHandler
                 fn () => $this->categories->listPublic(),
             );
         } catch (Throwable) {
+            // Array/file stores reject tags — always forget+remember on the plain key
+            // so tests (CACHE_STORE=array) never serve a stale empty feed.
             $categories = Cache::remember(
                 self::CACHE_KEY,
                 now()->addMinutes(self::TTL_MINUTES),

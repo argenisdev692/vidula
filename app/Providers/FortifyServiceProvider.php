@@ -58,15 +58,25 @@ class FortifyServiceProvider extends ServiceProvider
 
         // Prompt §2: registration — max 3 per IP / hour.
         RateLimiter::for('register', function (Request $request) {
-            return Limit::perHour(3)->by($request->ip());
+            return Limit::perHour(3)->by((string) $request->ip());
         });
 
         $this->app->booted(function (): void {
             $route = Route::getRoutes()->getByName('register.store');
 
-            if ($route !== null) {
-                $route->middleware('throttle:register');
+            if ($route === null) {
+                return;
             }
+
+            $middleware = array_values(array_filter(
+                (array) ($route->action['middleware'] ?? []),
+                static fn (mixed $m): bool => $m !== 'throttle:register',
+            ));
+
+            // Prepend so throttle runs BEFORE `guest`. Otherwise an authenticated
+            // session (Fortify auto-login after register) gets RedirectIfAuthenticated
+            // 302 and never consumes the limiter — tests and bots alike bypass it.
+            $route->action['middleware'] = ['throttle:register', ...$middleware];
         });
     }
 }

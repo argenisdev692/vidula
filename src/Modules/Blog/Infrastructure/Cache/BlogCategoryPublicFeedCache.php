@@ -26,7 +26,9 @@ final class BlogCategoryPublicFeedCache
         try {
             Cache::tags(['blog_categories_public'])->flush();
         } catch (Throwable) {
-            // Store doesn't support tags — cached entries still expire via TTL.
+            // Store doesn't support tags — drop the plain fallback key used by
+            // ListPublicBlogCategoriesHandler when Cache::tags() throws.
+            Cache::forget('blog_categories.public');
         }
     }
 }

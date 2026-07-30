@@ -7,6 +7,7 @@ namespace Modules\Auth\Tests\Feature;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
 final class RegistrationTest extends TestCase
@@ -60,6 +61,11 @@ final class RegistrationTest extends TestCase
                 'password_confirmation' => 'Sup3rS3cret!2026',
                 'terms_and_conditions' => true,
             ])->assertRedirect();
+
+            // Fortify logs the user in after register. Clear auth so the next
+            // attempt is a real registration hit (not only a guest 302).
+            Auth::logout();
+            $this->flushSession();
         }
 
         $this->postJson('/register', [

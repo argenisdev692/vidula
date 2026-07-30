@@ -20,7 +20,11 @@
     // White logo renders on the dark gradient header.
     $logo = $profile['logo_white_url'];
     $companyUrl = $profile['url'];
-    $address = $profile['address'];
+    $location = collect([
+        $profile['city'] ?? null,
+        $profile['state'] ?? null,
+        $profile['country'] ?? null,
+    ])->filter(static fn (?string $part): bool => $part !== null && $part !== '')->implode(', ');
     $support = $profile['support_email'];
 
     // Preheader: short inbox-preview snippet (child views may @section('preheader')).
@@ -138,8 +142,8 @@
                             <p style="margin:0 0 6px; color:{{ $cSecondary }}; font-size:13px; line-height:1.5;">
                                 &copy; {{ date('Y') }} {{ $company }}. {{ __('All rights reserved.') }}
                             </p>
-                            @if($address)
-                                <p style="margin:0 0 6px; color:{{ $cMuted }}; font-size:12px; line-height:1.5;">{{ $address }}</p>
+                            @if($location !== '')
+                                <p style="margin:0 0 6px; color:{{ $cMuted }}; font-size:12px; line-height:1.5;">{{ $location }}</p>
                             @endif
                             <p style="margin:0; color:{{ $cMuted }}; font-size:12px; line-height:1.5;">
                                 {{ __('Need help?') }} <a href="mailto:{{ $support }}" style="color:{{ $cAccentSoft }}; text-decoration:none; font-weight:600;">{{ $support }}</a>

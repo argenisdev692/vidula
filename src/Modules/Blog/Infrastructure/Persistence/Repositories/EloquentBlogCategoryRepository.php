@@ -55,8 +55,15 @@ final class EloquentBlogCategoryRepository implements BlogCategoryRepositoryPort
     public function listPublic(): Collection
     {
         return BlogCategoryEloquentModel::query()
-            ->withCount(['posts as posts_count' => fn ($query) => $query->where('posts.post_status', PostStatus::Published->value)])
             ->select(['id', 'uuid', 'blog_category_name', 'blog_category_description', 'blog_category_image'])
+            ->withCount([
+                // No table prefix: the withCount subquery already scopes `posts`.
+                // Prefixed `posts.post_status` breaks on some drivers/aliases.
+                'posts as posts_count' => fn ($query) => $query->where(
+                    'post_status',
+                    PostStatus::Published,
+                ),
+            ])
             ->orderBy('blog_category_name')
             ->limit(100)
             ->get();

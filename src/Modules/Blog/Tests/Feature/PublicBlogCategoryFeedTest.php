@@ -46,10 +46,16 @@ final class PublicBlogCategoryFeedTest extends TestCase
         PostEloquentModel::factory()->published()->create(['category_id' => $category->id]);
         PostEloquentModel::factory()->create(['category_id' => $category->id]); // draft
 
+        // Posts are created after setUp cache flush — bust again so a warm empty
+        // feed from another code path cannot hide the new published row.
+        BlogCategoryPublicFeedCache::flush();
+        Cache::forget('blog_categories.public');
+
         $response = $this->getJson('/api/blog-categories/public')->assertOk();
 
         $data = $response->json('data');
         $row = collect($data)->firstWhere('name', 'Engineering');
+        $this->assertNotNull($row);
         $this->assertSame(1, $row['posts_count']);
     }
 
