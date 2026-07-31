@@ -179,8 +179,8 @@
     <table class="header">
         <tr>
             <td class="header-logo">
-                @if (! empty($company['logo_dark_data_uri']))
-                    <img src="{{ $company['logo_dark_data_uri'] }}" alt="{{ $company['name'] }}" />
+                @if (! empty($company['invoice_logo_data_uri']))
+                    <img src="{{ $company['invoice_logo_data_uri'] }}" alt="{{ $company['name'] }}" />
                 @endif
             </td>
             <td class="header-title">

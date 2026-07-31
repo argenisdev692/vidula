@@ -25,7 +25,9 @@ final readonly class DomPdfInvoiceRenderer implements InvoicePdfRendererPort
 
         return Pdf::loadView('exports.pdf.invoice', [
             'invoice' => $invoice,
-            'company' => CompanyProfile::pdfBranding(),
+            'company' => array_merge(CompanyProfile::pdfBranding(), [
+                'invoice_logo_data_uri' => CompanyProfile::invoiceLogoDataUri(),
+            ]),
         ])
             ->setPaper('a4', 'portrait')
             ->output();

@@ -7,6 +7,7 @@ namespace Shared\Infrastructure\Company;
 use App\Models\CompanyData;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Modules\Invoices\Infrastructure\Pdf\DomPdfInvoiceRenderer;
 use Shared\Domain\Ports\StoragePort;
 use Throwable;
 
@@ -35,6 +36,9 @@ final class CompanyProfile
     private const string FALLBACK_LOGO_WHITE = 'img/Logo-white.png';
 
     private const string FALLBACK_MARK = 'img/Mark.png';
+
+    /** Invoice PDF header (dompdf) — not the CRM-uploaded company logo. */
+    private const string INVOICE_PDF_LOGO = 'img/img-invoice/logo.webp';
 
     /**
      * @return CompanyArray
@@ -86,12 +90,25 @@ final class CompanyProfile
     }
 
     /**
+     * Base64 `data:` URI for the invoice PDF header only (`public/img/img-invoice`).
+     * Does not affect {@see data()}, {@see pdfBranding()}, emails, or the CRM UI.
+     */
+    public static function invoiceLogoDataUri(): string
+    {
+        return self::bundledAssetDataUri(self::INVOICE_PDF_LOGO);
+    }
+
+    /**
      * Branding payload for the corporate PDF export layout.
      *
      * dompdf renders with remote fetching disabled, so logos are pre-fetched and
      * embedded as base64 `data:` URIs here rather than referenced by URL. The
      * white logo sits on the coloured header band; the dark logo is exposed for
      * light-background contexts. Contact fields feed the header/footer blocks.
+     *
+     * Single-invoice documents (`exports.pdf.invoice`) do **not** use these logo
+     * fields for the header — only {@see invoiceLogoDataUri()} via
+     * {@see DomPdfInvoiceRenderer}.
      *
      * @return array{name: string, legal_name: ?string, website: ?string, email: ?string, phone: ?string, address: ?string, nif_nipc: ?string, nie: ?string, bank_beneficiary: ?string, bank_iban: ?string, bank_bic: ?string, bank_name: ?string, invoice_notes: ?string, logo_data_uri: string, logo_dark_data_uri: string, socials: array<string, string>}
      */
@@ -215,11 +232,39 @@ final class CompanyProfile
             $path = public_path($fallback);
 
             if (is_file($path)) {
-                return 'data:image/png;base64,'.base64_encode((string) file_get_contents($path));
+                return self::bundledAssetDataUri($fallback);
             }
         } catch (Throwable) {
         }
 
         return '';
+    }
+
+    private static function bundledAssetDataUri(string $relativePath): string
+    {
+        try {
+            $path = public_path($relativePath);
+
+            if (! is_file($path)) {
+                return '';
+            }
+
+            $mime = self::mimeForPublicPath($relativePath);
+
+            return 'data:'.$mime.';base64,'.base64_encode((string) file_get_contents($path));
+        } catch (Throwable) {
+            return '';
+        }
+    }
+
+    private static function mimeForPublicPath(string $relativePath): string
+    {
+        return match (strtolower(pathinfo($relativePath, PATHINFO_EXTENSION))) {
+            'webp' => 'image/webp',
+            'jpg', 'jpeg' => 'image/jpeg',
+            'gif' => 'image/gif',
+            'svg' => 'image/svg+xml',
+            default => 'image/png',
+        };
     }
 }
