@@ -20,28 +20,54 @@ final class ServiceSeeder extends Seeder
             [
                 'name' => 'Landing Page',
                 'slug' => 'landing_page',
-                'description' => 'Single-page site optimized for a specific campaign or offer.',
+                'description' => 'Single-page site optimized for a campaign, ads, or one clear conversion goal.',
                 'sort_order' => 0,
             ],
             [
-                'name' => 'Web App',
-                'slug' => 'web_app',
-                'description' => 'Multi-page web application with custom business logic.',
+                'name' => 'Business Website',
+                'slug' => 'new_website',
+                'description' => 'Multi-page marketing site with services, about, blog, and SEO foundations.',
                 'sort_order' => 1,
             ],
             [
-                'name' => 'Mobile App',
-                'slug' => 'mobile_app',
-                'description' => 'Native or cross-platform mobile application for iOS and Android.',
+                'name' => 'Redesign',
+                'slug' => 'redesign',
+                'description' => 'UX, performance, and conversion improvements for an existing site.',
                 'sort_order' => 2,
+            ],
+            [
+                'name' => 'E-Commerce',
+                'slug' => 'ecommerce',
+                'description' => 'Online store with catalog, cart, checkout, and payment integrations.',
+                'sort_order' => 3,
+            ],
+            [
+                'name' => 'Custom Business App',
+                'slug' => 'web_app',
+                'description' => 'Custom software: CRM workflows, dashboards, internal tools, or SaaS MVP.',
+                'sort_order' => 4,
+            ],
+            [
+                'name' => 'Maintenance & Support',
+                'slug' => 'maintenance',
+                'description' => 'Ongoing updates, security patches, hosting support, and small enhancements.',
+                'sort_order' => 5,
+            ],
+            [
+                'name' => 'Other',
+                'slug' => 'other',
+                'description' => 'Something else — describe your project in the booking notes.',
+                'sort_order' => 6,
             ],
         ];
 
         foreach ($services as $service) {
+            $existing = ServiceEloquentModel::query()->where('slug', $service['slug'])->first();
+
             ServiceEloquentModel::query()->updateOrCreate(
                 ['slug' => $service['slug']],
                 [
-                    'uuid' => Uuid::uuid7()->toString(),
+                    'uuid' => $existing?->uuid ?? Uuid::uuid7()->toString(),
                     'name' => $service['name'],
                     'description' => $service['description'],
                     'is_active' => true,
@@ -50,5 +76,9 @@ final class ServiceSeeder extends Seeder
                 ],
             );
         }
+
+        ServiceEloquentModel::query()
+            ->where('slug', 'mobile_app')
+            ->update(['is_active' => false]);
     }
 }
