@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Actions\Fortify;
 
 use App\Models\User;
-use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
@@ -72,9 +71,11 @@ final class CreateNewUser implements CreatesNewUsers
         $key = 'register|'.$request->ip();
 
         if (RateLimiter::tooManyAttempts($key, 3)) {
-            throw new ThrottleRequestsException(
-                RateLimiter::availableIn($key),
-            );
+            $seconds = RateLimiter::availableIn($key);
+
+            abort(429, __('Too many registration attempts. Please try again in :seconds seconds.', ['seconds' => $seconds]), [
+                'Retry-After' => $seconds,
+            ]);
         }
 
         RateLimiter::hit($key, 3600);

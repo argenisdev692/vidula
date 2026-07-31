@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Modules\Blog\Application\DTOs\BlogCategoryFilterData;
+use Modules\Post\Domain\Enums\PostStatus;
 use Modules\Post\Infrastructure\Persistence\Eloquent\Models\PostEloquentModel;
 use Shared\Domain\Ports\StoragePort;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
@@ -85,6 +86,17 @@ final class BlogCategoryEloquentModel extends Model
     public function posts(): HasMany
     {
         return $this->hasMany(PostEloquentModel::class, 'category_id');
+    }
+
+    /**
+     * Published posts only — used by the public landing-page category feed count.
+     *
+     * @return HasMany<PostEloquentModel, $this>
+     */
+    public function publishedPosts(): HasMany
+    {
+        return $this->hasMany(PostEloquentModel::class, 'category_id')
+            ->where('post_status', PostStatus::Published->value);
     }
 
     /**

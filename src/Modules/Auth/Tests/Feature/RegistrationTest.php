@@ -6,8 +6,10 @@ namespace Modules\Auth\Tests\Feature;
 
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
+use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use Tests\TestCase;
 
 final class RegistrationTest extends TestCase
@@ -53,6 +55,12 @@ final class RegistrationTest extends TestCase
 
     public function test_registration_is_throttled_to_three_attempts_per_ip_per_hour(): void
     {
+        // Fortify's `guest` middleware redirects authenticated users (302) before
+        // CreateNewUser's limiter runs — disable it so all four POSTs hit the action.
+        $this->withoutMiddleware(RedirectIfAuthenticated::class);
+
+        RateLimiter::clear('register|127.0.0.1');
+
         for ($i = 1; $i <= 3; $i++) {
             $this->postJson('/register', [
                 'first_name' => 'Jane',
@@ -62,8 +70,6 @@ final class RegistrationTest extends TestCase
                 'terms_and_conditions' => true,
             ])->assertRedirect();
 
-            // Fortify logs the user in after register. Clear auth so the next
-            // attempt is a real registration hit (not only a guest 302).
             Auth::logout();
             $this->flushSession();
         }

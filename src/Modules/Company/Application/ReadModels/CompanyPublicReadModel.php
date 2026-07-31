@@ -33,8 +33,8 @@ final class CompanyPublicReadModel extends Data
         public ?string $email,
         public ?string $phone,
         public ?string $address,
-        // Underscore property so SnakeCaseMapper emits `address_2` (Str::snake('address2') would stay `address2`).
-        public ?string $address_2,
+        #[MapOutputName('address_2')]
+        public ?string $addressLine2,
         public ?string $zipCode,
         public ?string $city,
         public ?string $state,
@@ -60,7 +60,7 @@ final class CompanyPublicReadModel extends Data
             email: $profile['support_email'],
             phone: $profile['phone'],
             address: $profile['address'],
-            address_2: $profile['address_2'],
+            addressLine2: $profile['address_2'],
             zipCode: $profile['zip_code'],
             city: $profile['city'],
             state: $profile['state'],

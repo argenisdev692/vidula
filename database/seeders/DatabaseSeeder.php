@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             UserSeeder::class,
             CompanySeeder::class,
+            ClientSeeder::class,
             BlogCategorySeeder::class,
             ServiceSeeder::class,
             AvailabilitySeeder::class,
