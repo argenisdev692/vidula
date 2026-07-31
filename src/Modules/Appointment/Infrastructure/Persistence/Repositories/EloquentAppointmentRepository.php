@@ -35,9 +35,10 @@ final readonly class EloquentAppointmentRepository implements AppointmentReposit
         return AppointmentEloquentModel::query()
             ->when($filters->status === 'suspended', fn ($q) => $q->onlyTrashed())
             ->applyFilters($filters)
+            ->with(['service:uuid,name,slug'])
             ->select([
                 'id', 'uuid', 'first_name', 'last_name', 'client_type', 'company_name',
-                'project_type', 'email', 'phone', 'status_lead', 'meeting_status',
+                'project_type', 'service_id', 'email', 'phone', 'status_lead', 'meeting_status',
                 'scheduled_at', 'readed', 'created_at', 'deleted_at',
             ])
             ->orderByDesc('created_at')
@@ -48,6 +49,7 @@ final readonly class EloquentAppointmentRepository implements AppointmentReposit
     public function findByUuid(string $uuid): ?AppointmentEloquentModel
     {
         return AppointmentEloquentModel::withTrashed()
+            ->with(['service:uuid,name,slug'])
             ->where('uuid', $uuid)
             ->first();
     }

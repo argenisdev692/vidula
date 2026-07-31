@@ -8,6 +8,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\Appointment\Application\DTOs\AppointmentData;
+use Modules\Appointment\Application\Services\AppointmentServiceResolver;
 use Modules\Appointment\Domain\Exceptions\PastDateSchedulingException;
 use Modules\Appointment\Domain\Exceptions\SlotUnavailableException;
 use Modules\Appointment\Domain\Ports\AppointmentRepositoryPort;
@@ -25,6 +26,7 @@ final readonly class CreateAppointmentHandler
     public function __construct(
         private AppointmentRepositoryPort $appointments,
         private AppointmentScheduler $scheduler,
+        private AppointmentServiceResolver $serviceResolver,
     ) {}
 
     #[\NoDiscard]
@@ -40,12 +42,15 @@ final readonly class CreateAppointmentHandler
             }
         }
 
+        $serviceAssignment = $this->serviceResolver->resolve($data->serviceUuid);
+
         return DB::transaction(fn () => $this->appointments->create([
             'first_name' => $data->firstName,
             'last_name' => $data->lastName,
             'client_type' => $data->clientType,
             'company_name' => $data->companyName,
-            'project_type' => $data->projectType,
+            'service_id' => $serviceAssignment['service_id'],
+            'project_type' => $serviceAssignment['project_type'],
             'email' => $email,
             'phone' => $data->phone,
             'address' => $data->address,

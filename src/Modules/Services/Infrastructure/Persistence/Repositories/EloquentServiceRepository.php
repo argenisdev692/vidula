@@ -57,6 +57,14 @@ final readonly class EloquentServiceRepository implements ServiceRepositoryPort
             ->first();
     }
 
+    public function findActiveByUuid(string $uuid): ?ServiceEloquentModel
+    {
+        return ServiceEloquentModel::query()
+            ->active()
+            ->where('uuid', $uuid)
+            ->first();
+    }
+
     public function create(array $attributes): ServiceEloquentModel
     {
         return ServiceEloquentModel::query()->create($attributes);

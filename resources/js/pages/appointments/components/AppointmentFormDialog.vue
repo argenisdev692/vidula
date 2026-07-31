@@ -6,17 +6,18 @@
 import { computed, ref } from 'vue';
 import AppModal from '@/common/ui/AppModal.vue';
 import AppointmentForm from './AppointmentForm.vue';
-import type { AppointmentEditData } from '@/modules/appointments/types';
-
-const visible = defineModel<boolean>('visible', { default: false });
+import type { AppointmentEditData, ServiceOption } from '@/modules/appointments/types';
 
 const props = withDefaults(
     defineProps<{
         mode?: 'create' | 'edit';
         appointment?: AppointmentEditData | null;
+        serviceOptions?: ServiceOption[];
     }>(),
-    { mode: 'create', appointment: null },
+    { mode: 'create', appointment: null, serviceOptions: () => [] },
 );
+
+const visible = defineModel<boolean>('visible', { default: false });
 
 const emit = defineEmits<{ saved: [] }>();
 
@@ -58,6 +59,7 @@ function onSaved(): void {
             ref="formRef"
             :mode="mode"
             :appointment="appointment"
+            :service-options="serviceOptions"
             variant="dialog"
             @saved="onSaved"
             @cancel="close"

@@ -49,12 +49,7 @@
                                 <td>{{ $appointment->company_name }}</td>
                             </tr>
                         @endif
-                        @if ($appointment->project_type)
-                            <tr>
-                                <td class="label">Project</td>
-                                <td>{{ str($appointment->project_type->value)->replace('_', ' ')->title() }}</td>
-                            </tr>
-                        @endif
+                        @include('emails.appointments.partials.service-row')
                         @if ($appointment->address)
                             <tr>
                                 <td class="label">Address</td>

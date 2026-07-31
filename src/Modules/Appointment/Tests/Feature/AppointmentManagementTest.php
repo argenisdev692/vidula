@@ -17,16 +17,24 @@ use Modules\Appointment\Infrastructure\Mail\NewLeadMail;
 use Modules\Appointment\Infrastructure\Persistence\Eloquent\Models\AppointmentEloquentModel;
 use Modules\Availability\Infrastructure\Persistence\Eloquent\Models\AvailabilityRuleEloquentModel;
 use Modules\Meeting\Infrastructure\Persistence\Eloquent\Models\MeetingEloquentModel;
+use Modules\Services\Infrastructure\Persistence\Eloquent\Models\ServiceEloquentModel;
 use Tests\TestCase;
 
 final class AppointmentManagementTest extends TestCase
 {
     use RefreshDatabase;
 
+    private ServiceEloquentModel $websiteService;
+
     protected function setUp(): void
     {
         parent::setUp();
         $this->seed(RolePermissionSeeder::class);
+
+        $this->websiteService = ServiceEloquentModel::factory()->create([
+            'slug' => 'new_website',
+            'is_active' => true,
+        ]);
     }
 
     private function superAdmin(): User
@@ -47,7 +55,7 @@ final class AppointmentManagementTest extends TestCase
             'last_name' => 'Lovelace',
             'client_type' => 'individual',
             'company_name' => null,
-            'project_type' => 'new_website',
+            'service_uuid' => $this->websiteService->uuid,
             'email' => 'ADA@Example.com',
             'phone' => '+15551234567',
             'address' => '123 Main St',
@@ -258,13 +266,16 @@ final class AppointmentManagementTest extends TestCase
             ->assertJsonMissing(['email' => 'someone@else.com']);
     }
 
-    public function test_project_type_filter_narrows_the_list(): void
+    public function test_service_uuid_filter_narrows_the_list(): void
     {
-        AppointmentEloquentModel::factory()->create(['email' => 'ecommerce@lead.com', 'project_type' => 'ecommerce']);
-        AppointmentEloquentModel::factory()->create(['email' => 'website@lead.com', 'project_type' => 'new_website']);
+        $ecommerce = ServiceEloquentModel::factory()->create(['slug' => 'ecommerce', 'is_active' => true]);
+        $website = ServiceEloquentModel::factory()->create(['slug' => 'new_website', 'is_active' => true]);
+
+        AppointmentEloquentModel::factory()->create(['email' => 'ecommerce@lead.com', 'service_id' => $ecommerce->id]);
+        AppointmentEloquentModel::factory()->create(['email' => 'website@lead.com', 'service_id' => $website->id]);
 
         $this->actingAs($this->superAdmin())
-            ->getJson('/appointments?project_type=ecommerce')
+            ->getJson('/appointments?service_uuid='.$ecommerce->uuid)
             ->assertOk()
             ->assertJsonFragment(['email' => 'ecommerce@lead.com'])
             ->assertJsonMissing(['email' => 'website@lead.com']);

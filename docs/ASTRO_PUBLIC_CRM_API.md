@@ -329,20 +329,13 @@ export type ContactSupportBody = {
 
 export type ClientType = 'company' | 'individual';
 
-export type ProjectType =
-  | 'new_website'
-  | 'redesign'
-  | 'ecommerce'
-  | 'landing_page'
-  | 'maintenance'
-  | 'other';
-
 export type BookAppointmentBody = {
   first_name: string;
   last_name: string;
   client_type: ClientType;
   company_name?: string | null;
-  project_type?: ProjectType | null;
+  /** UUID from `GET /api/services/public` (`data[].uuid`); must be an active service. */
+  service_uuid?: string | null;
   email: string;
   phone?: string | null;
   address?: string | null;
@@ -721,7 +714,7 @@ Request body (`BookAppointmentBody` + honeypot) — **snake_case**:
   "last_name": "Lovelace",
   "client_type": "individual",
   "company_name": null,
-  "project_type": "new_website",
+  "service_uuid": "019c3a12-0000-7000-8000-000000000030",
   "email": "ada@example.com",
   "phone": "+15551234567",
   "address": null,
@@ -745,7 +738,7 @@ Request body (`BookAppointmentBody` + honeypot) — **snake_case**:
 |-------|--------|
 | `client_type` | `company` \| `individual` |
 | `company_name` | Required when `client_type` is `company` |
-| `project_type` | `new_website`, `redesign`, `ecommerce`, `landing_page`, `maintenance`, `other` |
+| `service_uuid` | Optional UUID from `GET /api/services/public` (`data[].uuid`). Must reference an **active** service; backend stores `service_id` internally. |
 | `country_code` | 2-letter uppercase when present |
 | `scheduled_at` | Required; must be valid slot (not past / closed / taken) → else **422** on `scheduled_at` or `email` (duplicate active lead) |
 
@@ -765,7 +758,7 @@ const res = await fetch(`${base}/api/appointments`, {
     first_name: 'Ada',
     last_name: 'Lovelace',
     client_type: 'individual',
-    project_type: 'new_website',
+    service_uuid: services[0].uuid,
     email: 'ada@example.com',
     phone: '+15551234567',
     scheduled_at: '2026-12-11 10:00:00',

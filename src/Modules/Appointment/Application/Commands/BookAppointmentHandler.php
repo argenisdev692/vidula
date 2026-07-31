@@ -9,6 +9,7 @@ use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\Appointment\Application\DTOs\BookAppointmentData;
+use Modules\Appointment\Application\Services\AppointmentServiceResolver;
 use Modules\Appointment\Domain\Events\AppointmentBooked;
 use Modules\Appointment\Domain\Exceptions\PastDateSchedulingException;
 use Modules\Appointment\Domain\Exceptions\SlotUnavailableException;
@@ -41,6 +42,7 @@ final readonly class BookAppointmentHandler
         private AppointmentRepositoryPort $appointments,
         private AppointmentScheduler $scheduler,
         private SpamGuard $spamGuard,
+        private AppointmentServiceResolver $serviceResolver,
         private Cache $cache,
     ) {}
 
@@ -72,12 +74,15 @@ final readonly class BookAppointmentHandler
             $data->notes ?? '',
         );
 
+        $serviceAssignment = $this->serviceResolver->resolve($data->serviceUuid);
+
         $appointment = DB::transaction(fn () => $this->appointments->create([
             'first_name' => $data->firstName,
             'last_name' => $data->lastName,
             'client_type' => $data->clientType,
             'company_name' => $data->companyName,
-            'project_type' => $data->projectType,
+            'service_id' => $serviceAssignment['service_id'],
+            'project_type' => $serviceAssignment['project_type'],
             'email' => $email,
             'phone' => $data->phone,
             'address' => $data->address,

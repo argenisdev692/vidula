@@ -13,12 +13,13 @@ import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import BackLink from '@/common/ui/BackLink.vue';
 import AppointmentForm from './components/AppointmentForm.vue';
 import { appointmentDisplayName } from '@/modules/appointments/helpers/displayName';
-import type { AppointmentEditData } from '@/modules/appointments/types';
+import type { AppointmentEditData, ServiceOption } from '@/modules/appointments/types';
 
 defineOptions({ layout: AppLayout });
 
 const props = defineProps<{
     appointment: AppointmentEditData;
+    serviceOptions: ServiceOption[];
 }>();
 
 const fullName = computed<string>(() => appointmentDisplayName(props.appointment));
@@ -41,7 +42,7 @@ const fullName = computed<string>(() => appointmentDisplayName(props.appointment
             <BackLink href="/appointments" label="Back to appointments" />
 
             <article class="card">
-                <AppointmentForm mode="edit" :appointment="appointment" />
+                <AppointmentForm mode="edit" :appointment="props.appointment" :service-options="props.serviceOptions" />
             </article>
         </div>
     </PermissionGuard>

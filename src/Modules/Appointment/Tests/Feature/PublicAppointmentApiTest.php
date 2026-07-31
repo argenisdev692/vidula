@@ -6,6 +6,7 @@ namespace Modules\Appointment\Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Availability\Infrastructure\Persistence\Eloquent\Models\AvailabilityRuleEloquentModel;
+use Modules\Services\Infrastructure\Persistence\Eloquent\Models\ServiceEloquentModel;
 use Spatie\Honeypot\EncryptedTime;
 use Tests\TestCase;
 
@@ -17,6 +18,19 @@ use Tests\TestCase;
 final class PublicAppointmentApiTest extends TestCase
 {
     use RefreshDatabase;
+
+    private ServiceEloquentModel $websiteService;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->websiteService = ServiceEloquentModel::factory()->create([
+            'slug' => 'new_website',
+            'name' => 'Business Website',
+            'is_active' => true,
+        ]);
+    }
 
     /**
      * 2026-12-11 is a Friday with a seeded 09:00-13:00 availability window.
@@ -31,7 +45,7 @@ final class PublicAppointmentApiTest extends TestCase
             'last_name' => 'Lovelace',
             'client_type' => 'individual',
             'company_name' => null,
-            'project_type' => 'new_website',
+            'service_uuid' => $this->websiteService->uuid,
             'email' => 'ADA@Example.com',
             'phone' => '+15551234567',
             'address' => '123 Main St',
@@ -84,6 +98,7 @@ final class PublicAppointmentApiTest extends TestCase
 
         $this->assertDatabaseHas('appointments', [
             'email' => 'ada@example.com',
+            'service_id' => $this->websiteService->id,
             'status_lead' => 'New',
             'is_spam' => false,
         ]);
@@ -185,5 +200,16 @@ final class PublicAppointmentApiTest extends TestCase
             ->assertJsonValidationErrors('email');
 
         $this->assertDatabaseCount('appointments', 1);
+    }
+
+    public function test_an_inactive_service_uuid_is_rejected_with_422(): void
+    {
+        $this->seedOpenFriday();
+        $inactive = ServiceEloquentModel::factory()->create(['is_active' => false]);
+
+        $this->withHeaders($this->crmHeaders())
+            ->postJson('/api/appointments', $this->payload(['service_uuid' => $inactive->uuid]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['service_uuid']);
     }
 }

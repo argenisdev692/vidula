@@ -30,9 +30,9 @@ import {
     APPOINTMENT_STATUS_OPTIONS,
     CLIENT_TYPE_OPTIONS,
     MEETING_STATUS_OPTIONS,
-    PROJECT_TYPE_OPTIONS,
     STATUS_LEAD_OPTIONS,
 } from '@/modules/appointments/helpers/options';
+import { serviceOptionsToSelect } from '@/modules/appointments/helpers/serviceLabel';
 import { buildAppointmentExportUrl, buildAppointmentQueryParams } from '@/modules/appointments/helpers/buildAppointmentQueryParams';
 import type {
     Appointment,
@@ -45,7 +45,7 @@ import type {
     ClientType,
     MeetingStatus,
     PaginatedResponse,
-    ProjectType,
+    ServiceOption,
     StatusLead,
 } from '@/modules/appointments/types';
 
@@ -54,6 +54,7 @@ defineOptions({ layout: AppLayout });
 const props = defineProps<{
     appointments: PaginatedResponse<Appointment>;
     filters: AppointmentFilters;
+    serviceOptions: ServiceOption[];
 }>();
 
 const toast = useToast();
@@ -76,7 +77,7 @@ const query = reactive<AppointmentQuery>({
     status_lead: props.filters.status_lead,
     meeting_status: props.filters.meeting_status,
     client_type: props.filters.client_type,
-    project_type: props.filters.project_type,
+    service_uuid: props.filters.service_uuid,
     read: props.filters.read,
     spam: props.filters.spam,
     date_from: props.filters.date_from,
@@ -93,7 +94,7 @@ function applyCriteria(target: AppointmentQuery, criteria: FilterCriteria): void
     target.status_lead = (criteria.statusLead as StatusLead | undefined) || null;
     target.meeting_status = (criteria.meetingStatus as Exclude<MeetingStatus, null> | undefined) || null;
     target.client_type = (criteria.clientType as ClientType | undefined) || null;
-    target.project_type = (criteria.projectType as ProjectType | undefined) || null;
+    target.service_uuid = (criteria.serviceUuid as string | undefined) || null;
     target.read = (criteria.read as AppointmentRead | undefined) || null;
     target.spam = (criteria.spam as AppointmentSpam | undefined) || null;
 
@@ -269,7 +270,7 @@ function confirmBulk(): void {
     });
 }
 
-const filterFields: FilterField[] = [
+const filterFields = computed<FilterField[]>(() => [
     { key: 'dateRange', label: 'Captured between', type: 'date-range', placeholder: 'Start — End' },
     { key: 'scheduledRange', label: 'Meeting scheduled between', type: 'date-range', placeholder: 'Start — End' },
     {
@@ -282,7 +283,13 @@ const filterFields: FilterField[] = [
     { key: 'statusLead', label: 'Lead status', type: 'select', placeholder: 'All', options: STATUS_LEAD_OPTIONS },
     { key: 'meetingStatus', label: 'Meeting status', type: 'select', placeholder: 'All', options: MEETING_STATUS_OPTIONS },
     { key: 'clientType', label: 'Client type', type: 'select', placeholder: 'All', options: CLIENT_TYPE_OPTIONS },
-    { key: 'projectType', label: 'Project type', type: 'select', placeholder: 'All', options: PROJECT_TYPE_OPTIONS },
+    {
+        key: 'serviceUuid',
+        label: 'Service',
+        type: 'select',
+        placeholder: 'All',
+        options: serviceOptionsToSelect(props.serviceOptions),
+    },
     {
         key: 'read',
         label: 'Read state',
@@ -297,7 +304,7 @@ const filterFields: FilterField[] = [
         placeholder: 'All',
         options: APPOINTMENT_SPAM_OPTIONS,
     },
-];
+]);
 </script>
 
 <template>
@@ -343,6 +350,7 @@ const filterFields: FilterField[] = [
                 v-model:visible="dialogVisible"
                 :mode="dialogMode"
                 :appointment="dialogAppointment"
+                :service-options="serviceOptions"
                 @saved="onDialogSaved"
             />
 

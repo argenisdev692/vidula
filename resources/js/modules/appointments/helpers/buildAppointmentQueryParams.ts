@@ -28,8 +28,8 @@ export function buildAppointmentQueryParams(query: AppointmentQuery): Record<str
     if (query.client_type) {
         params.client_type = query.client_type;
     }
-    if (query.project_type) {
-        params.project_type = query.project_type;
+    if (query.service_uuid) {
+        params.service_uuid = query.service_uuid;
     }
     if (query.read) {
         params.read = query.read;

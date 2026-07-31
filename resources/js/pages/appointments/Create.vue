@@ -13,7 +13,13 @@ import PermissionGuard from '@/modules/auth/components/PermissionGuard.vue';
 import BackLink from '@/common/ui/BackLink.vue';
 import AppointmentForm from './components/AppointmentForm.vue';
 
+import type { ServiceOption } from '@/modules/appointments/types';
+
 defineOptions({ layout: AppLayout });
+
+defineProps<{
+    serviceOptions: ServiceOption[];
+}>();
 </script>
 
 <template>
@@ -33,7 +39,7 @@ defineOptions({ layout: AppLayout });
             <BackLink href="/appointments" label="Back to appointments" />
 
             <article class="card">
-                <AppointmentForm mode="create" />
+                <AppointmentForm mode="create" :service-options="serviceOptions" />
             </article>
         </div>
     </PermissionGuard>

@@ -27,6 +27,10 @@ return new class extends Migration
             $table->string('client_type', 20)->default('individual');
             $table->string('company_name')->nullable();
             $table->string('project_type', 30)->nullable();
+            $table->foreignId('service_id')
+                ->nullable()
+                ->constrained('services')
+                ->nullOnDelete();
 
             $table->string('email');
             $table->string('phone')->nullable();
@@ -66,6 +70,7 @@ return new class extends Migration
             $table->index('readed', 'idx_appointments_readed');
             $table->index('is_spam', 'idx_appointments_is_spam');
             $table->index('scheduled_at', 'idx_appointments_scheduled_at');
+            $table->index('service_id', 'idx_appointments_service_id');
             // Canonical list filter pattern (status via deleted_at + default
             // ordering by created_at) — BACKEND-PHP §4.1.
             $table->index(['deleted_at', 'created_at'], 'idx_appointments_deleted_at_created_at');

@@ -16,7 +16,8 @@ import Tag from '@/volt/Tag.vue';
 import AppointmentPipelinePanel from './components/AppointmentPipelinePanel.vue';
 import { formatDateTime } from '@/modules/appointments/helpers/formatDate';
 import { appointmentDisplayName } from '@/modules/appointments/helpers/displayName';
-import { CLIENT_TYPE_LABEL, MEETING_STATUS_META, PROJECT_TYPE_LABEL, STATUS_LEAD_META } from '@/modules/appointments/helpers/statusMeta';
+import { appointmentServiceLabel } from '@/modules/appointments/helpers/serviceLabel';
+import { CLIENT_TYPE_LABEL, MEETING_STATUS_META, STATUS_LEAD_META } from '@/modules/appointments/helpers/statusMeta';
 import type { AppointmentDetail } from '@/modules/appointments/types';
 
 defineOptions({ layout: AppLayout });
@@ -97,8 +98,8 @@ const addressLine = computed<string>(() => {
                 <dd>{{ appointment.company_name ?? '—' }}</dd>
             </div>
             <div class="fact">
-                <dt>Project type</dt>
-                <dd>{{ appointment.project_type ? PROJECT_TYPE_LABEL[appointment.project_type] : '—' }}</dd>
+                <dt>Service</dt>
+                <dd>{{ appointmentServiceLabel(appointment) }}</dd>
             </div>
 
             <div class="fact">

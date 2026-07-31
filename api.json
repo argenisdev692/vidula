@@ -260,7 +260,7 @@
             },
             "post": {
                 "operationId": "appointments.book",
-                "description": "Accepts a scheduling request from the public landing page and stores the\nlead, validating the requested date/time against the current\navailability calendar (never in the past, inside an open window, not\nalready taken).",
+                "description": "Accepts a scheduling request from the public landing page and stores the\nlead, validating the requested date/time against the current\navailability calendar (never in the past, inside an open window, not\nalready taken). Request body is {@see BookAppointmentData} including\noptional `service_uuid` (active service from `GET /api/services/public`).",
                 "summary": "Book an appointment",
                 "tags": [
                     "PublicAppointmentApi"
@@ -4947,7 +4947,7 @@
             },
             "BookAppointmentData": {
                 "type": "object",
-                "description": "PUBLIC booking payload \u2014 the only surface the Astro landing page posts to\n(`POST /api/appointments`). Unlike the admin {@see AppointmentData}, this DTO\nrequires `scheduled_at`: a first-time booking always requests a specific\ndate/time, validated by {@see AppointmentScheduler}\n(not in the past, inside an open availability window, not already taken).",
+                "description": "PUBLIC booking payload \u2014 the only surface the Astro landing page posts to\n(`POST /api/appointments`). Unlike the admin {@see AppointmentData}, this DTO\nrequires `scheduled_at`: a first-time booking always requests a specific\ndate/time, validated by {@see AppointmentScheduler}\n(not in the past, inside an open availability window, not already taken).\n\n`service_uuid` is the public identifier from `GET /api/services/public`\n(`data[].uuid`). The API never accepts `services.id`; the handler resolves the\nUUID to `appointments.service_id` server-side.",
                 "properties": {
                     "first_name": {
                         "type": "string",
@@ -4971,20 +4971,12 @@
                         ],
                         "maxLength": 255
                     },
-                    "project_type": {
+                    "service_uuid": {
                         "type": [
                             "string",
                             "null"
                         ],
-                        "enum": [
-                            "new_website",
-                            "redesign",
-                            "ecommerce",
-                            "landing_page",
-                            "maintenance",
-                            "other",
-                            null
-                        ]
+                        "format": "uuid"
                     },
                     "email": {
                         "type": "string",
@@ -7156,6 +7148,7 @@
                     "ecommerce",
                     "landing_page",
                     "maintenance",
+                    "web_app",
                     "other"
                 ],
                 "title": "ProjectType"

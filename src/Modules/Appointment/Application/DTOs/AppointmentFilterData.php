@@ -36,7 +36,8 @@ final class AppointmentFilterData extends SoftDeleteFilterData
         public ?string $statusLead = null,
         public ?string $meetingStatus = null,
         public ?string $clientType = null,
-        public ?string $projectType = null,
+        /** Filter by catalog service UUID (`services.uuid`). */
+        public ?string $serviceUuid = null,
         public ?string $read = null,
         public ?string $spam = null,
         public ?string $scheduledFrom = null,
@@ -56,7 +57,7 @@ final class AppointmentFilterData extends SoftDeleteFilterData
             'status_lead' => ['nullable', 'string', 'in:New,Called,Pending,Declined'],
             'meeting_status' => ['nullable', 'string', 'in:Confirmed,Rescheduled,Cancelled'],
             'client_type' => ['nullable', 'string', 'in:company,individual'],
-            'project_type' => ['nullable', 'string', 'in:new_website,redesign,ecommerce,landing_page,maintenance,other'],
+            'service_uuid' => ['nullable', 'uuid', 'exists:services,uuid'],
             'read' => ['nullable', 'string', 'in:read,unread'],
             'spam' => ['nullable', 'string', 'in:spam,ham'],
             'scheduled_from' => ['nullable', 'date'],

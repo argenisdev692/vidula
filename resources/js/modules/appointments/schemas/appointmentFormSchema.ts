@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CLIENT_TYPE_VALUES, PROJECT_TYPE_VALUES } from '../helpers/options';
+import { CLIENT_TYPE_VALUES } from '../helpers/options';
 
 /**
  * Client-side UX validation for the appointment create/edit form (Zod v4).
@@ -15,8 +15,7 @@ import { CLIENT_TYPE_VALUES, PROJECT_TYPE_VALUES } from '../helpers/options';
  * `AppointmentController::store`); it is absent from the edit payload entirely,
  * so it is validated here as a plain optional string.
  *
- * `client_type` / `project_type` enums are derived from
- * {@link ../helpers/options} so Select options and Zod stay aligned.
+ * `client_type` enum is derived from {@link ../helpers/options}.
  */
 
 /** Unicode letters only — no whitespace, digits or punctuation. */
@@ -40,8 +39,7 @@ export const appointmentFormSchema = z
             .regex(NAME_PATTERN, 'Last name must contain letters only — no spaces.'),
         client_type: z.enum(CLIENT_TYPE_VALUES),
         company_name: z.string().trim().max(255, 'Company name must be 255 characters or fewer.'),
-        // Empty string allowed (optional select → null on submit).
-        project_type: z.union([z.enum(PROJECT_TYPE_VALUES), z.literal('')]),
+        service_uuid: z.union([z.string().uuid(), z.literal('')]),
         email: z
             .string()
             .trim()

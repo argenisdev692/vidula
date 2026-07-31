@@ -30,6 +30,7 @@ use Modules\Appointment\Application\DTOs\RescheduleAppointmentData;
 use Modules\Appointment\Application\Queries\GetAppointmentHandler;
 use Modules\Appointment\Application\Queries\GetAppointmentNotificationsHandler;
 use Modules\Appointment\Application\Queries\ListAppointmentsHandler;
+use Modules\Services\Domain\Ports\ServiceRepositoryPort;
 use Shared\Application\DTOs\BulkUuidsData;
 
 /**
@@ -40,6 +41,23 @@ use Shared\Application\DTOs\BulkUuidsData;
  */
 final readonly class AppointmentController
 {
+    public function __construct(private ServiceRepositoryPort $services) {}
+
+    /**
+     * @return list<array{uuid: string, name: string, slug: string}>
+     */
+    private function activeServiceOptions(): array
+    {
+        return $this->services->listActive()
+            ->map(static fn ($service): array => [
+                'uuid' => $service->uuid,
+                'name' => $service->name,
+                'slug' => $service->slug,
+            ])
+            ->values()
+            ->all();
+    }
+
     public function index(Request $request, ListAppointmentsHandler $list): InertiaResponse|JsonResponse
     {
         $filters = AppointmentFilterData::validateAndCreate($request);
@@ -50,6 +68,7 @@ final readonly class AppointmentController
             false => Inertia::render('appointments/Index', [
                 'appointments' => $appointments,
                 'filters' => $filters,
+                'serviceOptions' => $this->activeServiceOptions(),
             ]),
         };
     }
@@ -88,7 +107,9 @@ final readonly class AppointmentController
 
     public function create(): InertiaResponse
     {
-        return Inertia::render('appointments/Create');
+        return Inertia::render('appointments/Create', [
+            'serviceOptions' => $this->activeServiceOptions(),
+        ]);
     }
 
     public function edit(Request $request, string $uuid, GetAppointmentHandler $get): InertiaResponse|JsonResponse
@@ -96,13 +117,13 @@ final readonly class AppointmentController
         // Project only the editable lead-profile columns (AppointmentData's field
         // set) — pipeline state (status_lead, meeting_status, scheduled_at, …)
         // never rides on this form, it changes only through the dedicated actions.
-        $payload = $get->handle($uuid)->only([
+        $appointment = $get->handle($uuid);
+        $payload = $appointment->only([
             'uuid',
             'first_name',
             'last_name',
             'client_type',
             'company_name',
-            'project_type',
             'email',
             'phone',
             'address',
@@ -118,11 +139,13 @@ final readonly class AppointmentController
             'notes',
             'owner',
         ]);
+        $payload['service_uuid'] = $appointment->service?->uuid;
 
         return match ($request->expectsJson()) {
             true => response()->json(['data' => $payload]),
             false => Inertia::render('appointments/Edit', [
                 'appointment' => $payload,
+                'serviceOptions' => $this->activeServiceOptions(),
             ]),
         };
     }

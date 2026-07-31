@@ -25,6 +25,8 @@ interface ServiceRepositoryPort
 
     public function findByUuid(string $uuid): ?ServiceEloquentModel;
 
+    public function findActiveByUuid(string $uuid): ?ServiceEloquentModel;
+
     /**
      * @param  array<string, mixed>  $attributes
      */

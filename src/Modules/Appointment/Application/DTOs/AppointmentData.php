@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Appointment\Application\DTOs;
 
 use Illuminate\Validation\Rule;
+use Modules\Appointment\Application\Services\AppointmentServiceResolver;
 use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\SnakeCaseMapper;
@@ -25,7 +26,7 @@ final class AppointmentData extends Data
         public string $lastName,
         public string $clientType,
         public ?string $companyName,
-        public ?string $projectType,
+        public ?string $serviceUuid,
         public string $email,
         public ?string $phone,
         public ?string $address,
@@ -73,7 +74,7 @@ final class AppointmentData extends Data
             'last_name' => ['required', 'string', 'max:255'],
             'client_type' => ['required', Rule::in(['company', 'individual'])],
             'company_name' => ['nullable', 'string', 'max:255', 'required_if:client_type,company'],
-            'project_type' => ['nullable', Rule::in(['new_website', 'redesign', 'ecommerce', 'landing_page', 'maintenance', 'other'])],
+            'service_uuid' => AppointmentServiceResolver::uuidValidationRules(),
             'email' => [
                 'required', 'string', 'email', 'max:255',
                 // Mirrors the DB partial unique index (email unique WHERE deleted_at

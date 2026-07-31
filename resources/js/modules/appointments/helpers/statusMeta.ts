@@ -26,5 +26,6 @@ export const PROJECT_TYPE_LABEL: Record<ProjectType, string> = {
     ecommerce: 'E-commerce',
     landing_page: 'Landing page',
     maintenance: 'Maintenance',
+    web_app: 'Custom business app',
     other: 'Other',
 };

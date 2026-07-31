@@ -33,12 +33,7 @@
                             <td class="label">Date &amp; Time</td>
                             <td>{{ $appointment->scheduled_at?->locale('en')->isoFormat('dddd, MMMM D, YYYY [at] h:mm A') }}</td>
                         </tr>
-                        @if ($appointment->project_type)
-                            <tr>
-                                <td class="label">Project</td>
-                                <td>{{ str($appointment->project_type->value)->replace('_', ' ')->title() }}</td>
-                            </tr>
-                        @endif
+                        @include('emails.appointments.partials.service-row')
                         @if ($appointment->address)
                             <tr>
                                 <td class="label">Address</td>

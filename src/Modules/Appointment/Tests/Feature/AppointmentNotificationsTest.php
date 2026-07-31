@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Event;
 use Modules\Appointment\Infrastructure\Broadcasting\AppointmentSubmitted;
 use Modules\Appointment\Infrastructure\Persistence\Eloquent\Models\AppointmentEloquentModel;
 use Modules\Availability\Infrastructure\Persistence\Eloquent\Models\AvailabilityRuleEloquentModel;
+use Modules\Services\Infrastructure\Persistence\Eloquent\Models\ServiceEloquentModel;
 use Tests\TestCase;
 
 /**
@@ -96,13 +97,15 @@ final class AppointmentNotificationsTest extends TestCase
         Event::fake([AppointmentSubmitted::class]);
         $this->seedOpenFriday();
 
+        $service = ServiceEloquentModel::factory()->create(['slug' => 'new_website', 'is_active' => true]);
+
         $this->withHeaders($this->crmHeaders())
             ->postJson('/api/appointments', [
                 'first_name' => 'Ada',
                 'last_name' => 'Lovelace',
                 'client_type' => 'individual',
                 'company_name' => null,
-                'project_type' => 'new_website',
+                'service_uuid' => $service->uuid,
                 'email' => 'ada@example.com',
                 'phone' => '+15551234567',
                 'address' => '123 Main St',

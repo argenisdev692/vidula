@@ -16,5 +16,7 @@ enum ProjectType: string
 
     case Maintenance = 'maintenance';
 
+    case WebApp = 'web_app';
+
     case Other = 'other';
 }

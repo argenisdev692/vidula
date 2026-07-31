@@ -7,6 +7,7 @@ namespace Modules\Appointment\Application\Commands;
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Support\Facades\DB;
 use Modules\Appointment\Application\DTOs\AppointmentData;
+use Modules\Appointment\Application\Services\AppointmentServiceResolver;
 use Modules\Appointment\Domain\Ports\AppointmentRepositoryPort;
 use Modules\Appointment\Infrastructure\Persistence\Eloquent\Models\AppointmentEloquentModel;
 
@@ -20,6 +21,7 @@ final readonly class UpdateAppointmentHandler
 {
     public function __construct(
         private AppointmentRepositoryPort $appointments,
+        private AppointmentServiceResolver $serviceResolver,
         private Cache $cache,
     ) {}
 
@@ -27,13 +29,15 @@ final readonly class UpdateAppointmentHandler
     public function handle(AppointmentEloquentModel $appointment, AppointmentData $data): AppointmentEloquentModel
     {
         $email = $data->email |> trim(...) |> strtolower(...);
+        $serviceAssignment = $this->serviceResolver->resolve($data->serviceUuid);
 
         $updated = DB::transaction(fn () => $this->appointments->update($appointment, [
             'first_name' => $data->firstName,
             'last_name' => $data->lastName,
             'client_type' => $data->clientType,
             'company_name' => $data->companyName,
-            'project_type' => $data->projectType,
+            'service_id' => $serviceAssignment['service_id'],
+            'project_type' => $serviceAssignment['project_type'],
             'email' => $email,
             'phone' => $data->phone,
             'address' => $data->address,

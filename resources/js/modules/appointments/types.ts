@@ -21,7 +21,21 @@ export type { PaginatedResponse };
 export type ClientType = 'individual' | 'company';
 
 /** Project the lead is inquiring about (mirrors `Domain\ValueObjects\ProjectType`). */
-export type ProjectType = 'new_website' | 'redesign' | 'ecommerce' | 'landing_page' | 'maintenance' | 'other';
+export type ProjectType = 'new_website' | 'redesign' | 'ecommerce' | 'landing_page' | 'maintenance' | 'web_app' | 'other';
+
+/** Active catalog row from `GET /api/services/public` or Inertia `serviceOptions`. */
+export interface ServiceOption {
+    uuid: string;
+    name: string;
+    slug: string;
+}
+
+/** Nested service on list/detail appointment projections. */
+export interface AppointmentServiceSummary {
+    uuid: string;
+    name: string;
+    slug: string;
+}
 
 /** Sales pipeline stage (mirrors `Domain\ValueObjects\StatusLead`). */
 export type StatusLead = 'New' | 'Called' | 'Pending' | 'Declined';
@@ -52,6 +66,7 @@ export interface Appointment {
     client_type: ClientType;
     company_name: string | null;
     project_type: ProjectType | null;
+    service?: AppointmentServiceSummary | null;
     email: string;
     phone: string | null;
     status_lead: StatusLead | null;
@@ -101,7 +116,7 @@ export interface AppointmentEditData {
     last_name: string;
     client_type: ClientType;
     company_name: string | null;
-    project_type: ProjectType | null;
+    service_uuid: string | null;
     email: string;
     phone: string | null;
     address: string | null;
@@ -127,7 +142,7 @@ export interface AppointmentFilters {
     status_lead: StatusLead | null;
     meeting_status: Exclude<MeetingStatus, null> | null;
     client_type: ClientType | null;
-    project_type: ProjectType | null;
+    service_uuid: string | null;
     read: AppointmentRead | null;
     spam: AppointmentSpam | null;
     date_from: string | null;

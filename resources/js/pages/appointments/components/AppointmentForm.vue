@@ -23,18 +23,20 @@ import SecondaryButton from '@/volt/SecondaryButton.vue';
 import ToggleSwitch from '@/volt/ToggleSwitch.vue';
 import type { AddressValue } from '@/common/address/types';
 import type { SharedProps } from '@/types/inertia';
-import { CLIENT_TYPE_OPTIONS, PROJECT_TYPE_OPTIONS } from '@/modules/appointments/helpers/options';
+import { CLIENT_TYPE_OPTIONS } from '@/modules/appointments/helpers/options';
+import { serviceOptionsToSelect } from '@/modules/appointments/helpers/serviceLabel';
 import { appointmentFormSchema, NAME_MAX, NAME_MIN, type AppointmentFormValues } from '@/modules/appointments/schemas/appointmentFormSchema';
-import type { AppointmentEditData } from '@/modules/appointments/types';
+import type { AppointmentEditData, ServiceOption } from '@/modules/appointments/types';
 
 const props = withDefaults(
     defineProps<{
         mode: 'create' | 'edit';
         appointment?: AppointmentEditData | null;
+        serviceOptions: ServiceOption[];
         /** `dialog` hides page actions and emits saved/cancel for AppModal. */
         variant?: 'page' | 'dialog';
     }>(),
-    { appointment: null, variant: 'page' },
+    { appointment: null, serviceOptions: () => [], variant: 'page' },
 );
 
 const emit = defineEmits<{ saved: []; cancel: [] }>();
@@ -42,13 +44,14 @@ const emit = defineEmits<{ saved: []; cancel: [] }>();
 const isEdit = computed<boolean>(() => props.mode === 'edit');
 const isDialog = computed<boolean>(() => props.variant === 'dialog');
 const page = usePage<SharedProps>();
+const serviceSelectOptions = computed(() => serviceOptionsToSelect(props.serviceOptions));
 
 const form = useForm<AppointmentFormValues & { scheduled_date: string; scheduled_time: string }>({
     first_name: props.appointment?.first_name ?? '',
     last_name: props.appointment?.last_name ?? '',
     client_type: props.appointment?.client_type ?? 'individual',
     company_name: props.appointment?.company_name ?? '',
-    project_type: props.appointment?.project_type ?? '',
+    service_uuid: props.appointment?.service_uuid ?? '',
     email: props.appointment?.email ?? '',
     phone: props.appointment?.phone ?? '',
     address: props.appointment?.address ?? '',
@@ -79,7 +82,7 @@ watch(
         form.last_name = appointment.last_name ?? '';
         form.client_type = appointment.client_type ?? 'individual';
         form.company_name = appointment.company_name ?? '';
-        form.project_type = appointment.project_type ?? '';
+        form.service_uuid = appointment.service_uuid ?? '';
         form.email = appointment.email ?? '';
         form.phone = appointment.phone ?? '';
         form.address = appointment.address ?? '';
@@ -210,7 +213,7 @@ function submit(): void {
             last_name: data.last_name.trim(),
             client_type: data.client_type,
             company_name: data.client_type === 'company' ? emptyToNull(data.company_name) : null,
-            project_type: emptyToNull(data.project_type),
+            service_uuid: emptyToNull(data.service_uuid),
             email: data.email.trim(),
             phone: emptyToNull(data.phone),
             address: emptyToNull(data.address),
@@ -289,13 +292,13 @@ defineExpose({
                     :error="form.errors.company_name"
                 />
                 <SelectField
-                    v-model="form.project_type"
-                    name="project_type"
-                    label="Project type"
-                    placeholder="Select a project type"
+                    v-model="form.service_uuid"
+                    name="service_uuid"
+                    label="Service"
+                    placeholder="Select a service"
                     show-clear
-                    :options="PROJECT_TYPE_OPTIONS"
-                    :error="form.errors.project_type"
+                    :options="serviceSelectOptions"
+                    :error="form.errors.service_uuid"
                 />
             </div>
         </section>

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
@@ -22,6 +23,7 @@ use Modules\Appointment\Domain\ValueObjects\MeetingStatus;
 use Modules\Appointment\Domain\ValueObjects\ProjectType;
 use Modules\Appointment\Domain\ValueObjects\StatusLead;
 use Modules\Meeting\Infrastructure\Persistence\Eloquent\Models\MeetingAttendeeEloquentModel;
+use Modules\Services\Infrastructure\Persistence\Eloquent\Models\ServiceEloquentModel;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
@@ -35,6 +37,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property ClientType $client_type
  * @property string|null $company_name
  * @property ProjectType|null $project_type
+ * @property int|null $service_id
  * @property string $email
  * @property string|null $phone
  * @property string|null $address
@@ -61,12 +64,13 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property Carbon|null $deleted_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read ServiceEloquentModel|null $service
  *
  * @mixin \Eloquent
  */
 #[Table('appointments')]
 #[Fillable([
-    'uuid', 'first_name', 'last_name', 'client_type', 'company_name', 'project_type',
+    'uuid', 'first_name', 'last_name', 'client_type', 'company_name', 'project_type', 'service_id',
     'email', 'phone', 'address', 'address_2', 'zip_code', 'city', 'state', 'country',
     'country_code', 'latitude', 'longitude', 'sms_consent', 'readed', 'is_spam', 'spam_score',
     'spam_reasons', 'status_lead', 'meeting_status', 'scheduled_at', 'previous_scheduled_at',
@@ -104,6 +108,16 @@ final class AppointmentEloquentModel extends Model
     }
 
     /**
+     * Catalog service the lead selected (public `service_uuid` → internal FK).
+     *
+     * @return BelongsTo<ServiceEloquentModel, $this>
+     */
+    public function service(): BelongsTo
+    {
+        return $this->belongsTo(ServiceEloquentModel::class, 'service_id');
+    }
+
+    /**
      * Reusable list filter (BACKEND-PHP §4.1 — single scope, no duplicated
      * `when()` chains). `suspended` status is applied via `onlyTrashed()` at the
      * repository, mirroring Availability/ContactSupport.
@@ -126,7 +140,10 @@ final class AppointmentEloquentModel extends Model
             ->when($filters->statusLead !== null, fn ($q) => $q->where('status_lead', $filters->statusLead))
             ->when($filters->meetingStatus !== null, fn ($q) => $q->where('meeting_status', $filters->meetingStatus))
             ->when($filters->clientType !== null, fn ($q) => $q->where('client_type', $filters->clientType))
-            ->when($filters->projectType !== null, fn ($q) => $q->where('project_type', $filters->projectType))
+            ->when($filters->serviceUuid !== null, fn ($q) => $q->whereHas(
+                'service',
+                fn ($s) => $s->where('uuid', $filters->serviceUuid),
+            ))
             ->when($filters->read === 'read', fn ($q) => $q->where('readed', true))
             ->when($filters->read === 'unread', fn ($q) => $q->where('readed', false))
             ->when($filters->spam === 'spam', fn ($q) => $q->where('is_spam', true))

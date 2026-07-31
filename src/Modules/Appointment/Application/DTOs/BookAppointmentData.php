@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Appointment\Application\DTOs;
 
 use Illuminate\Validation\Rule;
+use Modules\Appointment\Application\Services\AppointmentServiceResolver;
 use Modules\Appointment\Domain\Services\AppointmentScheduler;
 use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Data;
@@ -16,6 +17,10 @@ use Spatie\LaravelData\Mappers\SnakeCaseMapper;
  * requires `scheduled_at`: a first-time booking always requests a specific
  * date/time, validated by {@see AppointmentScheduler}
  * (not in the past, inside an open availability window, not already taken).
+ *
+ * `service_uuid` is the public identifier from `GET /api/services/public`
+ * (`data[].uuid`). The API never accepts `services.id`; the handler resolves the
+ * UUID to `appointments.service_id` server-side.
  */
 #[MapInputName(SnakeCaseMapper::class)]
 final class BookAppointmentData extends Data
@@ -25,7 +30,8 @@ final class BookAppointmentData extends Data
         public string $lastName,
         public string $clientType,
         public ?string $companyName,
-        public ?string $projectType,
+        /** Active catalog service UUID (`GET /api/services/public` → `data[].uuid`). */
+        public ?string $serviceUuid,
         public string $email,
         public ?string $phone,
         public ?string $address,
@@ -70,7 +76,7 @@ final class BookAppointmentData extends Data
             'last_name' => ['required', 'string', 'max:255'],
             'client_type' => ['required', Rule::in(['company', 'individual'])],
             'company_name' => ['nullable', 'string', 'max:255', 'required_if:client_type,company'],
-            'project_type' => ['nullable', Rule::in(['new_website', 'redesign', 'ecommerce', 'landing_page', 'maintenance', 'other'])],
+            'service_uuid' => AppointmentServiceResolver::uuidValidationRules(),
             'email' => ['required', 'string', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
             'address' => ['nullable', 'string', 'max:255'],
