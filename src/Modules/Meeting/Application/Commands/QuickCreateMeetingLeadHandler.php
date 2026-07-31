@@ -31,7 +31,7 @@ final readonly class QuickCreateMeetingLeadHandler
             lastName: $data->lastName,
             clientType: 'individual',
             companyName: null,
-            projectType: null,
+            serviceUuid: null,
             email: $data->email,
             phone: $data->phone,
             address: null,
