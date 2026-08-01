@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Shared\Infrastructure\Company\CompanyProfile;
+use Throwable;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,10 +31,22 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Per-route buckets so Astro builds (many parallel public GETs) do not
+        // share one throttle:60,1 counter across every landing endpoint.
         RateLimiter::for('landing-public', function (Request $request) {
             $routeKey = $request->route()?->getName() ?? $request->path();
+            $identity = $request->ip() ?? 'guest';
 
-            return Limit::perMinute(120)->by($routeKey.'|'.($request->user()?->getAuthIdentifier() ?? $request->ip()));
+            try {
+                $userId = $request->user()?->getAuthIdentifier();
+                if ($userId !== null && $userId !== '') {
+                    $identity = (string) $userId;
+                }
+            } catch (Throwable) {
+                // Auth guard misconfigured mid-request — still rate-limit by IP.
+            }
+
+            return Limit::perMinute(120)->by($routeKey.'|'.$identity);
         });
 
         if ($this->app->environment('production')) {

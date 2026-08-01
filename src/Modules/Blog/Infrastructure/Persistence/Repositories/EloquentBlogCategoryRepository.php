@@ -54,17 +54,27 @@ final class EloquentBlogCategoryRepository implements BlogCategoryRepositoryPort
      */
     public function listPublic(): Collection
     {
+        $published = PostStatus::Published->value;
+
+        // Explicit correlated subquery (not withCount): avoids driver/alias
+        // quirks around `posts.post_status` vs unqualified `post_status`, and
+        // keeps SoftDeletes (`deleted_at`) unambiguous on PostgreSQL.
         return BlogCategoryEloquentModel::query()
-            ->select(['id', 'uuid', 'blog_category_name', 'blog_category_description', 'blog_category_image'])
-            ->withCount([
-                // No table prefix: the withCount subquery already scopes `posts`.
-                // Prefixed `posts.post_status` breaks on some drivers/aliases.
-                'posts as posts_count' => fn ($query) => $query->where(
-                    'post_status',
-                    PostStatus::Published->value,
-                ),
+            ->select([
+                'blog_categories.id',
+                'blog_categories.uuid',
+                'blog_categories.blog_category_name',
+                'blog_categories.blog_category_description',
+                'blog_categories.blog_category_image',
             ])
-            ->orderBy('blog_category_name')
+            ->selectRaw(
+                '(select count(*) from posts
+                    where posts.category_id = blog_categories.id
+                      and posts.post_status = ?
+                      and posts.deleted_at is null) as posts_count',
+                [$published],
+            )
+            ->orderBy('blog_categories.blog_category_name')
             ->limit(100)
             ->get();
     }

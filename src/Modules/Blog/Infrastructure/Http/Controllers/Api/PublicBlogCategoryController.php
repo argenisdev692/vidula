@@ -26,6 +26,6 @@ final readonly class PublicBlogCategoryController
      */
     public function index(ListPublicBlogCategoriesHandler $list): JsonResponse
     {
-        return response()->json(['data' => $list->handle()->toArray()]);
+        return response()->json(['data' => $list->handle()]);
     }
 }

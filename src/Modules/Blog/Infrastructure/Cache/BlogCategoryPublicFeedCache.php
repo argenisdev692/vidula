@@ -26,9 +26,10 @@ final class BlogCategoryPublicFeedCache
         try {
             Cache::tags(['blog_categories_public'])->flush();
         } catch (Throwable) {
-            // Store doesn't support tags — drop the plain fallback key used by
+            // Store doesn't support tags — drop the plain fallback keys used by
             // ListPublicBlogCategoriesHandler when Cache::tags() throws.
             Cache::forget('blog_categories.public');
+            Cache::forget('blog_categories.public.v2');
         }
     }
 }

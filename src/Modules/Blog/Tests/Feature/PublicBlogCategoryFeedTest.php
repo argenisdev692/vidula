@@ -21,6 +21,7 @@ final class PublicBlogCategoryFeedTest extends TestCase
         Cache::flush();
         BlogCategoryPublicFeedCache::flush();
         Cache::forget('blog_categories.public');
+        Cache::forget('blog_categories.public.v2');
     }
 
     public function test_public_feed_requires_no_authentication(): void
@@ -50,6 +51,7 @@ final class PublicBlogCategoryFeedTest extends TestCase
         // feed from another code path cannot hide the new published row.
         BlogCategoryPublicFeedCache::flush();
         Cache::forget('blog_categories.public');
+        Cache::forget('blog_categories.public.v2');
 
         $response = $this->getJson('/api/blog-categories/public')->assertOk();
 
