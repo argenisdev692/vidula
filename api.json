@@ -4551,6 +4551,12 @@
                             }
                         ]
                     },
+                    "service_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
                     "email": {
                         "type": "string"
                     },
@@ -4715,6 +4721,7 @@
                     "client_type",
                     "company_name",
                     "project_type",
+                    "service_id",
                     "email",
                     "phone",
                     "address",
