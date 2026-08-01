@@ -328,6 +328,37 @@ final class InvoiceManagementTest extends TestCase
         $this->assertStringContainsString('application/pdf', (string) $response->headers->get('content-type'));
     }
 
+    public function test_pdf_download_filename_includes_client_sequence_and_issue_date(): void
+    {
+        $admin = $this->superAdmin();
+        $client = ClientEloquentModel::factory()->active()->create();
+        $invoice = InvoiceEloquentModel::factory()->create([
+            'user_id' => $admin->id,
+            'client_id' => $client->id,
+            'client_name' => 'Aquashield Restoration LLC',
+            'invoice_number' => '015/2026',
+            'sequence' => 15,
+            'year' => 2026,
+            'issue_date' => '2026-08-01',
+        ]);
+        InvoiceItemEloquentModel::query()->create([
+            'invoice_id' => $invoice->id,
+            'sort_order' => 0,
+            'title' => 'Service',
+            'quantity' => 1,
+            'unit_price' => 100,
+            'amount' => 100,
+        ]);
+
+        $this->actingAs($admin)
+            ->get("/invoices/{$invoice->uuid}/pdf")
+            ->assertOk()
+            ->assertHeader(
+                'content-disposition',
+                'attachment; filename="Invoice-Aquashield-Restoration-LLC-015-01-08-2026.pdf"',
+            );
+    }
+
     public function test_delete_then_restore_invoice(): void
     {
         $admin = $this->superAdmin();

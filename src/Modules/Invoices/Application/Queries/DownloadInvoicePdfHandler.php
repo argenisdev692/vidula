@@ -6,6 +6,7 @@ namespace Modules\Invoices\Application\Queries;
 
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Modules\Invoices\Application\Support\InvoiceCacheKeys;
+use Modules\Invoices\Application\Support\InvoicePdfFilename;
 use Modules\Invoices\Domain\Ports\InvoicePdfRendererPort;
 
 /**
@@ -33,11 +34,9 @@ final readonly class DownloadInvoicePdfHandler
             fn (): string => $this->renderer->render($invoice),
         );
 
-        $safeNumber = str_replace('/', '-', $invoice->invoice_number);
-
         return [
             'binary' => $binary,
-            'filename' => "invoice-{$safeNumber}.pdf",
+            'filename' => InvoicePdfFilename::forInvoice($invoice),
         ];
     }
 }

@@ -25,7 +25,7 @@ final class BlogCategorySeeder extends Seeder
             [
                 'blog_category_name' => 'Software',
                 'blog_category_description' => 'Software development, engineering and best practices',
-                'blog_category_image' => 'https://pub-1bd403ae2aa74a938cd014ab41d2beda.r2.dev/blog-categories-cards/software.webp',
+                'blog_category_image' => 'https://pub-1bd403ae2aa74a938cd014ab41d2beda.r2.dev/blog-categories-cards/sotfware.webp',
                 'user_id' => 1,
             ],
             [
