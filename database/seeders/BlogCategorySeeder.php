@@ -19,25 +19,25 @@ final class BlogCategorySeeder extends Seeder
             [
                 'blog_category_name' => 'AI',
                 'blog_category_description' => 'Artificial Intelligence trends, tools and insights',
-                'blog_category_image' => 'blog-categories-cards/ai.webp',
+                'blog_category_image' => 'https://pub-1bd403ae2aa74a938cd014ab41d2beda.r2.dev/blog-categories-cards/ai.webp',
                 'user_id' => 1,
             ],
             [
                 'blog_category_name' => 'Software',
                 'blog_category_description' => 'Software development, engineering and best practices',
-                'blog_category_image' => 'blog-categories-cards/software.webp',
+                'blog_category_image' => 'https://pub-1bd403ae2aa74a938cd014ab41d2beda.r2.dev/blog-categories-cards/software.webp',
                 'user_id' => 1,
             ],
             [
                 'blog_category_name' => 'Marketing Online',
                 'blog_category_description' => 'Digital marketing strategies, SEO and content marketing',
-                'blog_category_image' => 'blog-categories-cards/marketing.webp',
+                'blog_category_image' => 'https://pub-1bd403ae2aa74a938cd014ab41d2beda.r2.dev/blog-categories-cards/marketing.webp',
                 'user_id' => 1,
             ],
             [
                 'blog_category_name' => 'Social Network',
                 'blog_category_description' => 'Social media platforms, networking and community building',
-                'blog_category_image' => 'blog-categories-cards/social_network.webp',
+                'blog_category_image' => 'https://pub-1bd403ae2aa74a938cd014ab41d2beda.r2.dev/blog-categories-cards/social_network.webp',
                 'user_id' => 1,
             ],
         ];
