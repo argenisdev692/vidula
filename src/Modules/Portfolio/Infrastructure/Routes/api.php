@@ -15,7 +15,7 @@ use Modules\Portfolio\Infrastructure\Http\Controllers\Api\PublicPortfolioControl
 | authenticated lookup surface mirroring the web CRUD.
 */
 Route::get('/portfolios/public', [PublicPortfolioController::class, 'index'])
-    ->middleware('throttle:60,1')
+    ->middleware('throttle:landing-public')
     ->name('api.portfolios.public');
 
 Route::middleware(['auth:sanctum', 'throttle:60,1'])

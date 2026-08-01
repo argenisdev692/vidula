@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\View\View as ViewContract;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -27,6 +30,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        RateLimiter::for('landing-public', function (Request $request) {
+            $routeKey = $request->route()?->getName() ?? $request->path();
+
+            return Limit::perMinute(120)->by($routeKey.'|'.($request->user()?->getAuthIdentifier() ?? $request->ip()));
+        });
+
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
         }

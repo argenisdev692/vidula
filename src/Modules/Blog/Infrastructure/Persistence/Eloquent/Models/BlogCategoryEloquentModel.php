@@ -148,6 +148,10 @@ final class BlogCategoryEloquentModel extends Model
                 return null;
             }
 
+            if (str_starts_with($key, 'http://') || str_starts_with($key, 'https://')) {
+                return $key;
+            }
+
             try {
                 return app(StoragePort::class)->publicUrl($key);
             } catch (Throwable) {

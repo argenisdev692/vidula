@@ -67,4 +67,18 @@ final class PublicBlogCategoryFeedTest extends TestCase
             ->assertOk()
             ->assertJsonMissing(['name' => 'Deleted Soon']);
     }
+
+    public function test_public_feed_returns_absolute_image_urls_when_stored_as_full_url(): void
+    {
+        $url = 'https://cdn.example.test/blog-categories-cards/ai.webp';
+
+        BlogCategoryEloquentModel::factory()->create([
+            'blog_category_name' => 'AI',
+            'blog_category_image' => $url,
+        ]);
+
+        $this->getJson('/api/blog-categories/public')
+            ->assertOk()
+            ->assertJsonPath('data.0.image_url', $url);
+    }
 }

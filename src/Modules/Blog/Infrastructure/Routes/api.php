@@ -15,7 +15,7 @@ use Modules\Blog\Infrastructure\Http\Controllers\Api\PublicBlogCategoryControlle
 | (sanctum) is the secondary authenticated lookup surface.
 */
 Route::get('/blog-categories/public', [PublicBlogCategoryController::class, 'index'])
-    ->middleware('throttle:60,1')
+    ->middleware('throttle:landing-public')
     ->name('api.blog-categories.public');
 
 Route::middleware(['auth:sanctum', 'throttle:60,1'])

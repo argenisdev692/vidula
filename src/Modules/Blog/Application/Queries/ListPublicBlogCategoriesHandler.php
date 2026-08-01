@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Blog\Application\Queries;
 
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Modules\Blog\Application\ReadModels\BlogCategoryPublicReadModel;
 use Modules\Blog\Domain\Ports\BlogCategoryRepositoryPort;
 use Modules\Post\Infrastructure\Cache\PostPublicFeedCache;
+use Spatie\LaravelData\DataCollection;
 use Throwable;
 
 /**
@@ -19,7 +19,7 @@ use Throwable;
  * internet traffic (BACKEND-PHP §7 Insecure Design).
  *
  * Cached, unlike the admin list: this is hit by anonymous traffic with no
- * per-user throttle beyond the route's `throttle:60,1` (BACKEND-PHP §5 Cache
+ * per-user throttle beyond the route's `throttle:landing-public` (BACKEND-PHP §5 Cache
  * Management). Every category-mutating handler AND every Post-mutating
  * handler (via {@see PostPublicFeedCache})
  * busts the `blog_categories_public` tag, since `posts_count` depends on both.
@@ -33,9 +33,9 @@ final readonly class ListPublicBlogCategoriesHandler
     public function __construct(private BlogCategoryRepositoryPort $categories) {}
 
     /**
-     * @return Collection<int, BlogCategoryPublicReadModel>
+     * @return DataCollection<int, BlogCategoryPublicReadModel>
      */
-    public function handle(): Collection
+    public function handle(): DataCollection
     {
         try {
             $categories = Cache::tags(['blog_categories_public'])->remember(
@@ -53,6 +53,6 @@ final readonly class ListPublicBlogCategoriesHandler
             );
         }
 
-        return $categories->map(BlogCategoryPublicReadModel::fromModel(...));
+        return BlogCategoryPublicReadModel::collect($categories, DataCollection::class);
     }
 }

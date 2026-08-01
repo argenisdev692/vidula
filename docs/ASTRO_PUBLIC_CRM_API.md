@@ -129,11 +129,11 @@ const token = import.meta.env.CRM_API_TOKEN;     // server only
 | `POST /api/contact-supports` | **Required** | 5/min |
 | `GET /api/appointments/honeypot` | **Required** | 30/min |
 | `POST /api/appointments` | **Required** | 5/min |
-| `GET /api/blog-categories/public` | No | 60/min |
-| `GET /api/posts/public` | No | 60/min |
-| `GET /api/posts/public/{slug}` | No | 60/min |
-| `GET /api/portfolios/public` | No | 60/min |
-| `GET /api/services/public` | No | 60/min |
+| `GET /api/blog-categories/public` | No | 120/min per route + IP |
+| `GET /api/posts/public` | No | 120/min per route + IP |
+| `GET /api/posts/public/{slug}` | No | 120/min per route + IP |
+| `GET /api/portfolios/public` | No | 120/min per route + IP |
+| `GET /api/services/public` | No | 120/min per route + IP |
 
 ### Token header (either)
 

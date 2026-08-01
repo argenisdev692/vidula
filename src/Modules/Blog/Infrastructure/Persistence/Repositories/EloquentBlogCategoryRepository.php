@@ -9,6 +9,7 @@ use Illuminate\Support\Collection;
 use Modules\Blog\Application\DTOs\BlogCategoryFilterData;
 use Modules\Blog\Domain\Ports\BlogCategoryRepositoryPort;
 use Modules\Blog\Infrastructure\Persistence\Eloquent\Models\BlogCategoryEloquentModel;
+use Modules\Post\Domain\Enums\PostStatus;
 use Shared\Infrastructure\Persistence\Concerns\BulkSoftDeletesByUuid;
 
 /**
@@ -55,7 +56,14 @@ final class EloquentBlogCategoryRepository implements BlogCategoryRepositoryPort
     {
         return BlogCategoryEloquentModel::query()
             ->select(['id', 'uuid', 'blog_category_name', 'blog_category_description', 'blog_category_image'])
-            ->withCount('publishedPosts as posts_count')
+            ->withCount([
+                // No table prefix: the withCount subquery already scopes `posts`.
+                // Prefixed `posts.post_status` breaks on some drivers/aliases.
+                'posts as posts_count' => fn ($query) => $query->where(
+                    'post_status',
+                    PostStatus::Published->value,
+                ),
+            ])
             ->orderBy('blog_category_name')
             ->limit(100)
             ->get();

@@ -15,7 +15,7 @@ use Modules\Post\Infrastructure\Http\Controllers\Api\PublicPostController;
 | a UUID. `/posts` (sanctum) is the secondary authenticated lookup surface
 | mirroring the web CRUD.
 */
-Route::middleware('throttle:60,1')->group(function (): void {
+Route::middleware('throttle:landing-public')->group(function (): void {
     Route::get('/posts/public', [PublicPostController::class, 'index'])->name('api.posts.public');
     Route::get('/posts/public/{slug}', [PublicPostController::class, 'show'])->name('api.posts.public.show');
 });

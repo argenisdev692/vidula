@@ -14,5 +14,5 @@ use Modules\Services\Infrastructure\Http\Controllers\Api\PublicServiceController
 | authenticated lookups.
 */
 Route::get('/services/public', [PublicServiceController::class, 'index'])
-    ->middleware('throttle:60,1')
+    ->middleware('throttle:landing-public')
     ->name('api.services.public');
