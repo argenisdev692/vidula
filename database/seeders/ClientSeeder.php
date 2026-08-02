@@ -42,7 +42,7 @@ final class ClientSeeder extends Seeder
             ],
             [
                 'client_name' => 'AQUASHIELD RESTORATION LLC',
-                'email' => null,
+                'email' => 'info@aquashieldrestorationusa.com',
                 'phone' => '+17135876423',
                 'status' => 'ACTIVE',
                 'tax_id' => '0',
@@ -53,7 +53,7 @@ final class ClientSeeder extends Seeder
             ],
             [
                 'client_name' => 'CESAR AUGUSTO GONZALEZ',
-                'email' => null,
+                'email' => 'cesarmilenario@gmail.com',
                 'phone' => '+34603105307',
                 'status' => 'ACTIVE',
                 'tax_id' => '0',
