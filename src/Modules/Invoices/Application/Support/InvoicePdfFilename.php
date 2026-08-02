@@ -16,7 +16,9 @@ final class InvoicePdfFilename
 {
     public static function forInvoice(InvoiceEloquentModel $invoice): string
     {
-        $clientSegment = self::clientNameSegment($invoice->client_name);
+        $invoice->loadMissing('client:id,client_name');
+        $clientName = $invoice->client?->client_name ?? 'Client';
+        $clientSegment = self::clientNameSegment($clientName);
         $numberSegment = sprintf('%03d', $invoice->sequence);
         $dateSegment = $invoice->issue_date->format('d-m-Y');
 

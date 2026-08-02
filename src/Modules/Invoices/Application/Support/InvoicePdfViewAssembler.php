@@ -27,14 +27,19 @@ final class InvoicePdfViewAssembler
      *     due_date: string,
      *     payment_date: string,
      *     client_tax_id_label: string,
-     *     fiscal_notice: string|null,
-     *     show_additional_notes: bool,
+     *     notes_body: string|null,
+     *     additional_notes: string|null,
      *     currency_symbol: string
      * }
      */
     public function assemble(InvoiceEloquentModel $invoice, array $company): array
     {
-        $clientCode = strtoupper((string) ($invoice->client_country_code ?? ''));
+        $invoice->loadMissing([
+            'client:id,uuid,client_name,email,phone,tax_id,nif,address,country,country_code',
+        ]);
+
+        $client = $invoice->client;
+        $clientCode = strtoupper((string) ($client?->country_code ?? ''));
         $locale = self::resolveDocumentLocale($clientCode);
         $labels = self::labelsFor($locale);
 
@@ -47,15 +52,16 @@ final class InvoicePdfViewAssembler
             $invoice,
             $issuerName,
             strtoupper((string) ($company['country_code'] ?? 'PT')),
-            $invoice->client_country,
-            $invoice->client_country_code,
+            $client?->country,
+            $client?->country_code,
         );
 
-        $storedFiscal = trim((string) ($invoice->notes ?? ''));
-        $fiscalDisplay = $storedFiscal !== '' ? $storedFiscal : trim((string) $fiscalNotice);
-        $fiscalDisplay = $fiscalDisplay !== '' ? $fiscalDisplay : null;
+        $storedNotes = trim((string) ($invoice->notes ?? ''));
+        $notesBody = $storedNotes !== '' ? $storedNotes : trim((string) $fiscalNotice);
+        $notesBody = $notesBody !== '' ? $notesBody : null;
 
         $additionalNotes = trim((string) ($invoice->additional_notes ?? ''));
+        $additionalNotes = $additionalNotes !== '' ? $additionalNotes : null;
 
         return [
             'html_lang' => match ($locale) {
@@ -71,8 +77,8 @@ final class InvoicePdfViewAssembler
                 ? self::formatDate($invoice->payment_date, $locale)
                 : '',
             'client_tax_id_label' => self::clientTaxIdLabel($clientCode, $locale),
-            'fiscal_notice' => $fiscalDisplay,
-            'show_additional_notes' => $additionalNotes !== '',
+            'notes_body' => $notesBody,
+            'additional_notes' => $additionalNotes,
             'currency_symbol' => self::currencySymbol((string) ($invoice->currency ?: 'USD')),
         ];
     }
@@ -124,7 +130,8 @@ final class InvoicePdfViewAssembler
                 'total_due' => 'Total a pagar',
                 'total_paid' => 'Total pago',
                 'fiscal_heading' => 'Informação fiscal',
-                'notes_heading' => 'Notas adicionais',
+                'notes_heading' => 'Notas',
+                'additional_notes_heading' => 'Notas adicionais',
                 'payment_received' => 'Pagamento recebido',
                 'payment_method' => 'Método de pagamento',
                 'transfer_number' => 'N.º de transferência',
@@ -155,7 +162,8 @@ final class InvoicePdfViewAssembler
                 'total_due' => 'Total a pagar',
                 'total_paid' => 'Total pagado',
                 'fiscal_heading' => 'Información fiscal',
-                'notes_heading' => 'Notas adicionales',
+                'notes_heading' => 'Notas',
+                'additional_notes_heading' => 'Notas adicionales',
                 'payment_received' => 'Pago recibido',
                 'payment_method' => 'Método de pago',
                 'transfer_number' => 'N.º de transferencia',
@@ -186,7 +194,8 @@ final class InvoicePdfViewAssembler
                 'total_due' => 'Total due',
                 'total_paid' => 'Total paid',
                 'fiscal_heading' => 'Tax information',
-                'notes_heading' => 'Additional notes',
+                'notes_heading' => 'Notes',
+                'additional_notes_heading' => 'Additional notes',
                 'payment_received' => 'Payment received',
                 'payment_method' => 'Payment method',
                 'transfer_number' => 'Transfer number',

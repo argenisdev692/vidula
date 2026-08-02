@@ -41,15 +41,6 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->text('additional_notes')->nullable();
 
-            $table->string('client_name');
-            $table->string('client_tax_id')->nullable();
-            $table->string('client_email')->nullable();
-            $table->string('client_phone', 32)->nullable();
-            $table->string('client_address')->nullable();
-            $table->string('client_city')->nullable();
-            $table->string('client_country')->nullable();
-            $table->char('client_country_code', 2)->nullable();
-
             $table->softDeletes();
             $table->timestamps();
 

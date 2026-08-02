@@ -70,7 +70,7 @@ function rowClass(row: Invoice): string | undefined {
 
             <Column field="client_name" header="Client">
                 <template #body="{ data }">
-                    <span>{{ (data as Invoice).client_name }}</span>
+                    <span>{{ (data as Invoice).client?.client_name ?? '—' }}</span>
                 </template>
             </Column>
 

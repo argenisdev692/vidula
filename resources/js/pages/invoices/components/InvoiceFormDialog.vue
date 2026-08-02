@@ -108,9 +108,18 @@ const clientModel = computed<string | null>({
     get: () => form.client_uuid || null,
     set: (value) => {
         form.client_uuid = value ?? '';
-        applyClientDefaults();
     },
 });
+
+watch(
+    () => form.client_uuid,
+    () => {
+        if (!visible.value || isEdit.value) {
+            return;
+        }
+        applyClientDefaults();
+    },
+);
 
 function applyClientDefaults(): void {
     const client = props.clients.find((row) => row.uuid === form.client_uuid);
@@ -658,7 +667,7 @@ function submit(): void {
                 v-model="form.notes"
                 name="notes"
                 label="VAT / fiscal notice"
-                hint="Auto-filled from client country and tax mode. Shown on the PDF."
+                hint="Auto-filled from client and tax mode. Shown on the PDF."
                 :rows="3"
                 :error="form.errors.notes"
             />
@@ -667,7 +676,7 @@ function submit(): void {
                 v-model="form.additional_notes"
                 name="additional_notes"
                 label="Additional notes"
-                hint="Optional extra text on the PDF (separate from the fiscal notice)."
+                hint="Optional. Only appears on the PDF when filled in."
                 :rows="3"
                 :error="form.errors.additional_notes"
             />

@@ -18,8 +18,6 @@ final class InvoiceCrossBorderVatNoticeTest extends TestCase
         $invoice = InvoiceEloquentModel::factory()->make([
             'tax_mode' => 'EXEMPT',
             'tax_rate' => 0,
-            'client_country' => 'Spain',
-            'client_country_code' => 'ES',
         ]);
 
         $notice = InvoiceCrossBorderVatNotice::forExemptInvoice(
@@ -41,8 +39,6 @@ final class InvoiceCrossBorderVatNoticeTest extends TestCase
         $invoice = InvoiceEloquentModel::factory()->make([
             'tax_mode' => 'EXEMPT',
             'tax_rate' => 0,
-            'client_country' => 'United States',
-            'client_country_code' => 'US',
         ]);
 
         $notice = InvoiceCrossBorderVatNotice::forExemptInvoice(
@@ -63,7 +59,6 @@ final class InvoiceCrossBorderVatNoticeTest extends TestCase
         $invoice = InvoiceEloquentModel::factory()->make([
             'tax_mode' => 'PERCENT',
             'tax_rate' => 23,
-            'client_country_code' => 'ES',
         ]);
 
         $this->assertNull(

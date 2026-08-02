@@ -53,7 +53,6 @@ final class EloquentInvoiceRepository implements InvoiceRepositoryPort
                 'tax_amount',
                 'total',
                 'is_paid',
-                'client_name',
                 'created_at',
                 'deleted_at',
             ])
@@ -67,7 +66,7 @@ final class EloquentInvoiceRepository implements InvoiceRepositoryPort
     {
         return InvoiceEloquentModel::withTrashed()
             ->with([
-                'client:id,uuid,client_name,email,tax_id,nif,address',
+                'client:id,uuid,client_name,email,phone,tax_id,nif,address,country,country_code',
                 'user:id,first_name,last_name',
                 'product:id,uuid,title,description,price,currency,type',
                 'items.service:id,uuid,name,description',

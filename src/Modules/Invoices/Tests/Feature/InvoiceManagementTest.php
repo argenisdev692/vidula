@@ -10,6 +10,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Modules\Clients\Infrastructure\Persistence\Eloquent\Models\ClientEloquentModel;
+use Modules\Invoices\Application\Support\InvoiceClientBilling;
 use Modules\Invoices\Infrastructure\Persistence\Eloquent\Models\InvoiceEloquentModel;
 use Modules\Invoices\Infrastructure\Persistence\Eloquent\Models\InvoiceItemEloquentModel;
 use Modules\Invoices\Infrastructure\Queue\GenerateInvoicePdfJob;
@@ -95,8 +96,6 @@ final class InvoiceManagementTest extends TestCase
 
         $this->assertSame($admin->id, $invoice->user_id);
         $this->assertSame($client->id, $invoice->client_id);
-        $this->assertSame('AquaShield', $invoice->client_name);
-        $this->assertSame('36-5164436', $invoice->client_tax_id);
         $this->assertSame(1, $invoice->sequence);
         $this->assertSame(2026, $invoice->year);
         $this->assertSame('EXEMPT', $invoice->tax_mode);
@@ -108,7 +107,7 @@ final class InvoiceManagementTest extends TestCase
         Queue::assertPushed(GenerateInvoicePdfJob::class);
     }
 
-    public function test_create_snapshots_client_country_from_client_record(): void
+    public function test_create_links_client_for_pdf_and_listing(): void
     {
         Queue::fake();
 
@@ -126,13 +125,15 @@ final class InvoiceManagementTest extends TestCase
             ->post('/invoices', $this->validPayload($client, ['invoice_number' => '002/2026']))
             ->assertRedirect();
 
-        $invoice = InvoiceEloquentModel::query()->where('invoice_number', '002/2026')->firstOrFail();
+        $invoice = InvoiceEloquentModel::query()
+            ->with('client:id,uuid,client_name,email,phone,tax_id,nif,country,country_code')
+            ->where('invoice_number', '002/2026')
+            ->firstOrFail();
 
-        $this->assertSame('Spain', $invoice->client_country);
-        $this->assertSame('ES', $invoice->client_country_code);
-        $this->assertSame('billing@client.test', $invoice->client_email);
-        $this->assertSame('+34600111222', $invoice->client_phone);
-        $this->assertSame('B98330335', $invoice->client_tax_id);
+        $this->assertSame($client->id, $invoice->client_id);
+        $this->assertSame('ES', $invoice->client?->country_code);
+        $this->assertSame('billing@client.test', $invoice->client?->email);
+        $this->assertSame('B98330335', InvoiceClientBilling::taxIdForClient($invoice->client));
     }
 
     public function test_zero_percent_tax_keeps_total_equal_to_subtotal(): void
@@ -358,11 +359,12 @@ final class InvoiceManagementTest extends TestCase
     public function test_pdf_download_filename_includes_client_sequence_and_issue_date(): void
     {
         $admin = $this->superAdmin();
-        $client = ClientEloquentModel::factory()->active()->create();
+        $client = ClientEloquentModel::factory()->active()->create([
+            'client_name' => 'Aquashield Restoration LLC',
+        ]);
         $invoice = InvoiceEloquentModel::factory()->create([
             'user_id' => $admin->id,
             'client_id' => $client->id,
-            'client_name' => 'Aquashield Restoration LLC',
             'invoice_number' => '015/2026',
             'sequence' => 15,
             'year' => 2026,

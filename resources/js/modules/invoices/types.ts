@@ -47,12 +47,17 @@ export interface Invoice {
     amount_received: string | number | null;
     notes: string | null;
     additional_notes: string | null;
-    client_name: string;
-    client_tax_id: string | null;
-    client_address: string | null;
-    client_city: string | null;
-    client_country: string | null;
-    client?: { uuid: string; client_name: string } | null;
+    client?: {
+        uuid: string;
+        client_name: string;
+        email?: string | null;
+        phone?: string | null;
+        tax_id?: string | null;
+        nif?: string | null;
+        address?: string | null;
+        country?: string | null;
+        country_code?: string | null;
+    } | null;
     product?: InvoiceProduct | null;
     items?: InvoiceItem[];
     user?: { first_name: string | null; last_name: string | null } | null;

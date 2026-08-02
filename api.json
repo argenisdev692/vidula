@@ -6449,6 +6449,18 @@
                             "null"
                         ]
                     },
+                    "client_email": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "client_phone": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
                     "client_address": {
                         "type": [
                             "string",
@@ -6526,6 +6538,8 @@
                     "additional_notes",
                     "client_name",
                     "client_tax_id",
+                    "client_email",
+                    "client_phone",
                     "client_address",
                     "client_city",
                     "client_country",

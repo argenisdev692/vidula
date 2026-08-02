@@ -212,7 +212,9 @@
         $fmt = static fn ($n) => $symbol.number_format((float) $n, 2).' '.$currency;
         $providerName = $company['legal_name'] ?: $company['name'];
         $providerNameUpper = mb_strtoupper((string) $providerName, 'UTF-8');
-        $clientNameUpper = mb_strtoupper((string) $invoice->client_name, 'UTF-8');
+        $client = $invoice->client;
+        $clientNameUpper = mb_strtoupper((string) ($client?->client_name ?? ''), 'UTF-8');
+        $clientTaxId = \Modules\Invoices\Application\Support\InvoiceClientBilling::taxIdForClient($client);
         $statusLabel = $invoice->is_paid ? $labels['status_paid'] : $labels['status_pending'];
     @endphp
 
@@ -272,18 +274,20 @@
             </td>
             <td>
                 <div class="party-title">{{ $labels['bill_to'] }}</div>
-                <div class="party-name">{{ $clientNameUpper }}</div>
-                @if ($invoice->client_tax_id)
-                    <div class="party-line"><strong>{{ $pdf['client_tax_id_label'] }}:</strong> {{ $invoice->client_tax_id }}</div>
-                @endif
-                @if ($invoice->client_address)
-                    <div class="party-line">{{ $invoice->client_address }}</div>
-                @endif
-                @if ($invoice->client_email)
-                    <div class="party-line"><strong>{{ $labels['email'] }}:</strong> {{ $invoice->client_email }}</div>
-                @endif
-                @if ($invoice->client_phone)
-                    <div class="party-line"><strong>{{ $labels['phone'] }}:</strong> {{ $invoice->client_phone }}</div>
+                @if ($client)
+                    <div class="party-name">{{ $clientNameUpper }}</div>
+                    @if ($clientTaxId)
+                        <div class="party-line"><strong>{{ $pdf['client_tax_id_label'] }}:</strong> {{ $clientTaxId }}</div>
+                    @endif
+                    @if ($client->address)
+                        <div class="party-line">{{ $client->address }}</div>
+                    @endif
+                    @if ($client->email)
+                        <div class="party-line"><strong>{{ $labels['email'] }}:</strong> {{ $client->email }}</div>
+                    @endif
+                    @if ($client->phone)
+                        <div class="party-line"><strong>{{ $labels['phone'] }}:</strong> {{ $client->phone }}</div>
+                    @endif
                 @endif
             </td>
         </tr>
@@ -341,17 +345,17 @@
         </table>
     </div>
 
-    @if (! empty($pdf['fiscal_notice']))
+    @if (! empty($pdf['notes_body']))
         <div class="notice-box">
             <h3>{{ $labels['fiscal_heading'] }}</h3>
-            <p>{{ $pdf['fiscal_notice'] }}</p>
+            <p>{{ $pdf['notes_body'] }}</p>
         </div>
     @endif
 
-    @if ($pdf['show_additional_notes'] && $invoice->additional_notes)
+    @if (! empty($pdf['additional_notes']))
         <div class="notice-box">
-            <h3>{{ $labels['notes_heading'] }}</h3>
-            <p>{{ $invoice->additional_notes }}</p>
+            <h3>{{ $labels['additional_notes_heading'] }}</h3>
+            <p>{{ $pdf['additional_notes'] }}</p>
         </div>
     @endif
 

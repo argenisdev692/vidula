@@ -20,7 +20,7 @@ final readonly class DomPdfInvoiceRenderer implements InvoicePdfRendererPort
     {
         $invoice->loadMissing([
             'items',
-            'client:id,uuid,client_name,email,phone,tax_id,nif,address',
+            'client:id,uuid,client_name,email,phone,tax_id,nif,address,country,country_code',
             'product:id,uuid,title,type',
         ]);
 

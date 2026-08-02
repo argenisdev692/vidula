@@ -30,6 +30,7 @@ final readonly class InvoiceExportController
         $rows = InvoiceEloquentModel::query()
             ->when($filters->status === 'suspended', fn ($q) => $q->onlyTrashed())
             ->applyFilters($filters)
+            ->with('client:id,client_name')
             ->orderByDesc('issue_date')
             ->orderByDesc('sequence')
             ->lazy();

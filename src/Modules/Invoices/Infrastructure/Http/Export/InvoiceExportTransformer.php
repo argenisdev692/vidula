@@ -40,7 +40,7 @@ final readonly class InvoiceExportTransformer
     {
         return [
             'Number' => $invoice->invoice_number,
-            'Client' => $invoice->client_name,
+            'Client' => $invoice->client?->client_name ?? '—',
             'Issue date' => $invoice->issue_date?->toIso8601String() ?? '',
             'Due date' => $invoice->due_date?->toIso8601String() ?? '',
             'Total' => sprintf('%s %s', $invoice->currency, number_format((float) $invoice->total, 2, '.', '')),

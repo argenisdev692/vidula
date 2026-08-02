@@ -10,7 +10,6 @@ use Illuminate\Validation\ValidationException;
 use Modules\Clients\Domain\Ports\ClientRepositoryPort;
 use Modules\Invoices\Application\DTOs\InvoiceData;
 use Modules\Invoices\Application\Support\InvoiceCacheKeys;
-use Modules\Invoices\Application\Support\InvoiceClientSnapshot;
 use Modules\Invoices\Application\Support\InvoiceTotalsCalculator;
 use Modules\Invoices\Domain\Ports\InvoiceRepositoryPort;
 use Modules\Invoices\Infrastructure\Persistence\Eloquent\Models\InvoiceEloquentModel;
@@ -71,7 +70,6 @@ final readonly class UpdateInvoiceHandler
             'amount_received' => $data->isPaid ? $data->amountReceived : null,
             'notes' => $data->notes,
             'additional_notes' => $data->additionalNotes,
-            ...InvoiceClientSnapshot::fromClient($client),
         ], $totals['items']));
 
         $this->cache->forget(InvoiceCacheKeys::invoice($updated->uuid));

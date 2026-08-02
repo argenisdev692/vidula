@@ -52,14 +52,6 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string|null $amount_received
  * @property string|null $notes
  * @property string|null $additional_notes
- * @property string $client_name
- * @property string|null $client_tax_id
- * @property string|null $client_email
- * @property string|null $client_phone
- * @property string|null $client_address
- * @property string|null $client_city
- * @property string|null $client_country
- * @property string|null $client_country_code
  * @property Carbon|null $deleted_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -95,14 +87,6 @@ use Spatie\Activitylog\Support\LogOptions;
     'amount_received',
     'notes',
     'additional_notes',
-    'client_name',
-    'client_tax_id',
-    'client_email',
-    'client_phone',
-    'client_address',
-    'client_city',
-    'client_country',
-    'client_country_code',
 ])]
 final class InvoiceEloquentModel extends Model
 {
@@ -168,7 +152,7 @@ final class InvoiceEloquentModel extends Model
             ->when($filters->search !== null, fn ($q) => $q->where(function ($w) use ($filters): void {
                 $term = "%{$filters->search}%";
                 $w->where('invoice_number', 'like', $term)
-                    ->orWhere('client_name', 'like', $term);
+                    ->orWhereHas('client', fn ($c) => $c->where('client_name', 'like', $term));
             }))
             ->when(
                 $filters->year !== null,
@@ -240,7 +224,6 @@ final class InvoiceEloquentModel extends Model
                 'amount_received',
                 'notes',
                 'additional_notes',
-                'client_name',
             ])
             ->logOnlyDirty()
             ->dontLogEmptyChanges()

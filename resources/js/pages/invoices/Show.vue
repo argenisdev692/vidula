@@ -71,7 +71,7 @@ function openPdf(): void {
         <dl class="facts">
             <div class="fact">
                 <dt>Client</dt>
-                <dd>{{ invoice.client_name }}</dd>
+                <dd>{{ invoice.client?.client_name ?? '—' }}</dd>
             </div>
             <div class="fact">
                 <dt>Issue date</dt>
