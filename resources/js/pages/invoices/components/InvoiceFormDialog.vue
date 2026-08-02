@@ -20,6 +20,7 @@ import {
     type InvoiceItemFormValues,
 } from '@/modules/invoices/schemas/invoiceFormSchema';
 import { buildCrossBorderVatNotice } from '@/modules/invoices/helpers/invoiceVatNotice';
+import { formatMoney } from '@/modules/invoices/helpers/formatDate';
 import { toLocalIsoDate } from '@/lib/date';
 import type {
     Invoice,
