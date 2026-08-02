@@ -54,6 +54,8 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string|null $additional_notes
  * @property string $client_name
  * @property string|null $client_tax_id
+ * @property string|null $client_email
+ * @property string|null $client_phone
  * @property string|null $client_address
  * @property string|null $client_city
  * @property string|null $client_country
@@ -95,6 +97,8 @@ use Spatie\Activitylog\Support\LogOptions;
     'additional_notes',
     'client_name',
     'client_tax_id',
+    'client_email',
+    'client_phone',
     'client_address',
     'client_city',
     'client_country',

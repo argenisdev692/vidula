@@ -105,10 +105,16 @@
         .party-name {
             font-size: 13px;
             font-weight: bold;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .party-line { margin: 3px 0; font-size: 11px; color: #444; line-height: 1.45; }
+        .party-line strong {
+            font-weight: bold;
             color: #2c3e50;
         }
-        .party-line { margin: 2px 0; font-size: 11px; color: #444; }
         table.items {
             width: 100%;
             border-collapse: collapse;
@@ -205,6 +211,8 @@
         $symbol = $pdf['currency_symbol'];
         $fmt = static fn ($n) => $symbol.number_format((float) $n, 2).' '.$currency;
         $providerName = $company['legal_name'] ?: $company['name'];
+        $providerNameUpper = mb_strtoupper((string) $providerName, 'UTF-8');
+        $clientNameUpper = mb_strtoupper((string) $invoice->client_name, 'UTF-8');
         $statusLabel = $invoice->is_paid ? $labels['status_paid'] : $labels['status_pending'];
     @endphp
 
@@ -245,37 +253,37 @@
         <tr>
             <td>
                 <div class="party-title">{{ $labels['from'] }}</div>
-                <div class="party-name">{{ $providerName }}</div>
+                <div class="party-name">{{ $providerNameUpper }}</div>
                 @if (! empty($company['nif_nipc']))
-                    <div class="party-line">NIF/NIPC: {{ $company['nif_nipc'] }}</div>
+                    <div class="party-line"><strong>NIF/NIPC:</strong> {{ $company['nif_nipc'] }}</div>
                 @endif
                 @if (! empty($company['nie']))
-                    <div class="party-line">NIE: {{ $company['nie'] }}</div>
+                    <div class="party-line"><strong>NIE:</strong> {{ $company['nie'] }}</div>
                 @endif
                 @if (! empty($company['address']))
                     <div class="party-line">{{ $company['address'] }}</div>
                 @endif
                 @if (! empty($company['email']))
-                    <div class="party-line">{{ $labels['email'] }}: {{ $company['email'] }}</div>
+                    <div class="party-line"><strong>{{ $labels['email'] }}:</strong> {{ $company['email'] }}</div>
                 @endif
                 @if (! empty($company['phone']))
-                    <div class="party-line">{{ $labels['phone'] }}: {{ $company['phone'] }}</div>
+                    <div class="party-line"><strong>{{ $labels['phone'] }}:</strong> {{ $company['phone'] }}</div>
                 @endif
             </td>
             <td>
                 <div class="party-title">{{ $labels['bill_to'] }}</div>
-                <div class="party-name">{{ $invoice->client_name }}</div>
+                <div class="party-name">{{ $clientNameUpper }}</div>
                 @if ($invoice->client_tax_id)
-                    <div class="party-line">{{ $pdf['client_tax_id_label'] }}: {{ $invoice->client_tax_id }}</div>
+                    <div class="party-line"><strong>{{ $pdf['client_tax_id_label'] }}:</strong> {{ $invoice->client_tax_id }}</div>
                 @endif
                 @if ($invoice->client_address)
                     <div class="party-line">{{ $invoice->client_address }}</div>
                 @endif
-                @if ($invoice->client_city)
-                    <div class="party-line">{{ $invoice->client_city }}</div>
+                @if ($invoice->client_email)
+                    <div class="party-line"><strong>{{ $labels['email'] }}:</strong> {{ $invoice->client_email }}</div>
                 @endif
-                @if ($invoice->client_country)
-                    <div class="party-line">{{ $invoice->client_country }}</div>
+                @if ($invoice->client_phone)
+                    <div class="party-line"><strong>{{ $labels['phone'] }}:</strong> {{ $invoice->client_phone }}</div>
                 @endif
             </td>
         </tr>

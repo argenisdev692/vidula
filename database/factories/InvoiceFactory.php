@@ -53,6 +53,8 @@ final class InvoiceFactory extends Factory
             'additional_notes' => null,
             'client_name' => $this->faker->company(),
             'client_tax_id' => null,
+            'client_email' => null,
+            'client_phone' => null,
             'client_address' => $this->faker->streetAddress(),
             'client_city' => null,
             'client_country' => 'United States',

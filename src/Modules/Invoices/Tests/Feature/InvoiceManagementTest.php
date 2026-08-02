@@ -116,6 +116,10 @@ final class InvoiceManagementTest extends TestCase
         $client = ClientEloquentModel::factory()->active()->create([
             'country' => 'Spain',
             'country_code' => 'ES',
+            'email' => 'billing@client.test',
+            'phone' => '+34600111222',
+            'nif' => 'B98330335',
+            'tax_id' => '0',
         ]);
 
         $this->actingAs($admin)
@@ -126,6 +130,9 @@ final class InvoiceManagementTest extends TestCase
 
         $this->assertSame('Spain', $invoice->client_country);
         $this->assertSame('ES', $invoice->client_country_code);
+        $this->assertSame('billing@client.test', $invoice->client_email);
+        $this->assertSame('+34600111222', $invoice->client_phone);
+        $this->assertSame('B98330335', $invoice->client_tax_id);
     }
 
     public function test_zero_percent_tax_keeps_total_equal_to_subtotal(): void

@@ -33,7 +33,7 @@ final class ClientSeeder extends Seeder
                 'tax_id' => '0',
                 'nif' => 'B98330335',
                 'address' => 'Avda. Manuel de Falla, 12 Duplicado, 46015 Valencia, España',
-                'country' => 'España',
+                'country' => 'Spain',
                 'country_code' => 'ES',
                 'website' => 'https://imaginaformacion.com/',
                 'facebook_link' => 'https://www.facebook.com/ImaginaGroup/',
@@ -59,7 +59,7 @@ final class ClientSeeder extends Seeder
                 'tax_id' => '0',
                 'nif' => 'Y7150874G',
                 'address' => 'Calle delicias 42 Portal A, Piso 1E, 35110 Vecindario, Las Palmas, España',
-                'country' => 'España',
+                'country' => 'spain',
                 'country_code' => 'ES',
             ],
         ];
