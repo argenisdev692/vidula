@@ -9,7 +9,7 @@
  * When `variant="dialog"`, success/cancel are emitted for the parent modal
  * instead of navigating away.
  */
-import { computed, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
 import TextField from '@/common/form/TextField.vue';
 import SelectField from '@/common/form/SelectField.vue';
@@ -44,7 +44,54 @@ const emit = defineEmits<{ saved: []; cancel: [] }>();
 const isEdit = computed<boolean>(() => props.mode === 'edit');
 const isDialog = computed<boolean>(() => props.variant === 'dialog');
 const page = usePage<SharedProps>();
-const serviceSelectOptions = computed(() => serviceOptionsToSelect(props.serviceOptions));
+
+/** Inertia `serviceOptions` + fallback to the public catalog API when empty. */
+const resolvedServiceOptions = ref<ServiceOption[]>([...props.serviceOptions]);
+
+watch(
+    () => props.serviceOptions,
+    (next) => {
+        if (next.length > 0) {
+            resolvedServiceOptions.value = next;
+        }
+    },
+    { deep: true },
+);
+
+async function loadPublicServicesIfNeeded(): Promise<void> {
+    if (resolvedServiceOptions.value.length > 0) {
+        return;
+    }
+    try {
+        const res = await fetch('/api/services/public', {
+            headers: { Accept: 'application/json' },
+            credentials: 'same-origin',
+        });
+        if (!res.ok) {
+            return;
+        }
+        const json = (await res.json()) as {
+            data?: Array<{ uuid: string; name: string; slug: string }>;
+        };
+        const rows = json.data ?? [];
+        if (rows.length === 0) {
+            return;
+        }
+        resolvedServiceOptions.value = rows.map((row) => ({
+            uuid: row.uuid,
+            name: row.name,
+            slug: row.slug,
+        }));
+    } catch {
+        /* keep empty — Select shows placeholder */
+    }
+}
+
+onMounted(() => {
+    void loadPublicServicesIfNeeded();
+});
+
+const serviceSelectOptions = computed(() => serviceOptionsToSelect(resolvedServiceOptions.value));
 
 const form = useForm<AppointmentFormValues & { scheduled_date: string; scheduled_time: string }>({
     first_name: props.appointment?.first_name ?? '',
