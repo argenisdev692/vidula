@@ -47,7 +47,10 @@ final class GenerateInvoicePdfJob implements ShouldQueue
 
         try {
             $binary = $renderer->render($invoice);
-            $cache->put(InvoiceCacheKeys::pdf($this->invoiceUuid), $binary, now()->addDay());
+            $version = $invoice->updated_at?->getTimestamp() ?? 0;
+            $cache->put(InvoiceCacheKeys::pdf($this->invoiceUuid, $version), $binary, now()->addDay());
+            // Legacy unversioned key (pre-versioned cache) — drop so downloads cannot hit it.
+            $cache->forget(InvoiceCacheKeys::pdf($this->invoiceUuid));
         } catch (Throwable $exception) {
             Log::warning('invoices.pdf.generation_failed', [
                 'uuid' => $this->invoiceUuid,

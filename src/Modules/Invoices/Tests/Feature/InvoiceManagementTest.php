@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Modules\Clients\Infrastructure\Persistence\Eloquent\Models\ClientEloquentModel;
 use Modules\Invoices\Application\Support\InvoiceClientBilling;
+use Modules\Invoices\Application\Support\InvoicePdfViewAssembler;
 use Modules\Invoices\Infrastructure\Persistence\Eloquent\Models\InvoiceEloquentModel;
 use Modules\Invoices\Infrastructure\Persistence\Eloquent\Models\InvoiceItemEloquentModel;
 use Modules\Invoices\Infrastructure\Queue\GenerateInvoicePdfJob;
@@ -102,9 +103,106 @@ final class InvoiceManagementTest extends TestCase
         $this->assertSame('200.00', $invoice->subtotal);
         $this->assertSame('0.00', $invoice->tax_amount);
         $this->assertSame('200.00', $invoice->total);
+        $this->assertSame('USD', $invoice->currency);
         $this->assertCount(2, $invoice->items);
 
         Queue::assertPushed(GenerateInvoicePdfJob::class);
+    }
+
+    public function test_create_persists_eur_currency_when_requested(): void
+    {
+        Queue::fake();
+
+        $admin = $this->superAdmin();
+        $client = ClientEloquentModel::factory()->active()->create([
+            'country_code' => 'ES',
+        ]);
+
+        $this->actingAs($admin)
+            ->post('/invoices', $this->validPayload($client, [
+                'invoice_number' => '020/2026',
+                'currency' => 'EUR',
+            ]))
+            ->assertRedirect();
+
+        $invoice = InvoiceEloquentModel::query()->where('invoice_number', '020/2026')->firstOrFail();
+        $this->assertSame('EUR', $invoice->currency);
+    }
+
+    public function test_update_changes_currency_and_pdf_assembler_symbol(): void
+    {
+        $admin = $this->superAdmin();
+        $client = ClientEloquentModel::factory()->active()->create(['country_code' => 'US']);
+        $invoice = InvoiceEloquentModel::factory()->create([
+            'user_id' => $admin->id,
+            'client_id' => $client->id,
+            'invoice_number' => '021/2026',
+            'sequence' => 21,
+            'year' => 2026,
+            'currency' => 'EUR',
+            'subtotal' => 10,
+            'tax_amount' => 0,
+            'total' => 10,
+        ]);
+        InvoiceItemEloquentModel::query()->create([
+            'invoice_id' => $invoice->id,
+            'sort_order' => 0,
+            'title' => 'Old',
+            'quantity' => 1,
+            'unit_price' => 10,
+            'amount' => 10,
+        ]);
+
+        $this->actingAs($admin)
+            ->put("/invoices/{$invoice->uuid}", $this->validPayload($client, [
+                'invoice_number' => '021/2026',
+                'currency' => 'USD',
+            ]))
+            ->assertRedirect();
+
+        $invoice->refresh()->load('client');
+        $this->assertSame('USD', $invoice->currency);
+
+        $assembler = new InvoicePdfViewAssembler;
+        $pdf = $assembler->assemble($invoice, ['country' => 'Portugal', 'country_code' => 'PT']);
+        $this->assertSame('$', $pdf['currency_symbol']);
+    }
+
+    public function test_show_json_includes_items_and_currency_for_edit_hydrate(): void
+    {
+        $admin = $this->superAdmin();
+        $client = ClientEloquentModel::factory()->active()->create(['country_code' => 'US']);
+        $invoice = InvoiceEloquentModel::factory()->create([
+            'user_id' => $admin->id,
+            'client_id' => $client->id,
+            'invoice_number' => '022/2026',
+            'sequence' => 22,
+            'year' => 2026,
+            'currency' => 'USD',
+            'notes' => 'Stored fiscal notice',
+            'additional_notes' => 'Extra note',
+        ]);
+        InvoiceItemEloquentModel::query()->create([
+            'invoice_id' => $invoice->id,
+            'sort_order' => 0,
+            'title' => 'Consulting',
+            'description' => 'Hourly',
+            'quantity' => 2,
+            'unit_price' => 50,
+            'amount' => 100,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->getJson("/invoices/{$invoice->uuid}");
+
+        $response->assertOk()
+            ->assertJsonPath('data.currency', 'USD')
+            ->assertJsonPath('data.notes', 'Stored fiscal notice')
+            ->assertJsonPath('data.additional_notes', 'Extra note')
+            ->assertJsonPath('data.items.0.title', 'Consulting');
+
+        $this->assertSame(2.0, (float) $response->json('data.items.0.quantity'));
+        $this->assertSame(50.0, (float) $response->json('data.items.0.unit_price'));
     }
 
     public function test_create_links_client_for_pdf_and_listing(): void

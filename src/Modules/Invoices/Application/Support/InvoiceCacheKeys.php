@@ -14,8 +14,16 @@ final readonly class InvoiceCacheKeys
         return "invoice_{$uuid}";
     }
 
-    public static function pdf(string $uuid): string
+    /**
+     * PDF binary cache key. Pass `$version` (usually `updated_at` unix ts) so an
+     * edit never re-serves a pre-edit PDF after Redis forget races.
+     */
+    public static function pdf(string $uuid, ?int $version = null): string
     {
-        return "invoice_pdf_{$uuid}";
+        if ($version === null) {
+            return "invoice_pdf_{$uuid}";
+        }
+
+        return "invoice_pdf_{$uuid}_{$version}";
     }
 }

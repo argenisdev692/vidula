@@ -51,4 +51,26 @@ final class InvoicePdfViewAssemblerTest extends TestCase
         $this->assertSame('INVOICE', $pdf['labels']['document_title']);
         $this->assertStringContainsString('Reverse Charge', (string) $pdf['notes_body']);
     }
+
+    public function test_currency_symbol_follows_invoice_currency(): void
+    {
+        $client = ClientEloquentModel::factory()->make(['country_code' => 'US']);
+        $usdInvoice = InvoiceEloquentModel::factory()->make([
+            'currency' => 'USD',
+            'tax_mode' => 'EXEMPT',
+        ]);
+        $usdInvoice->setRelation('client', $client);
+
+        $eurInvoice = InvoiceEloquentModel::factory()->make([
+            'currency' => 'EUR',
+            'tax_mode' => 'EXEMPT',
+        ]);
+        $eurInvoice->setRelation('client', $client);
+
+        $assembler = new InvoicePdfViewAssembler;
+        $company = ['country' => 'Portugal', 'country_code' => 'PT'];
+
+        $this->assertSame('$', $assembler->assemble($usdInvoice, $company)['currency_symbol']);
+        $this->assertSame('€', $assembler->assemble($eurInvoice, $company)['currency_symbol']);
+    }
 }

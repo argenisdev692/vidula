@@ -67,7 +67,7 @@ const form = useForm<InvoiceFormValues>({
     invoice_number: '',
     issue_date: todayIso(),
     due_date: plusDaysIso(5),
-    currency: 'EUR',
+    currency: 'USD',
     tax_mode: 'EXEMPT',
     tax_rate: 0,
     tax_label: 'IVA',
@@ -80,6 +80,15 @@ const form = useForm<InvoiceFormValues>({
     additional_notes: '',
     items: [emptyInvoiceItem(0)],
 });
+
+const currencyOptions: SelectOption[] = [
+    { label: 'USD — US Dollar', value: 'USD' },
+    { label: 'EUR — Euro', value: 'EUR' },
+];
+
+function currencyFromClientCountry(countryCode: string | null | undefined): string {
+    return (countryCode ?? '').trim().toUpperCase() === 'US' ? 'USD' : 'EUR';
+}
 
 const isEdit = computed<boolean>(() => props.mode === 'edit');
 const dialogTitle = computed<string>(() => (isEdit.value ? 'Edit invoice' : 'New invoice'));
@@ -111,6 +120,13 @@ const clientModel = computed<string | null>({
     },
 });
 
+const currencyModel = computed<string | null>({
+    get: () => form.currency || null,
+    set: (value) => {
+        form.currency = (value ?? 'USD').toUpperCase();
+    },
+});
+
 watch(
     () => form.client_uuid,
     () => {
@@ -125,15 +141,14 @@ function applyClientDefaults(): void {
     const client = props.clients.find((row) => row.uuid === form.client_uuid);
     if (!client) {
         if (!isEdit.value) {
-            form.currency = 'EUR';
+            form.currency = 'USD';
             form.notes = props.defaultNotes ?? '';
         }
         return;
     }
 
-    const code = (client.country_code ?? '').trim().toUpperCase();
     if (!isEdit.value) {
-        form.currency = code === 'US' ? 'USD' : 'EUR';
+        form.currency = currencyFromClientCountry(client.country_code);
     }
 
     applyNotesForSelectedClient();
@@ -172,7 +187,9 @@ const productModel = computed<string | null>({
         if (!product) {
             return;
         }
-        form.currency = product.currency.toUpperCase();
+        // Do not overwrite invoice currency from the product — client/country
+        // (and the currency field) own that. Products default to EUR and were
+        // wiping USD after selecting a US client.
         const first = form.items[0];
         if (first && (!first.title.trim() || first.unit_price === 0)) {
             first.title = product.title;
@@ -273,7 +290,7 @@ function fillFromInvoice(invoice: Invoice): void {
     form.invoice_number = invoice.invoice_number;
     form.issue_date = parseIsoDate(invoice.issue_date);
     form.due_date = parseIsoDate(invoice.due_date);
-    form.currency = invoice.currency;
+    form.currency = (invoice.currency || 'USD').toUpperCase();
     form.tax_mode = invoice.tax_mode;
     form.tax_rate = invoice.tax_rate !== null ? Number(invoice.tax_rate) : 0;
     form.tax_label = invoice.tax_label || 'IVA';
@@ -309,8 +326,12 @@ watch(visible, async (open) => {
         loadingInvoice.value = true;
         try {
             const payload = await apiFetch<{ data: Invoice }>('GET', `/invoices/${props.invoice.uuid}`);
+            if (!payload?.data) {
+                throw new Error('Invoice payload missing data');
+            }
             fillFromInvoice(payload.data);
         } catch {
+            // List rows omit items/notes/payment — still restore currency and header fields.
             fillFromInvoice(props.invoice);
         } finally {
             loadingInvoice.value = false;
@@ -325,7 +346,7 @@ watch(visible, async (open) => {
         form.invoice_number = await resolveNextInvoiceNumber();
         form.issue_date = todayIso();
         form.due_date = plusDaysIso(5);
-        form.currency = 'EUR';
+        form.currency = 'USD';
         form.tax_mode = 'EXEMPT';
         form.tax_rate = 0;
         form.tax_label = 'IVA';
@@ -510,6 +531,14 @@ function submit(): void {
                     required
                     :min-date="form.issue_date || undefined"
                     :error="form.errors.due_date"
+                />
+                <SelectField
+                    v-model="currencyModel"
+                    name="currency"
+                    label="Currency"
+                    required
+                    :options="currencyOptions"
+                    :error="form.errors.currency"
                 />
                 <SelectField
                     v-model="taxModeModel"
