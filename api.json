@@ -3353,7 +3353,34 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/components/schemas/ServiceEloquentModel"
+                                                "type": "object",
+                                                "properties": {
+                                                    "uuid": {
+                                                        "type": "string"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "slug": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "sort_order": {
+                                                        "type": "integer"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "uuid",
+                                                    "name",
+                                                    "slug",
+                                                    "description",
+                                                    "sort_order"
+                                                ]
                                             }
                                         }
                                     },
@@ -6440,51 +6467,6 @@
                             "null"
                         ]
                     },
-                    "client_name": {
-                        "type": "string"
-                    },
-                    "client_tax_id": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "client_email": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "client_phone": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "client_address": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "client_city": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "client_country": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "client_country_code": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
                     "deleted_at": {
                         "type": [
                             "string",
@@ -6536,14 +6518,6 @@
                     "amount_received",
                     "notes",
                     "additional_notes",
-                    "client_name",
-                    "client_tax_id",
-                    "client_email",
-                    "client_phone",
-                    "client_address",
-                    "client_city",
-                    "client_country",
-                    "client_country_code",
                     "deleted_at",
                     "created_at",
                     "updated_at",
@@ -7287,69 +7261,6 @@
                     "deleted_at"
                 ],
                 "title": "Role"
-            },
-            "ServiceEloquentModel": {
-                "type": "object",
-                "properties": {
-                    "uuid": {
-                        "type": "string"
-                    },
-                    "name": {
-                        "type": "string"
-                    },
-                    "slug": {
-                        "type": "string"
-                    },
-                    "description": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "is_active": {
-                        "type": "boolean"
-                    },
-                    "sort_order": {
-                        "type": "integer"
-                    },
-                    "user_id": {
-                        "type": "integer"
-                    },
-                    "deleted_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "updated_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    }
-                },
-                "required": [
-                    "uuid",
-                    "name",
-                    "slug",
-                    "description",
-                    "is_active",
-                    "sort_order",
-                    "user_id",
-                    "deleted_at",
-                    "created_at",
-                    "updated_at"
-                ],
-                "title": "ServiceEloquentModel"
             },
             "SocialCopyData": {
                 "type": "object",

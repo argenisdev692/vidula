@@ -8,6 +8,7 @@ use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Modules\Clients\Infrastructure\Persistence\Eloquent\Models\ClientEloquentModel;
 use Modules\Invoices\Infrastructure\Persistence\Eloquent\Models\InvoiceEloquentModel;
 use Tests\TestCase;
 
@@ -32,11 +33,14 @@ final class InvoiceApiTest extends TestCase
     public function test_sanctum_lists_invoices(): void
     {
         Sanctum::actingAs($this->superAdmin());
+        $client = ClientEloquentModel::factory()->active()->create([
+            'client_name' => 'API Invoice Client',
+        ]);
         InvoiceEloquentModel::factory()->create([
+            'client_id' => $client->id,
             'invoice_number' => '050/2026',
             'sequence' => 50,
             'year' => 2026,
-            'client_name' => 'API Invoice Client',
         ]);
 
         $this->getJson('/api/invoices')
@@ -47,11 +51,14 @@ final class InvoiceApiTest extends TestCase
     public function test_sanctum_shows_an_invoice_by_uuid(): void
     {
         Sanctum::actingAs($this->superAdmin());
+        $client = ClientEloquentModel::factory()->active()->create([
+            'client_name' => 'Shown Invoice Client',
+        ]);
         $invoice = InvoiceEloquentModel::factory()->create([
+            'client_id' => $client->id,
             'invoice_number' => '051/2026',
             'sequence' => 51,
             'year' => 2026,
-            'client_name' => 'Shown Invoice Client',
         ]);
 
         $this->getJson("/api/invoices/{$invoice->uuid}")

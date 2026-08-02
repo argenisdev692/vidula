@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Modules\Services\Infrastructure\Cache\ServicePublicFeedCache;
 use Modules\Services\Infrastructure\Persistence\Eloquent\Models\ServiceEloquentModel;
 use Ramsey\Uuid\Uuid;
 
@@ -80,5 +81,7 @@ final class ServiceSeeder extends Seeder
         ServiceEloquentModel::query()
             ->where('slug', 'mobile_app')
             ->update(['is_active' => false]);
+
+        ServicePublicFeedCache::flush();
     }
 }
