@@ -19,6 +19,10 @@ Route::middleware(['web', 'auth', 'throttle:60,1'])->prefix('invoices')->name('i
     Route::get('/next-number', [InvoiceController::class, 'nextNumber'])
         ->middleware('permission:CREATE_INVOICES')->name('next-number');
 
+    Route::get('/check-number', [InvoiceController::class, 'checkNumber'])
+        ->middleware(['permission:CREATE_INVOICES|UPDATE_INVOICES', 'throttle:30,1'])
+        ->name('check-number');
+
     Route::get('/export', InvoiceExportController::class)
         ->middleware(['permission:EXPORT_INVOICES', 'throttle:10,1'])->name('export');
 

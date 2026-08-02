@@ -50,6 +50,13 @@ interface InvoiceRepositoryPort
     ): bool;
 
     /**
+     * Soft-deleted rows included. Used by the realtime number check.
+     *
+     * @return array{uuid: string, invoice_number: string, client_name: string, is_suspended: bool}|null
+     */
+    public function findNumberConflict(string $invoiceNumber, int $year, int $sequence, ?string $exceptUuid = null): ?array;
+
+    /**
      * @param  list<string>  $serviceUuids
      * @return array<string, int>
      */

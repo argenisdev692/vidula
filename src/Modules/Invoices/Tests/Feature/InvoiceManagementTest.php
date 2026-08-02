@@ -364,6 +364,85 @@ final class InvoiceManagementTest extends TestCase
             ]);
     }
 
+    public function test_check_number_reports_available_when_free(): void
+    {
+        $admin = $this->superAdmin();
+
+        $this->actingAs($admin)
+            ->getJson('/invoices/check-number?invoice_number=014/2026')
+            ->assertOk()
+            ->assertJson([
+                'available' => true,
+                'invoice_number' => '014/2026',
+                'invoice' => null,
+            ]);
+    }
+
+    public function test_check_number_returns_client_name_when_taken(): void
+    {
+        $admin = $this->superAdmin();
+        $client = ClientEloquentModel::factory()->active()->create([
+            'client_name' => 'Aquashield Restoration LLC',
+        ]);
+        InvoiceEloquentModel::factory()->create([
+            'user_id' => $admin->id,
+            'client_id' => $client->id,
+            'invoice_number' => '014/2026',
+            'sequence' => 14,
+            'year' => 2026,
+        ]);
+
+        $this->actingAs($admin)
+            ->getJson('/invoices/check-number?invoice_number=014')
+            ->assertOk()
+            ->assertJsonPath('available', false)
+            ->assertJsonPath('invoice_number', '014/'.now()->year)
+            ->assertJsonPath('invoice.client_name', 'Aquashield Restoration LLC')
+            ->assertJsonPath('invoice.is_suspended', false);
+    }
+
+    public function test_check_number_ignores_current_invoice_on_edit(): void
+    {
+        $admin = $this->superAdmin();
+        $client = ClientEloquentModel::factory()->active()->create(['client_name' => 'Self Client']);
+        $invoice = InvoiceEloquentModel::factory()->create([
+            'user_id' => $admin->id,
+            'client_id' => $client->id,
+            'invoice_number' => '014/2026',
+            'sequence' => 14,
+            'year' => 2026,
+        ]);
+
+        $this->actingAs($admin)
+            ->getJson("/invoices/check-number?invoice_number=014/2026&ignore={$invoice->uuid}")
+            ->assertOk()
+            ->assertJson([
+                'available' => true,
+                'invoice' => null,
+            ]);
+    }
+
+    public function test_check_number_flags_soft_deleted_as_taken(): void
+    {
+        $admin = $this->superAdmin();
+        $client = ClientEloquentModel::factory()->active()->create(['client_name' => 'Archived Co']);
+        $invoice = InvoiceEloquentModel::factory()->create([
+            'user_id' => $admin->id,
+            'client_id' => $client->id,
+            'invoice_number' => '014/2026',
+            'sequence' => 14,
+            'year' => 2026,
+        ]);
+        $invoice->delete();
+
+        $this->actingAs($admin)
+            ->getJson('/invoices/check-number?invoice_number=014/2026')
+            ->assertOk()
+            ->assertJsonPath('available', false)
+            ->assertJsonPath('invoice.client_name', 'Archived Co')
+            ->assertJsonPath('invoice.is_suspended', true);
+    }
+
     public function test_duplicate_invoice_number_is_rejected(): void
     {
         $admin = $this->superAdmin();

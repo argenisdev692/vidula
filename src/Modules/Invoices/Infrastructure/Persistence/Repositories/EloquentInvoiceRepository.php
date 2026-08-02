@@ -129,6 +129,45 @@ final class EloquentInvoiceRepository implements InvoiceRepositoryPort
             ->exists();
     }
 
+    public function findNumberConflict(
+        string $invoiceNumber,
+        int $year,
+        int $sequence,
+        ?string $exceptUuid = null,
+    ): ?array {
+        $invoice = InvoiceEloquentModel::withTrashed()
+            ->with(['client:id,uuid,client_name'])
+            ->when(
+                $exceptUuid !== null,
+                fn ($q) => $q->where('uuid', '!=', $exceptUuid),
+            )
+            ->where(function ($q) use ($invoiceNumber, $year, $sequence): void {
+                $q->where('invoice_number', $invoiceNumber)
+                    ->orWhere(fn ($w) => $w->where('year', $year)->where('sequence', $sequence));
+            })
+            ->select([
+                'id',
+                'uuid',
+                'client_id',
+                'invoice_number',
+                'sequence',
+                'year',
+                'deleted_at',
+            ])
+            ->first();
+
+        if ($invoice === null) {
+            return null;
+        }
+
+        return [
+            'uuid' => $invoice->uuid,
+            'invoice_number' => $invoice->invoice_number,
+            'client_name' => (string) ($invoice->client?->client_name ?? 'Unknown client'),
+            'is_suspended' => $invoice->deleted_at !== null,
+        ];
+    }
+
     public function mapServiceIdsByUuid(array $serviceUuids): array
     {
         if ($serviceUuids === []) {

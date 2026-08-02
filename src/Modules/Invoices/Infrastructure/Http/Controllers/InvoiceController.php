@@ -17,6 +17,7 @@ use Modules\Invoices\Application\Commands\RestoreInvoiceHandler;
 use Modules\Invoices\Application\Commands\UpdateInvoiceHandler;
 use Modules\Invoices\Application\DTOs\InvoiceData;
 use Modules\Invoices\Application\DTOs\InvoiceFilterData;
+use Modules\Invoices\Application\Queries\CheckInvoiceNumberHandler;
 use Modules\Invoices\Application\Queries\GetInvoiceFormOptionsHandler;
 use Modules\Invoices\Application\Queries\GetInvoiceHandler;
 use Modules\Invoices\Application\Queries\ListInvoicesHandler;
@@ -64,6 +65,23 @@ final readonly class InvoiceController
         $year = $request->integer('year') ?: null;
 
         return response()->json($suggest->handle($year > 0 ? $year : null));
+    }
+
+    public function checkNumber(Request $request, CheckInvoiceNumberHandler $check): JsonResponse
+    {
+        $validated = $request->validate([
+            'invoice_number' => ['required', 'string', 'max:32', 'regex:/^(\d{1,6}|\d{1,6}\/\d{4})$/'],
+            'ignore' => ['nullable', 'uuid'],
+            'year' => ['nullable', 'integer', 'min:2000', 'max:2100'],
+        ]);
+
+        $year = isset($validated['year']) ? (int) $validated['year'] : null;
+
+        return response()->json($check->handle(
+            $validated['invoice_number'],
+            $validated['ignore'] ?? null,
+            $year,
+        ));
     }
 
     public function store(Request $request, InvoiceData $data, CreateInvoiceHandler $create): RedirectResponse

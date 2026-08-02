@@ -21,6 +21,7 @@ import {
 } from '@/modules/invoices/schemas/invoiceFormSchema';
 import { buildCrossBorderVatNotice } from '@/modules/invoices/helpers/invoiceVatNotice';
 import { formatMoney } from '@/modules/invoices/helpers/formatDate';
+import { useInvoiceNumberCheck } from '@/modules/invoices/composables/useInvoiceNumberCheck';
 import { toLocalIsoDate } from '@/lib/date';
 import type {
     Invoice,
@@ -92,6 +93,36 @@ function currencyFromClientCountry(countryCode: string | null | undefined): stri
 
 const isEdit = computed<boolean>(() => props.mode === 'edit');
 const dialogTitle = computed<string>(() => (isEdit.value ? 'Edit invoice' : 'New invoice'));
+
+const { status: invoiceNumberStatus, isBlocking: invoiceNumberBlocking, message: invoiceNumberMessage } =
+    useInvoiceNumberCheck({
+        source: () => form.invoice_number,
+        original: () => (isEdit.value ? props.invoice?.invoice_number : null),
+        ignoreUuid: () => (isEdit.value ? props.invoice?.uuid : null),
+    });
+
+const invoiceNumberError = computed<string | undefined>(() => {
+    if (form.errors.invoice_number) {
+        return form.errors.invoice_number;
+    }
+    if (invoiceNumberStatus.value === 'taken') {
+        return invoiceNumberMessage.value || 'This invoice number is already used.';
+    }
+    if (invoiceNumberStatus.value === 'invalid' && form.invoice_number.trim() !== '') {
+        return invoiceNumberMessage.value;
+    }
+    return undefined;
+});
+
+const invoiceNumberSuccess = computed<string | undefined>(() => {
+    if (invoiceNumberError.value) {
+        return undefined;
+    }
+    if (invoiceNumberStatus.value === 'available' || invoiceNumberStatus.value === 'checking') {
+        return invoiceNumberMessage.value || undefined;
+    }
+    return undefined;
+});
 
 const clientOptions = computed<SelectOption[]>(() =>
     props.clients.map((client) => ({ label: client.client_name, value: client.uuid })),
@@ -405,6 +436,13 @@ function emptyToNull(value: string): string | null {
 }
 
 function submit(): void {
+    if (invoiceNumberBlocking.value) {
+        if (invoiceNumberStatus.value === 'taken') {
+            form.setError('invoice_number', invoiceNumberMessage.value || 'This invoice number is already used.');
+        }
+        return;
+    }
+
     const parsed = invoiceFormSchema.safeParse({
         ...form.data(),
         tax_rate: form.tax_mode === 'PERCENT' ? (form.tax_rate ?? 0) : 0,
@@ -513,8 +551,9 @@ function submit(): void {
                         name="invoice_number"
                         label="Invoice number"
                         required
-                        hint="Auto sequence from last invoice (NNN/YYYY)"
-                        :error="form.errors.invoice_number"
+                        hint="Auto sequence from last invoice (NNN/YYYY). Type 014 to check 014/current year."
+                        :error="invoiceNumberError"
+                        :success="invoiceNumberSuccess"
                     />
                 </div>
                 <DateField
