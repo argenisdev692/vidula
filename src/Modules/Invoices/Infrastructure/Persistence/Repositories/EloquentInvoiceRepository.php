@@ -160,7 +160,7 @@ final class EloquentInvoiceRepository implements InvoiceRepositoryPort
         return ClientEloquentModel::query()
             ->where('status', 'ACTIVE')
             ->orderBy('client_name')
-            ->select(['uuid', 'client_name', 'tax_id', 'nif', 'address', 'email'])
+            ->select(['uuid', 'client_name', 'tax_id', 'nif', 'address', 'email', 'country', 'country_code'])
             ->limit($limit)
             ->get()
             ->map(static fn (ClientEloquentModel $client): array => [
@@ -170,6 +170,8 @@ final class EloquentInvoiceRepository implements InvoiceRepositoryPort
                 'nif' => $client->nif,
                 'address' => $client->address,
                 'email' => $client->email,
+                'country' => $client->country,
+                'country_code' => $client->country_code,
             ])
             ->values()
             ->all();

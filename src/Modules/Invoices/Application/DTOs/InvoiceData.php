@@ -44,6 +44,7 @@ final class InvoiceData extends Data
         public ?string $paymentDate = null,
         public ?float $amountReceived = null,
         public ?string $notes = null,
+        public ?string $additionalNotes = null,
     ) {}
 
     /**
@@ -67,6 +68,7 @@ final class InvoiceData extends Data
             'payment_date' => ['nullable', 'required_if:is_paid,true', 'date'],
             'amount_received' => ['nullable', 'required_if:is_paid,true', 'numeric', 'min:0', 'max:9999999.99'],
             'notes' => ['nullable', 'string', 'max:5000'],
+            'additional_notes' => ['nullable', 'string', 'max:5000'],
             'items' => ['required', 'array', 'min:1', 'max:50'],
             'items.*.title' => ['required', 'string', 'max:255'],
             'items.*.description' => ['nullable', 'string', 'max:500'],

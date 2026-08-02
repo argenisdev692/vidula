@@ -33,6 +33,8 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string $status
  * @property string $phone
  * @property string|null $address
+ * @property string|null $country
+ * @property string|null $country_code
  * @property string|null $tax_id
  * @property string|null $nif
  * @property string|null $website
@@ -61,6 +63,8 @@ use Spatie\Activitylog\Support\LogOptions;
     'status',
     'phone',
     'address',
+    'country',
+    'country_code',
     'tax_id',
     'nif',
     'website',
@@ -173,6 +177,8 @@ final class ClientEloquentModel extends Model
                 'status',
                 'phone',
                 'address',
+                'country',
+                'country_code',
                 'tax_id',
                 'nif',
                 'website',

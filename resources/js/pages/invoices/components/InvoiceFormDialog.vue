@@ -19,7 +19,7 @@ import {
     type InvoiceFormValues,
     type InvoiceItemFormValues,
 } from '@/modules/invoices/schemas/invoiceFormSchema';
-import { formatMoney } from '@/modules/invoices/helpers/formatDate';
+import { buildCrossBorderVatNotice } from '@/modules/invoices/helpers/invoiceVatNotice';
 import { toLocalIsoDate } from '@/lib/date';
 import type {
     Invoice,
@@ -41,8 +41,9 @@ const props = withDefaults(
         products: InvoiceProductOption[];
         nextInvoiceNumber: NextInvoiceNumber;
         defaultNotes?: string | null;
+        issuerCountry?: string;
     }>(),
-    { mode: 'create', invoice: null, defaultNotes: null, products: () => [] },
+    { mode: 'create', invoice: null, defaultNotes: null, products: () => [], issuerCountry: 'Portugal' },
 );
 
 const emit = defineEmits<{ saved: [] }>();
@@ -75,6 +76,7 @@ const form = useForm<InvoiceFormValues>({
     payment_date: '',
     amount_received: null,
     notes: '',
+    additional_notes: '',
     items: [emptyInvoiceItem(0)],
 });
 
@@ -105,8 +107,49 @@ const clientModel = computed<string | null>({
     get: () => form.client_uuid || null,
     set: (value) => {
         form.client_uuid = value ?? '';
+        applyClientDefaults();
     },
 });
+
+function applyClientDefaults(): void {
+    const client = props.clients.find((row) => row.uuid === form.client_uuid);
+    if (!client) {
+        if (!isEdit.value) {
+            form.currency = 'EUR';
+            form.notes = props.defaultNotes ?? '';
+        }
+        return;
+    }
+
+    const code = (client.country_code ?? '').trim().toUpperCase();
+    if (!isEdit.value) {
+        form.currency = code === 'US' ? 'USD' : 'EUR';
+    }
+
+    applyNotesForSelectedClient();
+}
+
+function applyNotesForSelectedClient(): void {
+    if (isEdit.value) {
+        return;
+    }
+
+    const client = props.clients.find((row) => row.uuid === form.client_uuid);
+    if (!client) {
+        form.notes = props.defaultNotes ?? '';
+        return;
+    }
+
+    const notice = buildCrossBorderVatNotice(
+        form.tax_mode,
+        Number(form.tax_rate ?? 0),
+        props.issuerCountry,
+        client.country,
+        client.country_code,
+    );
+
+    form.notes = notice ?? props.defaultNotes ?? '';
+}
 
 const productModel = computed<string | null>({
     get: () => form.product_uuid,
@@ -138,6 +181,7 @@ const taxModeModel = computed<string | null>({
         } else if (form.tax_rate === null) {
             form.tax_rate = 0;
         }
+        applyNotesForSelectedClient();
     },
 });
 
@@ -232,6 +276,7 @@ function fillFromInvoice(invoice: Invoice): void {
             ? Number(invoice.amount_received)
             : null;
     form.notes = invoice.notes ?? '';
+    form.additional_notes = invoice.additional_notes ?? '';
     form.items = mapItemsFromInvoice(invoice);
 }
 
@@ -280,6 +325,7 @@ watch(visible, async (open) => {
         form.payment_date = '';
         form.amount_received = null;
         form.notes = props.defaultNotes ?? '';
+        form.additional_notes = '';
         form.items = [emptyInvoiceItem(0)];
     } finally {
         loadingInvoice.value = false;
@@ -378,6 +424,7 @@ function submit(): void {
         payment_date: data.is_paid ? emptyToNull(data.payment_date) : null,
         amount_received: data.is_paid ? (data.amount_received ?? 0) : null,
         notes: emptyToNull(data.notes),
+        additional_notes: emptyToNull(data.additional_notes),
         items: data.items.map((item, index) => ({
             title: item.title.trim(),
             description: emptyToNull(item.description),
@@ -609,10 +656,19 @@ function submit(): void {
             <TextareaField
                 v-model="form.notes"
                 name="notes"
-                label="Important notes"
-                hint="Shown on the PDF (e.g. VAT reverse charge)."
+                label="VAT / fiscal notice"
+                hint="Auto-filled from client country and tax mode. Shown on the PDF."
                 :rows="3"
                 :error="form.errors.notes"
+            />
+
+            <TextareaField
+                v-model="form.additional_notes"
+                name="additional_notes"
+                label="Additional notes"
+                hint="Optional extra text on the PDF (separate from the fiscal notice)."
+                :rows="3"
+                :error="form.errors.additional_notes"
             />
         </form>
     </AppModal>

@@ -37,6 +37,8 @@ final class EloquentClientRepository implements ClientRepositoryPort
                 'status',
                 'phone',
                 'address',
+                'country',
+                'country_code',
                 'tax_id',
                 'nif',
                 'website',

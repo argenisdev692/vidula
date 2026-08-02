@@ -108,6 +108,26 @@ final class InvoiceManagementTest extends TestCase
         Queue::assertPushed(GenerateInvoicePdfJob::class);
     }
 
+    public function test_create_snapshots_client_country_from_client_record(): void
+    {
+        Queue::fake();
+
+        $admin = $this->superAdmin();
+        $client = ClientEloquentModel::factory()->active()->create([
+            'country' => 'Spain',
+            'country_code' => 'ES',
+        ]);
+
+        $this->actingAs($admin)
+            ->post('/invoices', $this->validPayload($client, ['invoice_number' => '002/2026']))
+            ->assertRedirect();
+
+        $invoice = InvoiceEloquentModel::query()->where('invoice_number', '002/2026')->firstOrFail();
+
+        $this->assertSame('Spain', $invoice->client_country);
+        $this->assertSame('ES', $invoice->client_country_code);
+    }
+
     public function test_zero_percent_tax_keeps_total_equal_to_subtotal(): void
     {
         $admin = $this->superAdmin();

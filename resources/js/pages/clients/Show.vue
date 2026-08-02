@@ -122,6 +122,14 @@ const twitterHref = computed(() => toHttpUrl(props.client.twitter_link));
                 <dd>{{ client.address || '—' }}</dd>
             </div>
             <div class="fact">
+                <dt>Country</dt>
+                <dd>{{ client.country || '—' }}</dd>
+            </div>
+            <div class="fact">
+                <dt>Country code</dt>
+                <dd class="mono">{{ client.country_code || '—' }}</dd>
+            </div>
+            <div class="fact">
                 <dt>Website</dt>
                 <dd>
                     <a

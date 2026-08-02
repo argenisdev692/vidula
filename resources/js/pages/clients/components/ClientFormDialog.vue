@@ -7,8 +7,8 @@
  *   · edit   → PUT  /clients/{uuid}
  *
  * PhoneField emits E.164; empty optional strings are mapped to null on submit.
- * Address uses Google Places autocomplete; only a single `address` string is
- * persisted (clients table has no city/state/zip columns).
+ * Address uses Google Places autocomplete; `country` and `country_code` are
+ * extracted from the selected place (ISO-3166 alpha-2 in `country_code`).
  */
 import { computed, ref, watch } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
@@ -44,6 +44,8 @@ const form = useForm<ClientFormValues>({
     status: 'DRAFT',
     phone: '',
     address: '',
+    country: '',
+    country_code: '',
     tax_id: '',
     nif: '',
     website: '',
@@ -105,6 +107,8 @@ watch(visible, (open) => {
     form.status = props.client?.status ?? 'DRAFT';
     form.phone = props.client?.phone ?? '';
     form.address = props.client?.address ?? '';
+    form.country = props.client?.country ?? '';
+    form.country_code = props.client?.country_code ?? '';
     form.tax_id = props.client?.tax_id ?? '';
     form.nif = props.client?.nif ?? '';
     form.website = props.client?.website ?? '';
@@ -113,7 +117,11 @@ watch(visible, (open) => {
     form.linkedin_link = props.client?.linkedin_link ?? '';
     form.twitter_link = props.client?.twitter_link ?? '';
     form.notes = props.client?.notes ?? '';
-    addressValue.value = seedAddress(props.client?.address);
+    addressValue.value = {
+        ...seedAddress(props.client?.address),
+        country: props.client?.country ?? null,
+        country_code: props.client?.country_code ?? null,
+    };
 });
 
 function close(): void {
@@ -125,9 +133,15 @@ function emptyToNull(value: string): string | null {
     return trimmed === '' ? null : trimmed;
 }
 
+function syncCountryFromAddress(): void {
+    form.country = addressValue.value.country?.trim() ?? '';
+    form.country_code = (addressValue.value.country_code ?? '').trim().toUpperCase();
+}
+
 function submit(): void {
     const address = formatAddress(addressValue.value);
     form.address = address;
+    syncCountryFromAddress();
 
     const parsed = clientFormSchema.safeParse({
         client_name: form.client_name,
@@ -135,6 +149,8 @@ function submit(): void {
         status: form.status,
         phone: form.phone,
         address,
+        country: form.country,
+        country_code: form.country_code,
         tax_id: form.tax_id,
         nif: form.nif,
         website: form.website,
@@ -170,6 +186,8 @@ function submit(): void {
         status: data.status,
         phone: data.phone.trim(),
         address: emptyToNull(address),
+        country: emptyToNull(data.country),
+        country_code: emptyToNull(data.country_code?.toUpperCase() ?? ''),
         tax_id: emptyToNull(data.tax_id),
         nif: emptyToNull(data.nif),
         website: emptyToNull(data.website),
@@ -245,7 +263,12 @@ function submit(): void {
             <AddressAutocomplete
                 v-model="addressValue"
                 :api-key="page.props.config.google_maps_api_key"
-                :errors="{ address: form.errors.address }"
+                :errors="{
+                    address: form.errors.address,
+                    country_code: form.errors.country_code,
+                }"
+                with-country-code
+                @update:model-value="syncCountryFromAddress"
             />
 
             <div class="client-form__row">

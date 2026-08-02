@@ -28,6 +28,8 @@ export interface Client {
     status: ClientLifecycleStatus;
     phone: string;
     address: string | null;
+    country: string | null;
+    country_code: string | null;
     tax_id: string | null;
     nif: string | null;
     website: string | null;

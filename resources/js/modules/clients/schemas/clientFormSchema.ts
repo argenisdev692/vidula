@@ -32,6 +32,12 @@ export const clientFormSchema = z.object({
         .max(20, 'Phone must be 20 characters or fewer.')
         .refine((value) => isValidPhoneNumber(value), 'Enter a valid phone number.'),
     address: z.string().trim().max(255, 'Address must be 255 characters or fewer.'),
+    country: z.string().trim().max(255, 'Country must be 255 characters or fewer.'),
+    country_code: z
+        .string()
+        .trim()
+        .max(2, 'Country code must be 2 characters.')
+        .refine((value) => value === '' || /^[A-Za-z]{2}$/.test(value), 'Use a 2-letter country code.'),
     tax_id: z.string().trim().max(255, 'Tax ID must be 255 characters or fewer.'),
     nif: z.string().trim().max(255, 'NIF must be 255 characters or fewer.'),
     website: optionalUrl,

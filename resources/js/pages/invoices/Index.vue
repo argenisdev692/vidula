@@ -39,6 +39,7 @@ const props = defineProps<{
     services: InvoiceServiceOption[];
     products: InvoiceProductOption[];
     defaultNotes: string | null;
+    issuerCountry: string;
 }>();
 
 const { hasPermission } = useAuthorization();
@@ -272,6 +273,7 @@ const filterFields = computed<FilterField[]>(() => [
                 :products="products"
                 :next-invoice-number="nextInvoiceNumber"
                 :default-notes="defaultNotes"
+                :issuer-country="issuerCountry"
             />
 
             <ConfirmDialog

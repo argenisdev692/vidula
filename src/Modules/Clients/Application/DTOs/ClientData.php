@@ -24,6 +24,8 @@ final class ClientData extends Data
         public string $status = 'DRAFT',
         public ?string $email = null,
         public ?string $address = null,
+        public ?string $country = null,
+        public ?string $countryCode = null,
         public ?string $taxId = null,
         public ?string $nif = null,
         public ?string $website = null,
@@ -40,7 +42,7 @@ final class ClientData extends Data
      */
     public static function prepareForPipeline(array $properties): array
     {
-        foreach (['email', 'address', 'tax_id', 'nif', 'website', 'facebook_link', 'instagram_link', 'linkedin_link', 'twitter_link', 'notes'] as $field) {
+        foreach (['email', 'address', 'country', 'country_code', 'tax_id', 'nif', 'website', 'facebook_link', 'instagram_link', 'linkedin_link', 'twitter_link', 'notes'] as $field) {
             if (array_key_exists($field, $properties) && $properties[$field] === '') {
                 $properties[$field] = null;
             }
@@ -60,6 +62,8 @@ final class ClientData extends Data
             'status' => ['required', 'string', 'in:DRAFT,ACTIVE,ARCHIVED'],
             'phone' => ['required', 'string', 'max:20', 'phone:INTERNATIONAL'],
             'address' => ['nullable', 'string', 'max:255'],
+            'country' => ['nullable', 'string', 'max:255'],
+            'country_code' => ['nullable', 'string', 'size:2', 'alpha'],
             'tax_id' => ['nullable', 'string', 'max:255'],
             'nif' => ['nullable', 'string', 'max:255'],
             'website' => ['nullable', 'string', 'max:255', 'url'],

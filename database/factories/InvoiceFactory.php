@@ -50,11 +50,13 @@ final class InvoiceFactory extends Factory
             'payment_date' => null,
             'amount_received' => null,
             'notes' => null,
+            'additional_notes' => null,
             'client_name' => $this->faker->company(),
             'client_tax_id' => null,
             'client_address' => $this->faker->streetAddress(),
             'client_city' => null,
             'client_country' => 'United States',
+            'client_country_code' => 'US',
         ];
     }
 }

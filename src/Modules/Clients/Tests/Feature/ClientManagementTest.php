@@ -67,6 +67,24 @@ final class ClientManagementTest extends TestCase
         $this->assertSame('+12015550101', $client->phone);
     }
 
+    public function test_create_persists_country_and_country_code(): void
+    {
+        $admin = $this->superAdmin();
+
+        $this->actingAs($admin)
+            ->post('/clients', $this->validPayload([
+                'client_name' => 'Cliente España',
+                'country' => 'España',
+                'country_code' => 'es',
+            ]))
+            ->assertRedirect();
+
+        $client = ClientEloquentModel::query()->where('client_name', 'Cliente España')->firstOrFail();
+
+        $this->assertSame('España', $client->country);
+        $this->assertSame('ES', $client->country_code);
+    }
+
     public function test_invalid_phone_is_rejected(): void
     {
         $this->actingAs($this->superAdmin())

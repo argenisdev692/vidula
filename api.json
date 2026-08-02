@@ -3140,7 +3140,40 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "type": "string"
+                                                "type": "object",
+                                                "properties": {
+                                                    "uuid": {
+                                                        "type": "string"
+                                                    },
+                                                    "name": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "description": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "image_url": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "posts_count": {
+                                                        "type": "integer"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "uuid",
+                                                    "name",
+                                                    "description",
+                                                    "image_url",
+                                                    "posts_count"
+                                                ]
                                             }
                                         }
                                     },
@@ -5670,6 +5703,18 @@
                             "null"
                         ]
                     },
+                    "country": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "country_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
                     "tax_id": {
                         "type": [
                             "string",
@@ -5748,6 +5793,8 @@
                     "status",
                     "phone",
                     "address",
+                    "country",
+                    "country_code",
                     "tax_id",
                     "nif",
                     "website",
@@ -6387,6 +6434,12 @@
                             "null"
                         ]
                     },
+                    "additional_notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
                     "client_name": {
                         "type": "string"
                     },
@@ -6409,6 +6462,12 @@
                         ]
                     },
                     "client_country": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "client_country_code": {
                         "type": [
                             "string",
                             "null"
@@ -6464,11 +6523,13 @@
                     "payment_date",
                     "amount_received",
                     "notes",
+                    "additional_notes",
                     "client_name",
                     "client_tax_id",
                     "client_address",
                     "client_city",
                     "client_country",
+                    "client_country_code",
                     "deleted_at",
                     "created_at",
                     "updated_at",

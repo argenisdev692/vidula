@@ -46,6 +46,7 @@ export interface Invoice {
     payment_date: string | null;
     amount_received: string | number | null;
     notes: string | null;
+    additional_notes: string | null;
     client_name: string;
     client_tax_id: string | null;
     client_address: string | null;
@@ -66,6 +67,8 @@ export interface InvoiceClientOption {
     nif: string | null;
     address: string | null;
     email: string | null;
+    country: string | null;
+    country_code: string | null;
 }
 
 export interface InvoiceServiceOption {

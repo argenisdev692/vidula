@@ -20,6 +20,8 @@ return new class extends Migration
             $table->string('status', 50)->default('DRAFT');
             $table->string('phone', 20);
             $table->string('address')->nullable();
+            $table->string('country')->nullable();
+            $table->char('country_code', 2)->nullable();
             $table->string('tax_id')->nullable();
             $table->string('nif')->nullable();
 

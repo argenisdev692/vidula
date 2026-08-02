@@ -29,6 +29,7 @@ export const invoiceFormSchema = z
         payment_date: z.string(),
         amount_received: z.number().min(0).max(9999999.99).nullable(),
         notes: z.string().trim().max(5000),
+        additional_notes: z.string().trim().max(5000),
         items: z.array(invoiceItemSchema).min(1, 'Add at least one line item').max(50),
     })
     .superRefine((data, ctx) => {

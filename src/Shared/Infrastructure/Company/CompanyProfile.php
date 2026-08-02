@@ -110,7 +110,7 @@ final class CompanyProfile
      * fields for the header — only {@see invoiceLogoDataUri()} via
      * {@see DomPdfInvoiceRenderer}.
      *
-     * @return array{name: string, legal_name: ?string, website: ?string, email: ?string, phone: ?string, address: ?string, nif_nipc: ?string, nie: ?string, bank_beneficiary: ?string, bank_iban: ?string, bank_bic: ?string, bank_name: ?string, invoice_notes: ?string, logo_data_uri: string, logo_dark_data_uri: string, socials: array<string, string>}
+     * @return array{name: string, legal_name: ?string, website: ?string, email: ?string, phone: ?string, address: ?string, country: ?string, country_code: ?string, nif_nipc: ?string, nie: ?string, bank_beneficiary: ?string, bank_iban: ?string, bank_bic: ?string, bank_name: ?string, invoice_notes: ?string, logo_data_uri: string, logo_dark_data_uri: string, socials: array<string, string>}
      */
     public static function pdfBranding(): array
     {
@@ -128,6 +128,8 @@ final class CompanyProfile
                 'email' => $company?->email ?: config('mail.from.address'),
                 'phone' => $company?->phone,
                 'address' => self::composeAddress($company),
+                'country' => $company?->country,
+                'country_code' => $company?->country_code,
                 'nif_nipc' => $company?->nif_nipc,
                 'nie' => $company?->nie,
                 'bank_beneficiary' => $company?->bank_beneficiary,

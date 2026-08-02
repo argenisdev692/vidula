@@ -33,6 +33,8 @@ final class ClientSeeder extends Seeder
                 'tax_id' => '0',
                 'nif' => 'B98330335',
                 'address' => 'Avda. Manuel de Falla, 12 Duplicado, 46015 Valencia, España',
+                'country' => 'España',
+                'country_code' => 'ES',
                 'website' => 'https://imaginaformacion.com/',
                 'facebook_link' => 'https://www.facebook.com/ImaginaGroup/',
                 'linkedin_link' => 'https://www.linkedin.com/company/imagina-group/',
@@ -46,6 +48,8 @@ final class ClientSeeder extends Seeder
                 'tax_id' => '0',
                 'nif' => '36-5164436',
                 'address' => '1321 Upland Dr. PMB 4455, 77043 Houston, Texas, United States',
+                'country' => 'United States',
+                'country_code' => 'US',
             ],
             [
                 'client_name' => 'CESAR AUGUSTO GONZALEZ',
@@ -55,6 +59,8 @@ final class ClientSeeder extends Seeder
                 'tax_id' => '0',
                 'nif' => 'Y7150874G',
                 'address' => 'Calle delicias 42 Portal A, Piso 1E, 35110 Vecindario, Las Palmas, España',
+                'country' => 'España',
+                'country_code' => 'ES',
             ],
         ];
 
@@ -75,6 +81,8 @@ final class ClientSeeder extends Seeder
                 'tax_id' => $attributes['tax_id'],
                 'nif' => $attributes['nif'],
                 'address' => $attributes['address'],
+                'country' => $attributes['country'] ?? null,
+                'country_code' => $attributes['country_code'] ?? null,
                 'website' => $attributes['website'] ?? null,
                 'facebook_link' => $attributes['facebook_link'] ?? null,
                 'instagram_link' => $attributes['instagram_link'] ?? null,

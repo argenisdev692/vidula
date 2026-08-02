@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Invoices\Infrastructure\Pdf;
 
 use Barryvdh\DomPDF\Facade\Pdf;
+use Modules\Invoices\Application\Support\InvoicePdfViewAssembler;
 use Modules\Invoices\Domain\Ports\InvoicePdfRendererPort;
 use Modules\Invoices\Infrastructure\Persistence\Eloquent\Models\InvoiceEloquentModel;
 use Shared\Infrastructure\Company\CompanyProfile;
@@ -23,11 +24,16 @@ final readonly class DomPdfInvoiceRenderer implements InvoicePdfRendererPort
             'product:id,uuid,title,type',
         ]);
 
+        $company = array_merge(CompanyProfile::pdfBranding(), [
+            'invoice_logo_data_uri' => CompanyProfile::invoiceLogoDataUri(),
+        ]);
+
+        $assembler = new InvoicePdfViewAssembler;
+
         return Pdf::loadView('exports.pdf.invoice', [
             'invoice' => $invoice,
-            'company' => array_merge(CompanyProfile::pdfBranding(), [
-                'invoice_logo_data_uri' => CompanyProfile::invoiceLogoDataUri(),
-            ]),
+            'company' => $company,
+            'pdf' => $assembler->assemble($invoice, $company),
         ])
             ->setPaper('a4', 'portrait')
             ->output();

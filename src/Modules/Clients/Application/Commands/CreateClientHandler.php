@@ -27,6 +27,8 @@ final readonly class CreateClientHandler
             'status' => $data->status,
             'phone' => $data->phone,
             'address' => $data->address,
+            'country' => $data->country,
+            'country_code' => $data->countryCode !== null ? strtoupper($data->countryCode) : null,
             'tax_id' => $data->taxId,
             'nif' => $data->nif,
             'website' => $data->website,
