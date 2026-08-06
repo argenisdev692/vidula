@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Portfolio\Application\DTOs;
 
-use Illuminate\Http\UploadedFile;
 use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Attributes\MapOutputName;
 use Spatie\LaravelData\Data;
@@ -12,17 +11,13 @@ use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 
 /**
  * Create/update payload for a portfolio project. Store and Update share 100% of
- * the fields and rules (DTO Fusion Rule), so a single fused DTO is used: `cover`
- * and `video` are optional on both operations — on create they seed the columns,
- * on update they replace the R2 object when a new file is uploaded, or clear it
- * when `remove_cover` / `remove_video` is sent without a replacement file (a new
- * upload always takes precedence over a remove flag — see UpdatePortfolioHandler).
+ * the fields and rules (DTO Fusion Rule), so a single fused DTO is used.
  *
- * Both media fields are validated (MIME + extension + magic bytes + size) before
- * they reach R2, then stored with public visibility so the landing page gallery
- * can render them via a permanent URL (BACKEND-PHP §5 public-asset exception —
- * the same convention already used by `BlogCategoryData->image` and the company
- * branding assets — never used for private user uploads).
+ * Cover and video arrive as R2 object keys after a prior browser → R2 PUT via
+ * `POST /portfolios/uploads/presign` (StoragePort::temporaryUploadUrl). The
+ * handlers verify prefix + existence before persisting. `remove_cover` /
+ * `remove_video` clear a slot when no replacement key is sent (a new key always
+ * wins — see UpdatePortfolioHandler).
  *
  * `tech_stack` is a JSON string list (e.g. React, Next.js, PostgreSQL) exposed
  * on the public Scramble feed for Astro badge rendering — max 20 × 50 chars.
@@ -44,8 +39,8 @@ final class PortfolioData extends Data
         public bool $isPublic = true,
         public ?string $description = null,
         public int $sortOrder = 0,
-        public ?UploadedFile $cover = null,
-        public ?UploadedFile $video = null,
+        public ?string $coverPath = null,
+        public ?string $videoPath = null,
         public bool $removeCover = false,
         public bool $removeVideo = false,
     ) {}
@@ -55,6 +50,9 @@ final class PortfolioData extends Data
      */
     public static function rules(): array
     {
+        $coverPrefix = preg_quote(rtrim((string) config('portfolio.cover_prefix', 'portfolios/cover'), '/'), '/');
+        $videoPrefix = preg_quote(rtrim((string) config('portfolio.video_prefix', 'portfolios/video'), '/'), '/');
+
         return [
             'title' => ['required', 'string', 'max:255'],
             'client_name' => ['required', 'string', 'max:255'],
@@ -68,21 +66,17 @@ final class PortfolioData extends Data
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'remove_cover' => ['boolean'],
             'remove_video' => ['boolean'],
-            'cover' => [
+            'cover_path' => [
                 'nullable',
-                'file',
-                'image',
-                'mimes:jpg,jpeg,png,webp',
-                'mimetypes:image/jpeg,image/png,image/webp',
-                'max:4096', // 4 MB
-                'dimensions:max_width=4096,max_height=4096',
+                'string',
+                'max:500',
+                'regex:/^'.$coverPrefix.'\/[0-9a-fA-F\-]{36}\/[\w.\-]+$/',
             ],
-            'video' => [
+            'video_path' => [
                 'nullable',
-                'file',
-                'mimes:mp4,webm',
-                'mimetypes:video/mp4,video/webm',
-                'max:51200', // 50 MB
+                'string',
+                'max:500',
+                'regex:/^'.$videoPrefix.'\/[0-9a-fA-F\-]{36}\/[\w.\-]+$/',
             ],
         ];
     }

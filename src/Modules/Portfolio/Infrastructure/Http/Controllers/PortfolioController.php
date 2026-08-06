@@ -7,16 +7,19 @@ namespace Modules\Portfolio\Infrastructure\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 use Modules\Portfolio\Application\Commands\BulkDeletePortfoliosHandler;
 use Modules\Portfolio\Application\Commands\BulkRestorePortfoliosHandler;
 use Modules\Portfolio\Application\Commands\CreatePortfolioHandler;
 use Modules\Portfolio\Application\Commands\DeletePortfolioHandler;
+use Modules\Portfolio\Application\Commands\PresignPortfolioMediaHandler;
 use Modules\Portfolio\Application\Commands\RestorePortfolioHandler;
 use Modules\Portfolio\Application\Commands\UpdatePortfolioHandler;
 use Modules\Portfolio\Application\DTOs\PortfolioData;
 use Modules\Portfolio\Application\DTOs\PortfolioFilterData;
+use Modules\Portfolio\Application\DTOs\PresignPortfolioMediaData;
 use Modules\Portfolio\Application\Queries\GetPortfolioHandler;
 use Modules\Portfolio\Application\Queries\ListPortfoliosHandler;
 use Shared\Application\DTOs\BulkUuidsData;
@@ -47,16 +50,33 @@ final readonly class PortfolioController
             : Inertia::render('portfolios/Show', ['portfolio' => $portfolio]);
     }
 
+    public function presign(PresignPortfolioMediaData $data, PresignPortfolioMediaHandler $presign): JsonResponse
+    {
+        return response()->json(['data' => $presign->handle($data)]);
+    }
+
     public function store(Request $request, PortfolioData $data, CreatePortfolioHandler $create): RedirectResponse
     {
-        (void) $create->handle($data, (int) $request->user()->id);
+        try {
+            (void) $create->handle($data, (int) $request->user()->id);
+        } catch (\InvalidArgumentException $e) {
+            $field = str_contains(strtolower($e->getMessage()), 'video') ? 'video_path' : 'cover_path';
+
+            throw ValidationException::withMessages([$field => $e->getMessage()]);
+        }
 
         return back()->with('success', __('Portfolio project created.'));
     }
 
     public function update(string $uuid, PortfolioData $data, GetPortfolioHandler $get, UpdatePortfolioHandler $update): RedirectResponse
     {
-        (void) $update->handle($get->handle($uuid), $data);
+        try {
+            (void) $update->handle($get->handle($uuid), $data);
+        } catch (\InvalidArgumentException $e) {
+            $field = str_contains(strtolower($e->getMessage()), 'video') ? 'video_path' : 'cover_path';
+
+            throw ValidationException::withMessages([$field => $e->getMessage()]);
+        }
 
         return back()->with('success', __('Portfolio project updated.'));
     }

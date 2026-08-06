@@ -12,9 +12,10 @@ use Modules\Portfolio\Infrastructure\Http\Controllers\PortfolioGalleryController
 |
 | Management routes are gated by `permission:*_PORTFOLIOS` (UI authz uses
 | permissions, never roles). Static segments are declared BEFORE the `{uuid}`
-| wildcard so `/bulk-delete`, `/bulk-restore`, and `/export` are never captured
-| as a UUID. Gallery routes are nested under `/{uuid}/gallery` and share
-| `permission:UPDATE_PORTFOLIOS` with the parent aggregate.
+| wildcard so `/bulk-delete`, `/bulk-restore`, `/uploads/presign`, and `/export`
+| are never captured as a UUID. Cover/video upload via direct R2 PUT after
+| `POST /uploads/presign`. Gallery routes are nested under `/{uuid}/gallery`
+| and share `permission:UPDATE_PORTFOLIOS` with the parent aggregate.
 */
 Route::middleware(['web', 'auth', 'throttle:60,1'])->prefix('portfolios')->name('portfolios.')->group(function (): void {
     Route::get('/', [PortfolioController::class, 'index'])
@@ -22,6 +23,10 @@ Route::middleware(['web', 'auth', 'throttle:60,1'])->prefix('portfolios')->name(
 
     Route::post('/', [PortfolioController::class, 'store'])
         ->middleware('permission:CREATE_PORTFOLIOS')->name('store');
+
+    Route::post('/uploads/presign', [PortfolioController::class, 'presign'])
+        ->middleware(['permission:CREATE_PORTFOLIOS|UPDATE_PORTFOLIOS', 'throttle:60,1'])
+        ->name('uploads.presign');
 
     Route::post('/bulk-delete', [PortfolioController::class, 'bulkDelete'])
         ->middleware('permission:BULK_DELETE_PORTFOLIOS')->name('bulk-delete');

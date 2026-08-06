@@ -60,9 +60,9 @@ return [
     | Cloudflare R2 CORS (browser presigned PUT uploads)
     |--------------------------------------------------------------------------
     |
-    | Video-export uploads XHR PUT directly from the browser to signed R2 URLs.
-    | Primary origin = config('app.url') (APP_URL). Extras = R2_CORS_EXTRA_ORIGINS.
-    | Apply with: ./vendor/bin/sail artisan r2:sync-cors
+| Video-export and portfolio cover/video uploads XHR PUT directly from the
+| browser to signed R2 URLs. Primary origin = config('app.url') (APP_URL).
+| Extras = R2_CORS_EXTRA_ORIGINS. Apply with: ./vendor/bin/sail artisan r2:sync-cors
     |
     */
 

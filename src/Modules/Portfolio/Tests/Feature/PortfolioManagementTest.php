@@ -7,10 +7,10 @@ namespace Modules\Portfolio\Tests\Feature;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Modules\Portfolio\Infrastructure\Persistence\Eloquent\Models\PortfolioEloquentModel;
+use Shared\Domain\Ports\StoragePort;
 use Tests\TestCase;
 
 final class PortfolioManagementTest extends TestCase
@@ -31,10 +31,24 @@ final class PortfolioManagementTest extends TestCase
         return $admin;
     }
 
+    /** Put a fake object under the expected portfolios/{kind}/{uuid}/name prefix. */
+    private function seedMediaKey(string $kind, string $filename = 'asset.bin'): string
+    {
+        $prefix = $kind === 'cover'
+            ? (string) config('portfolio.cover_prefix', 'portfolios/cover')
+            : (string) config('portfolio.video_prefix', 'portfolios/video');
+        $key = rtrim($prefix, '/').'/'.Str::uuid()->toString().'/'.$filename;
+        Storage::disk('r2')->put($key, 'fake-bytes');
+
+        return $key;
+    }
+
     public function test_super_admin_creates_a_portfolio_with_cover_and_video(): void
     {
         Storage::fake('r2');
         $admin = $this->superAdmin();
+        $coverPath = $this->seedMediaKey('cover', 'cover.png');
+        $videoPath = $this->seedMediaKey('video', 'demo.mp4');
 
         $this->actingAs($admin)
             ->post('/portfolios', [
@@ -44,8 +58,8 @@ final class PortfolioManagementTest extends TestCase
                 'tech_stack' => ['React', 'Next.js', 'PostgreSQL', 'Stripe'],
                 'live_url' => 'https://acme.example.com',
                 'is_public' => true,
-                'cover' => UploadedFile::fake()->image('cover.png', 800, 600),
-                'video' => UploadedFile::fake()->create('demo.mp4', 2048, 'video/mp4'),
+                'cover_path' => $coverPath,
+                'video_path' => $videoPath,
             ])
             ->assertRedirect();
 
@@ -53,10 +67,43 @@ final class PortfolioManagementTest extends TestCase
 
         $this->assertSame($admin->id, $portfolio->user_id);
         $this->assertSame(['React', 'Next.js', 'PostgreSQL', 'Stripe'], $portfolio->tech_stack);
-        $this->assertNotNull($portfolio->cover_path);
-        $this->assertNotNull($portfolio->video_path);
+        $this->assertSame($coverPath, $portfolio->cover_path);
+        $this->assertSame($videoPath, $portfolio->video_path);
         Storage::disk('r2')->assertExists($portfolio->cover_path);
         Storage::disk('r2')->assertExists($portfolio->video_path);
+    }
+
+    public function test_create_rejects_missing_r2_object_for_cover_path(): void
+    {
+        Storage::fake('r2');
+        $missing = 'portfolios/cover/'.Str::uuid()->toString().'/missing.png';
+
+        $this->actingAs($this->superAdmin())
+            ->post('/portfolios', [
+                'title' => 'Missing Object',
+                'client_name' => 'Client',
+                'project_type' => 'web',
+                'cover_path' => $missing,
+            ])
+            ->assertSessionHasErrors('cover_path');
+
+        $this->assertDatabaseMissing('portfolios', ['title' => 'Missing Object']);
+    }
+
+    public function test_create_rejects_path_outside_allowed_prefix(): void
+    {
+        Storage::fake('r2');
+        $evil = 'video-exports/_parts/'.Str::uuid()->toString().'/evil.mp4';
+        Storage::disk('r2')->put($evil, 'x');
+
+        $this->actingAs($this->superAdmin())
+            ->post('/portfolios', [
+                'title' => 'Evil Key',
+                'client_name' => 'Client',
+                'project_type' => 'web',
+                'cover_path' => $evil,
+            ])
+            ->assertSessionHasErrors('cover_path');
     }
 
     public function test_create_without_media_is_allowed(): void
@@ -102,27 +149,27 @@ final class PortfolioManagementTest extends TestCase
     {
         Storage::fake('r2');
         $admin = $this->superAdmin();
+        $oldPath = $this->seedMediaKey('cover', 'old.png');
+        $newPath = $this->seedMediaKey('cover', 'new.png');
 
         $this->actingAs($admin)->post('/portfolios', [
             'title' => 'Cloud Platform',
             'client_name' => 'Client',
             'project_type' => 'web',
-            'cover' => UploadedFile::fake()->image('old.png', 400, 300),
+            'cover_path' => $oldPath,
         ])->assertRedirect();
 
         $portfolio = PortfolioEloquentModel::query()->where('title', 'Cloud Platform')->firstOrFail();
-        $oldPath = $portfolio->cover_path;
+        $this->assertSame($oldPath, $portfolio->cover_path);
 
         $this->actingAs($admin)->put("/portfolios/{$portfolio->uuid}", [
             'title' => 'Cloud Platform',
             'client_name' => 'Client',
             'project_type' => 'web',
-            'cover' => UploadedFile::fake()->image('new.png', 400, 300),
+            'cover_path' => $newPath,
         ])->assertRedirect();
 
-        $newPath = $portfolio->refresh()->cover_path;
-
-        $this->assertNotSame($oldPath, $newPath);
+        $this->assertSame($newPath, $portfolio->refresh()->cover_path);
         Storage::disk('r2')->assertMissing($oldPath);
         Storage::disk('r2')->assertExists($newPath);
     }
@@ -131,16 +178,16 @@ final class PortfolioManagementTest extends TestCase
     {
         Storage::fake('r2');
         $admin = $this->superAdmin();
+        $coverPath = $this->seedMediaKey('cover', 'cover.png');
 
         $this->actingAs($admin)->post('/portfolios', [
             'title' => 'Rebrand',
             'client_name' => 'Client',
             'project_type' => 'branding',
-            'cover' => UploadedFile::fake()->image('cover.png', 400, 300),
+            'cover_path' => $coverPath,
         ])->assertRedirect();
 
         $portfolio = PortfolioEloquentModel::query()->where('title', 'Rebrand')->firstOrFail();
-        $coverPath = $portfolio->cover_path;
 
         $this->actingAs($admin)->put("/portfolios/{$portfolio->uuid}", [
             'title' => 'Rebrand',
@@ -157,12 +204,14 @@ final class PortfolioManagementTest extends TestCase
     {
         Storage::fake('r2');
         $admin = $this->superAdmin();
+        $oldPath = $this->seedMediaKey('cover', 'old.png');
+        $newPath = $this->seedMediaKey('cover', 'new.png');
 
         $this->actingAs($admin)->post('/portfolios', [
             'title' => 'Conflict Case',
             'client_name' => 'Client',
             'project_type' => 'web',
-            'cover' => UploadedFile::fake()->image('old.png', 400, 300),
+            'cover_path' => $oldPath,
         ])->assertRedirect();
 
         $portfolio = PortfolioEloquentModel::query()->where('title', 'Conflict Case')->firstOrFail();
@@ -172,11 +221,63 @@ final class PortfolioManagementTest extends TestCase
             'client_name' => 'Client',
             'project_type' => 'web',
             'remove_cover' => true,
-            'cover' => UploadedFile::fake()->image('new.png', 400, 300),
+            'cover_path' => $newPath,
         ])->assertRedirect();
 
-        $this->assertNotNull($portfolio->refresh()->cover_path);
+        $this->assertSame($newPath, $portfolio->refresh()->cover_path);
         Storage::disk('r2')->assertExists($portfolio->cover_path);
+        Storage::disk('r2')->assertMissing($oldPath);
+    }
+
+    public function test_presign_returns_upload_url_for_cover(): void
+    {
+        $this->mock(StoragePort::class, function ($mock): void {
+            $mock->shouldReceive('temporaryUploadUrl')
+                ->once()
+                ->andReturn([
+                    'upload_url' => 'https://r2.example.test/put',
+                    'headers' => ['Content-Type' => 'image/png'],
+                ]);
+        });
+
+        $this->actingAs($this->superAdmin())
+            ->postJson('/portfolios/uploads/presign', [
+                'kind' => 'cover',
+                'filename' => 'cover.png',
+                'content_type' => 'image/png',
+                'size_bytes' => 1024,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.upload_url', 'https://r2.example.test/put')
+            ->assertJsonStructure(['data' => ['upload_url', 'key', 'headers', 'expires_in_seconds']]);
+    }
+
+    public function test_presign_rejects_video_mime_for_cover_kind(): void
+    {
+        $this->actingAs($this->superAdmin())
+            ->postJson('/portfolios/uploads/presign', [
+                'kind' => 'cover',
+                'filename' => 'clip.mp4',
+                'content_type' => 'video/mp4',
+                'size_bytes' => 1024,
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('content_type');
+    }
+
+    public function test_users_without_permission_cannot_presign(): void
+    {
+        $plain = User::factory()->create();
+        $plain->assignRole('USER');
+
+        $this->actingAs($plain)
+            ->postJson('/portfolios/uploads/presign', [
+                'kind' => 'video',
+                'filename' => 'demo.mp4',
+                'content_type' => 'video/mp4',
+                'size_bytes' => 1024,
+            ])
+            ->assertForbidden();
     }
 
     public function test_delete_then_restore_a_portfolio(): void

@@ -6,36 +6,36 @@ namespace Modules\Portfolio\Application\Commands;
 
 use Illuminate\Support\Facades\DB;
 use Modules\Portfolio\Application\DTOs\PortfolioData;
+use Modules\Portfolio\Application\Support\PortfolioMediaKeyGuard;
 use Modules\Portfolio\Application\Support\PortfolioPublicFeedCache;
 use Modules\Portfolio\Domain\Ports\PortfolioRepositoryPort;
 use Modules\Portfolio\Infrastructure\Persistence\Eloquent\Models\PortfolioEloquentModel;
-use Shared\Domain\Ports\StoragePort;
 
 /**
- * Persists a new portfolio project. Cover and video, when uploaded, are stored
- * on R2 with public visibility and the returned object keys are written to the
- * `cover_path` / `video_path` columns. Authorization (permission:CREATE_PORTFOLIOS)
- * is enforced at the route — never inside this handler.
+ * Persists a new portfolio project. Cover/video keys (when present) must already
+ * exist on R2 from a prior browser → StoragePort::temporaryUploadUrl PUT.
+ * Authorization (permission:CREATE_PORTFOLIOS) is enforced at the route.
  */
 final readonly class CreatePortfolioHandler
 {
     public function __construct(
         private PortfolioRepositoryPort $portfolios,
-        private StoragePort $storage,
+        private PortfolioMediaKeyGuard $mediaKeys,
     ) {}
 
     #[\NoDiscard]
     public function handle(PortfolioData $data, int $userId): PortfolioEloquentModel
     {
-        // Uploads happen before the transaction — object storage is not
-        // transactional and must never run inside the DB unit-of-work.
-        $coverPath = $data->cover !== null
-            ? $this->storage->putFile('portfolios/cover', $data->cover, 'public')
-            : null;
+        $coverPath = $data->coverPath;
+        $videoPath = $data->videoPath;
 
-        $videoPath = $data->video !== null
-            ? $this->storage->putFile('portfolios/video', $data->video, 'public')
-            : null;
+        if ($coverPath !== null) {
+            $this->mediaKeys->assertValidCoverKey($coverPath);
+        }
+
+        if ($videoPath !== null) {
+            $this->mediaKeys->assertValidVideoKey($videoPath);
+        }
 
         $portfolio = DB::transaction(fn () => $this->portfolios->create([
             'title' => $data->title,

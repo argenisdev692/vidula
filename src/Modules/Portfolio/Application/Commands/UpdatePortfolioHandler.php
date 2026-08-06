@@ -6,25 +6,25 @@ namespace Modules\Portfolio\Application\Commands;
 
 use Illuminate\Support\Facades\DB;
 use Modules\Portfolio\Application\DTOs\PortfolioData;
+use Modules\Portfolio\Application\Support\PortfolioMediaKeyGuard;
 use Modules\Portfolio\Application\Support\PortfolioPublicFeedCache;
 use Modules\Portfolio\Domain\Ports\PortfolioRepositoryPort;
 use Modules\Portfolio\Infrastructure\Persistence\Eloquent\Models\PortfolioEloquentModel;
 use Shared\Domain\Ports\StoragePort;
 
 /**
- * Updates an existing portfolio project. A new cover/video replaces the previous
- * R2 object (the old key is deleted so the bucket never accumulates orphans);
- * `remove_cover`/`remove_video` clears a slot back to null (and deletes its R2
- * object) when no replacement file is uploaded — an explicit upload always wins
- * over a remove flag sent in the same request. When neither is set, the
- * existing column is left untouched. Authorization (permission:UPDATE_PORTFOLIOS)
- * is enforced at the route.
+ * Updates an existing portfolio project. A new cover/video R2 key replaces the
+ * previous object (old key deleted after commit); `remove_cover`/`remove_video`
+ * clears a slot when no replacement key is sent — an explicit key always wins
+ * over a remove flag. Authorization (permission:UPDATE_PORTFOLIOS) is
+ * enforced at the route.
  */
 final readonly class UpdatePortfolioHandler
 {
     public function __construct(
         private PortfolioRepositoryPort $portfolios,
         private StoragePort $storage,
+        private PortfolioMediaKeyGuard $mediaKeys,
     ) {}
 
     #[\NoDiscard]
@@ -45,19 +45,19 @@ final readonly class UpdatePortfolioHandler
         $previousCover = null;
         $previousVideo = null;
 
-        if ($data->cover !== null) {
+        if ($data->coverPath !== null) {
+            $this->mediaKeys->assertValidCoverKey($data->coverPath);
             $previousCover = $portfolio->cover_path;
-            // Upload the replacement before the transaction — object storage is
-            // not transactional and must stay out of the DB unit-of-work.
-            $attributes['cover_path'] = $this->storage->putFile('portfolios/cover', $data->cover, 'public');
+            $attributes['cover_path'] = $data->coverPath;
         } elseif ($data->removeCover && $portfolio->cover_path !== null) {
             $previousCover = $portfolio->cover_path;
             $attributes['cover_path'] = null;
         }
 
-        if ($data->video !== null) {
+        if ($data->videoPath !== null) {
+            $this->mediaKeys->assertValidVideoKey($data->videoPath);
             $previousVideo = $portfolio->video_path;
-            $attributes['video_path'] = $this->storage->putFile('portfolios/video', $data->video, 'public');
+            $attributes['video_path'] = $data->videoPath;
         } elseif ($data->removeVideo && $portfolio->video_path !== null) {
             $previousVideo = $portfolio->video_path;
             $attributes['video_path'] = null;
@@ -65,8 +65,6 @@ final readonly class UpdatePortfolioHandler
 
         $updated = DB::transaction(fn () => $this->portfolios->update($portfolio, $attributes));
 
-        // Delete superseded objects only after the write commits, so a failed
-        // update never orphans the row from its still-referenced assets.
         if (is_string($previousCover) && $previousCover !== '' && $previousCover !== $updated->cover_path) {
             $this->storage->delete($previousCover);
         }

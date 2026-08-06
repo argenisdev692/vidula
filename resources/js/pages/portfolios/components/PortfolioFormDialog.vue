@@ -2,12 +2,11 @@
 /**
  * Create / edit modal for a portfolio project. There is no `GET /create` or
  * `GET /{uuid}/edit` route — the backend store/update return `back()`
- * redirects and accept optional cover/video uploads — so the form lives in a
- * Volt Dialog on the Index page and submits multipart via Inertia `useForm`:
+ * redirects. Cover/video are uploaded direct to Cloudflare R2 via
+ * `POST /portfolios/uploads/presign` + PUT, then the form submits only R2 keys:
  *
- *   · create → POST /portfolios                          (forceFormData)
+ *   · create → POST /portfolios
  *   · edit   → POST /portfolios/{uuid} + `_method: 'put'` spoof
- *              (Inertia cannot send multipart over a native PUT)
  *
  * Gallery images are a separate, per-uuid concern (`POST /{uuid}/gallery`) that
  * only makes sense once the project exists — they are managed on the Show page
@@ -24,7 +23,7 @@
  * backend but the server stays authoritative; server errors surface through
  * `form.errors`.
  */
-import { computed, onBeforeUnmount, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import TextField from '@/common/form/TextField.vue';
 import TextareaField from '@/common/form/TextareaField.vue';
@@ -32,6 +31,8 @@ import DateField from '@/common/form/DateField.vue';
 import FileField from '@/common/form/FileField.vue';
 import ToggleSwitch from '@/volt/ToggleSwitch.vue';
 import AppModal from '@/common/ui/AppModal.vue';
+import { HttpError } from '@/lib/http';
+import { uploadPortfolioMedia } from '@/modules/portfolio/api';
 import { portfolioFormSchema, parseTechStack, type PortfolioFormValues } from '@/modules/portfolio/schemas/portfolioFormSchema';
 import type { Portfolio } from '@/modules/portfolio/types';
 
@@ -70,6 +71,9 @@ const form = useForm<PortfolioForm>({
     remove_cover: false,
     remove_video: false,
 });
+
+const uploading = ref(false);
+const isBusy = computed<boolean>(() => form.processing || uploading.value);
 
 const isEdit = computed<boolean>(() => props.mode === 'edit');
 const dialogTitle = computed<string>(() => (isEdit.value ? 'Edit portfolio project' : 'New portfolio project'));
@@ -125,13 +129,44 @@ watch(visible, (open) => {
     form.video = null;
     form.remove_cover = false;
     form.remove_video = false;
+    uploading.value = false;
 });
 
 function close(): void {
     visible.value = false;
 }
 
-function submit(): void {
+function applyHttpErrors(error: unknown): void {
+    if (!(error instanceof HttpError) || typeof error.body !== 'object' || error.body === null) {
+        form.setError('cover', error instanceof Error ? error.message : 'Upload failed.');
+        return;
+    }
+
+    const body = error.body as { message?: string; errors?: Record<string, string[]> };
+    const errors = body.errors ?? {};
+    form.clearErrors();
+
+    if (errors.content_type?.[0] || errors.size_bytes?.[0] || errors.kind?.[0]) {
+        form.setError('cover', errors.content_type?.[0] ?? errors.size_bytes?.[0] ?? errors.kind?.[0] ?? 'Upload rejected.');
+        return;
+    }
+
+    if (errors.cover_path?.[0]) {
+        form.setError('cover', errors.cover_path[0]);
+    }
+    if (errors.video_path?.[0]) {
+        form.setError('video', errors.video_path[0]);
+    }
+    if (!errors.cover_path && !errors.video_path) {
+        form.setError('cover', body.message ?? 'Upload failed.');
+    }
+}
+
+async function submit(): Promise<void> {
+    if (isBusy.value) {
+        return;
+    }
+
     const techStack = parseTechStack(form.tech_stack_text);
     const parsed = portfolioFormSchema.safeParse({
         title: form.title,
@@ -160,6 +195,27 @@ function submit(): void {
 
     const url = isEdit.value ? `/portfolios/${props.portfolio!.uuid}` : '/portfolios';
 
+    let coverPath: string | null = null;
+    let videoPath: string | null = null;
+
+    try {
+        uploading.value = true;
+        form.clearErrors();
+
+        if (form.cover) {
+            coverPath = await uploadPortfolioMedia('cover', form.cover);
+        }
+        if (form.video) {
+            videoPath = await uploadPortfolioMedia('video', form.video);
+        }
+    } catch (error) {
+        applyHttpErrors(error);
+        uploading.value = false;
+        return;
+    } finally {
+        uploading.value = false;
+    }
+
     form
         .transform((data) => {
             const payload: Record<string, unknown> = {
@@ -177,29 +233,36 @@ function submit(): void {
             if (data.published_at) {
                 payload.published_at = data.published_at;
             }
-            if (data.cover) {
-                payload.cover = data.cover;
+            if (coverPath) {
+                payload.cover_path = coverPath;
             }
-            if (data.video) {
-                payload.video = data.video;
+            if (videoPath) {
+                payload.video_path = videoPath;
             }
             if (isEdit.value) {
                 payload._method = 'put';
-                if (data.remove_cover && !data.cover) {
+                if (data.remove_cover && !coverPath) {
                     payload.remove_cover = true;
                 }
-                if (data.remove_video && !data.video) {
+                if (data.remove_video && !videoPath) {
                     payload.remove_video = true;
                 }
             }
             return payload;
         })
         .post(url, {
-            forceFormData: true,
             preserveScroll: true,
             onSuccess: () => {
                 emit('saved');
                 close();
+            },
+            onError: (errors) => {
+                if (errors.cover_path) {
+                    form.setError('cover', errors.cover_path);
+                }
+                if (errors.video_path) {
+                    form.setError('video', errors.video_path);
+                }
             },
         });
 }
@@ -213,8 +276,8 @@ function submit(): void {
         icon="pi pi-briefcase"
         :confirm-label="isEdit ? 'Save changes' : 'Create project'"
         confirm-icon="pi pi-check"
-        :loading="form.processing"
-        :dismissable="!form.processing"
+        :loading="isBusy"
+        :dismissable="!isBusy"
         width="38rem"
         @confirm="submit"
         @cancel="close"
