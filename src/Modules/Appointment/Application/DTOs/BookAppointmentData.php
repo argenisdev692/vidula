@@ -13,7 +13,7 @@ use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 
 /**
  * PUBLIC booking payload — the only surface the Astro landing page posts to
- * (`POST /api/appointments`). Unlike the admin {@see AppointmentData}, this DTO
+ * (`POST /api/appointments/public`). Unlike the admin {@see AppointmentData}, this DTO
  * requires `scheduled_at`: a first-time booking always requests a specific
  * date/time, validated by {@see AppointmentScheduler}
  * (not in the past, inside an open availability window, not already taken).

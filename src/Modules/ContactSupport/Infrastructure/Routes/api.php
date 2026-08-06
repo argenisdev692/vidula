@@ -9,20 +9,20 @@ use Modules\ContactSupport\Infrastructure\Http\Controllers\Api\PublicContactApiC
 /*
 | PUBLIC contact-support API for the marketing landing page. Stateless
 | (no session/CSRF), gated by `crm.token` (CRM_API_TOKEN), tightly throttled
-| per IP. Defined BEFORE the authenticated group so GET /honeypot is never
+| per IP. Defined BEFORE the authenticated group so /public* is never
 | shadowed by GET /{uuid}. Documented by Scramble under /api/contact-supports.
 */
 Route::prefix('contact-supports')
     ->name('api.contact-supports.')
     ->middleware('crm.token')
     ->group(function (): void {
-        Route::post('/', [PublicContactApiController::class, 'store'])
+        Route::post('/public', [PublicContactApiController::class, 'store'])
             ->middleware('throttle:5,1')
-            ->name('submit');
+            ->name('public');
 
-        Route::get('/honeypot', [PublicContactApiController::class, 'honeypot'])
+        Route::get('/public/honeypot', [PublicContactApiController::class, 'honeypot'])
             ->middleware('throttle:30,1')
-            ->name('honeypot');
+            ->name('public.honeypot');
     });
 
 /*

@@ -20,10 +20,10 @@ Reviewed against route files + `Public*` controllers (July 2026). **Verdict: the
 | `/api/posts/public/{slug}` | GET | None | `PostPublicReadModel` | Flat object |
 | `/api/portfolios/public` | GET | None | `PaginatedDataCollection<PortfolioPublicReadModel>` | Pagination + `gallery[]` |
 | `/api/services/public` | GET | None | `JsonResponse` (Eloquent allowlist) | `{ data: [...] }` |
-| `/api/contact-supports/honeypot` | GET | `crm.token` | `JsonResponse` (honeypot descriptor) | Flat object |
-| `/api/contact-supports` | POST | `crm.token` | `ContactSupportData` body | `{ message }` 201 |
-| `/api/appointments/honeypot` | GET | `crm.token` | Same as contact | Flat object |
-| `/api/appointments` | POST | `crm.token` | `BookAppointmentData` body | `{ message }` 201 |
+| `/api/contact-supports/public/honeypot` | GET | `crm.token` | `JsonResponse` (honeypot descriptor) | Flat object |
+| `/api/contact-supports/public` | POST | `crm.token` | `ContactSupportData` body | `{ message }` 201 |
+| `/api/appointments/public/honeypot` | GET | `crm.token` | Same as contact | Flat object |
+| `/api/appointments/public` | POST | `crm.token` | `BookAppointmentData` body | `{ message }` 201 |
 
 **Scramble caveat:** `config/scramble.php` marks routes **public** when they lack `auth` / `auth:sanctum`. Routes behind `crm.token` still appear **without** API-key security in OpenAPI — trust **this doc** and the auth matrix, not only Scramble’s lock icon. Optional follow-up: register a custom `securitySchemes` entry for `CRM_API_TOKEN` in Scramble.
 
@@ -83,7 +83,7 @@ portfolios/public  →  each item includes cover_url, video_url, tech_stack, gal
 Browser  →  POST /api/contact (Astro server)  →  Laravel + CRM_API_TOKEN + honeypot
 ```
 
-Never call `POST /api/contact-supports` or `POST /api/appointments` from client JS with the token.
+Never call `POST /api/contact-supports/public` or `POST /api/appointments/public` from client JS with the token.
 
 ### Suggested Astro structure
 
@@ -125,10 +125,10 @@ const token = import.meta.env.CRM_API_TOKEN;     // server only
 | Endpoint | `CRM_API_TOKEN` | Throttle |
 |----------|-----------------|----------|
 | `GET /api/company-data/public` | **Required** | 60/min |
-| `GET /api/contact-supports/honeypot` | **Required** | 30/min |
-| `POST /api/contact-supports` | **Required** | 5/min |
-| `GET /api/appointments/honeypot` | **Required** | 30/min |
-| `POST /api/appointments` | **Required** | 5/min |
+| `GET /api/contact-supports/public/honeypot` | **Required** | 30/min |
+| `POST /api/contact-supports/public` | **Required** | 5/min |
+| `GET /api/appointments/public/honeypot` | **Required** | 30/min |
+| `POST /api/appointments/public` | **Required** | 5/min |
 | `GET /api/blog-categories/public` | No | 120/min per route + IP |
 | `GET /api/posts/public` | No | 120/min per route + IP |
 | `GET /api/posts/public/{slug}` | No | 120/min per route + IP |
@@ -172,10 +172,10 @@ function publicHeaders(): HeadersInit {
 | 4 | GET | `/api/posts/public/{slug}` | — | `PostPublic` |
 | 5 | GET | `/api/portfolios/public` | — | `Paginated<PortfolioPublic>` |
 | 6 | GET | `/api/services/public` | — | `ServicePublicResponse` |
-| 7 | GET | `/api/contact-supports/honeypot` | — | `HoneypotDescriptor` |
-| 8 | POST | `/api/contact-supports` | `ContactSupportBody` + honeypot keys | `MessageResponse` (201) |
-| 9 | GET | `/api/appointments/honeypot` | — | `HoneypotDescriptor` |
-| 10 | POST | `/api/appointments` | `BookAppointmentBody` + honeypot keys | `MessageResponse` (201) |
+| 7 | GET | `/api/contact-supports/public/honeypot` | — | `HoneypotDescriptor` |
+| 8 | POST | `/api/contact-supports/public` | `ContactSupportBody` + honeypot keys | `MessageResponse` (201) |
+| 9 | GET | `/api/appointments/public/honeypot` | — | `HoneypotDescriptor` |
+| 10 | POST | `/api/appointments/public` | `BookAppointmentBody` + honeypot keys | `MessageResponse` (201) |
 
 **Errors (shared):**
 
@@ -648,10 +648,10 @@ Use for appointment / contact `<select>` options.
 
 ## 6. Contact support (CRM token)
 
-### `GET /api/contact-supports/honeypot`
+### `GET /api/contact-supports/public/honeypot`
 
 ```ts
-const honeypot = await fetch(`${base}/api/contact-supports/honeypot`, {
+const honeypot = await fetch(`${base}/api/contact-supports/public/honeypot`, {
   headers: crmHeaders(),
 }).then((r) => r.json()) as HoneypotDescriptor;
 ```
@@ -668,7 +668,7 @@ Example JSON (field names are **camelCase**; POST body uses **dynamic keys** fro
 
 On submit, add `[nameFieldName]: ""` and `[validFromFieldName]: encryptedValidFrom` to the JSON body (see tests — e.g. `my_name` / `valid_from`).
 
-### `POST /api/contact-supports`
+### `POST /api/contact-supports/public`
 
 Request body (`ContactSupportBody` + honeypot keys) — **snake_case**:
 
@@ -700,11 +700,11 @@ Success **201** (`MessageResponse`):
 
 ## 7. Appointment booking (CRM token)
 
-### `GET /api/appointments/honeypot`
+### `GET /api/appointments/public/honeypot`
 
 Same response as contact — `HoneypotDescriptor` (camelCase JSON).
 
-### `POST /api/appointments`
+### `POST /api/appointments/public`
 
 Request body (`BookAppointmentBody` + honeypot) — **snake_case**:
 
@@ -751,7 +751,7 @@ Success **201** (`MessageResponse`):
 ```
 
 ```ts
-const res = await fetch(`${base}/api/appointments`, {
+const res = await fetch(`${base}/api/appointments/public`, {
   method: 'POST',
   headers: crmHeaders(),
   body: JSON.stringify({
@@ -786,10 +786,10 @@ export const paths = {
 
   // CRM-token GETs / POSTs (server only)
   company: `${API}/api/company-data/public`,
-  contactHoneypot: `${API}/api/contact-supports/honeypot`,
-  contactSubmit: `${API}/api/contact-supports`,
-  appointmentHoneypot: `${API}/api/appointments/honeypot`,
-  appointmentBook: `${API}/api/appointments`,
+  contactHoneypot: `${API}/api/contact-supports/public/honeypot`,
+  contactSubmit: `${API}/api/contact-supports/public`,
+  appointmentHoneypot: `${API}/api/appointments/public/honeypot`,
+  appointmentBook: `${API}/api/appointments/public`,
 } as const;
 ```
 
@@ -817,8 +817,8 @@ export const paths = {
 | Posts | `PostPublicReadModel` · `api.posts.public` / `api.posts.public.show` |
 | Portfolios + media | `PortfolioPublicReadModel` + `PortfolioGalleryImageReadModel` · `api.portfolios.public` |
 | Services | `ListPublicServicesHandler` + Eloquent select allowlist · `api.services.public` |
-| Contact body | `ContactSupportData` · `api.contact-supports.submit` |
-| Appointment body | `BookAppointmentData` · `api.appointments.book` |
+| Contact body | `ContactSupportData` · `api.contact-supports.public` |
+| Appointment body | `BookAppointmentData` · `api.appointments.public` |
 | Token middleware | `EnsureCrmApiToken` · alias `crm.token` |
 
 Scramble UI: `/docs/api` (local). OpenAPI JSON: `/docs/api.json`.

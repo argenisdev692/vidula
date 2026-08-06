@@ -30,6 +30,7 @@ use Spatie\Honeypot\SpamProtection;
  * one-active-lead-per-email guard happen inside {@see BookAppointmentHandler}
  * and surface as a normal 422.
  *
+ * Route: `POST /api/appointments/public` (+ `GET .../public/honeypot`).
  * Auth: `crm.token` middleware (CRM_API_TOKEN) — Astro server-side only.
  */
 final readonly class PublicAppointmentApiController

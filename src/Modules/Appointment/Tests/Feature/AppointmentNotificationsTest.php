@@ -100,7 +100,7 @@ final class AppointmentNotificationsTest extends TestCase
         $service = ServiceEloquentModel::factory()->create(['slug' => 'new_website', 'is_active' => true]);
 
         $this->withHeaders($this->crmHeaders())
-            ->postJson('/api/appointments', [
+            ->postJson('/api/appointments/public', [
                 'first_name' => 'Ada',
                 'last_name' => 'Lovelace',
                 'client_type' => 'individual',

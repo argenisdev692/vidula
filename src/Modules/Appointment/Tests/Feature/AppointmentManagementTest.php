@@ -204,7 +204,7 @@ final class AppointmentManagementTest extends TestCase
         AvailabilityRuleEloquentModel::factory()->forDay(5)->slot('09:00', '13:00')->create();
 
         $this->withHeaders($this->crmHeaders())
-            ->postJson('/api/appointments', [
+            ->postJson('/api/appointments/public', [
                 'first_name' => 'Grace',
                 'last_name' => 'Hopper',
                 'client_type' => 'individual',

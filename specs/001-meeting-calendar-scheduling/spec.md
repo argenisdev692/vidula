@@ -11,7 +11,7 @@ The team has already installed `spatie/laravel-google-calendar` (backend) and `@
 (frontend). **Decision (resolved 2026-07-16, see `clarify.md` Q1/Q2):** a new, separate `Meeting`
 module is built for general-purpose internal scheduling with a mixed attendee selector (system
 users, existing leads, support contacts). `Appointment` remains the untouched public lead-intake
-pipeline (Astro landing page → `POST /api/appointments`) and keeps its own list-based management
+pipeline (Astro landing page → `POST /api/appointments/public`) and keeps its own list-based management
 UI — it does **not** grow a FullCalendar of its own. `Meeting` is the single calendar surface: it
 renders its own internal meetings plus a read-only overlay of existing `Appointment` records
 (via a query-only port/adapter, no write coupling), giving staff one place to see everything on
@@ -87,7 +87,7 @@ Calendar, **so that** I see them alongside my personal calendar without duplicat
   query-only cross-module port), reusing current status semantics (`MeetingStatus`, `StatusLead`)
   for the Appointment overlay.
 - **FR-2**: The system MUST NOT change the public booking contract (`BookAppointmentData`,
-  `POST /api/appointments`) used by the Astro landing page, and MUST NOT modify the `Appointment`
+  `POST /api/appointments/public`) used by the Astro landing page, and MUST NOT modify the `Appointment`
   module's domain to be aware of `Meeting`.
 - **FR-3**: The system MUST allow staff to create `Meeting` entries with attendees drawn from
   three source types: system `User`, `Appointment` lead, `ContactSupport` contact.

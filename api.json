@@ -257,46 +257,6 @@
                         "$ref": "#/components/responses/AuthenticationException"
                     }
                 }
-            },
-            "post": {
-                "operationId": "appointments.book",
-                "description": "Accepts a scheduling request from the public landing page and stores the\nlead, validating the requested date/time against the current\navailability calendar (never in the past, inside an open window, not\nalready taken). Request body is {@see BookAppointmentData} including\noptional `service_uuid` (active service from `GET /api/services/public`).",
-                "summary": "Book an appointment",
-                "tags": [
-                    "PublicAppointmentApi"
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/BookAppointmentData"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Thanks! Your appointment request has been received."
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": []
             }
         },
         "/appointments/{uuid}": {
@@ -1585,46 +1545,6 @@
                         "$ref": "#/components/responses/AuthenticationException"
                     }
                 }
-            },
-            "post": {
-                "operationId": "contact-supports.submit",
-                "description": "Accepts a contact-support submission from the public landing page and\nstores it for the support team. Spam is flagged for review, never\nrejected; the response is identical whether or not the message was\nflagged, so automated senders gain no signal.",
-                "summary": "Submit a contact request",
-                "tags": [
-                    "PublicContactApi"
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/ContactSupportData"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Thanks! Your message has been received. We will get back to you shortly."
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": []
             }
         },
         "/contact-supports/{uuid}": {
@@ -3097,9 +3017,51 @@
                 }
             }
         },
-        "/appointments/honeypot": {
+        "/appointments/public": {
+            "post": {
+                "operationId": "appointments.public",
+                "description": "Accepts a scheduling request from the public landing page and stores the\nlead, validating the requested date/time against the current\navailability calendar (never in the past, inside an open window, not\nalready taken). Request body is {@see BookAppointmentData} including\noptional `service_uuid` (active service from `GET /api/services/public`).",
+                "summary": "Book an appointment",
+                "tags": [
+                    "PublicAppointmentApi"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BookAppointmentData"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Thanks! Your appointment request has been received."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/appointments/public/honeypot": {
             "get": {
-                "operationId": "appointments.honeypot",
+                "operationId": "appointments.public.honeypot",
                 "description": "Returns the field names + encrypted timestamp the landing page must embed\nas hidden inputs and echo back on submit.",
                 "summary": "Get honeypot fields",
                 "tags": [
@@ -3211,9 +3173,51 @@
                 "security": []
             }
         },
-        "/contact-supports/honeypot": {
+        "/contact-supports/public": {
+            "post": {
+                "operationId": "contact-supports.public",
+                "description": "Accepts a contact-support submission from the public landing page and\nstores it for the support team. Spam is flagged for review, never\nrejected; the response is identical whether or not the message was\nflagged, so automated senders gain no signal.",
+                "summary": "Submit a contact request",
+                "tags": [
+                    "PublicContactApi"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ContactSupportData"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Thanks! Your message has been received. We will get back to you shortly."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/contact-supports/public/honeypot": {
             "get": {
-                "operationId": "contact-supports.honeypot",
+                "operationId": "contact-supports.public.honeypot",
                 "description": "Returns the field names + encrypted timestamp the landing page must embed\nas hidden inputs and echo back on submit, so the honeypot bot filter can\nvalidate the request. The `encryptedValidFrom` value is self-contained\n(no session needed) and expires after the configured window.",
                 "summary": "Get honeypot fields",
                 "tags": [
@@ -5014,7 +5018,7 @@
             },
             "BookAppointmentData": {
                 "type": "object",
-                "description": "PUBLIC booking payload \u2014 the only surface the Astro landing page posts to\n(`POST /api/appointments`). Unlike the admin {@see AppointmentData}, this DTO\nrequires `scheduled_at`: a first-time booking always requests a specific\ndate/time, validated by {@see AppointmentScheduler}\n(not in the past, inside an open availability window, not already taken).\n\n`service_uuid` is the public identifier from `GET /api/services/public`\n(`data[].uuid`). The API never accepts `services.id`; the handler resolves the\nUUID to `appointments.service_id` server-side.",
+                "description": "PUBLIC booking payload \u2014 the only surface the Astro landing page posts to\n(`POST /api/appointments/public`). Unlike the admin {@see AppointmentData}, this DTO\nrequires `scheduled_at`: a first-time booking always requests a specific\ndate/time, validated by {@see AppointmentScheduler}\n(not in the past, inside an open availability window, not already taken).\n\n`service_uuid` is the public identifier from `GET /api/services/public`\n(`data[].uuid`). The API never accepts `services.id`; the handler resolves the\nUUID to `appointments.service_id` server-side.",
                 "properties": {
                     "first_name": {
                         "type": "string",
