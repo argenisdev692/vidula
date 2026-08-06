@@ -6,6 +6,7 @@ namespace Modules\Portfolio\Application\ReadModels;
 
 use Modules\Portfolio\Infrastructure\Persistence\Eloquent\Models\PortfolioEloquentModel;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
+use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Attributes\MapOutputName;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\SnakeCaseMapper;
@@ -23,6 +24,7 @@ use Spatie\LaravelData\Mappers\SnakeCaseMapper;
  * URL via the model accessor, Carbon → ISO-8601), matching the BACKEND-PHP §5
  * date-handling rule (ReadModels carry strings, never Carbon).
  */
+#[MapInputName(SnakeCaseMapper::class)]
 #[MapOutputName(SnakeCaseMapper::class)]
 final class PortfolioPublicReadModel extends Data
 {

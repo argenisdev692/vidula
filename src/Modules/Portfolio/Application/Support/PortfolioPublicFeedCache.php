@@ -13,11 +13,18 @@ use Throwable;
  * the landing-page feed never serves stale data past a save.
  *
  * Tag-based flush degrades silently when the cache store doesn't support tags
- * (BACKEND-PHP §5 Cache Management) — entries still expire via their TTL.
+ * (BACKEND-PHP §5 Cache Management). A monotonic version key always bumps on
+ * flush so plain-key fallbacks (e.g. CACHE_STORE=array in tests) invalidate too.
+ *
+ * Cached payloads MUST be plain arrays — never Eloquent models / paginators.
+ * Serializing models + R2 accessors across Redis caused sticky 500s after the
+ * first warm (same class of bug as blog categories / services).
  */
 final readonly class PortfolioPublicFeedCache
 {
     public const string PUBLIC_TAG = 'portfolios_public';
+
+    private const string VERSION_KEY = 'portfolios.public.cache_version';
 
     private const int TTL_MINUTES = 5;
 
@@ -29,12 +36,14 @@ final readonly class PortfolioPublicFeedCache
      */
     public static function rememberPublic(string $key, callable $callback): mixed
     {
+        $version = (int) Cache::get(self::VERSION_KEY, 1);
+        $versionedKey = "{$key}.v{$version}";
         $ttl = now()->addMinutes(self::TTL_MINUTES);
 
         try {
-            return Cache::tags([self::PUBLIC_TAG])->remember($key, $ttl, $callback);
+            return Cache::tags([self::PUBLIC_TAG])->remember($versionedKey, $ttl, $callback);
         } catch (Throwable) {
-            return Cache::remember($key, $ttl, $callback);
+            return Cache::remember($versionedKey, $ttl, $callback);
         }
     }
 
@@ -43,7 +52,9 @@ final readonly class PortfolioPublicFeedCache
         try {
             Cache::tags([self::PUBLIC_TAG])->flush();
         } catch (Throwable) {
-            // Store doesn't support tags — cached pages still expire via TTL.
+            // Store doesn't support tags — version bump below still invalidates.
         }
+
+        Cache::forever(self::VERSION_KEY, ((int) Cache::get(self::VERSION_KEY, 1)) + 1);
     }
 }

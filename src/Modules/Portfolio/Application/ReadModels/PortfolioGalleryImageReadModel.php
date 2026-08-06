@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Portfolio\Application\ReadModels;
 
 use Modules\Portfolio\Infrastructure\Persistence\Eloquent\Models\PortfolioMediaEloquentModel;
+use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Attributes\MapOutputName;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\SnakeCaseMapper;
@@ -15,6 +16,7 @@ use Spatie\LaravelData\Mappers\SnakeCaseMapper;
  * order leave the boundary — never the raw R2 object key (`path`) or the
  * internal integer `id`.
  */
+#[MapInputName(SnakeCaseMapper::class)]
 #[MapOutputName(SnakeCaseMapper::class)]
 final class PortfolioGalleryImageReadModel extends Data
 {

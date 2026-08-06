@@ -7,13 +7,44 @@ namespace Modules\Portfolio\Tests\Feature;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Modules\Portfolio\Application\Support\PortfolioPublicFeedCache;
 use Modules\Portfolio\Infrastructure\Persistence\Eloquent\Models\PortfolioEloquentModel;
 use Tests\TestCase;
 
 final class PublicPortfolioFeedTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Cache::flush();
+        PortfolioPublicFeedCache::flush();
+    }
+
+    public function test_public_feed_survives_a_second_cached_hit(): void
+    {
+        PortfolioEloquentModel::factory()->create([
+            'title' => 'Cached Project',
+            'is_public' => true,
+            'cover_path' => 'portfolios/cover/demo.png',
+            'tech_stack' => ['Vue'],
+        ]);
+
+        // First warm writes mapped arrays (never Eloquent) into cache.
+        $this->getJson('/api/portfolios/public')
+            ->assertOk()
+            ->assertJsonFragment(['title' => 'Cached Project']);
+
+        // Second hit must read the cached payload without a sticky 500
+        // (Redis unserialize of Eloquent + R2 accessors — blog-categories fix).
+        $this->getJson('/api/portfolios/public')
+            ->assertOk()
+            ->assertJsonFragment(['title' => 'Cached Project'])
+            ->assertJsonMissingPath('data.0.id');
+    }
 
     public function test_public_feed_only_returns_is_public_portfolios(): void
     {
