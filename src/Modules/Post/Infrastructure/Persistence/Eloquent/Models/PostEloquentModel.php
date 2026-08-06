@@ -175,6 +175,12 @@ final class PostEloquentModel extends Model
                 return null;
             }
 
+            // Legacy rows may store an absolute public URL — never pass those
+            // through publicUrl() or R2_URL is prepended again (double host).
+            if (str_starts_with($key, 'http://') || str_starts_with($key, 'https://')) {
+                return $key;
+            }
+
             try {
                 return app(StoragePort::class)->publicUrl($key);
             } catch (Throwable) {

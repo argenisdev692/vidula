@@ -71,8 +71,11 @@ final readonly class UpdatePostHandler
             $previous = $post->post_cover_image;
             // Upload before the transaction — object storage is not transactional.
             $attributes['post_cover_image'] = $this->storage->putFile('posts', $data->coverImage, 'public');
-        } elseif ($data->coverImagePath !== null && $data->coverImagePath !== $post->post_cover_image) {
-            $attributes['post_cover_image'] = $data->coverImagePath;
+        } elseif ($data->coverImagePath !== null) {
+            $normalized = $this->normalizeCoverPath($data->coverImagePath);
+            if ($normalized !== null && $normalized !== $post->post_cover_image) {
+                $attributes['post_cover_image'] = $normalized;
+            }
         }
 
         $updated = DB::transaction(fn () => $this->posts->update($post, $attributes));
@@ -88,6 +91,25 @@ final readonly class UpdatePostHandler
         }
 
         return $updated;
+    }
+
+    /**
+     * Persist object keys only. Absolute public URLs are reduced to their path
+     * so cover_image_url is not double-prefixed with R2_URL.
+     */
+    private function normalizeCoverPath(string $path): ?string
+    {
+        if ($path === '') {
+            return null;
+        }
+
+        if (str_starts_with($path, 'https://') || str_starts_with($path, 'http://')) {
+            $key = ltrim(rawurldecode((string) parse_url($path, PHP_URL_PATH)), '/');
+
+            return $key !== '' ? $key : null;
+        }
+
+        return ltrim($path, '/');
     }
 
     private function uniqueSlug(string $base, string $ignoreUuid): string

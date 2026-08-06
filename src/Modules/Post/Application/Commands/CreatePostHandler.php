@@ -33,7 +33,7 @@ final readonly class CreatePostHandler
         // transactional and must never run inside the DB unit-of-work.
         $coverImagePath = $data->coverImage !== null
             ? $this->storage->putFile('posts', $data->coverImage, 'public')
-            : $data->coverImagePath;
+            : $this->normalizeCoverPath($data->coverImagePath);
 
         $slug = $this->uniqueSlug(Str::slug($data->title));
         $isPublished = $data->status === 'published';
@@ -67,6 +67,23 @@ final readonly class CreatePostHandler
         }
 
         return $post;
+    }
+
+    /**
+     * Persist object keys only. Absolute public URLs (legacy / mistaken client
+     * payloads) are reduced to their path so cover_image_url is not double-prefixed.
+     */
+    private function normalizeCoverPath(?string $path): ?string
+    {
+        if ($path === null || $path === '') {
+            return $path;
+        }
+
+        if (str_starts_with($path, 'https://') || str_starts_with($path, 'http://')) {
+            return ltrim(rawurldecode((string) parse_url($path, PHP_URL_PATH)), '/');
+        }
+
+        return ltrim($path, '/');
     }
 
     private function uniqueSlug(string $base): string

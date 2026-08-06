@@ -8,6 +8,7 @@ use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 use Modules\Blog\Infrastructure\Persistence\Eloquent\Models\BlogCategoryEloquentModel;
 use Modules\Post\Domain\Ports\PostPublicFeedCachePort;
 use Modules\Post\Infrastructure\Persistence\Eloquent\Models\PostEloquentModel;
@@ -142,5 +143,23 @@ final class PublicPostFeedTest extends TestCase
         $this->getJson('/api/posts/public')
             ->assertOk()
             ->assertJsonFragment(['title' => 'Freshly Published']);
+    }
+
+    public function test_public_feed_does_not_double_prefix_absolute_cover_urls(): void
+    {
+        config(['filesystems.disks.r2.url' => 'https://pub-current.example.test']);
+        Storage::forgetDisk('r2');
+
+        $cover = 'https://pub-legacy.example.test/posts/ai/003a5dd7-eb71-40b0-b81b-993a61c77a4c.png';
+
+        PostEloquentModel::factory()->published()->create([
+            'post_title' => 'Legacy Absolute Cover',
+            'post_cover_image' => $cover,
+        ]);
+
+        $this->getJson('/api/posts/public')
+            ->assertOk()
+            ->assertJsonFragment(['cover_image_url' => $cover])
+            ->assertJsonMissing(['cover_image_url' => 'https://pub-current.example.test/'.$cover]);
     }
 }

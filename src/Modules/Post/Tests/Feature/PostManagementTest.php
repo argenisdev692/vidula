@@ -7,6 +7,7 @@ namespace Modules\Post\Tests\Feature;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Modules\Blog\Infrastructure\Persistence\Eloquent\Models\BlogCategoryEloquentModel;
 use Modules\Post\Infrastructure\Persistence\Eloquent\Models\PostEloquentModel;
@@ -158,6 +159,57 @@ final class PostManagementTest extends TestCase
             ->assertOk()
             ->assertJsonFragment(['post_title' => 'Artificial Intelligence Trends'])
             ->assertJsonMissing(['post_title' => 'Gardening Tips']);
+    }
+
+    public function test_absolute_cover_image_url_is_not_double_prefixed(): void
+    {
+        config(['filesystems.disks.r2.url' => 'https://pub-current.example.test']);
+        Storage::forgetDisk('r2');
+
+        $cover = 'https://pub-legacy.example.test/posts/ai/003a5dd7-eb71-40b0-b81b-993a61c77a4c.png';
+
+        $post = PostEloquentModel::factory()->create([
+            'post_title' => 'Legacy Cover Post',
+            'post_cover_image' => $cover,
+        ]);
+
+        $this->assertSame($cover, $post->cover_image_url);
+
+        $this->actingAs($this->superAdmin())
+            ->getJson('/posts')
+            ->assertOk()
+            ->assertJsonFragment(['cover_image_url' => $cover])
+            ->assertJsonMissing(['cover_image_url' => 'https://pub-current.example.test/'.$cover]);
+    }
+
+    public function test_object_key_cover_image_resolves_via_configured_r2_url(): void
+    {
+        config(['filesystems.disks.r2.url' => 'https://pub-current.example.test']);
+        Storage::forgetDisk('r2');
+
+        $key = 'posts/ai/003a5dd7-eb71-40b0-b81b-993a61c77a4c.png';
+        $post = PostEloquentModel::factory()->create(['post_cover_image' => $key]);
+
+        $this->assertSame('https://pub-current.example.test/'.$key, $post->cover_image_url);
+    }
+
+    public function test_create_normalizes_absolute_cover_image_path_to_object_key(): void
+    {
+        $admin = $this->superAdmin();
+        $absolute = 'https://pub-legacy.example.test/posts/ai/003a5dd7-eb71-40b0-b81b-993a61c77a4c.png';
+
+        $this->actingAs($admin)
+            ->post('/posts', [
+                'title' => 'Cover Path Normalized',
+                'content' => 'Body content.',
+                'status' => 'draft',
+                'cover_image_path' => $absolute,
+            ])
+            ->assertRedirect();
+
+        $post = PostEloquentModel::query()->where('post_title', 'Cover Path Normalized')->firstOrFail();
+
+        $this->assertSame('posts/ai/003a5dd7-eb71-40b0-b81b-993a61c77a4c.png', $post->post_cover_image);
     }
 
     public function test_a_user_without_permission_cannot_manage_posts(): void
