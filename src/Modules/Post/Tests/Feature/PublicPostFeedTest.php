@@ -7,13 +7,54 @@ namespace Modules\Post\Tests\Feature;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Modules\Blog\Infrastructure\Persistence\Eloquent\Models\BlogCategoryEloquentModel;
+use Modules\Post\Domain\Ports\PostPublicFeedCachePort;
 use Modules\Post\Infrastructure\Persistence\Eloquent\Models\PostEloquentModel;
 use Tests\TestCase;
 
 final class PublicPostFeedTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Cache::flush();
+        $this->app->make(PostPublicFeedCachePort::class)->flush();
+    }
+
+    public function test_public_feed_survives_a_second_cached_hit(): void
+    {
+        PostEloquentModel::factory()->published()->create(['post_title' => 'Cached Post']);
+
+        $this->getJson('/api/posts/public')
+            ->assertOk()
+            ->assertJsonFragment(['title' => 'Cached Post']);
+
+        $this->getJson('/api/posts/public')
+            ->assertOk()
+            ->assertJsonFragment(['title' => 'Cached Post'])
+            ->assertJsonMissingPath('data.0.id');
+    }
+
+    public function test_public_detail_survives_a_second_cached_hit(): void
+    {
+        $post = PostEloquentModel::factory()->published()->create([
+            'post_title' => 'Cached Detail',
+            'post_content' => 'Body for the detail cache.',
+        ]);
+
+        $this->getJson("/api/posts/public/{$post->post_title_slug}")
+            ->assertOk()
+            ->assertJsonPath('content', 'Body for the detail cache.');
+
+        $this->getJson("/api/posts/public/{$post->post_title_slug}")
+            ->assertOk()
+            ->assertJsonPath('title', 'Cached Detail')
+            ->assertJsonPath('content', 'Body for the detail cache.')
+            ->assertJsonMissingPath('id');
+    }
 
     public function test_public_feed_only_returns_published_posts(): void
     {

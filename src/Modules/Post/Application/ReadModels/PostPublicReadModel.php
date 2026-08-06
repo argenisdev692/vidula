@@ -6,6 +6,7 @@ namespace Modules\Post\Application\ReadModels;
 
 use Modules\Post\Application\Queries\GetPublicPostHandler;
 use Modules\Post\Infrastructure\Persistence\Eloquent\Models\PostEloquentModel;
+use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Attributes\MapOutputName;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\SnakeCaseMapper;
@@ -20,6 +21,7 @@ use Spatie\LaravelData\Mappers\SnakeCaseMapper;
  * only populated by {@see GetPublicPostHandler}
  * for the single-post detail page.
  */
+#[MapInputName(SnakeCaseMapper::class)]
 #[MapOutputName(SnakeCaseMapper::class)]
 final class PostPublicReadModel extends Data
 {

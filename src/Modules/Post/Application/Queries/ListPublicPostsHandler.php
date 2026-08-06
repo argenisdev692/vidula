@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Post\Application\Queries;
 
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Modules\Post\Application\ReadModels\PostPublicReadModel;
 use Modules\Post\Domain\Ports\PostPublicFeedCachePort;
 use Modules\Post\Domain\Ports\PostRepositoryPort;
+use Modules\Post\Infrastructure\Persistence\Eloquent\Models\PostEloquentModel;
 use Spatie\LaravelData\PaginatedDataCollection;
-use Throwable;
 
 /**
  * Landing-page feed: `published` posts only, optionally scoped to one
@@ -20,15 +20,20 @@ use Throwable;
  *
  * Cached, unlike the admin `ListPostsHandler`/`GetPostHandler`: this is hit by
  * anonymous traffic with no per-user throttle beyond the route's
- * `throttle:60,1` (BACKEND-PHP §5 Cache Management). Every Create/Update/
- * Delete/Restore/Bulk handler busts the `posts_public` tag via
+ * `throttle:landing-public` (BACKEND-PHP §5 Cache Management). Every
+ * Create/Update/Delete/Restore/Bulk handler busts the `posts_public` tag via
  * {@see PostPublicFeedCachePort}.
+ *
+ * Important: we cache already-mapped public arrays (+ pagination meta) — never
+ * Eloquent models. Serializing models + accessors across Redis was a source of
+ * sticky 500s after the first warm (same fix as blog categories / portfolios).
  */
 final readonly class ListPublicPostsHandler
 {
-    private const int TTL_MINUTES = 5;
-
-    public function __construct(private PostRepositoryPort $posts) {}
+    public function __construct(
+        private PostRepositoryPort $posts,
+        private PostPublicFeedCachePort $publicFeedCache,
+    ) {}
 
     /**
      * @return PaginatedDataCollection<int, PostPublicReadModel>
@@ -38,23 +43,41 @@ final readonly class ListPublicPostsHandler
         $page = max((int) request()->integer('page', 1), 1);
         $cacheKey = "posts.public.category.{$categoryUuid}.page.{$page}.per_page.{$perPage}";
 
-        try {
-            $paginator = Cache::tags(['posts_public'])->remember(
-                $cacheKey,
-                now()->addMinutes(self::TTL_MINUTES),
-                fn () => $this->posts->paginatePublic($categoryUuid, $perPage),
-            );
-        } catch (Throwable) {
-            $paginator = Cache::remember(
-                $cacheKey,
-                now()->addMinutes(self::TTL_MINUTES),
-                fn () => $this->posts->paginatePublic($categoryUuid, $perPage),
-            );
-        }
+        /** @var array{items: list<array<string, mixed>>, total: int, per_page: int, current_page: int, path: string} $payload */
+        $payload = $this->publicFeedCache->remember(
+            $cacheKey,
+            function () use ($categoryUuid, $perPage): array {
+                $paginator = $this->posts->paginatePublic($categoryUuid, $perPage);
 
-        // Map to the public allowlist AFTER the cache boundary: the cache keeps
-        // storing the Eloquent paginator (unchanged, proven behaviour) while the
-        // response shape is a precise, id-free ReadModel collection.
+                /** @var list<array<string, mixed>> $items */
+                $items = $paginator->getCollection()
+                    ->map(static function (PostEloquentModel $model): array {
+                        return PostPublicReadModel::fromModel($model)->toArray();
+                    })
+                    ->values()
+                    ->all();
+
+                return [
+                    'items' => $items,
+                    'total' => $paginator->total(),
+                    'per_page' => $paginator->perPage(),
+                    'current_page' => $paginator->currentPage(),
+                    'path' => $paginator->path(),
+                ];
+            },
+        );
+
+        $paginator = new LengthAwarePaginator(
+            $payload['items'],
+            $payload['total'],
+            $payload['per_page'],
+            $payload['current_page'],
+            [
+                'path' => $payload['path'],
+                'query' => request()->query(),
+            ],
+        );
+
         return PostPublicReadModel::collect($paginator, PaginatedDataCollection::class);
     }
 }
