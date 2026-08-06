@@ -34,6 +34,9 @@ final class EloquentPortfolioRepository implements PortfolioRepositoryPort
             ->applyFilters($filters)
             ->with('user:id,first_name,last_name')
             ->withCount('gallery')
+            // `description` is required here: Index opens create/edit from list
+            // rows (no separate GET edit payload), so omitting it leaves the
+            // dialog description empty even when the column is populated.
             ->select([
                 'id',
                 'uuid',
@@ -46,6 +49,7 @@ final class EloquentPortfolioRepository implements PortfolioRepositoryPort
                 'is_public',
                 'cover_path',
                 'video_path',
+                'description',
                 'sort_order',
                 'user_id',
                 'created_at',

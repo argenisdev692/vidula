@@ -101,6 +101,25 @@ final class PublicPortfolioFeedTest extends TestCase
         $response->assertJsonMissingPath('data.0.user_id');
     }
 
+    public function test_public_feed_does_not_double_prefix_absolute_cover_urls(): void
+    {
+        config(['filesystems.disks.r2.url' => 'https://pub-current.example.test']);
+        Storage::forgetDisk('r2');
+
+        $cover = 'https://pub-legacy.example.test/portfolios/cover/003a5dd7-eb71-40b0-b81b-993a61c77a4c/ser-1.png';
+
+        PortfolioEloquentModel::factory()->create([
+            'title' => 'Legacy Absolute Cover',
+            'is_public' => true,
+            'cover_path' => $cover,
+        ]);
+
+        $this->getJson('/api/portfolios/public')
+            ->assertOk()
+            ->assertJsonFragment(['cover_url' => $cover])
+            ->assertJsonMissing(['cover_url' => 'https://pub-current.example.test/'.$cover]);
+    }
+
     public function test_creating_a_portfolio_busts_the_cached_feed(): void
     {
         $this->seed(RolePermissionSeeder::class);

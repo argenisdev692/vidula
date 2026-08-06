@@ -2,10 +2,12 @@
  * Portfolio module — snake_case interfaces mirroring the backend
  * {@link \Modules\Portfolio\Infrastructure\Persistence\Eloquent\Models\PortfolioEloquentModel}
  * (+ its `gallery` HasMany child, {@link PortfolioGalleryImage}). The list query
- * selects a lean column set + `withCount('gallery')`; the Show detail loads the
- * full model plus the ordered `gallery` relation (see GetPortfolioHandler /
- * EloquentPortfolioRepository) — `description`, `updated_at` and `gallery` are
- * therefore only guaranteed on the Show payload, not on list rows.
+ * selects columns needed for the DataTable + Index create/edit dialog
+ * (including `description`, `cover_path`/`video_path` → appended `cover_url`/
+ * `video_url`) + `withCount('gallery')`. The Show detail loads the full model
+ * plus the ordered `gallery` relation (see GetPortfolioHandler /
+ * EloquentPortfolioRepository) — `updated_at` and `gallery` are only guaranteed
+ * on the Show payload.
  *
  * A row is ACTIVE when `deleted_at === null` and SUSPENDED (soft-deleted) when
  * it holds a timestamp — independent of `is_public`, the landing-page

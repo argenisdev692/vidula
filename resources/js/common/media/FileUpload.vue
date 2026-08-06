@@ -65,6 +65,14 @@ watch(model, (file) => {
     }
 });
 
+/** Re-attempt current-file preview when the parent swaps entities (edit dialog). */
+watch(
+    () => props.currentUrl,
+    () => {
+        currentBroken.value = false;
+    },
+);
+
 function openPicker(): void {
     if (props.disabled) {
         return;

@@ -14,6 +14,11 @@ use Shared\Domain\Ports\StoragePort;
  *
  * `local`/`public` disks are forbidden as the final destination for user/business
  * uploads (BACKEND-PHP §5). Defaults to the `r2` disk; injectable for tests.
+ *
+ * Columns should store object keys (`portfolios/cover/{uuid}/file.png`). Legacy
+ * rows may hold absolute public URLs — {@see publicUrl()} returns those as-is
+ * (never double-prefix with `R2_URL`), while exists/delete/temporaryUrl strip
+ * the URL down to the object key for the S3 API.
  */
 final readonly class R2StorageAdapter implements StoragePort
 {
@@ -26,9 +31,10 @@ final readonly class R2StorageAdapter implements StoragePort
 
     public function put(string $path, string $contents, string $visibility = 'private'): string
     {
-        $this->disk->put($path, $contents, ['visibility' => $visibility]);
+        $key = $this->normalizeObjectKey($path);
+        $this->disk->put($key, $contents, ['visibility' => $visibility]);
 
-        return $path;
+        return $key;
     }
 
     public function putFile(string $directory, \SplFileInfo $file, string $visibility = 'private'): string
@@ -44,7 +50,10 @@ final readonly class R2StorageAdapter implements StoragePort
 
     public function temporaryUrl(string $path, \DateTimeInterface $expiresAt): string
     {
-        return $this->disk->temporaryUrl($path, CarbonImmutable::instance($expiresAt));
+        return $this->disk->temporaryUrl(
+            $this->normalizeObjectKey($path),
+            CarbonImmutable::instance($expiresAt),
+        );
     }
 
     /**
@@ -53,7 +62,10 @@ final readonly class R2StorageAdapter implements StoragePort
     public function temporaryUploadUrl(string $path, \DateTimeInterface $expiresAt): array
     {
         /** @var array{url: string, headers: array<string, string>} $payload */
-        $payload = $this->disk->temporaryUploadUrl($path, CarbonImmutable::instance($expiresAt));
+        $payload = $this->disk->temporaryUploadUrl(
+            $this->normalizeObjectKey($path),
+            CarbonImmutable::instance($expiresAt),
+        );
 
         return [
             'upload_url' => $payload['url'],
@@ -86,14 +98,22 @@ final readonly class R2StorageAdapter implements StoragePort
 
     public function publicUrl(string $path): string
     {
-        return $this->disk->url($path);
+        // Already a permanent URL (legacy rows / manual inserts) — never
+        // concatenate disk `url` again or we produce
+        // `{R2_URL}/{https://other-host/...}`.
+        if ($this->isAbsoluteUrl($path)) {
+            return $path;
+        }
+
+        return $this->disk->url($this->normalizeObjectKey($path));
     }
 
     public function copyToLocal(string $path, string $localPath): void
     {
-        $stream = $this->disk->readStream($path);
+        $key = $this->normalizeObjectKey($path);
+        $stream = $this->disk->readStream($key);
         if ($stream === null) {
-            throw new \RuntimeException("Failed to open storage object [{$path}].");
+            throw new \RuntimeException("Failed to open storage object [{$key}].");
         }
 
         try {
@@ -110,7 +130,7 @@ final readonly class R2StorageAdapter implements StoragePort
             try {
                 $copied = stream_copy_to_stream($stream, $out);
                 if ($copied === false) {
-                    throw new \RuntimeException("Failed to copy storage object [{$path}] to local disk.");
+                    throw new \RuntimeException("Failed to copy storage object [{$key}] to local disk.");
                 }
             } finally {
                 fclose($out);
@@ -128,15 +148,16 @@ final readonly class R2StorageAdapter implements StoragePort
             throw new \RuntimeException("Local file not found [{$localPath}].");
         }
 
+        $key = $this->normalizeObjectKey($path);
         $stream = fopen($localPath, 'rb');
         if ($stream === false) {
             throw new \RuntimeException("Failed to open local file [{$localPath}].");
         }
 
         try {
-            $ok = $this->disk->put($path, $stream, ['visibility' => $visibility]);
+            $ok = $this->disk->put($key, $stream, ['visibility' => $visibility]);
             if ($ok === false) {
-                throw new \RuntimeException("Failed to stream [{$localPath}] to storage [{$path}].");
+                throw new \RuntimeException("Failed to stream [{$localPath}] to storage [{$key}].");
             }
         } finally {
             if (is_resource($stream)) {
@@ -144,16 +165,36 @@ final readonly class R2StorageAdapter implements StoragePort
             }
         }
 
-        return $path;
+        return $key;
     }
 
     public function delete(string $path): bool
     {
-        return $this->disk->delete($path);
+        return $this->disk->delete($this->normalizeObjectKey($path));
     }
 
     public function exists(string $path): bool
     {
-        return $this->disk->exists($path);
+        return $this->disk->exists($this->normalizeObjectKey($path));
+    }
+
+    private function isAbsoluteUrl(string $path): bool
+    {
+        return str_starts_with($path, 'https://') || str_starts_with($path, 'http://');
+    }
+
+    /**
+     * Map a stored value to the R2 object key. Absolute public URLs are reduced
+     * to their path; keys are returned trimmed.
+     */
+    private function normalizeObjectKey(string $path): string
+    {
+        if ($this->isAbsoluteUrl($path)) {
+            $parsedPath = (string) parse_url($path, PHP_URL_PATH);
+
+            return ltrim(rawurldecode($parsedPath), '/');
+        }
+
+        return ltrim($path, '/');
     }
 }

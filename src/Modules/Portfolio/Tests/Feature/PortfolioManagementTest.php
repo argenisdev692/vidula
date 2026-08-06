@@ -330,6 +330,41 @@ final class PortfolioManagementTest extends TestCase
             ->assertJsonMissing(['title' => 'Gardening App']);
     }
 
+    public function test_absolute_cover_and_video_urls_are_not_double_prefixed(): void
+    {
+        config(['filesystems.disks.r2.url' => 'https://pub-current.example.test']);
+        Storage::forgetDisk('r2');
+
+        $cover = 'https://pub-legacy.example.test/portfolios/cover/003a5dd7-eb71-40b0-b81b-993a61c77a4c/ser-1.png';
+        $video = 'https://pub-legacy.example.test/portfolios/video/0b5b66ca-3e5f-4f47-8ef9-afcf033bb685/video-servispin.mp4';
+
+        $portfolio = PortfolioEloquentModel::factory()->create([
+            'cover_path' => $cover,
+            'video_path' => $video,
+        ]);
+
+        $this->assertSame($cover, $portfolio->cover_url);
+        $this->assertSame($video, $portfolio->video_url);
+
+        $this->actingAs($this->superAdmin())
+            ->getJson('/portfolios')
+            ->assertOk()
+            ->assertJsonFragment(['cover_url' => $cover, 'video_url' => $video])
+            ->assertJsonMissing(['cover_url' => 'https://pub-current.example.test/'.$cover]);
+    }
+
+    public function test_object_key_cover_path_resolves_via_configured_r2_url(): void
+    {
+        // Offline URL composition from the configured public base (no network).
+        config(['filesystems.disks.r2.url' => 'https://pub-current.example.test']);
+        Storage::forgetDisk('r2');
+
+        $key = 'portfolios/cover/003a5dd7-eb71-40b0-b81b-993a61c77a4c/ser-1.png';
+        $portfolio = PortfolioEloquentModel::factory()->create(['cover_path' => $key]);
+
+        $this->assertSame('https://pub-current.example.test/'.$key, $portfolio->cover_url);
+    }
+
     public function test_a_user_without_permission_cannot_manage_portfolios(): void
     {
         $plain = User::factory()->create();
