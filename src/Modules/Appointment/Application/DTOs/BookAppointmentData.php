@@ -13,10 +13,10 @@ use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 
 /**
  * PUBLIC booking payload — the only surface the Astro landing page posts to
- * (`POST /api/appointments/public`). Unlike the admin {@see AppointmentData}, this DTO
- * requires `scheduled_at`: a first-time booking always requests a specific
- * date/time, validated by {@see AppointmentScheduler}
- * (not in the past, inside an open availability window, not already taken).
+ * (`POST /api/appointments/public`). `scheduled_at` is optional: the landing
+ * page may capture a lead without a slot; when present it is validated by
+ * {@see AppointmentScheduler} (not in the past, inside an open availability
+ * window, not already taken). `sms_consent` defaults to `false` when omitted.
  *
  * `service_uuid` is the public identifier from `GET /api/services/public`
  * (`data[].uuid`). The API never accepts `services.id`; the handler resolves the
@@ -44,7 +44,7 @@ final class BookAppointmentData extends Data
         public ?string $countryCode,
         public ?float $latitude,
         public ?float $longitude,
-        public string $scheduledAt,
+        public ?string $scheduledAt = null,
         public bool $smsConsent = false,
         public ?string $notes = null,
     ) {}
@@ -88,8 +88,8 @@ final class BookAppointmentData extends Data
             'country_code' => ['nullable', 'string', 'size:2', 'alpha', 'uppercase'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
-            'scheduled_at' => ['required', 'date'],
-            'sms_consent' => ['boolean'],
+            'scheduled_at' => ['nullable', 'date'],
+            'sms_consent' => ['sometimes', 'boolean'],
             'notes' => ['nullable', 'string', 'max:5000'],
         ];
     }

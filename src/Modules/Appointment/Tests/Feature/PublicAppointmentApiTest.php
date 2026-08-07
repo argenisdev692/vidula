@@ -126,7 +126,23 @@ final class PublicAppointmentApiTest extends TestCase
         $this->withHeaders($this->crmHeaders())
             ->postJson('/api/appointments/public', [])
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['first_name', 'last_name', 'client_type', 'email', 'scheduled_at']);
+            ->assertJsonValidationErrors(['first_name', 'last_name', 'client_type', 'email']);
+    }
+
+    public function test_a_booking_without_scheduled_at_or_sms_consent_is_accepted(): void
+    {
+        $payload = $this->payload();
+        unset($payload['scheduled_at'], $payload['sms_consent']);
+
+        $this->withHeaders($this->crmHeaders())
+            ->postJson('/api/appointments/public', $payload)
+            ->assertCreated();
+
+        $this->assertDatabaseHas('appointments', [
+            'email' => 'ada@example.com',
+            'scheduled_at' => null,
+            'sms_consent' => false,
+        ]);
     }
 
     public function test_a_past_date_is_rejected_with_422(): void

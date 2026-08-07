@@ -347,7 +347,7 @@ export type BookAppointmentBody = {
   country_code?: string | null;
   latitude?: number | null;
   longitude?: number | null;
-  scheduled_at: string;
+  scheduled_at?: string | null;
   sms_consent?: boolean;
   notes?: string | null;
 };
@@ -740,7 +740,8 @@ Request body (`BookAppointmentBody` + honeypot) — **snake_case**:
 | `company_name` | Required when `client_type` is `company` |
 | `service_uuid` | Optional UUID from `GET /api/services/public` (`data[].uuid`). Must reference an **active** service; backend stores `service_id` internally. |
 | `country_code` | 2-letter uppercase when present |
-| `scheduled_at` | Required; must be valid slot (not past / closed / taken) → else **422** on `scheduled_at` or `email` (duplicate active lead) |
+| `scheduled_at` | Optional; when set must be a valid slot (not past / closed / taken) → else **422**. Duplicate active email → **422** on `email` |
+| `sms_consent` | Optional; defaults to `false` when omitted |
 
 Success **201** (`MessageResponse`):
 

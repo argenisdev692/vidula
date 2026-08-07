@@ -38,11 +38,12 @@ final readonly class PublicAppointmentApiController
     /**
      * Book an appointment.
      *
-     * Accepts a scheduling request from the public landing page and stores the
-     * lead, validating the requested date/time against the current
-     * availability calendar (never in the past, inside an open window, not
-     * already taken). Request body is {@see BookAppointmentData} including
+     * Accepts a lead from the public landing page. When `scheduled_at` is sent
+     * it is validated against the availability calendar (never in the past,
+     * inside an open window, not already taken); when omitted the lead is
+     * stored unscheduled. Request body is {@see BookAppointmentData} including
      * optional `service_uuid` (active service from `GET /api/services/public`).
+     * `sms_consent` defaults to false when omitted.
      */
     public function store(
         BookAppointmentData $data,

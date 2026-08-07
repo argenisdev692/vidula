@@ -20,9 +20,10 @@ use Modules\Appointment\Domain\ValueObjects\StatusLead;
 use Modules\Appointment\Infrastructure\Persistence\Eloquent\Models\AppointmentEloquentModel;
 
 /**
- * PUBLIC entry point (Astro landing page, no auth). A first-time booking is
- * validated by {@see AppointmentScheduler} (not a past date, inside an open
- * availability window, not already taken) before anything is persisted.
+ * PUBLIC entry point (Astro landing page, no auth). When `scheduled_at` is
+ * sent it is validated by {@see AppointmentScheduler} (not a past date, inside
+ * an open availability window, not already taken) before anything is persisted.
+ * Omitting `scheduled_at` stores an unscheduled New lead (same as admin capture).
  *
  * The `appointments.email` partial unique index allows only one ACTIVE lead per
  * email. A resubmission from an email that already has an active appointment is
@@ -59,12 +60,16 @@ final readonly class BookAppointmentHandler
             ]);
         }
 
-        $scheduledAt = CarbonImmutable::parse($data->scheduledAt);
+        $scheduledAt = null;
 
-        try {
-            $this->scheduler->assertBookable($scheduledAt);
-        } catch (PastDateSchedulingException|SlotUnavailableException $e) {
-            throw ValidationException::withMessages(['scheduled_at' => [$e->getMessage()]]);
+        if ($data->scheduledAt !== null) {
+            $scheduledAt = CarbonImmutable::parse($data->scheduledAt);
+
+            try {
+                $this->scheduler->assertBookable($scheduledAt);
+            } catch (PastDateSchedulingException|SlotUnavailableException $e) {
+                throw ValidationException::withMessages(['scheduled_at' => [$e->getMessage()]]);
+            }
         }
 
         // Content-scoring layer (after the honeypot bot filter in the controller):
