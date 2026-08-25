@@ -5,8 +5,9 @@
 <h1 align="center">Vidula</h1>
 
 <p align="center">
-  <b>AI-powered operations workspace for creators, educators &amp; coaches</b><br>
-  CRM, scheduling, content generation, video production and personal-branding tools in a single modular Laravel monolith.
+  <b>An MVP I built for my own teaching workflow</b><br>
+  Classroom management — students, enrollments, scheduling — plus an automated <b>video-pill editor</b> that transcribes a take,
+  strips filler words and dead air, and renders a publishable clip. Laravel 13 + Inertia v3 + Vue 3, modular hexagonal monolith.
 </p>
 
 <p align="center">
@@ -17,7 +18,7 @@
   <img src="https://img.shields.io/badge/Vue-3.5-42b883?logo=vuedotjs&logoColor=white" alt="Vue 3.5">
   <img src="https://img.shields.io/badge/Inertia.js-v3-9553e9?logo=inertia&logoColor=white" alt="Inertia v3">
   <img src="https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white" alt="TypeScript strict">
-  <img src="https://img.shields.io/badge/tests-96%20files%20%2F%2024%20modules-brightgreen" alt="Test coverage by module">
+  <img src="https://img.shields.io/badge/tests-100%20files%20%2F%2024%20modules-brightgreen" alt="Test coverage by module">
   <img src="https://img.shields.io/badge/license-Proprietary-lightgrey" alt="License">
 </p>
 
@@ -55,7 +56,9 @@
 6. [Performance](#6-performance)
 7. [Security](#7-security)
 8. [Contributing &amp; Maintenance](#8-contributing--maintenance)
-9. [2026 Enterprise Considerations](#9-2026-enterprise-considerations)
+9. [Project state](#9-project-state)
+   - [9.1 AI-assisted development](#91-ai-assisted-development)
+   - [9.2 Known gaps](#92-known-gaps)
 10. [License](#10-license)
 
 ---
@@ -64,24 +67,37 @@
 
 | | |
 |---|---|
-| **Product** | Vidula — *"AI-Powered Workspace for Creators and Educators"* (`config/app.php:title_description`) |
-| **Business domain** | Coaching / education / personal-brand SaaS — CRM, scheduling, content marketing and course production for a solo consultant/agency operation |
-| **Primary users** | The business owner and staff (internal admin panel behind auth), with a handful of public-facing surfaces (portfolio, blog, service pages, appointment booking, contact) |
+| **What it is** | An MVP built for my own teaching workflow — not a product with customers, not a multi-tenant SaaS |
+| **Two things it actually does** | (1) **Classroom management**: students, enrollments, scheduling. (2) **Video-pill editing**: turn a raw take into a short publishable clip, automatically |
+| **Primary user** | Me. Everything sits behind auth in a single-tenant admin panel; a few public surfaces (portfolio, blog, contact, booking) exist around it |
 | **Deployment target** | Railway (`APP_URL=https://vidula.up.railway.app`), containerized via Laravel Sail images |
-| **Audience for this document** | Backend/frontend engineers, DevOps, and technical reviewers onboarding onto the codebase |
+| **Audience for this document** | Engineers reading the codebase — including future me |
 
-Vidula unifies the tooling a content-driven service business would otherwise stitch together from five different SaaS subscriptions:
+### The video-pill pipeline
 
-| Capability | Modules involved |
+This is the part worth looking at. `Modules/VideoExport` takes a raw recording and produces a finished clip without manual scrubbing:
+
+| Step | Implementation |
 |---|---|
-| **Client & sales ops** | `Clients`, `Services`, `Invoices`, `ContactSupport`, `Company` |
-| **Scheduling** | `Appointment`, `Meeting`, `Availability` (Google Calendar sync, holiday-aware slot resolution) |
-| **AI Resume Studio** | `AiResumeStudio`, `Cvs` — ATS-oriented CV rewriting, job-page scraping, cover-letter drafting |
-| **Course / education ops** | `Students`, `Enrollments`, `Products` (AI content generator), `VideoExport` (FFmpeg pipeline) |
-| **Content marketing** | `Blog`, `Post`, `Campaigns`, `SocialMedia`, `Portfolio` (public case studies) |
-| **Platform** | `Auth`, `Authorization` (RBAC via `spatie/laravel-permission`), `Users`, `ActivityLog`, `Backup` |
+| Transcribe with word-level timestamps | `OpenAiWhisperTranscriber` → `Domain/ValueObjects/WordTimestamp` |
+| Detect filler words ("um", "like", …) | `Domain/Services/FillerCutDetector` |
+| Detect dead air | `Domain/Services/SilenceCutParser` |
+| Merge both into one non-overlapping cut list | `Domain/Services/CutPlanner` → `Domain/ValueObjects/TimeRange` |
+| Clean the audio | `AudioEnhanceChain` + `FfmpegArnndnAudioDenoiseAdapter` (RNNoise) |
+| Check the take against the intended script | `ReviewScriptAgainstTranscriptAgent` |
+| Render | `VideoExportPipeline` on the `video-export` Horizon queue, low-memory mode for small containers |
 
-The screenshot above is an example of a client-facing site delivered through the `Portfolio`/`Products` modules — it illustrates the kind of output the platform produces for end customers, not the internal admin UI itself.
+Upload goes browser → R2 via presigned PUT (no binary through the app server); progress streams back over Reverb.
+
+### Classroom management
+
+`Students` + `Enrollments` for roster and course registration, `Appointment` / `Meeting` / `Availability` for scheduling (Google Calendar sync, holiday-aware slot resolution), `Products` for AI-assisted course outlines.
+
+### Everything else
+
+The remaining ~17 modules (`Clients`, `Invoices`, `Campaigns`, `SocialMedia`, `AiResumeStudio`, `Portfolio`, `Blog`, …) are **exploratory** — built to exercise the architecture across many shapes of domain, not because the MVP needs them. See [4.1](#41-backend-srcmodules-srcshared) for the core/supporting/exploratory split. The architecture is deliberately over-specified relative to the feature set; practising the pattern at scale was part of the point.
+
+The screenshot above is a client-facing site rendered through the `Portfolio`/`Products` modules — output the platform can produce, not the admin UI itself.
 
 ---
 
@@ -490,16 +506,22 @@ src/
 │   └── Providers/
 │
 └── Modules/                      # 24 bounded contexts, identical internal shape:
-    ├── Auth/ Authorization/ Users/         # platform: sessions, 2FA, RBAC
-    ├── Clients/ Services/ Invoices/         # CRM & billing
-    ├── Appointment/ Meeting/ Availability/  # scheduling (Google Calendar sync)
+    │
+    │   ── CORE (what the MVP is for) ────────────────────────────────
+    ├── VideoExport/                         # video-pill pipeline: Whisper → filler/silence cuts → denoise → render
+    ├── Students/ Enrollments/               # classroom roster & course registration
+    ├── Appointment/ Meeting/ Availability/  # scheduling (Google Calendar sync, holiday-aware slots)
+    │
+    │   ── SUPPORTING (needed for the core to run) ───────────────────
+    ├── Auth/ Authorization/ Users/          # sessions, 2FA, RBAC
+    ├── ActivityLog/ Backup/                 # ops & audit trail
+    │
+    │   ── EXPLORATORY (architecture practice, not MVP scope) ────────
+    ├── Products/                            # AI content generator (course outlines)
     ├── AiResumeStudio/ Cvs/                 # AI resume/CV pipeline
-    ├── Students/ Enrollments/               # course/education ops
-    ├── Products/                            # AI content generator (courses/packages)
-    ├── VideoExport/                         # FFmpeg render pipeline
+    ├── Clients/ Services/ Invoices/         # CRM & billing
     ├── Blog/ Post/ Campaigns/ SocialMedia/  # content marketing automation
-    ├── Portfolio/ Company/ ContactSupport/  # public-facing + company data
-    └── ActivityLog/ Backup/                 # ops & compliance
+    └── Portfolio/ Company/ ContactSupport/  # public-facing + company data
         │
         ├── Providers/{Module}ServiceProvider.php   # registerWebRoutes() + registerApiRoutes()
         ├── Tests/{Feature,Unit}/
@@ -595,7 +617,7 @@ Both jobs run in parallel and must pass before merge. There is no separate CD st
 | Layer | Tool | Location | Status |
 |---|---|---|---|
 | Unit | PHPUnit 12 | `tests/Unit/`, `src/Modules/*/Tests/Unit/` (opt-in — only where domain invariants exist) | Present for VOs/services with real logic (e.g. `LibraryNameDetector`, `SeedOutlineParser`) |
-| Feature | PHPUnit 12 | `src/Modules/*/Tests/Feature/` (mandatory per module) | 96 test files across 24 modules as of this writing — `Auth` (22 files) and `Post`/`SocialMedia` are the most exercised |
+| Feature | PHPUnit 12 | `src/Modules/*/Tests/Feature/` (mandatory per module) | 100 test files across 24 modules as of this writing — heavily skewed: `Auth` (22), `Post` (7), `SocialMedia`/`Availability` (6 each), while the core `VideoExport` and `Enrollments` modules have 1 file each. See [9.2](#92-known-gaps). |
 | Frontend type safety | `vue-tsc --noEmit` | CI `frontend` job | Gate on strict TS, not a runtime test |
 | E2E | — | — | **Not yet implemented.** No Playwright/Cypress suite exists; recommended next step given the number of multi-step flows (video export, resume studio, appointment booking) |
 
@@ -694,22 +716,39 @@ This is currently a **single-maintainer** project (see `.cursor/rules/rules.mdc`
 
 ---
 
-## 9. 2026 Enterprise Considerations
+## 9. Project state
 
-| Concern | Current state |
+### 9.1 AI-assisted development
+
+The one non-obvious thing about this repo's setup: it is built to be worked on with coding agents.
+
+- `laravel/boost` — MCP server exposing Artisan, version-scoped docs, and read-only DB queries to an agent.
+- `.claude/` skills library (`BACKEND-PHP`, `FRONTEND`, `OWASP`, `ARCHITECTURE-PHP`, `ARCHITECTURE-VUE`) enforced as always-on rules, so architecture and security constraints are applied by the agent rather than caught in review.
+- `syn.mjs` — config-sync CLI that generates `.cursor/rules` and `CLAUDE.md` from a single source, so the two toolchains can't drift.
+
+That tooling is a large part of why a solo MVP carries 24 modules of consistent hexagonal structure.
+
+### 9.2 Known gaps
+
+Collected here so they're not scattered — these are real, not roadmap padding:
+
+| Gap | Detail |
 |---|---|
-| **AI-assisted development** | The repo ships first-class agent tooling: `laravel/boost` (MCP server exposing Artisan/docs/DB tools to AI agents), a `.claude/` skills library (`BACKEND-PHP`, `FRONTEND`, `OWASP`, `ARCHITECTURE-PHP`, `ARCHITECTURE-VUE`) enforced as always-on rules, and a `syn.mjs` config-sync CLI keeping `.cursor/rules` and `CLAUDE.md` generated from one source. This is a genuine differentiator for this codebase, not boilerplate. |
-| **Edge computing** | Static assets and media are served from Cloudflare R2 (edge-cached object storage); the application server itself is a single-region container (Railway) — no edge functions/edge-rendering are in use, which is an accepted trade-off for an authenticated back-office tool with no global-latency-sensitive audience. |
-| **Sustainability** | No formal green-hosting or carbon-footprint reporting is in place. Railway does not publish per-workload carbon metrics; this would need to be sourced from the hosting provider before it could be reported honestly. |
-| **Accessibility (WCAG 2.2)** | PrimeVue/Volt primitives are WCAG AA out of the box (per-vendor claim); this project has **not** run an independent WCAG 2.2 audit (axe-core/Lighthouse a11y) — recommended before claiming compliance externally. |
-| **Internationalization** | The application itself is English-only (`APP_LOCALE=en`, `APP_FALLBACK_LOCALE=en`); only vendor packages (`spatie/laravel-cookie-consent`, `spatie/laravel-backup`) ship translated strings out of the box for their own UI (dozens of locale files under `lang/vendor/`). No `resources/lang` translation layer exists for the application's own copy — i18n is not currently a product feature. |
-| **Privacy-first analytics** | `spatie/laravel-cookie-consent` gates any tracking behind explicit consent. No analytics/tracking SDK is currently wired into the frontend (`resources/js`) — the consent banner exists ahead of an analytics need, not as a formality. |
+| **E2E tests** | None. No Playwright/Cypress suite, despite the video-pill flow being the most multi-step thing in the app ([5.3](#53-testing-strategy)). |
+| **Core-module test coverage** | Inverted against priorities — `Auth` has 22 test files; `VideoExport`, `Enrollments`, `Cvs` have **1 each** and `Students` has 2. The modules that *are* the MVP are the least covered. |
+| **Accessibility** | Volt/PrimeVue primitives are WCAG AA per vendor claim; no independent axe-core/Lighthouse audit has been run here. Don't claim WCAG 2.2 compliance on this basis. |
+| **APM / tracing** | Not implemented — no OpenTelemetry/Prometheus exporter ([5.6](#56-monitoring--observability)). |
+| **Performance budgets** | No Lighthouse CI, no bundle analysis, no Core Web Vitals reporting ([6](#6-performance)). |
+| **Dependency automation** | No Dependabot/Renovate config committed; upgrades are manual ([7](#7-security)). |
+| **i18n** | English-only (`APP_LOCALE=en`). Locale files under `lang/vendor/` belong to vendor packages, not to this app's copy. |
+| **Analytics** | None wired in. `spatie/laravel-cookie-consent` gates tracking that doesn't exist yet. |
+| **Structured data / robots** | No JSON-LD layer or `robots.txt` audit for the public pages ([4.5](#45-seo)). |
 
 ---
 
 ## 10. License
 
-`composer.json` currently inherits the `laravel/laravel` skeleton's `MIT` license — this is a leftover from project scaffolding, not an intentional choice for what is now a commercial product (see `APP_URL=https://vidula.up.railway.app`, real client data models). **Treat this repository as proprietary/all-rights-reserved until `composer.json` and a root `LICENSE` file are updated to reflect the actual intended terms.**
+`composer.json` inherits the `laravel/laravel` skeleton's `MIT` license — scaffolding leftover, never a deliberate choice. No root `LICENSE` file exists. **Treat this repository as all-rights-reserved until `composer.json` and a `LICENSE` file say otherwise.**
 
 ---
 
